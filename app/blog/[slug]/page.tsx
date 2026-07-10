@@ -35,7 +35,7 @@ export default async function BlogPostPage({
   const post = getPost((await params).slug)
 
   return (
-    <article className="mx-auto w-full max-w-2xl px-6">
+    <article className="mx-auto w-full max-w-[37.5rem] px-6">
       <header>
         {post.cover && (
           <PolaroidCover

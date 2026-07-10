@@ -3,7 +3,7 @@ import { ThemeProvider } from 'next-themes'
 
 import './globals.css'
 import { fontVariables } from './fonts'
-import { DotGrid } from '~/components/dot-grid'
+import { AmbientBackground } from '~/components/ambient-background'
 import { SiteFooter } from '~/components/site-footer'
 import { SiteHeader } from '~/components/site-header'
 import { cn } from '~/lib/utils'
@@ -23,7 +23,7 @@ export default function RootLayout({
     <html lang="zh-CN" suppressHydrationWarning className={cn('font-sans', fontVariables)}>
       <body className="antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <DotGrid />
+          <AmbientBackground />
           <div className="flex min-h-screen flex-col">
             <SiteHeader />
             <main className="flex-1 pt-8">{children}</main>

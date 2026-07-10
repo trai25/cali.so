@@ -7,9 +7,9 @@ export default function HomePage() {
   const posts = getAllPosts()
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Cali Castle</h1>
-      <p className="mt-4 leading-relaxed text-muted-foreground">
+    <div className="mx-auto w-full max-w-[37.5rem] px-6">
+      <h1 className="text-sm font-semibold">Cali Castle</h1>
+      <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
         开发者、设计师、创始人。正在打造 Zolplay 与一些有趣的产品。
       </p>
 
@@ -20,9 +20,9 @@ export default function HomePage() {
             <li key={post.slug}>
               <Link
                 href={`/blog/${post.slug}`}
-                className="hairline-top group flex items-baseline justify-between gap-4 py-3"
+                className="hairline-top group flex items-baseline justify-between gap-4 py-3 text-sm"
               >
-                <span className="transition-colors duration-150 ease-[ease] group-hover:text-foreground">
+                <span className="font-medium transition-colors duration-150 ease-[ease] group-hover:text-foreground">
                   {post.title}
                 </span>
                 <time

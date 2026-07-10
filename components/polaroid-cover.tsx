@@ -33,15 +33,17 @@ export function PolaroidCover({
       className={cn('polaroid', tilted && 'polaroid-tilted', className)}
       style={tilted ? ({ '--tilt': `${tiltFromSlug(slug)}deg` } as React.CSSProperties) : undefined}
     >
-      <Image
-        src={cover.src}
-        alt={caption ?? ''}
-        width={cover.width}
-        height={cover.height}
-        priority={priority}
-        sizes={sizes}
-        className="w-full"
-      />
+      <span className="polaroid-photo">
+        <Image
+          src={cover.src}
+          alt={caption ?? ''}
+          width={cover.width}
+          height={cover.height}
+          priority={priority}
+          sizes={sizes}
+          className="w-full"
+        />
+      </span>
       <figcaption className="polaroid-caption">{caption ?? cover.caption ?? ' '}</figcaption>
     </figure>
   )

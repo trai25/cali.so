@@ -14,8 +14,8 @@ export default function BlogIndexPage() {
   const posts = getAllPosts()
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-balance">写作</h1>
+    <div className="mx-auto w-full max-w-[37.5rem] px-6">
+      <h1 className="text-sm font-medium text-muted-foreground">写作</h1>
       <ul className="mt-10 flex flex-col gap-12">
         {posts.map((post, index) => (
           <li key={post.slug}>
@@ -31,11 +31,11 @@ export default function BlogIndexPage() {
                   className="max-w-sm"
                 />
               )}
-              <div className="mt-5 flex items-baseline justify-between gap-4">
+              <div className="mt-5 flex items-baseline justify-between gap-4 text-sm">
                 <h2 className="font-medium">{post.title}</h2>
                 <time
                   dateTime={post.publishedAt.toISOString()}
-                  className="shrink-0 text-sm text-muted-foreground tabular-nums"
+                  className="shrink-0 text-muted-foreground tabular-nums"
                 >
                   {formatDate(post.publishedAt)}
                 </time>

@@ -1,6 +1,6 @@
 export function SiteFooter() {
   return (
-    <footer className="mx-auto mt-24 w-full max-w-2xl px-6 pb-12">
+    <footer className="mx-auto mt-24 w-full max-w-[37.5rem] px-6 pb-12">
       <div className="hairline-top flex items-baseline justify-between pt-6 text-sm text-muted-foreground">
         <p>© {new Date().getFullYear()} Cali Castle</p>
         <div className="flex gap-4">

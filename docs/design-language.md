@@ -10,17 +10,33 @@ its behavior spec is the contract.
 Token set (define in `globals.css`, use everywhere — no ad-hoc cubic-beziers):
 
 ```css
---ease-out-quart: cubic-bezier(0.165, 0.84, 0.44, 1);   /* enter/exit         */
---ease-in-out-quart: cubic-bezier(0.77, 0, 0.175, 1);   /* on-screen movement */
---ease: ease;                                            /* hover/color        */
+--ease-swift: cubic-bezier(0.2, 0.8, 0.2, 1);       /* UI: enters, exits, movement */
+--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);   /* playful objects: overshoots  */
+--ease: ease;                                        /* hover/color                  */
 ```
+
+Two motion families. **UI chrome** (tooltips, dropdowns, hover cards, focus)
+uses `--ease-swift` at 150–200ms — quick, decisive, no bounce. **Physical
+objects** (the photo covers, anything meant to feel picked up) use
+`--ease-spring` at 300–350ms — the overshoot reads as springiness; never use
+it on chrome.
 
 | Motion | Duration | Easing |
 | --- | --- | --- |
 | Hover/color change | 150ms | `ease` |
-| Tooltip, dropdown, hover card enter | 150–200ms | `--ease-out-quart` |
-| Exit (any) | ~2/3 of its enter | `--ease-out-quart` |
-| Shared-element page transition | 300–350ms | `--ease-in-out-quart` |
+| Tooltip, dropdown, hover card enter | 150–200ms | `--ease-swift` |
+| Exit (any) | ~2/3 of its enter | `--ease-swift` |
+| Photo pick-up / settle | 300–350ms | `--ease-spring` |
+| Shared-element page transition | 300–350ms | `--ease-swift` |
+
+Shadow scale (one alpha, growing throw — don't invent one-off shadows):
+
+```css
+--shadow-small:  0 5px 10px rgb(0 0 0 / 0.12);
+--shadow-medium: 0 8px 30px rgb(0 0 0 / 0.12);
+--shadow-large:  0 30px 60px rgb(0 0 0 / 0.12);
+--shadow-tooltip: 0 4px 8px rgb(0 0 0 / 0.04), 0 1px 1px rgb(0 0 0 / 0.02);
+```
 
 Hard rules:
 
@@ -45,10 +61,15 @@ Hard rules:
   Weights 400/500/600 only, as `--font-weight-{normal,medium,semibold}`
   variables. Weight never changes on hover or selection — state is shown with
   color, never with weight or size.
-- Body text is 16px minimum (also prevents iOS input zoom); post prose is
-  17px/1.7 with CJK line-height 1.9. Headings use `text-wrap: balance` and
-  tighter letter-spacing as size grows (pair size and tracking inside one
-  `<Text>`/prose style, per font).
+- **One size for chrome.** Site chrome — header, nav, footer, list rows,
+  dates, section labels, even page-level headings outside post bodies — is a
+  single size (14px, letter-spacing −0.011em); hierarchy comes from weight
+  and color only. Resist adding a size before exhausting weight + color.
+- **Prose is the exception.** Post bodies are 17px/1.7 with CJK line-height
+  1.9 (16px minimum everywhere also prevents iOS input zoom); post titles may
+  be large. Headings use `text-wrap: balance` and tighter letter-spacing as
+  size grows.
+- Content column is narrow: ~600px (`37.5rem`) plus padding.
 - `font-variant-numeric: tabular-nums` on anything that counts: dates in
   lists, reading time, subscriber counts.
 - Curly quotes, real ellipsis (…), full-width CJK punctuation left alone.
@@ -78,21 +99,32 @@ are short, concrete, and conversational — "为什么按钮不需要手指光�
 Inline mentions of external presences (social profile, code, films, music)
 open rich hover cards. The contract:
 
-- **Per-service design.** Each card is composed for its service — a code card
-  shows the contribution graph, a films card shows recent poster art with
-  ratings, a music card shows the current/last track with artwork. No generic
-  "avatar + handle" template.
-- **Behavior.** 300ms open intent delay (0ms when moving between adjacent
-  triggers), enter 200ms `--ease-out-quart` from `scale(0.95)` + `opacity: 0`,
-  `transform-origin` at the trigger. Exit faster than enter. Built on the
-  fluid hover-card primitive so pointer exit mid-animation reverses smoothly.
+- **Per-service design.** Each card is composed for its service — no generic
+  "avatar + handle" template. The card's *content* also animates, not just
+  its container:
+  - Code card: a real contribution graph (~52 week columns, hairline 0.5px
+    cell borders) whose cells **cascade in individually** — each cell rises
+    from `translateY(4px) scale(0.92)` over ~0.48s with a per-cell stagger.
+  - Films card: recent posters as a **fanned stack** (≈64×96px each,
+    overlapping by −8px), each poster entering **blur(4px) → sharp** with a
+    per-poster delay.
+  - Social card: avatar, name + verified mark, bio, follower stats in
+    `tabular-nums`.
+  - Music card: current/last track with artwork.
+- **Behavior.** ~256px fixed-width card, 300ms open intent delay (0ms when
+  moving between adjacent triggers), enter 200ms `--ease-swift` from
+  `scale(0.95)` + `opacity: 0`, `transform-origin` at the trigger,
+  `backface-visibility: hidden`. Exit faster than enter. Built on the fluid
+  hover-card primitive so pointer exit mid-animation reverses smoothly.
 - **Fixed dimensions per card type** — content loads into a fixed-size card
   (skeleton first), never resizing after open. No layout shift, ever.
 - **Touch fallback.** Hover cards require `@media (hover: hover) and (pointer:
-  fine)`. On touch, the trigger is a plain link to the destination — the card
-  is an enhancement, not the content.
+  fine)` and are simply absent on touch — the trigger is a plain link to the
+  destination (or inert text if there is no destination). The card is an
+  enhancement, never the content.
 - **Data at build time.** Card data (grid, films, tracks) is fetched at build
   / ISR, not on hover; an open card never spinners on network.
+- All content animations inside cards respect `prefers-reduced-motion`.
 
 ## Fluid page transitions
 
@@ -105,28 +137,44 @@ statically generated, and the transition plays over already-available content.
 
 ## Instant-photo cover treatment
 
-Post covers render as instant-print photographs:
+Post covers render as instant-print photographs. Governing principle: the
+photo is a physical object you pick up — and **paper doesn't squish** (scale
+and fade it, never deform it).
 
 - White frame: 4% of width on three sides, 14% at the bottom; bottom edge
-  carries an optional caption/date in a small handwriting-feel face.
-- In listings: deterministic tilt of −2° to 2° derived from the slug (stable
-  across builds), straightening to 0° on hover — 200ms `--ease-in-out-quart`,
-  `@media (hover: hover)` only.
-- Shadow: two-layer, e.g. `0 1px 2px rgb(0 0 0 / 0.06), 0 8px 24px
-  rgb(0 0 0 / 0.10)`, deepening slightly on hover with the same timing as the
-  straighten.
+  carries an optional caption/date in a small handwriting-feel face. An inner
+  hairline ring where photo meets frame (inset shadow ≈ `rgb(0 0 0 / 0.14)`)
+  sells the print edge.
+- Deterministic base tilt of −2° to 2° derived from the slug (stable across
+  builds).
+- **Hover = pick-up, not flatten**: rotate a further +1.2° from the base tilt
+  and scale to 1.03, 300ms `--ease-spring`, `@media (hover: hover)` only.
+  Press (`:active`) squishes the *gesture* — `scale(0.94)` — not the paper.
+  Exception: a photo with interactive affordances on it may straighten on
+  hover instead, so its controls are easy to grab.
+- Entrance (first paint of a listing): pop in from `rotate(base ± a few deg)
+  scale(0.85) opacity 0` to settled, ~350ms, staggered ~65ms per photo.
+  Scale + fade only. Skip after first visit in the session.
+- Shadow: `0 2px 4px -1px rgb(0 0 0 / 0.18)` at rest, stepping up the shadow
+  scale on hover with the same timing as the pick-up.
 - The same treatment renders the OG image, so a shared post is recognizably
   the same object.
 - The frame is a component (`PolaroidCover`), not per-post CSS.
 
-## Ambient background
+## Ambient background: paper, grain, and guides
 
-A fixed dot grid behind content: 24px cell, 1px dots, `--gray-1`-relative
-opacity around 5% in light and 8% in dark (tune per screen, not per
-component). Hairline rule lines may mark layout columns on wide viewports.
-Always `pointer-events: none`, `user-select: none`, masked out with
-`mask-image` behind dense text areas. It should be missable — noticed on the
-second visit, not the first.
+The page reads as a sheet of working paper, not a void:
+
+- **Grain**: a tiled noise texture over the whole page (fixed, tiled,
+  `pointer-events: none`), at an opacity just past the threshold of
+  perception. Light and dark modes get separately tuned strengths.
+- **Guides**: the content column is marked like a drafting sheet — fine
+  dotted rules (0.5px dots at 4px spacing) running the column width near the
+  top and bottom edges of the viewport, hairline weight, at ~16px insets.
+  Dashed variants (2px dash / 2px gap) may mark secondary structure.
+- No full-page dot matrix — texture comes from grain, structure from guides.
+- Everything in this layer is `pointer-events: none`, `user-select: none`,
+  and must be missable: noticed on the second visit, not the first.
 
 ## Micro-interaction craft
 
@@ -144,11 +192,14 @@ Few interactions, disproportionate care:
 
 ## Illustration accents
 
-Diagrams and decorative accents use a hand-drawn technical style: thin
-strokes, slight waver, no fills or flat-vector look. Decorative instances set
-`role="img"` + `aria-label` (or `aria-hidden` if truly ornamental),
-`user-select: none`, `pointer-events: none`. Used sparingly, mostly inside
-posts.
+Diagrams and decorative accents use a hand-drawn technical style: inline SVG,
+stroke widths in the 1.35–1.8 range, `stroke-linecap="round"`, slight waver,
+no fills or flat-vector look. Labels use a dedicated annotation face (the
+handwriting-feel font), not the body font. Strokes may draw themselves on
+first view (path-draw animation with tapered ends, ~0.5–1.25s), respecting
+reduced motion. Decorative instances set `role="img"` + `aria-label` (or
+`aria-hidden` if truly ornamental), `user-select: none`,
+`pointer-events: none`. Used sparingly, mostly inside posts.
 
 ## Static by default
 
