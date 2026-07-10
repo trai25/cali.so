@@ -163,6 +163,10 @@
 
   --grain-opacity: 0.3;
   --guide-opacity: 0.5;
+
+  /* instant-print paper stays paper in any theme */
+  --paper: oklch(0.98 0.004 95);
+  --paper-ink: oklch(0.52 0.012 95);
 }
 
 @media only screen and (min-resolution: 192dpi) {
@@ -228,10 +232,57 @@
   bottom: 16px;
 }
 
+/* full-height dashed verticals boxing the column, drafting-sheet style */
+.column-guide-v {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: repeating-linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--muted-foreground) 45%, transparent) 0,
+    color-mix(in oklab, var(--muted-foreground) 45%, transparent) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+}
+
+.column-guide-v:first-of-type {
+  left: max(16px, calc((100% - 37.5rem) / 2));
+}
+
+.column-guide-v:last-of-type {
+  right: max(16px, calc((100% - 37.5rem) / 2));
+}
+
+/* ── Selective focus: hovering a row defocuses its siblings ───────── */
+
+@media (hover: hover) and (pointer: fine) {
+  .focus-list > li {
+    transition:
+      filter 200ms var(--ease-swift),
+      opacity 200ms var(--ease-swift);
+  }
+
+  .focus-list:hover > li:not(:hover) {
+    filter: blur(4px);
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .focus-list > li,
+  .focus-list:hover > li:not(:hover) {
+    transition: none;
+    filter: none;
+    opacity: 1;
+  }
+}
+
 /* ── Instant-photo cover ──────────────────────────────────────────── */
 
 .polaroid {
-  background: var(--card);
+  background: var(--paper);
   padding: 4% 4% 0;
   box-shadow:
     0 0 0 1px rgb(0 0 0 / 0.04),
@@ -259,7 +310,7 @@
   padding: 0.25rem 0.125rem;
   font-size: 0.8125rem;
   font-style: italic;
-  color: var(--muted-foreground);
+  color: var(--paper-ink);
   user-select: none;
 }
 

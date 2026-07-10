@@ -126,14 +126,30 @@ open rich hover cards. The contract:
   / ISR, not on hover; an open card never spinners on network.
 - All content animations inside cards respect `prefers-reduced-motion`.
 
+## Selective focus
+
+The governing attention grammar: **only the thing being attended to is
+sharp.** Applications:
+
+- **List rows (writing index, home list)**: hovering a row blurs (~4–6px) and
+  dims everything else on the page over ~200ms `--ease-swift`; mouse-out
+  restores instantly. The hovered row itself does not move.
+- **Media loading**: images/video in card grids sit as blur-up placeholders
+  and resolve to sharp when loaded or attended.
+- Focus-pull requires `@media (hover: hover) and (pointer: fine)` and is
+  fully disabled under `prefers-reduced-motion` (no blur transitions —
+  content stays sharp).
+
 ## Fluid page transitions
 
-Index → post navigation uses the View Transitions API (Next's built-in
-support): the cover image and title are shared elements morphing over
-300–350ms `--ease-in-out-quart`; the rest crossfades. Browsers without view
+Index → post navigation continues the selective-focus grammar: the origin
+page defocuses (the hovered row already sharp), and the post rises over that
+blurred backdrop — cover and title morphing as shared elements over 300–350ms
+`--ease-swift`; the rest crossfades. Post pages may open as a staged title
+card (title + date settle first, content follows). Browsers without view
 transitions get instant navigation — no JS fallback animation. Reduced motion
-disables the morph entirely. Transitions never delay navigation: content is
-statically generated, and the transition plays over already-available content.
+disables all of it. Transitions never delay navigation: content is statically
+generated, and the transition plays over already-available content.
 
 ## Instant-photo cover treatment
 
@@ -168,10 +184,11 @@ The page reads as a sheet of working paper, not a void:
 - **Grain**: a tiled noise texture over the whole page (fixed, tiled,
   `pointer-events: none`), at an opacity just past the threshold of
   perception. Light and dark modes get separately tuned strengths.
-- **Guides**: the content column is marked like a drafting sheet — fine
+- **Guides**: the content column is boxed like a drafting sheet — fine
   dotted rules (0.5px dots at 4px spacing) running the column width near the
-  top and bottom edges of the viewport, hairline weight, at ~16px insets.
-  Dashed variants (2px dash / 2px gap) may mark secondary structure.
+  top and bottom viewport edges, plus full-height dashed vertical hairlines
+  (2px dash / 2px gap) at both column edges. All at hairline weight,
+  ~16px insets.
 - No full-page dot matrix — texture comes from grain, structure from guides.
 - Everything in this layer is `pointer-events: none`, `user-select: none`,
   and must be missable: noticed on the second visit, not the first.

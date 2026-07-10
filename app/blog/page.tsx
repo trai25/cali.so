@@ -16,7 +16,7 @@ export default function BlogIndexPage() {
   return (
     <div className="mx-auto w-full max-w-[37.5rem] px-6">
       <h1 className="text-sm font-medium text-muted-foreground">写作</h1>
-      <ul className="mt-10 flex flex-col gap-12">
+      <ul className="focus-list mt-10 flex flex-col gap-12">
         {posts.map((post, index) => (
           <li key={post.slug}>
             <Link href={`/blog/${post.slug}`} className="group block">

@@ -5,7 +5,10 @@ export function AmbientBackground() {
   return (
     <>
       <div aria-hidden className="paper-grain" />
-      <div aria-hidden className="column-guides" />
+      <div aria-hidden className="column-guides">
+        <div className="column-guide-v" />
+        <div className="column-guide-v" />
+      </div>
     </>
   )
 }

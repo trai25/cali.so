@@ -15,7 +15,7 @@ export default function HomePage() {
 
       <section className="mt-16">
         <h2 className="text-sm font-medium text-muted-foreground">写作</h2>
-        <ul className="mt-4 flex flex-col">
+        <ul className="focus-list mt-4 flex flex-col">
           {posts.map((post) => (
             <li key={post.slug}>
               <Link
