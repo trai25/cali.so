@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
   // another checkout, Next's lockfile-based root inference walks too far up.
   turbopack: { root: import.meta.dirname },
 
+  images: {
+    // Post images are served from content/ via app/content/[...path]/route.ts
+    localPatterns: [{ pathname: '/content/**' }, { pathname: '/_next/static/**' }],
+  },
+
   // v1 URL back-compat (issue #75): every URL Google or anyone else has
   // indexed must keep working. Routes that survive in v2 (blog, feeds,
   // newsletters, ama, about, projects) are served natively; everything

@@ -141,3 +141,251 @@
     @apply font-sans;
     }
 }
+/* ── Design-language tokens (docs/design-language.md) ─────────────── */
+
+:root {
+  --ease-out-quart: cubic-bezier(0.165, 0.84, 0.44, 1);
+  --ease-in-out-quart: cubic-bezier(0.77, 0, 0.175, 1);
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  --border-hairline: 1px;
+  --z-nav: 100;
+  --z-card: 200;
+  --z-toast: 300;
+
+  --dot-opacity: 5%;
+}
+
+@media only screen and (min-resolution: 192dpi) {
+  :root {
+    --border-hairline: 0.5px;
+  }
+}
+
+.dark {
+  --dot-opacity: 8%;
+}
+
+.hairline-top {
+  border-top: var(--border-hairline) solid var(--border);
+}
+
+/* ── Ambient dot grid ─────────────────────────────────────────────── */
+
+.dot-grid {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  user-select: none;
+  background-image: radial-gradient(
+    color-mix(in oklab, var(--foreground) var(--dot-opacity), transparent) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
+  mask-image: radial-gradient(ellipse 120% 90% at 50% 0%, black 35%, transparent 80%);
+}
+
+/* ── Instant-photo cover ──────────────────────────────────────────── */
+
+.polaroid {
+  background: var(--card);
+  padding: 4% 4% 0;
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.04),
+    0 1px 2px rgb(0 0 0 / 0.06),
+    0 8px 24px rgb(0 0 0 / 0.1);
+}
+
+.polaroid-caption {
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.25rem 0.125rem;
+  font-size: 0.8125rem;
+  font-style: italic;
+  color: var(--muted-foreground);
+  user-select: none;
+}
+
+.polaroid-tilted {
+  transform: rotate(var(--tilt, 0deg));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .polaroid-tilted {
+    transition:
+      transform 200ms var(--ease-in-out-quart),
+      box-shadow 200ms var(--ease-in-out-quart);
+  }
+
+  .group:hover .polaroid-tilted {
+    transform: rotate(0deg);
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.04),
+      0 2px 4px rgb(0 0 0 / 0.07),
+      0 12px 32px rgb(0 0 0 / 0.14);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .polaroid-tilted {
+    transition: none;
+  }
+}
+
+/* ── Post prose ───────────────────────────────────────────────────── */
+
+.prose {
+  font-size: 17px;
+  line-height: 1.7;
+}
+
+.prose:lang(zh-CN),
+.prose:lang(zh) {
+  line-height: 1.9;
+}
+
+.prose > * + * {
+  margin-top: 1.25em;
+}
+
+.prose h2 {
+  margin-top: 2.5em;
+  font-size: 1.25rem;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+.prose h3 {
+  margin-top: 2em;
+  font-size: 1.0625rem;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.prose a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: color-mix(in oklab, var(--foreground) 30%, transparent);
+  transition: text-decoration-color 150ms ease;
+}
+
+.prose a:hover {
+  text-decoration-color: var(--foreground);
+}
+
+.prose strong {
+  font-weight: var(--font-weight-semibold);
+}
+
+.prose blockquote {
+  border-left: 2px solid var(--border);
+  padding-left: 1rem;
+  color: var(--muted-foreground);
+}
+
+.prose figcaption,
+.prose .post-figcaption {
+  margin-top: 0.5rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+
+.prose code:not(pre code) {
+  background: var(--muted);
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.375rem;
+  font-size: 0.875em;
+}
+
+/* ── Code blocks (rehype-pretty-code + shiki dual themes) ─────────── */
+
+.code-frame {
+  position: relative;
+}
+
+.code-frame pre {
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+.code-frame pre::-webkit-scrollbar {
+  height: 8px;
+}
+
+.code-frame pre::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--foreground) 20%, transparent);
+  border-radius: 4px;
+}
+
+figure[data-rehype-pretty-code-figure] figcaption[data-rehype-pretty-code-title] {
+  margin: 0 0 -0.5rem;
+  padding: 0 0.25rem;
+  text-align: left;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+code[data-theme] span {
+  color: var(--shiki-light);
+}
+
+.dark code[data-theme] span {
+  color: var(--shiki-dark);
+}
+
+pre[data-theme] {
+  background: var(--shiki-light-bg);
+}
+
+.dark pre[data-theme] {
+  background: var(--shiki-dark-bg);
+}
+
+.code-copy {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.375rem;
+  color: var(--muted-foreground);
+  background: transparent;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.code-copy::after {
+  /* 44px minimum hit area */
+  content: '';
+  position: absolute;
+  inset: -0.5rem;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .code-copy:hover {
+    color: var(--foreground);
+    background: color-mix(in oklab, var(--foreground) 8%, transparent);
+  }
+}
+
+.code-copy:active {
+  transform: scale(0.97);
+}
+
+.code-copy[data-copied] {
+  color: var(--foreground);
+}
