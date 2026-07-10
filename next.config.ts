@@ -1,0 +1,40 @@
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  // Pin the project root: when developing from a git worktree nested inside
+  // another checkout, Next's lockfile-based root inference walks too far up.
+  turbopack: { root: import.meta.dirname },
+
+  // v1 URL back-compat (issue #75): every URL Google or anyone else has
+  // indexed must keep working. Routes that survive in v2 (blog, feeds,
+  // newsletters, ama, about, projects) are served natively; everything
+  // below covers what moved or was retired.
+  redirects: async () => [
+    // Social shortlinks (in bios and shared posts since v1)
+    { source: '/twitter', destination: 'https://x.com/thecalicastle', permanent: true },
+    { source: '/x', destination: 'https://x.com/thecalicastle', permanent: true },
+    { source: '/youtube', destination: 'https://youtube.com/@calicastle', permanent: true },
+    { source: '/tg', destination: 'https://t.me/cali_so', permanent: true },
+    { source: '/linkedin', destination: 'https://www.linkedin.com/in/calicastle/', permanent: true },
+    { source: '/github', destination: 'https://github.com/CaliCastle', permanent: true },
+    { source: '/bilibili', destination: 'https://space.bilibili.com/8350251', permanent: true },
+
+    // Retired in v2 (ADR-0003, ADR-0004)
+    { source: '/guestbook', destination: '/', permanent: true },
+    { source: '/sign-in', destination: '/', permanent: true },
+    { source: '/sign-in/:path*', destination: '/', permanent: true },
+    { source: '/sign-up', destination: '/', permanent: true },
+    { source: '/sign-up/:path*', destination: '/', permanent: true },
+    { source: '/studio', destination: '/', permanent: true },
+    { source: '/studio/:path*', destination: '/', permanent: true },
+  ],
+
+  rewrites: async () => [
+    // Feed aliases subscribed in RSS readers since v1
+    { source: '/feed', destination: '/feed.xml' },
+    { source: '/rss', destination: '/feed.xml' },
+    { source: '/rss.xml', destination: '/feed.xml' },
+  ],
+}
+
+export default nextConfig
