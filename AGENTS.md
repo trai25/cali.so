@@ -12,6 +12,10 @@ Issues are tracked in GitHub Issues (CaliCastle/cali.so) via the `gh` CLI; exter
 
 The five canonical triage labels are used as-is (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
 
+### Design
+
+All UI work follows the spec in `docs/design-language.md` (motion tokens, typography, hover-card contract, cover treatment). Apply the `emil-design-engineering` skill when building or reviewing UI.
+
 ### Domain docs
 
 Multi-context: `CONTEXT-MAP.md` at the root points to per-context `CONTEXT.md` files, added as the v2 architecture takes shape. See `docs/agents/domain.md`.
