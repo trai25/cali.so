@@ -2,6 +2,8 @@
 
 Cali Castle's personal site — v2 is a ground-up rewrite starting from a clean slate.
 
+**Picking up work?** Read `docs/handoff.md` first — current status, work queue, and gotchas.
+
 ## Agent skills
 
 ### Issue tracker
