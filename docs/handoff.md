@@ -30,23 +30,27 @@ Working and verified (light/dark/mobile, production build green):
   buttons.
 - **URL back-compat** (issue #75): all v1 redirects/rewrites live in
   `next.config.ts` since day one, verified against a running server.
+- **`/feed.xml`** (`app/feed.xml/route.ts`): v1 semantics (rss package,
+  zh-CN, cover enclosures) but fully static — `force-static`, regenerates
+  per deploy. `/feed`, `/rss`, `/rss.xml` rewrites verified. Site constants
+  live in `lib/seo.ts`; `metadataBase` is wired in the root layout.
 
 ## Work queue (rough order)
 
-1. **`/feed.xml` route** — the `/rss`, `/feed`, `/rss.xml` rewrites currently
-   404. Port semantics from v1 (`main` branch: `app/(main)/feed.xml/route.ts`).
-2. **Sitemap + OG images** — OG must reuse the polaroid treatment
-   (design-language: "recognizably the same object").
-3. **Pages**: `/projects` (data as typed config, v1 content in the archive's
+1. **Sitemap + OG images** — OG must reuse the polaroid treatment
+   (design-language: "recognizably the same object"). Also add the feed's
+   `image_url` once an OG/site image exists (v1 pointed it at
+   `opengraph-image.png`; omitted for now).
+2. **Pages**: `/projects` (data as typed config, v1 content in the archive's
    `sanity-export/documents/project.json`), `/about`, `/ama` (port from
    `main`, it's fully static).
-4. **Newsletters + admin + magic-link auth** (ADR-0004): subscribers/
+3. **Newsletters + admin + magic-link auth** (ADR-0004): subscribers/
    newsletters tables stay; Resend already in env. Single allowlisted email,
    15-min single-use token, rate-limited request, signed httpOnly ~30d
    session cookie.
-5. **Hover cards** (design-language contract), **focus-pull → post
+4. **Hover cards** (design-language contract), **focus-pull → post
    transition** (staged title card), print-pile list thumbnails.
-6. **Cutover checklist** (do NOT do early): crawl live v1 URLs and verify
+5. **Cutover checklist** (do NOT do early): crawl live v1 URLs and verify
    100% (issue #75 acceptance criteria); drop `comments`/`guestbook` tables
    (data already archived privately); decommission Sanity only after all
    content verified in prod; gate on Next 16.3 stable (ADR-0005).

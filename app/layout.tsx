@@ -6,9 +6,11 @@ import { fontVariables } from './fonts'
 import { AmbientBackground } from '~/components/ambient-background'
 import { SiteFooter } from '~/components/site-footer'
 import { SiteHeader } from '~/components/site-header'
+import { seo } from '~/lib/seo'
 import { cn } from '~/lib/utils'
 
 export const metadata: Metadata = {
+  metadataBase: seo.url,
   title: {
     default: 'Cali Castle',
     template: '%s | Cali Castle',
