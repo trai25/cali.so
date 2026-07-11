@@ -17,8 +17,11 @@ Working and verified (light/dark/mobile, production build green):
   colocated in `content/blog/<slug>/` and served by
   `app/content/[...path]/route.ts`; markdown images carry dimensions as
   `./file.png#WxH` fragments.
-- **One post ported** (`how-to-add-rss-to-your-nextjs-app-router`) as the
-  reference implementation; SSG via `generateStaticParams`.
+- **All 9 posts ported** from the v1 archive; SSG via `generateStaticParams`.
+  Tweets render via `<Tweet>` (`components/mdx/tweet.tsx`): fully static, no
+  client embed — tweet data is archived as `./tweet-<id>.json` next to the
+  post at port time (only `do-buttons-need-pointer-cursors` has one; the
+  embedded video is represented by a marker + link out, not mirrored).
 - **Design system foundations** per `docs/design-language.md` (the spec —
   read it before any UI work; also see AGENTS.md → apply the
   `emil-design-engineering` skill): paper grain + boxed drafting guides,
@@ -30,30 +33,20 @@ Working and verified (light/dark/mobile, production build green):
 
 ## Work queue (rough order)
 
-1. **Port the remaining 8 posts** — run per slug:
-   `node scripts/port-post.mjs <slug> <archive-dir> content/blog`
-   where `<archive-dir>` is the private v1 archive (Cali has it; contains
-   `sanity-export/`). Slugs: `8-laws-to-a-successful-engineer`,
-   `guide-for-cloning-my-site`, `an-ode-to-hao-chen`,
-   `how-to-protect-your-site-with-upstash`, `react-or-vue-my-take-on-web-dev`,
-   `im-gonna-be-a-father`, `2023-year-in-review`,
-   `do-buttons-need-pointer-cursors`. Two contain `tweet` blocks → build the
-   `<Tweet>` MDX component (static-rendered, no client embed if possible).
-   Verify each renders; check inline images and code blocks.
-2. **`/feed.xml` route** — the `/rss`, `/feed`, `/rss.xml` rewrites currently
+1. **`/feed.xml` route** — the `/rss`, `/feed`, `/rss.xml` rewrites currently
    404. Port semantics from v1 (`main` branch: `app/(main)/feed.xml/route.ts`).
-3. **Sitemap + OG images** — OG must reuse the polaroid treatment
+2. **Sitemap + OG images** — OG must reuse the polaroid treatment
    (design-language: "recognizably the same object").
-4. **Pages**: `/projects` (data as typed config, v1 content in the archive's
+3. **Pages**: `/projects` (data as typed config, v1 content in the archive's
    `sanity-export/documents/project.json`), `/about`, `/ama` (port from
    `main`, it's fully static).
-5. **Newsletters + admin + magic-link auth** (ADR-0004): subscribers/
+4. **Newsletters + admin + magic-link auth** (ADR-0004): subscribers/
    newsletters tables stay; Resend already in env. Single allowlisted email,
    15-min single-use token, rate-limited request, signed httpOnly ~30d
    session cookie.
-6. **Hover cards** (design-language contract), **focus-pull → post
+5. **Hover cards** (design-language contract), **focus-pull → post
    transition** (staged title card), print-pile list thumbnails.
-7. **Cutover checklist** (do NOT do early): crawl live v1 URLs and verify
+6. **Cutover checklist** (do NOT do early): crawl live v1 URLs and verify
    100% (issue #75 acceptance criteria); drop `comments`/`guestbook` tables
    (data already archived privately); decommission Sanity only after all
    content verified in prod; gate on Next 16.3 stable (ADR-0005).

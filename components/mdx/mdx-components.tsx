@@ -2,6 +2,7 @@ import Image from 'next/image'
 import type { MDXComponents } from 'mdx/types'
 
 import { CodeBlockPre } from './code-block'
+import { Tweet } from './tweet'
 
 // Post images arrive as ./file.png#WxH (dimensions encoded by the content
 // pipeline); rewrite to the content route and unpack the dimensions.
@@ -33,6 +34,7 @@ function PostImage({ slug, src, alt, title }: { slug: string; src: string; alt?:
 export function mdxComponents(slug: string): MDXComponents {
   return {
     pre: (props) => <CodeBlockPre {...props} />,
+    Tweet: ({ id }: { id: string }) => <Tweet slug={slug} id={id} />,
     img: (props) => (
       <PostImage slug={slug} src={props.src as string} alt={props.alt} title={props.title} />
     ),

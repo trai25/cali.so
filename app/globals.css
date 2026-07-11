@@ -496,3 +496,39 @@ pre[data-theme] {
 .code-copy[data-copied] {
   color: var(--foreground);
 }
+
+/* ── Tweet cards (static snapshots — no embeds, see components/mdx/tweet.tsx) */
+
+.tweet-card {
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+.tweet-card blockquote {
+  border-left: none;
+  padding-left: 0;
+  color: var(--foreground);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.tweet-card blockquote p + p {
+  margin-top: 0.75em;
+}
+
+.tweet-card figcaption {
+  margin-top: 0.75rem;
+  text-align: left;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.tweet-card-author {
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+}
+
+.tweet-card-media {
+  user-select: none;
+}
