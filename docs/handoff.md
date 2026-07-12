@@ -3,12 +3,14 @@
 Status snapshot for whoever (human or agent) picks this up. Last updated
 July 2026.
 
-> **Current working state (July 13, 2026)**: development lives in a git
-> worktree on branch `claude/whats-next-9a568d`. Everything after commit
-> `fed17bf` (rounds 13–13b below) is **uncommitted but verified** —
-> Cali commits by saying "lfg" (his alias for stage-all + conventional
-> commit); don't commit without it. Dev server: the Browser pane runs it
-> from `.claude/launch.json` (`autoPort: true` — do NOT hardcode a port;
+> **Current working state (July 13, 2026)**: all work through round 13b
+> is committed and merged into **`v2`** (at `882b319`, pushed).
+> **`v2` is the integration branch — land session branches there, never
+> `main`.** `main` is still the live v1 site and only receives `v2` once,
+> at cutover (see the checklist in the work queue). Cali commits by
+> saying "lfg" (his alias for stage-all + conventional commit); don't
+> commit without it. Dev server: the Browser pane runs it from
+> `.claude/launch.json` (`autoPort: true` — do NOT hardcode a port;
 > next dev respects the assigned PORT env). Verify with the pane or the
 > `agent-browser` CLI. Production build is green with every route static
 > + 6h ISR revalidate (see round 13's live social data).
