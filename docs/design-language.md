@@ -197,15 +197,30 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
   (+40%) and repels (≤7px) dots within ~150px, smoothed per-frame (0.16
   lerp, rAF only while active). Touch and reduced motion get the static
   print; no-JS gets the photo printed down (grayscale, 85%).
-- **Rulers**: measuring ticks hug the horizontal guides (48px major / 12px
-  minor), same missability contract as the guides.
+- **Rulers**: measuring ticks (48px major / 12px minor) ride top and
+  bottom as arcs of an enormous circle (fixed 40px rise at the viewport
+  edge, so R = w²/8s at any width) — a bent steel rule whose ends bow away
+  and leave the screen before the corners; the apex hugs the horizontal
+  guide. Ticks are dashes on the stroked path (`components/arc-rulers.tsx`),
+  perpendicular to the curve for free. Same missability contract as the
+  guides.
 - **Print veils** (`components/dither-veil.tsx`): cover images rest as
   ink-on-paper prints, identical in both themes (paper
   `oklch(0.98 0.004 95)`, ink `oklch(0.28 0.012 95)`), developing into the
   true photo on hover/focus (300ms). Two modes: pure ordered dither (4×4
   Bayer, 2.5px cells — list thumbnails), and the collage — seeded vertical
-  panels of dither, ascii raster (7px cells, ` .:-=+*#%@` ramp), and a
-  window of the original photo (post heroes). Captions on covers are
+  panels of dither, ascii raster (7px cells, ` -li+tcsea` ramp — the letters of
+  "cali castle" plus - and +, ordered by ink), and a
+  window of the original photo (post heroes). Post covers enter with a
+  morse-choreographed glitch (· — · · –, coverage ≈9→39→12→12→12%);
+  afterwards **clicking toggles photo ⇄ the full dither print** through
+  a Bayer dissolve: cells materialize (and dissolve away in reverse) in
+  the order of the matrix's own 16 thresholds, 38ms per step — the image
+  passes through its own printing screen. Fully interruptible: a walker
+  chases the tap's target one threshold per tick, so tapping mid-dissolve
+  just turns it around from wherever it is. Works on touch; reduced motion
+  swaps instantly. No hover behavior — the print answers to touch, like
+  paper. Captions on covers are
   braille numerals (`lib/braille.ts`); readable dates stay for assistive
   tech.
 - **Blog index rows**: one line per post — 64×44 dithered print thumb
@@ -266,6 +281,22 @@ Post pages float a 36px circular back control in the left margin (fixed at
 ≥52rem, inline above the cover below that), hairline ring + tooltip shadow,
 color-only hover. It returns to the index, so the cover/title morph plays
 in reverse.
+
+## Liquid glass dock
+
+The dock pill is real glass: a runtime-built displacement map (rounded-rect
+SDF, four-fold symmetric — one quadrant computed, mirrored into four; R/G
+channels encode the x/y bend, ramping outward through a 16px edge band,
+curve 1.6) drives an SVG `feDisplacementMap` applied as an inline-style
+`backdrop-filter: url(#…) blur(2px) saturate(1.4)` over a 55% paper
+background. Three displacement passes at staggered scales (44 ±10%) split
+the RGB channels for a faint chromatic fringe along the rim, recombined
+with screen blends; an inset top highlight (white 0.2 over, 0.06 under) plays the
+specular. The map and
+filter get a fresh id on every resize. Chromium-only by design —
+Safari/Firefox can't run SVG filters in `backdrop-filter` and get a plain
+frosted pane (blur 6px) instead. The `backdrop-filter` must stay inline:
+LightningCSS strips the raw property from stylesheets.
 
 ## Fluid page transitions
 

@@ -4,6 +4,7 @@ import path from 'node:path'
 import Link from 'next/link'
 
 import {
+  EmailCard,
   GitHubCard,
   type GitHubSnapshot,
   type SocialSnapshot,
@@ -60,6 +61,9 @@ export function SiteFooter() {
           </li>
           <li>
             <GitHubCard data={github} />
+          </li>
+          <li>
+            <EmailCard address="hi@cali.so" />
           </li>
         </Tree>
         <Tree zh="索引" en="index">

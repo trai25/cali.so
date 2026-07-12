@@ -5,11 +5,13 @@ import { writeFileSync } from 'node:fs'
 const res = await fetch('https://github-contributions-api.jogruber.de/v4/CaliCastle?y=last')
 const data = await res.json()
 const days = data.contributions
+const user = await (await fetch('https://api.github.com/users/CaliCastle')).json()
 writeFileSync(
   'content/github.json',
   JSON.stringify(
     {
       user: 'CaliCastle',
+      followers: user.followers,
       total: data.total.lastYear,
       from: days[0].date,
       to: days[days.length - 1].date,

@@ -70,7 +70,7 @@ export function Preferences() {
           </button>
         }
       />
-      <DropdownContent side="top" sideOffset={14} className="prefs-panel">
+      <DropdownContent side="top" sideOffset={14} className="prefs-panel w-max">
         <Row zh="语言" en="Language">
           <Tabs value={mounted ? locale : 'zh'} onValueChange={applyLocale}>
             <TabsList aria-label="语言 / Language">

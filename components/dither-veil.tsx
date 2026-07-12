@@ -4,13 +4,16 @@ import { useEffect, useRef } from 'react'
 
 const PIXEL = 2.5 // CSS px per dither cell
 const ASCII_CELL = 7 // CSS px per ascii character cell
-const RAMP = ' .:-=+*#%@'
-const BAYER = [
+// density ramp signed with the site's own letters: only characters from
+// "cali castle" plus - and + (no @/% blocks), light → dark by ink coverage
+const RAMP = ' -li+tcsea'
+const BAYER_ORDER = [
   [0, 8, 2, 10],
   [12, 4, 14, 6],
   [3, 11, 1, 9],
   [15, 7, 13, 5],
-].map((row) => row.map((v) => (v + 0.5) / 16))
+]
+const BAYER = BAYER_ORDER.map((row) => row.map((v) => (v + 0.5) / 16))
 
 const PAPER = 'oklch(0.98 0.004 95)'
 const INK = 'oklch(0.28 0.012 95)'
@@ -18,21 +21,22 @@ const INK = 'oklch(0.28 0.012 95)'
 const SEEDS = 33
 // thirteen voronoi patches (~3% each); alternating print styles
 const PATCH_STYLES: Array<1 | 2> = [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1]
-// glitch rhythm: · – · · – — ·  — coverage swells low → high → low
-// (≈9% → 15% → 12% → 18% → 27% → 39% → 12%)
+// glitch rhythm: · — · · –  — a sharp full-coverage flash up front,
+// then settling taps (≈9% → 39% → 12% → 12% → 12%)
 const DOT = 70
 const DASH = 160
 const LONG = 260
 const BEAT_GAP = 60
 const BEATS: Array<[number, number[]]> = [
   [DOT, [0, 1, 2]],
-  [DASH, [3, 4, 5, 6, 7]],
-  [DOT, [8, 9, 10, 11]],
-  [DOT, [0, 2, 4, 6, 8, 10]],
-  [DASH, [1, 3, 5, 7, 9, 11, 12, 0, 2]],
   [LONG, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]],
-  [DOT, [5, 6, 7, 8]],
+  [DOT, [8, 9, 10, 11]],
+  [DOT, [0, 2, 4, 6]],
+  [DASH, [3, 5, 7, 9]],
 ]
+
+// the Bayer dissolve: 16 discrete steps, one per threshold in the matrix
+const DISSOLVE_STEP_MS = 38
 
 function mulberry(seed: number): () => number {
   return () => {
@@ -55,9 +59,11 @@ function hashOf(s: string): number {
 // mode="dither": a full ordered-dither print that develops into the
 // photo on the parent .group's hover/focus (CSS-driven opacity).
 // mode="collage": an ENTRY glitch — scattered voronoi patches of dither
-// and ascii flash to a morse-like rhythm (· – · · – — ·), then the photo
-// settles clean. Hovering the print replays it. Reduced motion skips
-// straight to clean.
+// and ascii flash to a morse-like rhythm (· — · · –), then the photo
+// settles clean. Afterwards, CLICKING toggles photo ⇄ full dither print
+// through a BAYER DISSOLVE: cells materialize in the order of the
+// matrix's own 16 thresholds — the image passes through its own screen.
+// Works on touch too. Reduced motion swaps instantly; glitch is skipped.
 export function DitherVeil({ src, mode = 'dither' }: { src: string; mode?: 'dither' | 'collage' }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -73,7 +79,7 @@ export function DitherVeil({ src, mode = 'dither' }: { src: string; mode?: 'dith
     img.crossOrigin = 'anonymous'
     img.src = src
     let playing = false
-    let prepared: { rect: DOMRect; dither: Grid; ascii: Grid } | null = null
+    let prepared: { rect: DOMRect; dither: Grid; ascii: Grid; full: FullGrid } | null = null
     const timers: ReturnType<typeof setTimeout>[] = []
 
     function levels(cols: number, rows: number) {
@@ -129,6 +135,13 @@ export function DitherVeil({ src, mode = 'dither' }: { src: string; mode?: 'dith
       rows: number
       cell: number
       assign: Int16Array // patch id per cell, -1 = photo
+      sample: NonNullable<ReturnType<typeof levels>>
+    }
+
+    // full-frame dither data for the click toggle (no voronoi involved)
+    interface FullGrid {
+      cols: number
+      rows: number
       sample: NonNullable<ReturnType<typeof levels>>
     }
 
@@ -190,7 +203,7 @@ export function DitherVeil({ src, mode = 'dither' }: { src: string; mode?: 'dith
       const seeds: Array<{ x: number; y: number }> = []
       for (let i = 0; i < SEEDS; i++)
         seeds.push({ x: rand() * rect.width, y: rand() * rect.height })
-      // five distinct seed cells become the flashing patches
+      // thirteen distinct seed cells become the flashing patches
       const patchSeeds: number[] = []
       while (patchSeeds.length < PATCH_STYLES.length) {
         const pick = Math.floor(rand() * SEEDS)
@@ -212,7 +225,13 @@ export function DitherVeil({ src, mode = 'dither' }: { src: string; mode?: 'dith
       }
       const dither = buildGrid(rect, PIXEL, patchOf)
       const ascii = buildGrid(rect, ASCII_CELL, patchOf)
-      prepared = dither && ascii ? { rect, dither, ascii } : null
+      const cols = Math.max(1, Math.round(rect.width / PIXEL))
+      const rows = Math.max(1, Math.round(rect.height / PIXEL))
+      const fullSample = levels(cols, rows)
+      prepared =
+        dither && ascii && fullSample
+          ? { rect, dither, ascii, full: { cols, rows, sample: fullSample } }
+          : null
     }
 
     function play() {
@@ -235,6 +254,77 @@ export function DitherVeil({ src, mode = 'dither' }: { src: string; mode?: 'dith
       )
     }
 
+    // — Bayer dissolve toggle: click turns the photo into the dither print —
+    //
+    // Fully interruptible: `level` counts how many of the 16 thresholds are
+    // materialized, and a walker chases `target` one threshold per tick.
+    // A click mid-dissolve just flips the target and the walker turns
+    // around from wherever it is — each step is idempotent per slice.
+
+    let level = 0
+    let target = 0
+    let stepTimer: ReturnType<typeof setTimeout> | null = null
+
+    // paint (or clear) every cell whose position in the Bayer matrix holds
+    // the given threshold order — one dissolve step
+    function dissolveStep(order: number, toArt: boolean) {
+      if (!prepared) return
+      const { rect, full } = prepared
+      const { cols, rows, sample } = full
+      const cw = rect.width / cols
+      const ch = rect.height / rows
+      for (let r = 0; r < rows; r++) {
+        const rowOrder = BAYER_ORDER[r % 4]
+        for (let c = 0; c < cols; c++) {
+          if (rowOrder[c % 4] !== order) continue
+          const x = c * cw
+          const y = r * ch
+          if (!toArt) {
+            ctx.clearRect(x, y, cw + 0.5, ch + 0.5)
+            continue
+          }
+          const lum = sample.norm(sample.lums[r * cols + c])
+          ctx.fillStyle = 1 - lum > BAYER[r % 4][c % 4] ? INK : PAPER
+          ctx.fillRect(x, y, cw + 0.5, ch + 0.5)
+        }
+      }
+    }
+
+    function tick() {
+      stepTimer = null
+      if (level === target) return
+      if (level < target) {
+        dissolveStep(level, true)
+        level++
+      } else {
+        dissolveStep(level - 1, false)
+        level--
+      }
+      if (level !== target) {
+        stepTimer = setTimeout(tick, DISSOLVE_STEP_MS)
+      } else if (level === 0 && prepared) {
+        // per-cell clearRect leaves antialiased grid residue on fractional
+        // cell boundaries — one full clear snaps the photo truly clean
+        ctx.clearRect(0, 0, prepared.rect.width, prepared.rect.height)
+      }
+    }
+
+    const onToggle = () => {
+      if (playing || !prepared) return
+      target = target === 16 ? 0 : 16
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const { rect } = prepared
+        if (stepTimer) clearTimeout(stepTimer)
+        stepTimer = null
+        if (target === 16) drawDitherFull(rect)
+        else ctx.clearRect(0, 0, rect.width, rect.height)
+        level = target
+        return
+      }
+      // first step lands immediately — the tap answers on contact
+      if (!stepTimer) tick()
+    }
+
     function render() {
       const rect = canvas.getBoundingClientRect()
       if (rect.width < 4) return
@@ -248,6 +338,14 @@ export function DitherVeil({ src, mode = 'dither' }: { src: string; mode?: 'dith
       sizeCanvas(rect)
       prepare(rect)
       if (first) play()
+      // resize: the canvas was cleared, so snap to wherever the walker
+      // was headed
+      else if (target === 16) {
+        drawDitherFull(rect)
+        level = 16
+      } else {
+        level = 0
+      }
     }
 
     if (img.complete && img.naturalWidth > 0) render()
@@ -258,17 +356,20 @@ export function DitherVeil({ src, mode = 'dither' }: { src: string; mode?: 'dith
     })
     ro.observe(canvas)
 
-    // hovering the print replays the rhythm (fine pointers only)
-    const host = canvas.closest('.polaroid')
-    const onEnter = () => {
-      if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) play()
+    const host = canvas.closest('.polaroid') as HTMLElement | null
+    if (mode === 'collage' && host) {
+      host.addEventListener('click', onToggle)
+      host.style.cursor = 'pointer'
     }
-    if (mode === 'collage') host?.addEventListener('pointerenter', onEnter)
 
     return () => {
       img.removeEventListener('load', render)
       ro.disconnect()
-      host?.removeEventListener('pointerenter', onEnter)
+      if (host) {
+        host.removeEventListener('click', onToggle)
+        host.style.cursor = ''
+      }
+      if (stepTimer) clearTimeout(stepTimer)
       for (const t of timers) clearTimeout(t)
     }
   }, [src, mode])

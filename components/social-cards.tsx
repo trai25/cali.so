@@ -1,7 +1,9 @@
 'use client'
 
-import * as HoverCard from '@radix-ui/react-hover-card'
+import { PreviewCard } from '@base-ui/react/preview-card'
 import Image from 'next/image'
+
+import { InputCopy } from '~/components/ui/input-copy'
 
 import { T } from '~/lib/i18n'
 
@@ -15,6 +17,7 @@ export interface SocialSnapshot {
 
 export interface GitHubSnapshot {
   user: string
+  followers?: number
   total: number
   to: string
   levels: string
@@ -23,7 +26,7 @@ export interface GitHubSnapshot {
 const WEEKS = 52
 const DAYS = 7
 
-const GLYPHS: Record<string, { path: string; color?: string }> = {
+export const GLYPHS: Record<string, { path: string; color?: string }> = {
   x: {
     path: 'M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z',
   },
@@ -68,23 +71,25 @@ function Card({
   className: string
 }) {
   return (
-    <HoverCard.Root openDelay={300} closeDelay={120}>
-      <HoverCard.Trigger asChild>
-        <a
-          href={href}
-          target="_blank"
-          rel="noreferrer"
-          className="footer-tree-link"
-        >
-          {trigger}
-        </a>
-      </HoverCard.Trigger>
-      <HoverCard.Portal>
-        <HoverCard.Content className={className} side="top" sideOffset={8} collisionPadding={16}>
-          {children}
-        </HoverCard.Content>
-      </HoverCard.Portal>
-    </HoverCard.Root>
+    <PreviewCard.Root>
+      {/* Base UI's trigger renders the <a> itself; delays live on the
+          trigger (defaults 600/300 are too sleepy for chrome links) */}
+      <PreviewCard.Trigger
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        className="footer-tree-link"
+        delay={300}
+        closeDelay={120}
+      >
+        {trigger}
+      </PreviewCard.Trigger>
+      <PreviewCard.Portal>
+        <PreviewCard.Positioner side="top" sideOffset={8} collisionPadding={16} className="z-[var(--z-card)]">
+          <PreviewCard.Popup className={className}>{children}</PreviewCard.Popup>
+        </PreviewCard.Positioner>
+      </PreviewCard.Portal>
+    </PreviewCard.Root>
   )
 }
 
@@ -92,10 +97,12 @@ function Identity({
   data,
   avatar,
   service,
+  withBio = true,
 }: {
   data: SocialSnapshot
   avatar: string
   service: keyof typeof GLYPHS
+  withBio?: boolean
 }) {
   return (
     <>
@@ -107,9 +114,11 @@ function Identity({
         </span>
         <Glyph service={service} />
       </span>
-      <span className="service-card-bio">
-        <T zh={data.bio} en={data.bioEn ?? data.bio} />
-      </span>
+      {withBio && (
+        <span className="service-card-bio">
+          <T zh={data.bio} en={data.bioEn ?? data.bio} />
+        </span>
+      )}
     </>
   )
 }
@@ -117,46 +126,42 @@ function Identity({
 // Per-service hover cards for the chrome's social links. Data is baked at
 // build (content/social.json, content/github.json — refresh scripts in
 // scripts/); an open card never touches the network. Touch devices just
-// follow the link.
-export function XCard({ data }: { data: SocialSnapshot }) {
+// follow the link. Bodies are exported separately so other triggers (the
+// dock's say-hi menu) can serve the same cards.
+export function XCardBody({ data }: { data: SocialSnapshot }) {
   return (
-    <Card trigger="X/Twitter" href={`https://x.com/${data.handle}`} className="link-card service-card">
+    <>
       <Identity data={data} avatar="/images/headshot.jpg" service="x" />
       {data.followers && (
         <span className="service-card-stat">
           <b>{data.followers}</b> <T zh="关注者" en="followers" />
         </span>
       )}
-    </Card>
+    </>
   )
 }
 
-export function TelegramCard({ data }: { data: SocialSnapshot }) {
+export function TelegramCardBody({ data }: { data: SocialSnapshot }) {
+  return <Identity data={data} avatar="/images/avatar.png" service="telegram" withBio={false} />
+}
+
+export function YouTubeCardBody({ data }: { data: SocialSnapshot }) {
   return (
-    <Card trigger="Telegram" href={`https://t.me/${data.handle}`} className="link-card service-card">
-      <Identity data={data} avatar="/images/avatar.png" service="telegram" />
-      <span className="service-card-stat">
-        <T zh="给我发消息" en="Send me a message" />
-      </span>
-    </Card>
+    <>
+      <Identity data={data} avatar="/images/headshot.jpg" service="youtube" withBio={false} />
+      {data.followers && (
+        <span className="service-card-stat">
+          <b>{data.followers}</b> <T zh="订阅者" en="subscribers" />
+        </span>
+      )}
+    </>
   )
 }
 
-export function YouTubeCard({ data }: { data: SocialSnapshot }) {
-  return (
-    <Card trigger="YouTube" href={`https://youtube.com/@${data.handle}`} className="link-card service-card">
-      <Identity data={data} avatar="/images/headshot.jpg" service="youtube" />
-      <span className="service-card-stat">
-        <T zh="YouTube 频道" en="YouTube channel" />
-      </span>
-    </Card>
-  )
-}
-
-export function GitHubCard({ data }: { data: GitHubSnapshot }) {
+export function GitHubCardBody({ data }: { data: GitHubSnapshot }) {
   const levels = data.levels.slice(-WEEKS * DAYS)
   return (
-    <Card trigger="GitHub" href={`https://github.com/${data.user}`} className="link-card service-card service-card-gh">
+    <>
       <span className="contrib-grid" aria-hidden>
         {Array.from({ length: WEEKS }, (_, w) => (
           <span key={w} className="contrib-col">
@@ -174,10 +179,70 @@ export function GitHubCard({ data }: { data: GitHubSnapshot }) {
         ))}
       </span>
       <span className="service-card-stat">
-        <T zh="过去一年" en="Past year:" /> <b>{data.total.toLocaleString()}</b>{' '}
-        <T zh="次贡献" en="contributions" />
+        {data.followers != null && (
+          <>
+            <b>{data.followers}</b> <T zh="关注者" en="followers" /> ·{' '}
+          </>
+        )}
+        <b>{data.total.toLocaleString()}</b> <T zh="次贡献" en="contributions" />
         <Glyph service="github" />
       </span>
+    </>
+  )
+}
+
+export function XCard({ data }: { data: SocialSnapshot }) {
+  return (
+    <Card trigger="X/Twitter" href={`https://x.com/${data.handle}`} className="link-card service-card">
+      <XCardBody data={data} />
     </Card>
+  )
+}
+
+export function TelegramCard({ data }: { data: SocialSnapshot }) {
+  return (
+    <Card trigger="Telegram" href={`https://t.me/${data.handle}`} className="link-card service-card">
+      <TelegramCardBody data={data} />
+    </Card>
+  )
+}
+
+export function YouTubeCard({ data }: { data: SocialSnapshot }) {
+  return (
+    <Card trigger="YouTube" href={`https://youtube.com/@${data.handle}`} className="link-card service-card">
+      <YouTubeCardBody data={data} />
+    </Card>
+  )
+}
+
+export function GitHubCard({ data }: { data: GitHubSnapshot }) {
+  return (
+    <Card trigger="GitHub" href={`https://github.com/${data.user}`} className="link-card service-card service-card-gh">
+      <GitHubCardBody data={data} />
+    </Card>
+  )
+}
+
+// Email gets the same tooltip treatment: the trigger opens mailto:, while
+// the card itself is a fluid InputCopy — click the address to copy it.
+export function EmailCard({ address }: { address: string }) {
+  return (
+    <PreviewCard.Root>
+      <PreviewCard.Trigger
+        href={`mailto:${address}`}
+        className="footer-tree-link"
+        delay={300}
+        closeDelay={120}
+      >
+        Email
+      </PreviewCard.Trigger>
+      <PreviewCard.Portal>
+        <PreviewCard.Positioner side="top" sideOffset={8} collisionPadding={16} className="z-[var(--z-card)]">
+          <PreviewCard.Popup className="link-card service-card">
+            <InputCopy value={address} aria-label="复制邮箱 / Copy email" />
+          </PreviewCard.Popup>
+        </PreviewCard.Positioner>
+      </PreviewCard.Portal>
+    </PreviewCard.Root>
   )
 }

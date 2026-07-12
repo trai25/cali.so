@@ -1,7 +1,9 @@
 "use client";
 
 import {
+  Children,
   forwardRef,
+  isValidElement,
   useRef,
   useEffect,
   useState,
@@ -14,7 +16,7 @@ import {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cva, type VariantProps } from "class-variance-authority";
-import * as SelectPrimitive from "@radix-ui/react-select";
+import { Select as SelectPrimitive } from "@base-ui/react/select";
 import type { IconComponent } from "~/lib/icon-context";
 import { cn } from "~/lib/utils";
 import { spring, exitFallbackMs } from "~/lib/springs";
@@ -25,44 +27,18 @@ import { Elevated } from "~/lib/elevated";
 // ---------------------------------------------------------------------------
 // Select context
 //
-// Built on Radix Select, which owns positioning (popper collision flipping),
-// dismissal (outside press, Escape), list keyboard navigation + typeahead
-// (open and closed), combobox ARIA, and the hidden native <select> for forms.
-// The Fluid Functionalism layer keeps the proximity-hover overlays, the
-// spring open/close animation, and the animated checkmark.
-//
-// Radix-specific notes (verified against @radix-ui/react-select 2.2.6 dist):
-//
-// - Value/placeholder: Radix shows the placeholder when its value is "" or
-//   undefined, so the root is *always controlled* with our string state
-//   ("" = no selection). Passing "" never flips controlled/uncontrolled, and
-//   `data-placeholder` lands on the Trigger (not the Value span) — hence the
-//   `group-data-[placeholder]:` variant on the value wrapper below.
-//
-// - Initial label: while closed, Radix renders Content's children into a
-//   detached DocumentFragment; the selected SelectItem/ItemText therefore
-//   mounts before the popup ever opens and portals its text into the Value
-//   node. No item traversal (the base flavor's collectSelectItems) is needed
-//   — SelectContent just has to render unconditionally, never gated behind a
-//   local mounted flag.
-//
-// - Exit animation: Radix Select has no Presence/forceMount, so the popup
-//   unmounts the instant its `open` flips false. The root therefore keeps two
-//   open states: `open` (immediate, drives the motion targets) and
-//   `radixOpen` (what Radix sees; released via `unmount()` once the exit
-//   tween finishes — the actionsRef pattern from the Base UI flavor).
-//
-// - Radix Select is modal-ish: it scroll-locks the page and disables outside
-//   pointer events while open (the Base UI flavor is non-modal and tracks its
-//   anchor instead). Accepted as flavor behavior. Likewise the Viewport's
-//   injected stylesheet hides its own scrollbar.
+// Built on Base UI's Select primitive, which owns positioning (collision
+// flipping, anchor tracking), dismissal (outside press, focus-out, Escape
+// nesting inside dialogs), list keyboard navigation + typeahead, combobox
+// ARIA, and the hidden form input. The Fluid Functionalism layer keeps the
+// proximity-hover overlays, the spring open/close animation (via actionsRef
+// deferred unmount), and the animated checkmark.
 // ---------------------------------------------------------------------------
 
 interface SelectContextValue {
   value: string;
   open: boolean;
-  /** Releases Radix's open state once the exit animation has played. */
-  unmount: () => void;
+  actionsRef: React.RefObject<{ unmount: () => void } | null>;
 }
 
 const SelectContext = createContext<SelectContextValue | null>(null);
@@ -97,6 +73,33 @@ interface SelectProps {
   required?: boolean;
 }
 
+/**
+ * Walk the children tree collecting `{ value, label }` pairs from SelectItem
+ * elements. Passed to Base UI's `items` prop so the trigger can resolve the
+ * label of an initial value before the popup has ever mounted (items only
+ * render while open). Non-string labels fall back to the raw value, matching
+ * the previous labelMap behaviour.
+ */
+function collectSelectItems(
+  node: ReactNode,
+  out: { value: string; label: ReactNode }[] = []
+) {
+  Children.forEach(node, (child) => {
+    if (!isValidElement(child)) return;
+    const props = child.props as { value?: unknown; children?: ReactNode };
+    if (typeof props.value === "string") {
+      out.push({
+        value: props.value,
+        label:
+          typeof props.children === "string" ? props.children : props.value,
+      });
+    } else if (props.children) {
+      collectSelectItems(props.children, out);
+    }
+  });
+  return out;
+}
+
 function Select({
   children,
   value,
@@ -107,48 +110,42 @@ function Select({
   required,
 }: SelectProps) {
   const [internalValue, setInternalValue] = useState(defaultValue ?? "");
-  // Visual open state — flips immediately so exit springs start at once.
   const [open, setOpen] = useState(false);
-  // What Radix sees. Stays true through the exit tween (Radix has no
-  // deferred-unmount API), then `unmount` releases it.
-  const [radixOpen, setRadixOpen] = useState(false);
+  const actionsRef = useRef<{ unmount: () => void } | null>(null);
   const currentValue = value !== undefined ? value : internalValue;
 
+  const items = useMemo(() => collectSelectItems(children), [children]);
+
   const handleValueChange = useCallback(
-    (next: string) => {
-      if (value === undefined) setInternalValue(next);
-      onValueChange?.(next);
+    (next: string | null) => {
+      const v = next ?? "";
+      if (value === undefined) setInternalValue(v);
+      onValueChange?.(v);
     },
     [value, onValueChange]
   );
 
-  const handleOpenChange = useCallback((nextOpen: boolean) => {
-    setOpen(nextOpen);
-    if (nextOpen) setRadixOpen(true);
-    // Closing: radixOpen is released by SelectContent once the exit
-    // animation completes (onAnimationComplete or the timeout fallback).
-  }, []);
-
-  const unmount = useCallback(() => setRadixOpen(false), []);
-
   const ctx = useMemo(
-    () => ({ value: currentValue, open, unmount }),
-    [currentValue, open, unmount]
+    () => ({ value: currentValue, open, actionsRef }),
+    [currentValue, open]
   );
 
   return (
     <SelectContext.Provider value={ctx}>
       <SelectPrimitive.Root
-        // Always controlled; "" (no selection) shows the placeholder — Radix
-        // treats "" and undefined identically for placeholder purposes, but
-        // undefined would flip the root to uncontrolled.
-        value={currentValue}
+        // Always controlled; "" (no selection) maps to Base UI's null.
+        value={currentValue === "" ? null : currentValue}
         onValueChange={handleValueChange}
-        open={radixOpen}
-        onOpenChange={handleOpenChange}
+        open={open}
+        onOpenChange={setOpen}
+        actionsRef={actionsRef}
+        items={items}
         disabled={disabled}
         name={name}
         required={required}
+        // Non-modal: the page keeps scrolling and the Positioner tracks the
+        // anchor, so the popup follows its trigger instead of detaching.
+        modal={false}
       >
         {children}
       </SelectPrimitive.Root>
@@ -221,31 +218,29 @@ const SelectTrigger = forwardRef<HTMLButtonElement, SelectTriggerProps>(
                 className="shrink-0 text-muted-foreground transition-[color,stroke-width] duration-150 group-hover:text-foreground group-hover:stroke-[2]"
               />
             )}
-            {/* Radix strips className from Select.Value, and `data-placeholder`
-                lives on the Trigger, so the label styling sits on a wrapper
-                span keyed off the trigger's `group` class. */}
-            {/* py-1/-my-1 keeps truncate's overflow:hidden from clipping
-                ascenders/descenders outside the trimmed box. */}
-            <span className="min-w-0 flex-1 text-left truncate [text-box:trim-both_cap_alphabetic] py-1 -my-1 group-data-[placeholder]:text-muted-foreground">
-              <SelectPrimitive.Value placeholder={placeholder} />
-            </span>
+            <SelectPrimitive.Value
+              placeholder={placeholder}
+              // py-1/-my-1: truncate's overflow:hidden clips at the padding
+              // box, and the trimmed box excludes ascenders/descenders — the
+              // padding gives glyphs room while the negative margin keeps the
+              // trimmed layout box.
+              className="min-w-0 flex-1 text-left truncate [text-box:trim-both_cap_alphabetic] py-1 -my-1 data-[placeholder]:text-muted-foreground"
+            />
           </span>
 
-          <SelectPrimitive.Icon asChild>
-            <svg
-              width={16}
-              height={16}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="shrink-0 text-muted-foreground transition-colors duration-150 group-hover:text-foreground"
-            >
-              <path d="M6 9l6 6 6-6" />
-            </svg>
-          </SelectPrimitive.Icon>
+          <svg
+            width={16}
+            height={16}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="shrink-0 text-muted-foreground transition-colors duration-150 group-hover:text-foreground"
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
         </SelectPrimitive.Trigger>
         {error && (
           <span className="text-[12px] text-destructive pl-3">{error}</span>
@@ -268,7 +263,7 @@ interface SelectContentProps {
 
 const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
   ({ className, children }, ref) => {
-    const { open, value, unmount } = useSelectContext();
+    const { open, value, actionsRef } = useSelectContext();
     const shape = useShape();
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -287,16 +282,19 @@ const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
       undefined
     );
 
-    // Release Radix's open state once the exit tween has played.
+    // Release Base UI's deferred unmount once the exit tween has played.
     // onAnimationComplete on the motion.div is the primary signal; this
     // timeout is a fallback for throttled/background tabs where rAF-driven
     // animation callbacks can stall. The popup exits with spring.fast, so the
     // fallback tracks that tier's exit duration plus a safety buffer.
     useEffect(() => {
       if (open) return;
-      const id = setTimeout(() => unmount(), exitFallbackMs(spring.fast));
+      const id = setTimeout(
+        () => actionsRef.current?.unmount(),
+        exitFallbackMs(spring.fast)
+      );
       return () => clearTimeout(id);
-    }, [open, unmount]);
+    }, [open, actionsRef]);
 
     // Measure items + detect the checked row once the popup has mounted.
     useEffect(() => {
@@ -335,18 +333,15 @@ const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
       [registerItem, activeIndex, checkedIndex]
     );
 
-    // Rendered unconditionally: while closed, Radix parks these children in a
-    // detached DocumentFragment so the items stay registered (typeahead on
-    // the closed trigger, native <select> options, and the ItemText → Value
-    // label portal all depend on it).
     return (
       <SelectPrimitive.Portal>
-        <SelectPrimitive.Content
-          position="popper"
+        <SelectPrimitive.Positioner
+          positionMethod="fixed"
           side="bottom"
           align="start"
           sideOffset={6}
-          className="z-50"
+          alignItemWithTrigger={false}
+          className="z-50 outline-none"
         >
           <motion.div
             initial={{ opacity: 0, y: -4, scaleY: 0.96 }}
@@ -357,143 +352,140 @@ const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
             }
             transition={open ? spring.fast : spring.fast.exit}
             style={{ transformOrigin: "top center" }}
-            // Radix unmounts the popup the moment its open state flips, so
-            // that flip is held back (radixOpen in the root) until the exit
-            // spring has finished.
+            // Base UI defers unmount while actionsRef is set; release it once
+            // the exit spring has finished so the close animation fully plays.
             onAnimationComplete={() => {
-              if (!open) unmount();
+              if (!open) actionsRef.current?.unmount();
             }}
           >
             <SelectContentContext.Provider value={contentCtx}>
-              {/* The Viewport is the scroll container and, via its inline
-                  position: relative, the offsetParent the proximity overlay
-                  rects anchor to — the same double duty the Popup performed
-                  in the Base UI flavor. */}
-              <SelectPrimitive.Viewport asChild>
-                <Elevated
-                  offset={2}
-                  shadowLevel={3}
-                  ref={(node: HTMLDivElement | null) => {
-                    (
-                      containerRef as React.MutableRefObject<HTMLDivElement | null>
-                    ).current = node;
-                    if (typeof ref === "function") ref(node);
-                    else if (ref)
+              <SelectPrimitive.Popup
+                render={
+                  <Elevated
+                    offset={2}
+                    shadowLevel={3}
+                    ref={(node: HTMLDivElement | null) => {
                       (
-                        ref as React.MutableRefObject<HTMLDivElement | null>
+                        containerRef as React.MutableRefObject<HTMLDivElement | null>
                       ).current = node;
-                  }}
-                  onMouseEnter={() => {
-                    handlers.onMouseEnter();
-                    setFocusedIndex(null);
-                  }}
-                  onMouseMove={handlers.onMouseMove}
-                  onMouseLeave={handlers.onMouseLeave}
-                  onFocus={(e) => {
-                    const indexAttr = (e.target as HTMLElement)
-                      .closest("[data-proximity-index]")
-                      ?.getAttribute("data-proximity-index");
-                    if (indexAttr != null) {
-                      const idx = Number(indexAttr);
-                      setActiveIndex(idx);
-                      setFocusedIndex(
-                        (e.target as HTMLElement).matches(":focus-visible")
-                          ? idx
-                          : null
-                      );
-                    }
-                  }}
-                  onBlur={(e) => {
-                    if (containerRef.current?.contains(e.relatedTarget as Node))
-                      return;
-                    setFocusedIndex(null);
-                    setActiveIndex(null);
-                  }}
-                  className={cn(
-                    // min-w tracks the trigger via Radix's popper-provided
-                    // vars, matching the base flavor's --anchor-width.
-                    `relative flex flex-col gap-0.5 min-w-[var(--radix-select-trigger-width)] max-h-[min(300px,var(--radix-select-content-available-height))] overflow-y-auto ${shape.container} p-1 select-none outline-none`,
-                    className
+                      if (typeof ref === "function") ref(node);
+                      else if (ref)
+                        (
+                          ref as React.MutableRefObject<HTMLDivElement | null>
+                        ).current = node;
+                    }}
+                  />
+                }
+                onMouseEnter={() => {
+                  handlers.onMouseEnter();
+                  setFocusedIndex(null);
+                }}
+                onMouseMove={handlers.onMouseMove}
+                onMouseLeave={handlers.onMouseLeave}
+                onFocus={(e) => {
+                  const indexAttr = (e.target as HTMLElement)
+                    .closest("[data-proximity-index]")
+                    ?.getAttribute("data-proximity-index");
+                  if (indexAttr != null) {
+                    const idx = Number(indexAttr);
+                    setActiveIndex(idx);
+                    setFocusedIndex(
+                      (e.target as HTMLElement).matches(":focus-visible")
+                        ? idx
+                        : null
+                    );
+                  }
+                }}
+                onBlur={(e) => {
+                  if (containerRef.current?.contains(e.relatedTarget as Node))
+                    return;
+                  setFocusedIndex(null);
+                  setActiveIndex(null);
+                }}
+                className={cn(
+                  // min-w tracks the trigger via the Positioner's --anchor-width
+                  // var, matching the pre-migration minWidth: triggerRect.width.
+                  `relative flex flex-col gap-0.5 min-w-[var(--anchor-width)] max-h-[min(300px,var(--available-height))] overflow-y-auto ${shape.container} p-1 select-none outline-none`,
+                  className
+                )}
+              >
+                {/* Selected background */}
+                <AnimatePresence>
+                  {checkedRect && (
+                    <motion.div
+                      className={`absolute ${shape.bg} bg-active pointer-events-none`}
+                      initial={false}
+                      animate={{
+                        top: checkedRect.top,
+                        left: checkedRect.left,
+                        width: checkedRect.width,
+                        height: checkedRect.height,
+                        opacity: isHoveringOther ? 0.8 : 1,
+                      }}
+                      exit={{ opacity: 0, transition: spring.moderate.exit }}
+                      transition={{
+                        ...spring.moderate,
+                        opacity: { duration: 0.08 },
+                      }}
+                    />
                   )}
-                >
-                  {/* Selected background */}
-                  <AnimatePresence>
-                    {checkedRect && (
-                      <motion.div
-                        className={`absolute ${shape.bg} bg-active pointer-events-none`}
-                        initial={false}
-                        animate={{
-                          top: checkedRect.top,
-                          left: checkedRect.left,
-                          width: checkedRect.width,
-                          height: checkedRect.height,
-                          opacity: isHoveringOther ? 0.8 : 1,
-                        }}
-                        exit={{ opacity: 0, transition: spring.moderate.exit }}
-                        transition={{
-                          ...spring.moderate,
-                          opacity: { duration: 0.08 },
-                        }}
-                      />
-                    )}
-                  </AnimatePresence>
+                </AnimatePresence>
 
-                  {/* Hover background */}
-                  <AnimatePresence>
-                    {activeRect && (
-                      <motion.div
-                        key={sessionRef.current}
-                        className={`absolute ${shape.bg} bg-hover pointer-events-none`}
-                        initial={{
-                          opacity: 0,
-                          top: checkedRect?.top ?? activeRect.top,
-                          left: checkedRect?.left ?? activeRect.left,
-                          width: checkedRect?.width ?? activeRect.width,
-                          height: checkedRect?.height ?? activeRect.height,
-                        }}
-                        animate={{
-                          opacity: 1,
-                          top: activeRect.top,
-                          left: activeRect.left,
-                          width: activeRect.width,
-                          height: activeRect.height,
-                        }}
-                        exit={{ opacity: 0, transition: spring.fast.exit }}
-                        transition={{
-                          ...spring.fast,
-                          opacity: { duration: 0.08 },
-                        }}
-                      />
-                    )}
-                  </AnimatePresence>
+                {/* Hover background */}
+                <AnimatePresence>
+                  {activeRect && (
+                    <motion.div
+                      key={sessionRef.current}
+                      className={`absolute ${shape.bg} bg-hover pointer-events-none`}
+                      initial={{
+                        opacity: 0,
+                        top: checkedRect?.top ?? activeRect.top,
+                        left: checkedRect?.left ?? activeRect.left,
+                        width: checkedRect?.width ?? activeRect.width,
+                        height: checkedRect?.height ?? activeRect.height,
+                      }}
+                      animate={{
+                        opacity: 1,
+                        top: activeRect.top,
+                        left: activeRect.left,
+                        width: activeRect.width,
+                        height: activeRect.height,
+                      }}
+                      exit={{ opacity: 0, transition: spring.fast.exit }}
+                      transition={{
+                        ...spring.fast,
+                        opacity: { duration: 0.08 },
+                      }}
+                    />
+                  )}
+                </AnimatePresence>
 
-                  {/* Focus ring */}
-                  <AnimatePresence>
-                    {focusRect && (
-                      <motion.div
-                        className={`absolute ${shape.focusRing} pointer-events-none z-20 border border-[color:var(--focus-ring)]`}
-                        initial={false}
-                        animate={{
-                          left: focusRect.left - 2,
-                          top: focusRect.top - 2,
-                          width: focusRect.width + 4,
-                          height: focusRect.height + 4,
-                        }}
-                        exit={{ opacity: 0, transition: spring.fast.exit }}
-                        transition={{
-                          ...spring.fast,
-                          opacity: { duration: 0.08 },
-                        }}
-                      />
-                    )}
-                  </AnimatePresence>
+                {/* Focus ring */}
+                <AnimatePresence>
+                  {focusRect && (
+                    <motion.div
+                      className={`absolute ${shape.focusRing} pointer-events-none z-20 border border-[color:var(--focus-ring)]`}
+                      initial={false}
+                      animate={{
+                        left: focusRect.left - 2,
+                        top: focusRect.top - 2,
+                        width: focusRect.width + 4,
+                        height: focusRect.height + 4,
+                      }}
+                      exit={{ opacity: 0, transition: spring.fast.exit }}
+                      transition={{
+                        ...spring.fast,
+                        opacity: { duration: 0.08 },
+                      }}
+                    />
+                  )}
+                </AnimatePresence>
 
-                  {children}
-                </Elevated>
-              </SelectPrimitive.Viewport>
+                {children}
+              </SelectPrimitive.Popup>
             </SelectContentContext.Provider>
           </motion.div>
-        </SelectPrimitive.Content>
+        </SelectPrimitive.Positioner>
       </SelectPrimitive.Portal>
     );
   }
@@ -549,30 +541,34 @@ const SelectItem = forwardRef<HTMLDivElement, SelectItemProps>(
       <SelectPrimitive.Item
         value={value}
         disabled={disabled}
-        textValue={typeof children === "string" ? children : undefined}
-        ref={(node: HTMLDivElement | null) => {
-          (
-            internalRef as React.MutableRefObject<HTMLDivElement | null>
-          ).current = node;
-          if (typeof ref === "function") ref(node);
-          else if (ref)
-            (ref as React.MutableRefObject<HTMLDivElement | null>).current =
-              node;
-        }}
-        data-proximity-index={index}
-        data-value={value}
-        className={cn(
-          // Fixed height (was py-2 around a 19.5px line box ≈ 35.5px) so
-          // the text-box trim on the item text doesn't shrink the row.
-          `relative z-10 flex h-8 items-center gap-2 ${shape.item} px-2 text-[13px] cursor-pointer outline-none select-none`,
-          "transition-[color] duration-150",
-          isActive || isChecked
-            ? "text-foreground"
-            : "text-muted-foreground",
-          disabled && "opacity-50 pointer-events-none",
-          className
-        )}
-        {...props}
+        label={typeof children === "string" ? children : undefined}
+        render={
+          <div
+            ref={(node: HTMLDivElement | null) => {
+              (
+                internalRef as React.MutableRefObject<HTMLDivElement | null>
+              ).current = node;
+              if (typeof ref === "function") ref(node);
+              else if (ref)
+                (ref as React.MutableRefObject<HTMLDivElement | null>).current =
+                  node;
+            }}
+            data-proximity-index={index}
+            data-value={value}
+            className={cn(
+              // Fixed height (was py-2 around a 19.5px line box ≈ 35.5px) so
+              // the text-box trim on the item text doesn't shrink the row.
+              `relative z-10 flex h-8 items-center gap-2 ${shape.item} px-2 text-[13px] cursor-pointer outline-none select-none`,
+              "transition-[color] duration-150",
+              isActive || isChecked
+                ? "text-foreground"
+                : "text-muted-foreground",
+              disabled && "opacity-50 pointer-events-none",
+              className
+            )}
+            {...props}
+          />
+        }
       >
         {Icon && (
           <Icon
@@ -582,15 +578,13 @@ const SelectItem = forwardRef<HTMLDivElement, SelectItemProps>(
           />
         )}
 
-        {/* Layout classes live on the wrapper (Radix strips className from
-            ItemText) so the ItemText → trigger portal carries the plain label
-            only, not a styled span. Radix's built-in ItemIndicator is not
-            rendered — the animated checkmark below keys off our context. */}
-        {/* py-1/-my-1 keeps truncate's overflow:hidden from clipping
-            ascenders/descenders outside the trimmed box. */}
-        <span className="flex-1 min-w-0 truncate [text-box:trim-both_cap_alphabetic] py-1 -my-1">
-          <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
-        </span>
+        <SelectPrimitive.ItemText
+          // py-1/-my-1 keeps truncate's overflow:hidden from clipping
+          // ascenders/descenders outside the trimmed box.
+          render={<span className="flex-1 min-w-0 truncate [text-box:trim-both_cap_alphabetic] py-1 -my-1" />}
+        >
+          {children}
+        </SelectPrimitive.ItemText>
 
         <AnimatePresence>
           {isChecked && (
@@ -633,10 +627,6 @@ SelectItem.displayName = "SelectItem";
 
 // ---------------------------------------------------------------------------
 // SelectGroup + SelectLabel + SelectSeparator
-//
-// Plain presentational divs, copied from the base flavor. Radix's own
-// Select.Label throws when used outside a Select.Group, which would break
-// API parity (the base flavor allows a standalone label).
 // ---------------------------------------------------------------------------
 
 function SelectGroup({

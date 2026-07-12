@@ -1,6 +1,6 @@
 'use client'
 
-import * as HoverCard from '@radix-ui/react-hover-card'
+import { PreviewCard } from '@base-ui/react/preview-card'
 
 import type { LinkPreview } from '~/lib/link-previews'
 
@@ -18,30 +18,48 @@ export function ExternalLink({
   preview?: LinkPreview
   children: React.ReactNode
 }) {
-  const anchor = (
-    <a href={href} target="_blank" rel="noreferrer" className="external-link">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={favicon} alt="" width={14} height={14} loading="lazy" aria-hidden />
-      {children}
-    </a>
+  const icon = (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={favicon} alt="" width={14} height={14} loading="lazy" aria-hidden />
   )
 
-  if (!preview?.title) return anchor
+  if (!preview?.title) {
+    return (
+      <a href={href} target="_blank" rel="noreferrer" className="external-link">
+        {icon}
+        {children}
+      </a>
+    )
+  }
 
   return (
-    <HoverCard.Root openDelay={300} closeDelay={100}>
-      <HoverCard.Trigger asChild>{anchor}</HoverCard.Trigger>
-      <HoverCard.Portal>
-        <HoverCard.Content className="link-card" sideOffset={8} collisionPadding={16}>
-          <span className="link-card-site">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={favicon} alt="" width={16} height={16} loading="lazy" aria-hidden />
-            {preview.domain}
-          </span>
-          <span className="link-card-title">{preview.title}</span>
-          {preview.description && <span className="link-card-description">{preview.description}</span>}
-        </HoverCard.Content>
-      </HoverCard.Portal>
-    </HoverCard.Root>
+    <PreviewCard.Root>
+      {/* Base UI's trigger renders the <a> itself; delays live here, not on
+          the root (Base UI defaults are 600/300 — far too slow for prose) */}
+      <PreviewCard.Trigger
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        className="external-link"
+        delay={300}
+        closeDelay={100}
+      >
+        {icon}
+        {children}
+      </PreviewCard.Trigger>
+      <PreviewCard.Portal>
+        <PreviewCard.Positioner sideOffset={8} collisionPadding={16} className="z-[var(--z-card)]">
+          <PreviewCard.Popup className="link-card">
+            <span className="link-card-site">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={favicon} alt="" width={16} height={16} loading="lazy" aria-hidden />
+              {preview.domain}
+            </span>
+            <span className="link-card-title">{preview.title}</span>
+            {preview.description && <span className="link-card-description">{preview.description}</span>}
+          </PreviewCard.Popup>
+        </PreviewCard.Positioner>
+      </PreviewCard.Portal>
+    </PreviewCard.Root>
   )
 }

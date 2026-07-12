@@ -142,6 +142,86 @@ Working and verified (light/dark/mobile, production build green):
   prints the clean headshot (ink ∝ darkness), dark keeps the studio
   portrait, theme flips crossfade the two dot fields over 550ms.
 
+- **Round 12 (July 2026)**: social cards simplified — Telegram is
+  identity-only, YouTube drops its bio for a subscriber count (1.91K,
+  baked via new `scripts/refresh-social.mjs` scrape), GitHub's stat line
+  gains followers (865, now fetched in `refresh-github.mjs`), X
+  unchanged. The footer grew an **Email** item: the link opens
+  mailto:hi@cali.so, its hover card is a fluid **InputCopy** (click
+  copies, execCommand fallback included). The shadcn registry is now
+  wired up for real — `components.json` points `@fluid` at the **base
+  flavor** (`/r/base/{name}.json`, matching our Base UI stack);
+  `npx shadcn@latest add @fluid/tooltip` pulled the base tooltip, and
+  input-copy (default-flavor only in the registry) was placed by hand
+  with its tooltip import swapped to ours + the usual retheme (150ms,
+  neutral focus ring, --active highlight). Cover veils: entry rhythm is
+  now · — · · – and hover UX is GONE — clicking the cover toggles
+  photo ⇄ the full dither print via a **Bayer dissolve** (cells
+  materialize in the matrix's own 16-threshold order, reversing on the
+  way back; fully interruptible — a level/target walker turns around
+  mid-flight on re-tap, with a full-canvas clear on reaching empty
+  because per-cell clearRect leaves antialiased residue on fractional
+  cell boundaries; ripple + collage/sticker variants were tried and
+  dropped)
+  (see the design language's print-veils section; a spotlight-hover
+  variant was built and immediately superseded by the ripple).
+
+- **Round 11 (July 2026)**: **Radix → Base UI migration** — every popup
+  primitive now comes from `@base-ui/react` (1.6.0), all `@radix-ui/*`
+  packages removed (including the dead `radix-ui` umbrella). The fluid
+  components went back to their registry originals (which are Base UI
+  native) with our retheme deltas re-applied: dropdown/menu-item (Menu.*,
+  actionsRef deferred unmount replaces the forceMount hack), tabs
+  (`activateOnFocus` keeps arrow-keys-activate; h-6/px-2 sizing and the
+  icon-only label guard survive), select (collectSelectItems feeds Root
+  `items` — Base UI only mounts items while open; `alignItemWithTrigger`
+  must stay false), button (cloneElement asChild, no Slot). Hover cards
+  are Base UI PreviewCard: delays live on the Trigger (ours 300/100 and
+  300/120 — defaults are 600/300), positioning on the Positioner, and the
+  CSS hooks changed: `[data-state='open']` → `[data-open]`,
+  `[data-state='closed']` → `[data-ending-style]` (the exit-animation
+  attr Base UI waits on before unmounting), transform-origin var is
+  `--transform-origin`, trigger-width var is `--anchor-width`. Both
+  menu/select Positioners pass `positionMethod="fixed"` — the dock is
+  position: fixed and non-modal popups would lag it on scroll under the
+  default absolute strategy. `DropdownMenu` grew an `orientation` prop;
+  say-hi passes "horizontal" so ArrowLeft/Right traverse the icon row.
+  An adversarial review workflow confirmed and we fixed: the umbrella
+  dep, a reduced-motion ordering bug on `.service-card[data-open]`
+  (needs its own guard after the animation rule), and the orientation
+  gap. zoom-image's `data-state` is our own component's attr — untouched
+  on purpose.
+
+- **Round 10 (July 2026)**: the dock went **liquid glass**
+  (`components/liquid-glass.tsx`): displacement-map refraction with
+  chromatic fringe + specular rim (white 0.2/0.06) over a bg dropped
+  98% → 55%. A clarity slider for it was built and then dropped as
+  gimmicky — if it ever returns, know that React 19 hydration wipes
+  pre-paint inline styles off `<html>`, so persisted vars must re-apply
+  on mount (next-themes does the same). Chrome tightened alongside:
+  prefs controls hug contents (TabItem h-6/px-2, icon-only tabs skip the
+  phantom label gap, panel `w-max` over the fluid `w-72`), dock dividers
+  read again (16% ink instead of the border token, which vanished on
+  glass), hover cards pad 10×12px — and they must stay
+  `position: relative`: static dock children paint below the glass layer
+  and get blurred into the backdrop. The dock also grew a 打招呼/Say hi
+  item (`components/say-hi.tsx`, waving-hand duotone from Cali) left of
+  偏好: a dropdown of every contact route — X/Telegram/
+  YouTube/GitHub brand glyphs (handles read from `content/*.json`) plus
+  mailto hi@cali.so — laid out as a horizontal icon-only row (Radix Item
+  primitives keep keyboard activation). One shared hover card floats
+  above the row and MORPHS between services — framer layout projection
+  springs position+size while contents crossfade (250ms open, instant
+  glide once open, only ever one card). Card bodies are extracted as
+  `*CardBody` exports in `components/social-cards.tsx` so the footer
+  links and the dock serve identical cards. All per the
+  spec's "Liquid glass dock" section (Chromium refracts, Safari/Firefox
+  fall back to a frosted pane; filter id refreshes per resize). Ruler tick
+  inks dimmed 15% (0.55 → 0.47 major, 0.4 → 0.34 minor), and the rulers
+  themselves bent into arcs (`components/arc-rulers.tsx`, replacing the CSS
+  gradient strips): SVG paths with dash-rendered ticks, curving off-screen
+  before the left/right edges.
+
 - **Round 9 (July 2026)**: fluid Select/Tabs rethemed onto site tokens
   (surface scale from --popover, hover/active tints defined — they were
   silently missing, neutral focus ring, 150ms hover timing, chrome-scale

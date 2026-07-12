@@ -5,7 +5,9 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 import { PhotosIcon, ProjectsIcon, WritingIcon } from '~/components/dock-icons'
+import { LiquidGlass } from '~/components/liquid-glass'
 import { Preferences } from '~/components/preferences'
+import { SayHi } from '~/components/say-hi'
 import { T } from '~/lib/i18n'
 import { playTick } from '~/lib/sound'
 
@@ -53,6 +55,7 @@ export function Dock() {
   const pathname = usePathname()
   return (
     <nav className="dock" aria-label="主导航 / Main navigation">
+      <LiquidGlass />
       <DockItem href="/" zh="首页" en="Home" active={pathname === '/'}>
         <span className="dock-avatar">
           <Image src="/images/avatar.png" alt="" width={26} height={26} />
@@ -65,6 +68,7 @@ export function Dock() {
         </DockItem>
       ))}
       <span className="dock-rule" aria-hidden />
+      <SayHi />
       <Preferences />
     </nav>
   )

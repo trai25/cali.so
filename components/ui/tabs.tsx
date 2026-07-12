@@ -14,7 +14,7 @@ import {
   isValidElement,
   type ComponentPropsWithoutRef,
 } from "react";
-import * as TabsPrimitive from "@radix-ui/react-tabs";
+import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import { motion, AnimatePresence } from "framer-motion";
 import type { IconComponent } from "~/lib/icon-context";
 import { cn } from "~/lib/utils";
@@ -39,7 +39,6 @@ interface TabsListContextValue {
   registerTab: (index: number, value: string, el: HTMLElement | null) => void;
   hoveredIndex: number | null;
   selectedValue: string | undefined;
-  /** Optimistically set selectedIdx so the indicator moves immediately on click. */
   setOptimisticIdx: (index: number) => void;
 }
 
@@ -56,16 +55,13 @@ function useTabsList() {
 interface TabsProps
   extends Omit<
     ComponentPropsWithoutRef<typeof TabsPrimitive.Root>,
-    "onValueChange" | "onSelect"
+    "onValueChange" | "value" | "defaultValue" | "onSelect"
   > {
-  /** Controlled value (takes precedence over selectedIndex). */
   value?: string;
-  /** Called when the active tab changes. */
   onValueChange?: (value: string) => void;
-  /** Index-based controlled alternative. */
   selectedIndex?: number;
-  /** Called with the new index when the active tab changes. */
   onSelect?: (index: number) => void;
+  defaultValue?: string;
 }
 
 const Tabs = forwardRef<HTMLDivElement, TabsProps>(
@@ -89,7 +85,7 @@ const Tabs = forwardRef<HTMLDivElement, TabsProps>(
       setValueOrder((current) => {
         if (
           current.length === order.length &&
-          current.every((value, index) => value === order[index])
+          current.every((v, i) => v === order[i])
         ) {
           return current;
         }
@@ -106,14 +102,16 @@ const Tabs = forwardRef<HTMLDivElement, TabsProps>(
         ? valueOrder[selectedIndex]
         : uncontrolledValue ?? valueOrder[0]);
 
+    // Base UI passes (value, eventDetails); we only need value.
     const handleValueChange = useCallback(
-      (newValue: string) => {
+      (newValue: unknown) => {
+        const v = newValue as string;
         if (value === undefined && selectedIndex == null) {
-          setUncontrolledValue(newValue);
+          setUncontrolledValue(v);
         }
-        onValueChange?.(newValue);
+        onValueChange?.(v);
         if (onSelect) {
-          const idx = valueOrder.indexOf(newValue);
+          const idx = valueOrder.indexOf(v);
           if (idx !== -1) onSelect(idx);
         }
       },
@@ -129,18 +127,16 @@ const Tabs = forwardRef<HTMLDivElement, TabsProps>(
         }}
       >
         {/*
-          Always controlled: feeding the primitive an undefined-then-defined
-          value flips it from uncontrolled to controlled, which Radix warns
-          about in dev. valueOrder is empty on the first commit, so fall back
-          to an empty-string sentinel — TabsList's layout effect populates
-          valueOrder pre-paint, so the corrected value lands before anything
-          is visible.
+          Always controlled: Base UI's useControlled logs a dev warning when
+          value flips undefined → defined. valueOrder is empty on the first
+          commit, so fall back to an empty-string sentinel — TabsList's
+          layout effect populates valueOrder pre-paint, so the corrected
+          value lands before anything is visible.
         */}
         <TabsPrimitive.Root
           ref={ref}
           value={resolvedValue ?? ""}
           onValueChange={handleValueChange}
-          activationMode="automatic"
           {...props}
         >
           {children}
@@ -169,7 +165,6 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
     const valueOrderCtx = useContext(TabsValueOrderContext);
     const [optimisticIdx, setOptimisticIdx] = useState<number | null>(null);
 
-    // Derive value order from children synchronously
     const values = Children.toArray(children)
       .filter(isValidElement)
       .map((child) => (child.props as { value?: string }).value)
@@ -177,12 +172,10 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
     const valueOrderKey = values.join(",");
     const setValueOrder = valueOrderCtx?.setValueOrder;
 
-    // Report value order up to Tabs root
     useLayoutEffect(() => {
       setValueOrder?.(values);
     }, [setValueOrder, valueOrderKey]);
 
-    // Proximity hover
     const {
       activeIndex: hoveredIndex,
       setActiveIndex: setHoveredIndex,
@@ -192,7 +185,6 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
       measureItems,
     } = useProximityHover(containerRef, { axis: "x" });
 
-    // Register items: bridge from (index, value, el) → registerItem(index, el)
     const registerTab = useCallback(
       (index: number, _value: string, el: HTMLElement | null) => {
         registerItem(index, el);
@@ -200,13 +192,10 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
       [registerItem]
     );
 
-    // Measure on children change (resizes are covered by useProximityHover's
-    // own container ResizeObserver)
     useEffect(() => {
       measureItems();
     }, [measureItems, children]);
 
-    // Track mouse inside
     const handleMouseMove = useCallback(
       (e: React.MouseEvent) => {
         isMouseInside.current = true;
@@ -220,7 +209,6 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
       handlers.onMouseLeave();
     }, [handlers]);
 
-    // Focus ring
     const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
     const selectedValue = valueOrderCtx?.selectedValue;
     const selectedIdx =
@@ -238,10 +226,9 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
     const isHoveringSelected = hoveredIndex === activeSelectedIdx;
     const isHovering = hoveredIndex !== null && !isHoveringSelected;
 
-    // Auto-assign _index to children.
-    // Skip plain DOM elements — injecting _index into e.g. a <div>
-    // triggers React's unknown-prop warning.
     const indexedChildren = Children.map(children, (child, i) => {
+      // Skip plain DOM elements — injecting _index into e.g. a <div>
+      // triggers React's unknown-prop warning.
       if (isValidElement(child) && typeof child.type !== "string") {
         return cloneElement(child, { _index: i } as Record<string, unknown>);
       }
@@ -258,6 +245,8 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
         }}
       >
         <TabsPrimitive.List
+          // Match Radix's `activationMode="automatic"` — arrow keys move + activate.
+          activateOnFocus
           ref={(node) => {
             (
               containerRef as React.MutableRefObject<HTMLDivElement | null>
@@ -399,12 +388,9 @@ TabsList.displayName = "TabsList";
 /* ─────────────────────── TabItem ─────────────────────── */
 
 interface TabItemProps
-  extends ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> {
-  /** Unique value for this tab. */
+  extends ComponentPropsWithoutRef<typeof TabsPrimitive.Tab> {
   value: string;
-  /** Optional leading icon. */
   icon?: IconComponent;
-  /** Text label. */
   label: string;
   /** @internal Auto-assigned by TabsList. */
   _index?: number;
@@ -424,24 +410,24 @@ const TabItem = forwardRef<HTMLButtonElement, TabItemProps>(
     const isActive = hoveredIndex === _index || isSelected;
 
     return (
-      <TabsPrimitive.Trigger
+      <TabsPrimitive.Tab
         onClick={() => setOptimisticIdx(_index)}
         ref={(node) => {
           (
-            internalRef as React.MutableRefObject<HTMLButtonElement | null>
-          ).current = node;
-          if (typeof ref === "function") ref(node);
+            internalRef as React.MutableRefObject<HTMLElement | null>
+          ).current = node as HTMLButtonElement | null;
+          if (typeof ref === "function") ref(node as HTMLButtonElement);
           else if (ref)
             (
               ref as React.MutableRefObject<HTMLButtonElement | null>
-            ).current = node;
+            ).current = node as HTMLButtonElement | null;
         }}
         value={value}
         data-proximity-index={_index}
         className={cn(
           // Fixed height (not py) so the text-box trim below doesn't shrink
           // the tab — browsers without text-box support render identically.
-          "relative z-10 flex h-8 items-center gap-2 px-3 cursor-pointer bg-transparent border-none outline-none",
+          "relative z-10 flex h-6 items-center gap-1.5 px-2 cursor-pointer bg-transparent border-none outline-none",
           className
         )}
         {...props}
@@ -457,7 +443,9 @@ const TabItem = forwardRef<HTMLButtonElement, TabItemProps>(
           />
         )}
         {/* Both stacked spans carry the text-box trim so the invisible bold
-            sizer and the visible label keep identical boxes. */}
+            sizer and the visible label keep identical boxes. Icon-only tabs
+            skip the span so flex gap doesn't leave a phantom trailing gap. */}
+        {label !== "" && (
         <span className="inline-grid text-[13px] whitespace-nowrap">
           <span
             className="col-start-1 row-start-1 invisible [text-box:trim-both_cap_alphabetic]"
@@ -480,7 +468,8 @@ const TabItem = forwardRef<HTMLButtonElement, TabItemProps>(
             {label}
           </span>
         </span>
-      </TabsPrimitive.Trigger>
+        )}
+      </TabsPrimitive.Tab>
     );
   }
 );
@@ -490,15 +479,14 @@ TabItem.displayName = "TabItem";
 /* ─────────────────────── TabPanel ─────────────────────── */
 
 interface TabPanelProps
-  extends ComponentPropsWithoutRef<typeof TabsPrimitive.Content> {
-  /** Must match a TabItem value. */
+  extends ComponentPropsWithoutRef<typeof TabsPrimitive.Panel> {
   value: string;
 }
 
 const TabPanel = forwardRef<HTMLDivElement, TabPanelProps>(
   ({ className, ...props }, ref) => {
     return (
-      <TabsPrimitive.Content
+      <TabsPrimitive.Panel
         ref={ref}
         className={cn("outline-none", className)}
         {...props}
@@ -508,8 +496,6 @@ const TabPanel = forwardRef<HTMLDivElement, TabPanelProps>(
 );
 
 TabPanel.displayName = "TabPanel";
-
-/* ─────────────────────── Exports ─────────────────────── */
 
 export { Tabs, TabsList, TabItem, TabPanel };
 export type { TabsProps, TabsListProps, TabItemProps, TabPanelProps };

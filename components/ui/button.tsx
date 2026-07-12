@@ -8,7 +8,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
-import { Slot } from "@radix-ui/react-slot";
+import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import { cva, type VariantProps } from "class-variance-authority";
 import type { IconComponent } from "~/lib/icon-context";
 import { cn } from "~/lib/utils";
@@ -58,6 +58,7 @@ const buttonVariants = cva(
 interface ButtonProps
   extends ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
+  /** When true, the given single React-element child becomes the rendered element (slot-style). */
   asChild?: boolean;
   loading?: boolean;
   leadingIcon?: IconComponent;
@@ -100,16 +101,21 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    // asChild: the user's element becomes the root, but the button's internal
-    // structure (bg layer, content wrapper, spinner, icons) must survive. Slot
-    // requires exactly one child, so instead of Slottable we clone the user's
-    // element with our internals as its children — the element's own children
-    // become the label inside the content wrapper.
+    // asChild: the user's element becomes the root while the button's internal
+    // structure (bg layer, content wrapper, spinner, icons) survives as its
+    // children — the element's own children become the label. We clone the
+    // element directly instead of routing through ButtonPrimitive's `render`:
+    // Base UI would bolt button semantics (role="button", Space activation)
+    // onto e.g. a link, diverging from the Radix flavour's plain-link output.
     const asChildElement =
       asChild && isValidElement(children)
-        ? (children as ReactElement<{ children?: ReactNode }>)
+        ? (children as ReactElement<{
+            children?: ReactNode;
+            className?: string;
+            style?: React.CSSProperties;
+            ref?: React.Ref<HTMLButtonElement>;
+          }>)
         : null;
-    const Comp = asChildElement ? Slot : "button";
     const label = asChildElement ? asChildElement.props.children : children;
     const isIconOnly = size === "icon" || size === "icon-sm" || size === "icon-lg";
     const iconSize = size === "sm" ? 14 : size === "lg" ? 20 : 16;
@@ -200,27 +206,43 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       </>
     );
 
+    const rootClassName = cn(
+      buttonVariants({
+        variant,
+        size,
+        iconLeft: !isIconOnly && !!LeadingIcon,
+        iconRight: !isIconOnly && !!TrailingIcon,
+      }),
+      shape.button,
+      className
+    );
+
+    if (asChildElement) {
+      const childProps = asChildElement.props;
+      return cloneElement(
+        asChildElement,
+        {
+          ...props,
+          ref,
+          className: cn(rootClassName, childProps.className),
+          style: { ...style, ...childProps.style },
+        },
+        internals
+      );
+    }
+
     return (
-      <Comp
-        ref={ref}
-        className={cn(
-          buttonVariants({
-            variant,
-            size,
-            iconLeft: !isIconOnly && !!LeadingIcon,
-            iconRight: !isIconOnly && !!TrailingIcon,
-          }),
-          shape.button,
-          className
-        )}
+      <ButtonPrimitive
+        // Base UI's `ButtonPrimitive` forwards to an HTMLButtonElement;
+        // keep the public ref type narrow so consumers see the right type.
+        ref={ref as React.Ref<HTMLButtonElement>}
+        className={rootClassName}
         disabled={disabled || loading}
         style={style}
         {...props}
       >
-        {asChildElement
-          ? cloneElement(asChildElement, undefined, internals)
-          : internals}
-      </Comp>
+        {internals}
+      </ButtonPrimitive>
     );
   }
 );
