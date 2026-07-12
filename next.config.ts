@@ -5,9 +5,22 @@ const nextConfig: NextConfig = {
   // another checkout, Next's lockfile-based root inference walks too far up.
   turbopack: { root: import.meta.dirname },
 
+  // subset-font (OG images) loads harfbuzz wasm from node_modules via fs —
+  // bundling breaks the wasm path, so both stay external.
+  serverExternalPackages: ['subset-font', 'harfbuzzjs'],
+
+  // Shared-element morphs (cover/title) on route navigation; browsers
+  // without the View Transitions API just navigate instantly.
+  experimental: { viewTransition: true },
+
   images: {
-    // Post images are served from content/ via app/content/[...path]/route.ts
-    localPatterns: [{ pathname: '/content/**' }, { pathname: '/_next/static/**' }],
+    // Post images are served from content/ via app/content/[...path]/route.ts;
+    // site portraits/avatars live in public/images
+    localPatterns: [
+      { pathname: '/content/**' },
+      { pathname: '/images/**' },
+      { pathname: '/_next/static/**' },
+    ],
   },
 
   // v1 URL back-compat (issue #75): every URL Google or anyone else has

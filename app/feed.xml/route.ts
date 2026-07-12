@@ -14,6 +14,8 @@ export function GET() {
     site_url: seo.url.href,
     feed_url: `${seo.url.href}feed.xml`,
     language: 'zh-CN',
+    // RSS <image> wants a small square channel logo, not the 1200×630 OG
+    image_url: `${seo.url.href}images/avatar.png`,
     generator: 'PHP 9.0',
   })
 

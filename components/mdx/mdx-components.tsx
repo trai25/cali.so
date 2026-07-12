@@ -1,8 +1,11 @@
-import Image from 'next/image'
 import type { MDXComponents } from 'mdx/types'
 
 import { CodeBlockPre } from './code-block'
 import { Tweet } from './tweet'
+import { ExternalLink } from '~/components/external-link'
+import { ZoomImage } from '~/components/zoom-image'
+import { faviconUrl, getLinkPreview } from '~/lib/link-previews'
+import { tiltFromSlug } from '~/lib/polaroid'
 
 // Post images arrive as ./file.png#WxH (dimensions encoded by the content
 // pipeline); rewrite to the content route and unpack the dimensions.
@@ -10,14 +13,17 @@ function PostImage({ slug, src, alt, title }: { slug: string; src: string; alt?:
   const match = src.match(/^\.\/([A-Za-z0-9_.-]+)#(\d+)x(\d+)$/)
   if (!match) throw new Error(`post image needs ./file#WxH format, got: ${src}`)
   const [, file, width, height] = match
+  // deterministic scatter in [-1°, +1°] per file; hover straightens
+  const tilt = tiltFromSlug(file) / 2
   const img = (
-    <Image
+    <ZoomImage
       src={`/content/blog/${slug}/${file}`}
       alt={alt ?? ''}
       width={+width}
       height={+height}
       className="rounded-lg"
       sizes="(max-width: 704px) 100vw, 656px"
+      style={{ '--img-tilt': `${tilt.toFixed(2)}deg` } as React.CSSProperties}
     />
   )
   if (!title) return img
@@ -39,11 +45,13 @@ export function mdxComponents(slug: string): MDXComponents {
       <PostImage slug={slug} src={props.src as string} alt={props.alt} title={props.title} />
     ),
     a: (props) => {
-      const external = typeof props.href === 'string' && /^https?:/.test(props.href)
+      const href = typeof props.href === 'string' ? props.href : ''
+      const favicon = /^https?:/.test(href) ? faviconUrl(href) : null
+      if (!favicon) return <a {...props}>{props.children}</a>
       return (
-        <a {...props} {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}>
+        <ExternalLink href={href} favicon={favicon} preview={getLinkPreview(href)}>
           {props.children}
-        </a>
+        </ExternalLink>
       )
     },
   }

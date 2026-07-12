@@ -59,6 +59,41 @@
     stroke-dasharray: 40 60;
         }
     }
+  --color-hover: var(--hover);
+  --color-active: var(--active);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-4: var(--surface-4);
+  --color-surface-5: var(--surface-5);
+  --color-surface-6: var(--surface-6);
+  --color-surface-7: var(--surface-7);
+  --color-surface-8: var(--surface-8);
+  --shadow-surface-1: var(--shadow-1);
+  --shadow-surface-2: var(--shadow-2);
+  --shadow-surface-3: var(--shadow-3);
+  --shadow-surface-4: var(--shadow-4);
+  --shadow-surface-5: var(--shadow-5);
+  --shadow-surface-6: var(--shadow-6);
+  --shadow-surface-7: var(--shadow-7);
+  --shadow-surface-8: var(--shadow-8);
+  --color-dm-drop: var(--dm-drop);
+  --color-dm-ring-high: var(--dm-ring-high);
+  --color-dm-ring-mid: var(--dm-ring-mid);
+  --color-dm-ring-base: var(--dm-ring-base);
+  --color-dm-hi-peak: var(--dm-hi-peak);
+  --color-dm-hi-high: var(--dm-hi-high);
+  --color-dm-hi-mid: var(--dm-hi-mid);
+  --color-dm-hi-base: var(--dm-hi-base);
+  --shadow-8: var(--shadow-8);
+  --shadow-7: var(--shadow-7);
+  --shadow-6: var(--shadow-6);
+  --shadow-5: var(--shadow-5);
+  --shadow-4: var(--shadow-4);
+  --shadow-3: var(--shadow-3);
+  --shadow-2: var(--shadow-2);
+  --shadow-1: var(--shadow-1);
+  --color-shadow-color: var(--shadow-color)
 }
 
 :root {
@@ -94,6 +129,26 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
+    --surface-1: oklch(0.975 0 0);
+    --surface-2: oklch(0.985 0 0);
+    --surface-3: var(--popover);
+    --surface-4: var(--popover);
+    --surface-5: var(--popover);
+    --surface-6: var(--popover);
+    --surface-7: var(--popover);
+    --surface-8: var(--popover);
+    --hover: color-mix(in oklab, var(--foreground) 6%, transparent);
+    --active: color-mix(in oklab, var(--foreground) 10%, transparent);
+    --focus-ring: var(--ring);
+    --shadow-color: rgb(0 0 0 / 0.05);
+    --shadow-1: 0 0 0 1px var(--shadow-color);
+    --shadow-2: 0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color);
+    --shadow-3: 0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color), 0 3px 3px -1.5px var(--shadow-color);
+    --shadow-4: 0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color), 0 3px 3px -1.5px var(--shadow-color), 0 6px 6px -3px var(--shadow-color);
+    --shadow-5: 0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color), 0 3px 3px -1.5px var(--shadow-color), 0 6px 6px -3px var(--shadow-color), 0 12px 12px -6px var(--shadow-color);
+    --shadow-6: 0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color), 0 3px 3px -1.5px var(--shadow-color), 0 6px 6px -3px var(--shadow-color), 0 12px 12px -6px var(--shadow-color), 0 24px 24px -12px var(--shadow-color);
+    --shadow-7: 0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color), 0 3px 3px -1.5px var(--shadow-color), 0 6px 6px -3px var(--shadow-color), 0 12px 12px -6px var(--shadow-color), 0 24px 24px -12px var(--shadow-color), 0 48px 48px -24px var(--shadow-color);
+    --shadow-8: 0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color), 0 3px 3px -1.5px var(--shadow-color), 0 6px 6px -3px var(--shadow-color), 0 12px 12px -6px var(--shadow-color), 0 24px 24px -12px var(--shadow-color), 0 48px 48px -24px var(--shadow-color), 0 96px 96px -48px var(--shadow-color);
 }
 
 .dark {
@@ -128,6 +183,33 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
+    --surface-1: oklch(0.17 0 0);
+    --surface-2: oklch(0.19 0 0);
+    --surface-3: var(--popover);
+    --surface-4: oklch(0.23 0 0);
+    --surface-5: oklch(0.25 0 0);
+    --surface-6: oklch(0.27 0 0);
+    --surface-7: oklch(0.29 0 0);
+    --surface-8: oklch(0.31 0 0);
+    --hover: color-mix(in oklab, var(--foreground) 8%, transparent);
+    --active: color-mix(in oklab, var(--foreground) 13%, transparent);
+    --focus-ring: var(--ring);
+    --dm-hi-base: rgba(255,255,255,0.01);
+    --dm-hi-mid: rgba(255,255,255,0.02);
+    --dm-hi-high: rgba(255,255,255,0.04);
+    --dm-hi-peak: rgba(255,255,255,0.06);
+    --dm-ring-base: rgba(255,255,255,0.02);
+    --dm-ring-mid: rgba(255,255,255,0.04);
+    --dm-ring-high: rgba(255,255,255,0.06);
+    --dm-drop: rgba(0,0,0,0.18);
+    --shadow-1: inset 0 0 0 1px var(--dm-ring-base);
+    --shadow-2: inset 0 1px 0 0 var(--dm-hi-base), inset 0 0 0 1px var(--dm-ring-base), 0 1px 1px -0.5px var(--dm-drop);
+    --shadow-3: inset 0 1px 0 0 var(--dm-hi-mid), inset 0 0 0 1px var(--dm-ring-base), 0 0 0 1px rgba(0,0,0,0.12), 0 1px 1px -0.5px var(--dm-drop), 0 3px 3px -1.5px var(--dm-drop);
+    --shadow-4: inset 0 1px 0 0 var(--dm-hi-mid), inset 0 0 0 1px var(--dm-ring-mid), 0 0 0 1px rgba(0,0,0,0.14), 0 1px 1px -0.5px var(--dm-drop), 0 3px 3px -1.5px var(--dm-drop), 0 6px 6px -3px var(--dm-drop);
+    --shadow-5: inset 0 1px 0 0 var(--dm-hi-high), inset 0 0 0 1px var(--dm-ring-mid), 0 0 0 1px rgba(0,0,0,0.16), 0 1px 1px -0.5px var(--dm-drop), 0 3px 3px -1.5px var(--dm-drop), 0 6px 6px -3px var(--dm-drop), 0 12px 12px -6px var(--dm-drop);
+    --shadow-6: inset 0 1px 0 0 var(--dm-hi-high), inset 0 0 0 1px var(--dm-ring-high), 0 0 0 1px rgba(0,0,0,0.18), 0 1px 1px -0.5px var(--dm-drop), 0 3px 3px -1.5px var(--dm-drop), 0 6px 6px -3px var(--dm-drop), 0 12px 12px -6px var(--dm-drop), 0 24px 24px -12px var(--dm-drop);
+    --shadow-7: inset 0 1px 0 0 var(--dm-hi-peak), inset 0 0 0 1px var(--dm-ring-high), 0 0 0 1px rgba(0,0,0,0.20), 0 1px 1px -0.5px var(--dm-drop), 0 3px 3px -1.5px var(--dm-drop), 0 6px 6px -3px var(--dm-drop), 0 12px 12px -6px var(--dm-drop), 0 24px 24px -12px var(--dm-drop), 0 48px 48px -24px var(--dm-drop);
+    --shadow-8: inset 0 1px 0 0 var(--dm-hi-peak), inset 0 0 0 1px var(--dm-ring-high), 0 0 0 1px rgba(0,0,0,0.22), 0 1px 1px -0.5px var(--dm-drop), 0 3px 3px -1.5px var(--dm-drop), 0 6px 6px -3px var(--dm-drop), 0 12px 12px -6px var(--dm-drop), 0 24px 24px -12px var(--dm-drop), 0 48px 48px -24px var(--dm-drop), 0 96px 96px -48px var(--dm-drop);
 }
 
 @layer base {
@@ -146,6 +228,7 @@
 :root {
   --ease-swift: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-pop: cubic-bezier(0.34, 1.3, 0.64, 1);
 
   --shadow-small: 0 5px 10px rgb(0 0 0 / 0.12);
   --shadow-medium: 0 8px 30px rgb(0 0 0 / 0.12);
@@ -208,8 +291,7 @@
 }
 
 /* fine dotted rules marking the content column, like a drafting sheet */
-.column-guides::before,
-.column-guides::after {
+.column-guides::before {
   content: '';
   position: absolute;
   left: 50%;
@@ -226,10 +308,6 @@
 
 .column-guides::before {
   top: 16px;
-}
-
-.column-guides::after {
-  bottom: 16px;
 }
 
 /* full-height dashed verticals boxing the column, drafting-sheet style */
@@ -265,7 +343,7 @@
   }
 
   .focus-list:hover > li:not(:hover) {
-    filter: blur(4px);
+    filter: blur(1.5px);
     opacity: 0.55;
   }
 }
@@ -283,7 +361,7 @@
 
 .polaroid {
   background: var(--paper);
-  padding: 4% 4% 0;
+  padding: 2% 2% 0;
   box-shadow:
     0 0 0 1px rgb(0 0 0 / 0.04),
     0 2px 4px -1px rgb(0 0 0 / 0.18);
@@ -306,10 +384,10 @@
 .polaroid-caption {
   display: flex;
   align-items: center;
-  min-height: 2.75rem;
-  padding: 0.25rem 0.125rem;
-  font-size: 0.8125rem;
-  font-style: italic;
+  min-height: 1.75rem;
+  padding: 0.2rem 0.125rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
   color: var(--paper-ink);
   user-select: none;
 }
@@ -347,13 +425,13 @@
 /* ── Post prose ───────────────────────────────────────────────────── */
 
 .prose {
-  font-size: 17px;
+  font-size: 14px;
   line-height: 1.7;
 }
 
 .prose:lang(zh-CN),
 .prose:lang(zh) {
-  line-height: 1.9;
+  line-height: 1.85;
 }
 
 .prose > * + * {
@@ -362,7 +440,7 @@
 
 .prose h2 {
   margin-top: 2.5em;
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: var(--font-weight-semibold);
   letter-spacing: -0.015em;
   text-wrap: balance;
@@ -370,7 +448,7 @@
 
 .prose h3 {
   margin-top: 2em;
-  font-size: 1.0625rem;
+  font-size: 1rem;
   font-weight: var(--font-weight-semibold);
   letter-spacing: -0.01em;
   text-wrap: balance;
@@ -389,6 +467,42 @@
 
 .prose strong {
   font-weight: var(--font-weight-semibold);
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 1.375rem;
+}
+
+.prose ul > li {
+  list-style: none;
+  position: relative;
+}
+
+/* en-dash markers — the typewriter register */
+.prose ul > li::before {
+  content: '–';
+  position: absolute;
+  left: -1.375rem;
+  color: var(--muted-foreground);
+}
+
+.prose ol {
+  list-style: decimal;
+}
+
+.prose ol > li::marker {
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.prose li + li {
+  margin-top: 0.5em;
+}
+
+.prose li > ul,
+.prose li > ol {
+  margin-top: 0.5em;
 }
 
 .prose blockquote {
@@ -422,7 +536,7 @@
   overflow-x: auto;
   border-radius: 0.5rem;
   padding: 1rem;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   line-height: 1.6;
   box-shadow: 0 0 0 1px var(--border);
 }
@@ -497,38 +611,1728 @@ pre[data-theme] {
   color: var(--foreground);
 }
 
-/* ── Tweet cards (static snapshots — no embeds, see components/mdx/tweet.tsx) */
+/* ── Tweet cards (static snapshots, no embeds — components/mdx/tweet.tsx) */
 
 .tweet-card {
-  border-radius: 0.5rem;
-  padding: 1rem 1.25rem;
+  display: block;
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem 0.875rem;
   box-shadow: 0 0 0 1px var(--border);
+  text-decoration: none !important;
+  transition: box-shadow 150ms ease, background-color 150ms ease;
 }
 
-.tweet-card blockquote {
-  border-left: none;
-  padding-left: 0;
-  color: var(--foreground);
-  font-size: 0.9375rem;
-  line-height: 1.6;
+@media (hover: hover) and (pointer: fine) {
+  .tweet-card:hover {
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--foreground) 18%, transparent);
+    background: color-mix(in oklab, var(--foreground) 2%, transparent);
+  }
 }
 
-.tweet-card blockquote p + p {
-  margin-top: 0.75em;
+.tweet-card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
 }
 
-.tweet-card figcaption {
-  margin-top: 0.75rem;
-  text-align: left;
-  font-size: 0.875rem;
+.tweet-card-avatar {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  background: var(--muted);
+  box-shadow: inset 0 0 0 1px var(--border);
+  font-size: 1rem;
+  font-weight: var(--font-weight-medium);
   color: var(--muted-foreground);
+  user-select: none;
 }
 
-.tweet-card-author {
+img.tweet-card-avatar {
+  background: none;
+}
+
+.tweet-card-names {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.tweet-card-name {
+  font-size: 0.875rem;
   font-weight: var(--font-weight-medium);
   color: var(--foreground);
 }
 
-.tweet-card-media {
+.tweet-card-handle {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+
+.tweet-card-x {
+  color: var(--muted-foreground);
+  transition: color 150ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tweet-card:hover .tweet-card-x {
+    color: var(--foreground);
+  }
+}
+
+.tweet-card-body {
+  display: block;
+  margin-top: 0.75rem;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--foreground);
+}
+
+.tweet-card-body > span + span {
+  margin-top: 0.75em;
+}
+
+.tweet-card-foot {
+  display: flex;
+  gap: 0.375rem;
+  margin-top: 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Theme tri-toggle (footer chrome — components/theme-toggle.tsx) ── */
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+.theme-toggle button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  color: var(--muted-foreground);
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+/* extend the hit area vertically; horizontal stays button-width so
+   neighbors remain distinguishable */
+.theme-toggle button::after {
+  content: '';
+  position: absolute;
+  inset: -0.625rem 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .theme-toggle button:hover {
+    color: var(--foreground);
+  }
+}
+
+.theme-toggle button:active {
+  transform: scale(0.97);
+}
+
+.theme-toggle button[data-active] {
+  color: var(--foreground);
+  background: color-mix(in oklab, var(--foreground) 8%, transparent);
+}
+
+/* ── Image lightbox (components/zoom-image.tsx) ───────────────────── */
+
+.zoom-trigger {
+  display: block;
+  width: 100%;
+  cursor: zoom-in;
+}
+
+.zoom-trigger[data-zoomed] img {
+  /* the photo has been picked up — leave its shadow spot empty */
+  visibility: hidden;
+}
+
+.zoom-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-toast);
+  cursor: zoom-out;
+  outline: none;
+}
+
+.zoom-overlay-backdrop {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in oklab, var(--background) 94%, transparent);
+  opacity: 0;
+  transition: opacity 300ms var(--ease-swift);
+}
+
+.zoom-overlay[data-state='open'] .zoom-overlay-backdrop {
+  opacity: 1;
+}
+
+.zoom-overlay img {
+  position: fixed;
+  border-radius: 0.5rem;
+  will-change: transform;
+  transition: transform 300ms var(--ease-swift), box-shadow 300ms var(--ease-swift);
+}
+
+.zoom-overlay[data-state='open'] img {
+  box-shadow: var(--shadow-large);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zoom-overlay-backdrop,
+  .zoom-overlay img {
+    transition: none;
+  }
+}
+
+/* ── Header avatar ────────────────────────────────────────────────── */
+
+.avatar-flip {
+  position: relative;
+  display: block;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--border);
   user-select: none;
+}
+
+.avatar-flip img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 999px;
+}
+
+/* ── Motion: entrances, reveals, page transitions ─────────────────── */
+
+/* blur = not yet in focus — entrances sharpen, they don't slide */
+@keyframes enter-develop {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+  }
+}
+
+@keyframes polaroid-pop {
+  from {
+    opacity: 0;
+    transform: rotate(calc(var(--tilt, 0deg) + 1.5deg)) scale(0.85);
+  }
+}
+
+/* Above-the-fold entrance choreography: rows/blocks rise in with a
+   per-item delay (set --enter-delay inline; keep total under ~500ms) */
+.enter {
+  animation: enter-develop 350ms var(--ease-swift) backwards;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+/* Listing polaroids pop like prints dropped on the sheet; skipped after
+   the first visit this session (html[data-visited] set pre-paint) */
+.enter-polaroid .polaroid {
+  animation: polaroid-pop 350ms var(--ease-swift) backwards;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+html[data-visited] .enter-polaroid .polaroid {
+  animation: none;
+}
+
+/* Scroll reveal (post prose): hidden state is applied by JS only to
+   below-fold elements, so content without JS is simply there */
+.reveal-pending {
+  opacity: 0;
+  filter: blur(2px);
+  transform: translateY(5px);
+}
+
+@keyframes reveal-develop {
+  from {
+    opacity: 0;
+    filter: blur(2px);
+    transform: translateY(5px);
+  }
+}
+
+.reveal-in {
+  animation: reveal-develop 300ms var(--ease-swift) backwards;
+  animation-delay: var(--reveal-delay, 0ms);
+}
+
+/* nested choreography: a photo inside a revealing block develops after
+   the block (+250ms), popping from a slightly deeper scatter */
+@keyframes img-develop {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+    transform: rotate(calc(var(--img-tilt, 0deg) + 1.2deg)) scale(0.9);
+  }
+}
+
+.reveal-in .zoom-trigger {
+  animation: img-develop 500ms var(--ease-pop) backwards;
+  animation-delay: calc(var(--reveal-delay, 0ms) + 250ms);
+}
+
+/* Route transition: the origin defocuses while the destination rises.
+   Shared covers/titles morph via view-transition-name. */
+@keyframes vt-defocus {
+  to {
+    opacity: 0;
+    filter: blur(2px);
+  }
+}
+
+@keyframes vt-focus {
+  from {
+    opacity: 0;
+    filter: blur(2px);
+  }
+}
+
+::view-transition-old(root) {
+  animation: vt-defocus 250ms var(--ease-swift) both;
+}
+
+::view-transition-new(root) {
+  animation: vt-focus 300ms var(--ease-swift) both;
+}
+
+::view-transition-group(*) {
+  animation-duration: 320ms;
+  animation-timing-function: var(--ease-swift);
+}
+
+/* a revealing list hands its animation to the items, staggered */
+.prose ul.reveal-in,
+.prose ol.reveal-in {
+  animation: none;
+}
+
+.prose ul.reveal-in > li,
+.prose ol.reveal-in > li {
+  animation: reveal-develop 300ms var(--ease-swift) backwards;
+  animation-delay: calc(var(--reveal-delay, 0ms) + var(--li, 0) * 50ms);
+}
+
+.prose ul.reveal-in > li:nth-child(2),
+.prose ol.reveal-in > li:nth-child(2) {
+  --li: 1;
+}
+
+.prose ul.reveal-in > li:nth-child(3),
+.prose ol.reveal-in > li:nth-child(3) {
+  --li: 2;
+}
+
+.prose ul.reveal-in > li:nth-child(4),
+.prose ol.reveal-in > li:nth-child(4) {
+  --li: 3;
+}
+
+.prose ul.reveal-in > li:nth-child(5),
+.prose ol.reveal-in > li:nth-child(5) {
+  --li: 4;
+}
+
+.prose ul.reveal-in > li:nth-child(6),
+.prose ol.reveal-in > li:nth-child(6) {
+  --li: 5;
+}
+
+.prose ul.reveal-in > li:nth-child(7),
+.prose ol.reveal-in > li:nth-child(7) {
+  --li: 6;
+}
+
+.prose ul.reveal-in > li:nth-child(8),
+.prose ol.reveal-in > li:nth-child(8) {
+  --li: 7;
+}
+
+.prose ul.reveal-in > li:nth-child(9),
+.prose ol.reveal-in > li:nth-child(9) {
+  --li: 8;
+}
+
+.prose ul.reveal-in > li:nth-child(n + 10),
+.prose ol.reveal-in > li:nth-child(n + 10) {
+  --li: 9;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .enter,
+  .enter-polaroid .polaroid,
+  .reveal-in,
+  .prose ul.reveal-in > li,
+  .prose ol.reveal-in > li {
+    animation: none;
+  }
+
+  .reveal-pending {
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+
+  .reveal-in .zoom-trigger {
+    animation: none;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-image-pair(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}
+
+/* ── External links: inline favicon + preview hover card ──────────── */
+
+.external-link img {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  margin-right: 0.3em;
+  vertical-align: -0.125em;
+  user-select: none;
+}
+
+@keyframes link-card-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+@keyframes link-card-out {
+  to {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+.link-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  width: 16rem;
+  padding: 0.875rem 1rem;
+  border-radius: var(--radius);
+  background: var(--popover);
+  box-shadow: 0 0 0 1px var(--border), var(--shadow-tooltip), var(--shadow-medium);
+  transform-origin: var(--radix-hover-card-content-transform-origin);
+  backface-visibility: hidden;
+  z-index: var(--z-card);
+}
+
+.link-card[data-state='open'] {
+  animation: link-card-in 200ms var(--ease-swift);
+}
+
+.link-card[data-state='closed'] {
+  animation: link-card-out 130ms var(--ease-swift);
+}
+
+.link-card-site {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+
+.link-card-site img {
+  border-radius: 3px;
+}
+
+.link-card-title {
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium);
+  line-height: 1.4;
+  color: var(--foreground);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.link-card-description {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--muted-foreground);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link-card[data-state='open'],
+  .link-card[data-state='closed'],
+  .service-card[data-state='open'] {
+    animation: none;
+  }
+}
+
+/* ── Halftone portrait (components/halftone-portrait.tsx) ─────────── */
+
+[data-halftone] {
+  display: block;
+  position: relative;
+  user-select: none;
+}
+
+/* the raw photo carries layout and serves as the no-JS fallback,
+   printed-down so it still sits quietly on the paper */
+.halftone-source {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: grayscale(1) contrast(1.05);
+  opacity: 0.85;
+}
+
+[data-halftone][data-ready] .halftone-source {
+  opacity: 0;
+}
+
+.halftone-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: var(--foreground);
+}
+
+/* center-out list reveal with a tiny swing (rotate −2° → 0) */
+@keyframes enter-swing {
+  from {
+    opacity: 0;
+    transform: translateY(12px) rotate(-2deg);
+    filter: blur(2px);
+  }
+}
+
+.enter-swing {
+  animation: enter-swing 400ms var(--ease-swift) backwards;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .enter-swing {
+    animation: none;
+  }
+}
+
+/* measuring-tick rulers hugging the horizontal guides — instrument
+   chrome from the technical-print vocabulary, tuned to be missable.
+   They layer above the edge fades so the ticks never wash out. */
+.column-rulers {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  pointer-events: none;
+  user-select: none;
+  opacity: var(--guide-opacity);
+  /* white ticks under difference invert against whatever passes beneath */
+  mix-blend-mode: difference;
+}
+
+.column-ruler {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background:
+    repeating-linear-gradient(
+      to right,
+      rgb(255 255 255 / 0.55) 0 1px,
+      transparent 1px 48px
+    );
+}
+
+.column-ruler::after {
+  /* minor ticks, half height */
+  content: '';
+  position: absolute;
+  inset: 0;
+  height: 2.5px;
+  background: repeating-linear-gradient(
+    to right,
+    rgb(255 255 255 / 0.4) 0 1px,
+    transparent 1px 12px
+  );
+}
+
+.column-ruler-top {
+  top: 18px;
+}
+
+.column-ruler-bottom {
+  bottom: 18px;
+  rotate: 180deg;
+}
+
+/* ── Post images: scattered prints that straighten on attention ───── */
+
+.zoom-trigger {
+  transform: rotate(var(--img-tilt, 0deg));
+  transition: transform 300ms var(--ease-swift);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .zoom-trigger:hover {
+    transform: rotate(0deg) scale(1.02);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zoom-trigger {
+    transition: none;
+  }
+}
+
+/* ── Viewport edge fades: subtle progressive blur top & bottom ────── */
+
+.scroll-fade {
+  position: fixed;
+  left: 0;
+  right: 0;
+  height: 4.5rem;
+  z-index: 90;
+  pointer-events: none;
+  user-select: none;
+}
+
+.scroll-fade-top {
+  top: 0;
+  mask-image: linear-gradient(to bottom, black 15%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, black 15%, transparent);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--background) 62%, transparent),
+    transparent
+  );
+}
+
+.scroll-fade-bottom {
+  bottom: 0;
+  mask-image: linear-gradient(to top, black 15%, transparent);
+  -webkit-mask-image: linear-gradient(to top, black 15%, transparent);
+  background: linear-gradient(
+    to top,
+    color-mix(in oklab, var(--background) 62%, transparent),
+    transparent
+  );
+}
+
+.scroll-fade-bottom::before {
+  mask-image: linear-gradient(to top, black, transparent 45%);
+  -webkit-mask-image: linear-gradient(to top, black, transparent 45%);
+}
+
+/* the print develops into the photo on attention */
+.dither-veil {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+  transition: opacity 300ms var(--ease-swift);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .group:hover .dither-veil {
+    opacity: 0;
+  }
+}
+
+.group:focus-visible .dither-veil {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dither-veil {
+    transition: none;
+  }
+}
+
+/* ── Vinyl shelf (components/vinyl-shelf.tsx) ─────────────────────── */
+
+.vinyl-shelf {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.875rem;
+  /* headroom for the discs peeking out the top */
+  padding-top: 1.75rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.vinyl-shelf::-webkit-scrollbar {
+  display: none;
+}
+
+.vinyl {
+  position: relative;
+  width: 6rem;
+  flex-shrink: 0;
+}
+
+.vinyl a {
+  display: block;
+  position: relative;
+}
+
+.vinyl-sleeve {
+  position: relative;
+  display: block;
+  aspect-ratio: 1;
+  background: var(--paper);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.08), 0 2px 5px -1px rgb(0 0 0 / 0.2);
+  overflow: hidden;
+  transition: transform 300ms var(--ease-swift), box-shadow 300ms var(--ease-swift);
+}
+
+.vinyl-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* seeded crease streaks (inline background) + paper grain overlay */
+.vinyl-creases {
+  position: absolute;
+  inset: 0;
+}
+
+.vinyl-paper {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='96' height='96' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 96px 96px;
+  mix-blend-mode: overlay;
+  opacity: 0.55;
+}
+
+.vinyl-sleeve-raster {
+  position: absolute;
+  inset: -4px;
+  font-size: 8px;
+  line-height: 1.4;
+  letter-spacing: 0.06em;
+  word-break: break-all;
+  color: color-mix(in oklab, var(--paper-ink) 42%, transparent);
+  user-select: none;
+}
+
+.vinyl-sleeve-type {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0.5rem;
+  background: linear-gradient(to top, color-mix(in oklab, var(--paper) 88%, transparent) 45%, transparent);
+}
+
+.vinyl-sleeve-album {
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.2;
+  color: oklch(0.28 0.012 95);
+}
+
+.vinyl-sleeve-artist {
+  margin-top: 2px;
+  font-size: 0.6875rem;
+  color: var(--paper-ink);
+}
+
+.vinyl-disc {
+  position: absolute;
+  top: 0;
+  left: 5%;
+  width: 90%;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 50%, transparent 0 18%, rgb(255 255 255 / 0.05) 30%, transparent 32%, rgb(255 255 255 / 0.05) 44%, transparent 46%, rgb(255 255 255 / 0.05) 58%, transparent 60%),
+    oklch(0.2 0.005 95);
+  display: grid;
+  place-items: center;
+  transform: translateY(-12%);
+  transition: transform 300ms var(--ease-swift);
+}
+
+.vinyl-label {
+  width: 34%;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.15), inset 0 0 0 6px oklch(0.55 0.09 55);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .vinyl a:hover .vinyl-disc {
+    transform: translateY(-26%);
+  }
+
+  .vinyl a:hover .vinyl-sleeve {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.08), var(--shadow-small);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vinyl-disc,
+  .vinyl-sleeve {
+    transition: none;
+  }
+}
+
+/* ── Bookshelf: 3D accordion (components/bookshelf.tsx) ───────────── */
+
+.shelf3 {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 218px;
+  padding-bottom: 2px;
+  border-bottom: var(--border-hairline) solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.shelf3::-webkit-scrollbar {
+  display: none;
+}
+
+.book3 {
+  position: relative;
+  height: 210px;
+  flex-shrink: 0;
+  perspective: 1200px;
+  transform-origin: bottom center;
+  transition:
+    width 650ms cubic-bezier(0.65, 0, 0.35, 1),
+    transform 650ms cubic-bezier(0.65, 0, 0.35, 1);
+  cursor: pointer;
+}
+
+.book3-inner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 148px;
+  height: 100%;
+  transform-style: preserve-3d;
+  transform-origin: left center;
+  transition: transform 650ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.book3-cover {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  overflow: hidden;
+  border-radius: 2px 4px 4px 2px;
+  filter: drop-shadow(2px 4px 15px rgb(0 0 0 / 0.14));
+}
+
+.book3-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.book3-cover-blank {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  height: 100%;
+  padding: 1rem 0.75rem;
+  background: var(--paper);
+  font-size: 0.75rem;
+  color: var(--paper-ink);
+}
+
+.book3-cover-blank b {
+  font-weight: var(--font-weight-semibold);
+  color: oklch(0.28 0.012 95);
+}
+
+.book3-spine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  transform: rotateY(90deg);
+  transform-origin: left center;
+  backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 0;
+  writing-mode: vertical-rl;
+  background: color-mix(in oklab, var(--paper) calc(100% - var(--book-tone, 0) * 7%), var(--paper-ink));
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08);
+  border-radius: 2px;
+}
+
+.book3-spine-title {
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-medium);
+  color: oklch(0.28 0.012 95);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-height: 70%;
+}
+
+.book3-spine-author {
+  font-size: 0.5625rem;
+  color: var(--paper-ink);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .book3,
+  .book3-inner {
+    transition: none;
+  }
+}
+
+/* ── Experience rows ──────────────────────────────────────────────── */
+
+.experience-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.625rem 0;
+}
+
+/* ── Per-service hover cards (components/social-cards.tsx) ────────── */
+
+.service-card {
+  gap: 0.5rem;
+}
+
+/* service cards pop open with a touch of overshoot */
+.service-card[data-state='open'] {
+  animation: service-pop 260ms var(--ease-pop);
+}
+
+@keyframes service-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(4px);
+  }
+}
+
+.service-card-glyph {
+  margin-left: auto;
+  align-self: flex-start;
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+}
+
+.service-card-stat .service-card-glyph {
+  align-self: center;
+}
+
+.service-card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.service-card-avatar {
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.service-card-names {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.service-card-name {
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+}
+
+.service-card-sub {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+
+.service-card-bio {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--foreground);
+}
+
+.service-card-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.service-card-stat b {
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+}
+
+.service-card-gh {
+  width: 18.25rem;
+}
+
+/* 52-week contribution grid; cells cascade in individually per the
+   hover-card contract */
+.contrib-grid {
+  display: flex;
+  gap: 1px;
+}
+
+.contrib-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+@keyframes contrib-cell-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.92);
+  }
+}
+
+.contrib-grid i {
+  width: 4px;
+  height: 4px;
+  border-radius: 1px;
+  background: color-mix(in oklab, var(--foreground) 7%, transparent);
+  animation: contrib-cell-in 480ms var(--ease-swift) backwards;
+  animation-delay: calc(var(--ci, 0) * 1.1ms);
+}
+
+.contrib-grid i[data-level='1'] {
+  background: color-mix(in oklab, var(--foreground) 30%, transparent);
+}
+
+.contrib-grid i[data-level='2'] {
+  background: color-mix(in oklab, var(--foreground) 52%, transparent);
+}
+
+.contrib-grid i[data-level='3'] {
+  background: color-mix(in oklab, var(--foreground) 74%, transparent);
+}
+
+.contrib-grid i[data-level='4'] {
+  background: var(--foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contrib-grid i {
+    animation: none;
+  }
+}
+
+/* ── Blog index rows: print thumb · title ···· date ───────────────── */
+
+.blog-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  font-size: 0.875rem;
+}
+
+.print-thumb {
+  position: relative;
+  display: block;
+  width: 4rem;
+  height: 2.75rem;
+  flex-shrink: 0;
+  border-radius: 3px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+.print-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.print-thumb-empty {
+  background: var(--muted);
+}
+
+.blog-row-title {
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* dotted leader between title and date — the typewriter TOC register */
+.blog-row-leader {
+  flex: 1;
+  min-width: 1.5rem;
+  height: 1px;
+  align-self: center;
+  background: radial-gradient(
+      circle,
+      color-mix(in oklab, var(--muted-foreground) 41%, transparent) 0.5px,
+      transparent 0.5px
+    )
+    0 0 / 6px 1px repeat-x;
+}
+
+/* ── Back pill (post pages) ───────────────────────────────────────── */
+
+.back-pill {
+  position: fixed;
+  top: 2rem;
+  left: calc(50vw - 18.75rem - 4.5rem);
+  z-index: var(--z-nav);
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  color: var(--muted-foreground);
+  background: var(--background);
+  box-shadow: 0 0 0 1px var(--border), var(--shadow-tooltip);
+  transition: color 150ms ease, box-shadow 150ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .back-pill:hover {
+    color: var(--foreground);
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--foreground) 18%, transparent), var(--shadow-small);
+  }
+}
+
+.back-pill:active {
+  transform: scale(0.97);
+}
+
+@media (max-width: 52rem) {
+  .back-pill {
+    position: static;
+    margin-bottom: 1.25rem;
+  }
+}
+
+/* ── Bilingual chrome (lib/i18n.tsx) — CSS-swapped, no hydration ──── */
+
+[data-en] {
+  display: none;
+}
+
+html[data-locale='en'] [data-zh] {
+  display: none;
+}
+
+html[data-locale='en'] [data-en] {
+  display: inline;
+}
+
+.locale-toggle {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  transition: color 150ms ease;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .locale-toggle:hover {
+    color: var(--foreground);
+  }
+}
+
+.locale-toggle:active {
+  transform: scale(0.97);
+}
+
+/* ── Post table of contents (components/post-toc.tsx) ─────────────── */
+
+.post-toc {
+  position: fixed;
+  top: 5.75rem;
+  left: calc(50vw - 18.75rem - 13.5rem);
+  width: 11rem;
+  z-index: var(--z-nav);
+  display: none;
+  user-select: none;
+}
+
+@media (min-width: 64rem) {
+  .post-toc {
+    display: block;
+  }
+}
+
+/* ghost of the post title — fades in with a 2px rise once the real one
+   scrolls away; clicking returns to the top */
+.post-toc-title {
+  display: block;
+  max-width: 100%;
+  margin-bottom: 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: var(--font-weight-medium);
+  text-align: left;
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  transform: translateY(-2px);
+  pointer-events: none;
+  transition: opacity 200ms ease, transform 250ms var(--ease-swift);
+}
+
+.post-toc-title[data-visible] {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.post-toc ul {
+  display: flex;
+  flex-direction: column;
+}
+
+.post-toc li[data-level='3'] a {
+  padding-left: 0.75rem;
+}
+
+.post-toc a {
+  display: flex;
+  align-items: center;
+  min-height: 1.75rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+  opacity: 0.8;
+  transition: color 150ms ease, opacity 150ms ease;
+}
+
+.post-toc-label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* hand-drawn squiggle that draws itself in front of the active item,
+   nudging the label aside (illustration-accent register) */
+.post-toc-squiggle {
+  flex-shrink: 0;
+  max-width: 0;
+  margin-right: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-width 300ms ease, margin-right 300ms ease, opacity 200ms ease;
+}
+
+.post-toc-squiggle path {
+  fill: none;
+  stroke: color-mix(in oklab, var(--muted-foreground) 55%, transparent);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-dasharray: 20;
+  stroke-dashoffset: 20;
+  transition: stroke-dashoffset 350ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .post-toc a:hover {
+    color: var(--foreground);
+    opacity: 1;
+  }
+}
+
+.post-toc a[aria-current='true'] {
+  color: var(--foreground);
+  opacity: 1;
+}
+
+.post-toc a[aria-current='true'] .post-toc-squiggle {
+  max-width: 14px;
+  margin-right: 6px;
+  opacity: 1;
+}
+
+.post-toc a[aria-current='true'] .post-toc-squiggle path {
+  stroke-dashoffset: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-toc-title,
+  .post-toc-squiggle,
+  .post-toc-squiggle path {
+    transition: none;
+  }
+}
+
+/* anchored headings clear the viewport edge fade */
+.prose h2,
+.prose h3 {
+  scroll-margin-top: 4.5rem;
+}
+
+/* ── Photo masonry (/photos) — 2 cols, 3 from sm up ───────────────── */
+
+.photo-masonry {
+  columns: 2;
+  column-gap: 0.75rem;
+}
+
+@media (min-width: 40rem) {
+  .photo-masonry {
+    columns: 3;
+  }
+}
+
+.photo-item {
+  break-inside: avoid;
+  margin-bottom: 0.75rem;
+}
+
+.photo-item .zoom-trigger img {
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+/* ── Footer: Swiss editorial grid ─────────────────────────────────── */
+
+.footer-tree ul {
+  display: flex;
+  flex-direction: column;
+}
+
+.footer-label {
+  margin-bottom: 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--muted-foreground) 75%, transparent);
+  user-select: none;
+}
+
+/* directory-tree rails: a continuous vertical line with stubs, the
+   last branch closing the rail at its midpoint */
+.footer-tree li {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding-left: 1.125rem;
+}
+
+.footer-tree li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: color-mix(in oklab, var(--muted-foreground) 40%, transparent);
+}
+
+.footer-tree li:last-child::before {
+  bottom: auto;
+  height: 50%;
+}
+
+.footer-tree li::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 0.625rem;
+  height: 1px;
+  background: color-mix(in oklab, var(--muted-foreground) 40%, transparent);
+}
+
+.footer-tree li > * {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 39.99rem) {
+  .footer-tree li > * {
+    flex: 0 1 auto;
+  }
+}
+
+.footer-tree-link {
+  transition: color 150ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .footer-tree-link:hover {
+    color: var(--foreground);
+  }
+}
+
+.footer-colophon {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: var(--border-hairline) solid var(--border);
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  color: color-mix(in oklab, var(--muted-foreground) 85%, transparent);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+/* ── Global pill dock (components/dock.tsx) ───────────────────────── */
+
+.dock {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-nav);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  height: 3rem;
+  padding: 0.375rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--background) 98%, transparent);
+  box-shadow: 0 0 0 1px var(--border), var(--shadow-medium);
+}
+
+.dock-item {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  color: var(--muted-foreground);
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dock-item:hover {
+    color: var(--foreground);
+    background: color-mix(in oklab, var(--foreground) 6%, transparent);
+  }
+}
+
+.dock-item:active {
+  transform: scale(0.97);
+}
+
+.dock-item[data-active] {
+  color: var(--foreground);
+}
+
+.dock-dot {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--foreground);
+}
+
+.dock-avatar {
+  display: block;
+  width: 1.625rem;
+  height: 1.625rem;
+  border-radius: 999px;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.dock-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dock-rule {
+  width: 1px;
+  height: 1.125rem;
+  margin: 0 0.125rem;
+  background: var(--border);
+}
+
+/* label above the item, tooltip register */
+.dock-tip {
+  position: absolute;
+  bottom: calc(100% + 0.625rem);
+  left: 50%;
+  transform: translateX(-50%) scale(0.95);
+  padding: 0.25rem 0.5rem;
+  border-radius: calc(var(--radius) * 0.6);
+  background: var(--popover);
+  box-shadow: 0 0 0 1px var(--border), var(--shadow-tooltip);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  color: var(--foreground);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms var(--ease-swift), transform 150ms var(--ease-swift);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dock-item:hover .dock-tip {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+.dock-item:focus-visible .dock-tip {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock-tip,
+  .dock-item {
+    transition: none;
+  }
+}
+
+/* ── Preferences panel (components/preferences.tsx) ───────────────── */
+
+.prefs-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 13.5rem;
+  padding: 0.5rem;
+}
+
+/* label pinned left, control pinned right — chrome-size type */
+.prefs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+
+.prefs-row-label {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  user-select: none;
+}
+
+/* ── Home nav cards: analog vignettes on soft surfaces ────────────── */
+
+.nav-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 3.5rem;
+  /* bleed to the column's outer edges (through the px-6 padding), not
+     the viewport */
+  margin-left: -1.5rem;
+  margin-right: -1.5rem;
+  border-top: var(--border-hairline) solid var(--border);
+  border-bottom: var(--border-hairline) solid var(--border);
+}
+
+.nav-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 1.5rem 0.75rem 1.25rem;
+}
+
+.nav-card + .nav-card {
+  border-left: var(--border-hairline) solid var(--border);
+}
+
+.nav-card:active {
+  transform: scale(0.985);
+}
+
+.nc-vignette {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 3.5rem;
+  width: 100%;
+  margin-bottom: 0.375rem;
+}
+
+/* manuscript pages: three ruled sheets, loosely stacked */
+.nc-sheets span {
+  position: absolute;
+  width: 2.375rem;
+  height: 2.875rem;
+  transition: transform 300ms var(--ease-spring);
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 7px,
+      color-mix(in oklab, var(--paper-ink) 35%, transparent) 7px 7.5px
+    )
+    50% 60% / 70% 60% no-repeat,
+    var(--paper);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.08), 0 1px 2px rgb(0 0 0 / 0.12);
+}
+
+.nc-sheets span:nth-child(1) {
+  transform: rotate(-7deg) translateX(-9px);
+}
+
+.nc-sheets span:nth-child(2) {
+  transform: rotate(4deg) translateX(9px);
+}
+
+.nc-sheets span:nth-child(3) {
+  transform: rotate(-1deg) translateY(-2px);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .nav-card:hover .nc-sheets span:nth-child(1) {
+    transform: rotate(-13deg) translateX(-16px) translateY(-2px);
+  }
+
+  .nav-card:hover .nc-sheets span:nth-child(2) {
+    transform: rotate(9deg) translateX(16px) translateY(-1px);
+  }
+
+  .nav-card:hover .nc-sheets span:nth-child(3) {
+    transform: rotate(-2deg) translateY(-5px);
+  }
+}
+
+/* fanned polaroid minis */
+.nc-polaroid {
+  position: absolute;
+  padding: 3px 3px 8px;
+  background: var(--paper);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.08), 0 1px 3px rgb(0 0 0 / 0.15);
+  transform: rotate(calc(var(--i) * 9deg - 9deg)) translateX(calc(var(--i) * 16px - 16px));
+  transition: transform 300ms var(--ease-spring);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .nav-card:hover .nc-polaroid {
+    transform: rotate(calc(var(--i) * 15deg - 15deg)) translateX(calc(var(--i) * 24px - 24px))
+      translateY(calc((1 - var(--i)) * (1 - var(--i)) * 2px - 3px));
+  }
+}
+
+.nc-polaroid img {
+  display: block;
+  width: 2.25rem;
+  height: 1.875rem;
+  object-fit: cover;
+}
+
+/* blueprint paper: fine grid + the cube */
+.nc-blueprint {
+  color: var(--muted-foreground);
+}
+
+.nc-blueprint::before {
+  content: '';
+  position: absolute;
+  top: 0.125rem;
+  bottom: 0.125rem;
+  left: 50%;
+  width: 6.5rem;
+  transform: translateX(-50%);
+  border-radius: 3px;
+  background:
+    repeating-linear-gradient(to right, color-mix(in oklab, var(--muted-foreground) 20%, transparent) 0 0.5px, transparent 0.5px 7px),
+    repeating-linear-gradient(to bottom, color-mix(in oklab, var(--muted-foreground) 20%, transparent) 0 0.5px, transparent 0.5px 7px),
+    var(--paper);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.06);
+}
+
+.nc-blueprint svg {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  color: var(--paper-ink);
+  overflow: visible;
+}
+
+.nc-explode-a,
+.nc-explode-b,
+.nc-explode-c {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 300ms var(--ease-spring);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .nav-card:hover .nc-explode-a {
+    transform: translate(1.5px, -1.5px) rotate(3deg);
+  }
+
+  .nav-card:hover .nc-explode-b {
+    transform: translate(-2.5px, -2px) rotate(-6deg);
+  }
+
+  .nav-card:hover .nc-explode-c {
+    transform: translate(2px, 2.5px) rotate(5deg);
+  }
+}
+
+.nc-label {
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+}
+
+.nc-sub {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nc-sheets span,
+  .nc-polaroid,
+  .nc-explode-a,
+  .nc-explode-b,
+  .nc-explode-c {
+    transition: none;
+  }
 }

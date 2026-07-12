@@ -1,50 +1,60 @@
 import Image from 'next/image'
 
+import { DitherVeil } from '~/components/dither-veil'
 import type { PostCover } from '~/lib/content'
+import { tiltFromSlug } from '~/lib/polaroid'
 import { cn } from '~/lib/utils'
-
-// Deterministic tilt in [-2°, 2°] derived from the slug — stable across
-// builds (design language: instant-photo cover treatment).
-function tiltFromSlug(slug: string): number {
-  let h = 0
-  for (let i = 0; i < slug.length; i++) h = (h * 31 + slug.charCodeAt(i)) | 0
-  return ((Math.abs(h) % 401) - 200) / 100
-}
 
 export function PolaroidCover({
   slug,
   cover,
   caption,
+  alt,
   tilted = false,
   priority = false,
+  morph = false,
+  print = false,
   sizes,
   className,
 }: {
   slug: string
   cover: PostCover
-  caption?: string
+  caption?: React.ReactNode
+  /** image alt; captions may be decorative (e.g. braille) */
+  alt?: string
   tilted?: boolean
   priority?: boolean
+  /** shared-element morph across index ⇄ post navigation */
+  morph?: boolean
+  /** rest as an ink print (dither, or a dither/ascii/photo collage);
+   * hover/focus develops the photo */
+  print?: boolean | 'collage'
   sizes?: string
   className?: string
 }) {
   return (
     <figure
       className={cn('polaroid', tilted && 'polaroid-tilted', className)}
-      style={tilted ? ({ '--tilt': `${tiltFromSlug(slug)}deg` } as React.CSSProperties) : undefined}
+      style={
+        {
+          ...(tilted && { '--tilt': `${tiltFromSlug(slug)}deg` }),
+          ...(morph && { viewTransitionName: `cover-${slug}` }),
+        } as React.CSSProperties
+      }
     >
       <span className="polaroid-photo">
         <Image
           src={cover.src}
-          alt={caption ?? ''}
+          alt={alt ?? ''}
           width={cover.width}
           height={cover.height}
           priority={priority}
           sizes={sizes}
           className="w-full"
         />
+        {print && <DitherVeil src={cover.src} mode={print === 'collage' ? 'collage' : 'dither'} />}
       </span>
-      <figcaption className="polaroid-caption">{caption ?? cover.caption ?? ' '}</figcaption>
+      <figcaption className="polaroid-caption">{caption ?? cover.caption ?? ' '}</figcaption>
     </figure>
   )
 }

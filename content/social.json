@@ -1,0 +1,22 @@
+{
+  "x": {
+    "name": "Cali Castle",
+    "handle": "thecalicastle",
+    "bio": "开发者、设计师、细节控、佐玩创始人",
+    "bioEn": "Developer, designer, perfectionist, founder of Zolplay",
+    "followers": "20K+",
+    "asOf": "2024-01"
+  },
+  "telegram": {
+    "name": "Cali Castle",
+    "handle": "cali_so",
+    "bio": "找我聊聊产品、设计与开发",
+    "bioEn": "Talk products, design, and code with me"
+  },
+  "youtube": {
+    "name": "Cali Castle",
+    "handle": "calicastle",
+    "bio": "开发与设计的视频内容",
+    "bioEn": "Videos on building and designing"
+  }
+}

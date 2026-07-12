@@ -5,6 +5,13 @@ in ADR-0006 (motion is information, not decoration). Rules here are written to
 be buildable: when a value is stated, use it; when a component is described,
 its behavior spec is the contract.
 
+The header is sticky (z `--z-nav`) with a two-layer progressive-blur
+backdrop (8px masked to ~58%, 18px hugging the top edge, background tint
+82%→transparent) so passing content fades under the chrome; the top
+viewport fade lives there, the bottom one stays a fixed overlay. The
+footer is two rows: service links + locale/theme toggles above, © + RSS
+below.
+
 ## Motion system
 
 Token set (define in `globals.css`, use everywhere — no ad-hoc cubic-beziers):
@@ -47,8 +54,12 @@ Hard rules:
   animated.
 - Elements that move together share one duration and easing (card + its
   shadow, cover + its caption).
-- No scroll-triggered animation anywhere: no fade-ups on scroll, no parallax,
-  no scroll hijacking. Content is simply there when you arrive.
+- Scroll reveals are allowed only as gentle arrivals: below-fold long-form
+  blocks may sharpen in (blur 2px → 0 + fade, 300ms `--ease-swift`, ≤45ms
+  stagger within a batch) as they enter the viewport. Never parallax, never
+  scroll hijacking, never hiding content behind JS — the hidden state is
+  applied by script, so content without JS (or with reduced motion) is
+  simply there.
 - Springs (via the fluid components) are reserved for interruptible,
   pointer-driven motion — proximity hover, drag. Bounce stays in 0.1–0.3.
 - Every animation has a `prefers-reduced-motion: reduce` branch that sets
@@ -65,10 +76,11 @@ Hard rules:
   dates, section labels, even page-level headings outside post bodies — is a
   single size (14px, letter-spacing −0.011em); hierarchy comes from weight
   and color only. Resist adding a size before exhausting weight + color.
-- **Prose is the exception.** Post bodies are 17px/1.7 with CJK line-height
-  1.9 (16px minimum everywhere also prevents iOS input zoom); post titles may
-  be large. Headings use `text-wrap: balance` and tighter letter-spacing as
-  size grows.
+- **One base size: 14px.** Post bodies match the chrome at 14px/1.7 (CJK
+  line-height 1.85) — density is part of the print voice. Post titles may
+  still be large; prose h2 is 18px, h3 16px, code 13px. Form inputs are the
+  one exception: they stay ≥16px to prevent iOS zoom. Headings use
+  `text-wrap: balance` and tighter letter-spacing as size grows.
 - Content column is narrow: ~600px (`37.5rem`) plus padding.
 - `font-variant-numeric: tabular-nums` on anything that counts: dates in
   lists, reading time, subscriber counts.
@@ -93,6 +105,19 @@ Hard rules:
 Titles do the work: post listings are title + date, no descriptions. Titles
 are short, concrete, and conversational — "为什么按钮不需要手指光标" not
 "关于按钮光标设计的一些思考与实践". Section headers are one or two words.
+
+## Entrance choreography
+
+Entrances continue the selective-focus grammar: blocks *develop* into
+focus (blur 4px → sharp + fade, 350ms `--ease-swift`) with inline per-item
+delays — ~100ms base, 35–65ms steps, total under ~600ms. Nothing slides;
+blur stands in for "not yet attended". Listing polaroids instead pop like
+prints dropped on the sheet (rotate from base+1.5°, `scale(0.85)`, 350ms),
+65ms apart — and are skipped after the first visit in the session
+(`html[data-visited]`, set pre-paint). Entrance and reveal animations use
+`animation-fill-mode: backwards` — a forwards fill would pin the keyframe
+value and dead-lock hover transitions on the same properties. Reduced
+motion disables every entrance.
 
 ## Hover cards as craft objects
 
@@ -125,13 +150,90 @@ open rich hover cards. The contract:
 - **Data at build time.** Card data (grid, films, tracks) is fetched at build
   / ISR, not on hover; an open card never spinners on network.
 - All content animations inside cards respect `prefers-reduced-motion`.
+- **Implemented service cards** (`components/social-cards.tsx`, chrome
+  social links): the X card (avatar, name/@handle, bio, follower stat) and
+  the code card — a real 52×7 contribution grid, 4px cells on 1px gaps,
+  ink = foreground alpha ramp (7/30/52/74/100%), each cell cascading in
+  (`translateY(4px) scale(0.92)`, 480ms, ~1.1ms/cell stagger). Data baked
+  at build into `content/social.json` + `content/github.json`
+  (`scripts/refresh-github.mjs`); zero network on hover; snapshots never
+  spinner. Touch follows the plain link.
+- **The implemented base: external-link previews.** Every external link in
+  prose carries a 14px inline favicon (fixed slot, no layout shift) and — when
+  build-time metadata exists in `content/link-previews.json` — a preview card
+  (favicon + domain, title, two-line description) on the shared hover-card
+  primitive (`components/external-link.tsx`). Refresh the metadata with
+  `node scripts/refresh-link-previews.mjs`.
+
+## Image lightbox
+
+Post images zoom on click: the photo is picked up off the page (FLIP,
+transform-only, 300ms `--ease-swift`) and floats centered over the dimmed
+sheet at no more than its intrinsic size, gaining `--shadow-large`. Esc,
+click, or the first scroll puts it back. The inline image keeps its spot
+(zero layout shift); reduced motion swaps instantly. `components/zoom-image.tsx`.
+
+## Portrait & avatar
+
+The site carries its author: the header shows the line-art avatar, and on
+hover it blinks into the real photo (150ms crossfade, hover-capable pointers
+only). The home page opens with the halftone portrait hero (below).
+Illustration, photo, and print are three registers of the same person; use
+the illustration where chrome should stay quiet, the photo where a human
+moment is wanted, the print where the page itself should feel authored.
+
+## Technical print
+
+A second ambient register alongside the drafting sheet: the marks of
+reproduction — halftone dot screens, diagonal line rasters, dither fields,
+typewriter/ascii textures, measuring ticks, registration marks. Rules:
+
+- **Ink is always the foreground token** on transparent ground, never a
+  boxed image — prints must dissolve into the paper in both themes.
+- **The halftone portrait hero** (`components/halftone-portrait.tsx`): the
+  home portrait rendered as a dot screen on canvas — dot radius ∝ auto-leveled
+  luminance (p5–p95 stretch), ~5.5px cells, dots taper at the edges and
+  below a 6% floor so the figure emerges from nothing. A fine pointer swells
+  (+40%) and repels (≤7px) dots within ~150px, smoothed per-frame (0.16
+  lerp, rAF only while active). Touch and reduced motion get the static
+  print; no-JS gets the photo printed down (grayscale, 85%).
+- **Rulers**: measuring ticks hug the horizontal guides (48px major / 12px
+  minor), same missability contract as the guides.
+- **Print veils** (`components/dither-veil.tsx`): cover images rest as
+  ink-on-paper prints, identical in both themes (paper
+  `oklch(0.98 0.004 95)`, ink `oklch(0.28 0.012 95)`), developing into the
+  true photo on hover/focus (300ms). Two modes: pure ordered dither (4×4
+  Bayer, 2.5px cells — list thumbnails), and the collage — seeded vertical
+  panels of dither, ascii raster (7px cells, ` .:-=+*#%@` ramp), and a
+  window of the original photo (post heroes). Captions on covers are
+  braille numerals (`lib/braille.ts`); readable dates stay for assistive
+  tech.
+- **Blog index rows**: one line per post — 64×44 dithered print thumb
+  (still the shared morph element), title, dotted leader (the typewriter
+  TOC register), tabular date. Rows swing in center-out.
+- **Paper record sleeves** (`components/vinyl-shelf.tsx`): album art
+  printed on worn paper — seeded crease streaks (2–3 diagonal light/dark
+  gradients per album) under a grain overlay (`mix-blend-mode: overlay`).
+  The vinyl peeks out the top (−12%), and hover gives the sleeve a little
+  more room (scale 1.05) and the disc a little more air (−26%). The disc
+  never spins. Sleeves without art fall back to the word-raster texture.
+- Future candidates: ascii-on-hover for photos, dithered media
+  placeholders, line-screen section dividers. One instrument per page —
+  never stack rasters over each other.
+
+## Entrance swing (lists)
+
+Compact list rows may enter with a tiny swing — `translateY(12px)
+rotate(-2°)` + blur → settled, 400ms `--ease-swift`, staggered **from the
+center out** (50ms steps). Reserve the swing for item collections; prose
+and chrome develop without rotation.
 
 ## Selective focus
 
 The governing attention grammar: **only the thing being attended to is
 sharp.** Applications:
 
-- **List rows (writing index, home list)**: hovering a row blurs (~4–6px) and
+- **List rows (writing index, home list)**: hovering a row blurs (~1–2px) and
   dims everything else on the page over ~200ms `--ease-swift`; mouse-out
   restores instantly. The hovered row itself does not move.
 - **Media loading**: images/video in card grids sit as blur-up placeholders
@@ -139,6 +241,31 @@ sharp.** Applications:
 - Focus-pull requires `@media (hover: hover) and (pointer: fine)` and is
   fully disabled under `prefers-reduced-motion` (no blur transitions —
   content stays sharp).
+
+## Post marginalia
+
+At ≥64rem the post's left margin carries its wayfinding: the back pill on
+top, the table of contents below (fixed, 11rem wide, 13px, muted at 75%
+opacity; the section being read — last heading above the ⅓-viewport
+reading line — holds full foreground ink). Clicking smooth-scrolls
+(instant under reduced motion); headings carry `scroll-margin-top` to
+clear the edge fade. Below 64rem the margin chrome is simply absent.
+
+## Bilingual chrome
+
+Chrome strings render in both languages in the static DOM
+(`lib/i18n.tsx`'s `<T zh en>` + `<LocalDate>`), and CSS shows one based on
+`html[data-locale]` — restored pre-paint from localStorage, flipped by the
+footer toggle. No routes, no hydration risk, fully static. Post bodies
+keep their own `lang` (the article pins `zh-CN` so CJK prose metrics hold
+in either chrome language).
+
+## Back pill
+
+Post pages float a 36px circular back control in the left margin (fixed at
+≥52rem, inline above the cover below that), hairline ring + tooltip shadow,
+color-only hover. It returns to the index, so the cover/title morph plays
+in reverse.
 
 ## Fluid page transitions
 
@@ -150,6 +277,12 @@ card (title + date settle first, content follows). Browsers without view
 transitions get instant navigation — no JS fallback animation. Reduced motion
 disables all of it. Transitions never delay navigation: content is statically
 generated, and the transition plays over already-available content.
+
+Implementation: `experimental.viewTransition` + `view-transition-name` pairs
+(`cover-<slug>` via PolaroidCover's `morph` prop, `title-<slug>` on row
+title/post h1). Root: old page 250ms fade + `blur(2px)` defocus, new page
+300ms focus-in; shared groups 320ms `--ease-swift`. Entrance choreography on
+the destination chains after the morph window.
 
 ## Instant-photo cover treatment
 

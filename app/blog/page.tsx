@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 
-import { PolaroidCover } from '~/components/polaroid-cover'
+import { PostRow } from '~/components/post-row'
+import { RevealScope } from '~/components/reveal-scope'
 import { getAllPosts } from '~/lib/content'
-import { formatDate } from '~/lib/date'
+import { T } from '~/lib/i18n'
 
 export const metadata: Metadata = {
   title: '写作',
@@ -12,38 +12,27 @@ export const metadata: Metadata = {
 
 export default function BlogIndexPage() {
   const posts = getAllPosts()
+  const center = (posts.length - 1) / 2
 
   return (
     <div className="mx-auto w-full max-w-[37.5rem] px-6">
-      <h1 className="text-sm font-medium text-muted-foreground">写作</h1>
-      <ul className="focus-list mt-10 flex flex-col gap-12">
+      <h1 className="enter text-sm font-medium text-muted-foreground">
+        <T zh="写作" en="Writing" />
+      </h1>
+      <RevealScope as="ul" className="focus-list mt-6 flex flex-col">
         {posts.map((post, index) => (
-          <li key={post.slug}>
-            <Link href={`/blog/${post.slug}`} className="group block">
-              {post.cover && (
-                <PolaroidCover
-                  slug={post.slug}
-                  cover={post.cover}
-                  caption={formatDate(post.publishedAt)}
-                  tilted
-                  priority={index === 0}
-                  sizes="(max-width: 704px) 100vw, 656px"
-                  className="max-w-sm"
-                />
-              )}
-              <div className="mt-5 flex items-baseline justify-between gap-4 text-sm">
-                <h2 className="font-medium">{post.title}</h2>
-                <time
-                  dateTime={post.publishedAt.toISOString()}
-                  className="shrink-0 text-muted-foreground tabular-nums"
-                >
-                  {formatDate(post.publishedAt)}
-                </time>
-              </div>
-            </Link>
+          <li
+            key={post.slug}
+            className="enter-swing"
+            // center-out stagger with the tiny swing
+            style={
+              { '--enter-delay': `${120 + Math.abs(index - center) * 50}ms` } as React.CSSProperties
+            }
+          >
+            <PostRow post={post} />
           </li>
         ))}
-      </ul>
+      </RevealScope>
     </div>
   )
 }

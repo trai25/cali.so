@@ -1,0 +1,650 @@
+{
+  "https://antfu.me": {
+    "domain": "antfu.me",
+    "title": "Anthony Fu",
+    "description": "Hey! I'm Anthony Fu, a fanatical open sourceror and design engineer. Working at Vercel / Nuxt. Creator of Vitest, Slidev, VueUse, UnoCSS, Elk, Type Challenges."
+  },
+  "https://astro.build/": {
+    "domain": "astro.build",
+    "title": "Astro | The web framework for content-driven websites",
+    "description": "Astro is a JavaScript web framework optimized for building fast, content-driven websites. Server-first architecture, zero unnecessary JavaScript, and best-in-class performance."
+  },
+  "https://basecamp.com/books/rework": {
+    "domain": "basecamp.com",
+    "title": "Basecamp — Books we've written",
+    "description": "Explore practical business books by Basecamp/37signals including Shape Up, REWORK, Getting Real, and more filled with unconventional advice."
+  },
+  "https://blog.kevinzhow.com/posts/in-memory-of-haoel/zh": {
+    "domain": "blog.kevinzhow.com",
+    "title": "纪念左耳朵耗子 - Kevin Blog",
+    "description": "A memorial tribute to Chen Hao (左耳朵耗子), recounting the author's friendship with the influential tech blogger and his passing in May 2023."
+  },
+  "https://careers.google.com/": {
+    "domain": "careers.google.com",
+    "title": "Careers | Google",
+    "description": "Search for your career at Google. Explore jobs, learn how we hire, and discover life at Google. (301 redirects to google.com/about/careers/applications/)"
+  },
+  "https://chat.openai.com": {
+    "domain": "chat.openai.com",
+    "description": "[308 redirects to chatgpt.com, which returns HTTP 403 to automated clients; live for real users, metadata not fetchable]"
+  },
+  "https://clerk.com/": {
+    "domain": "clerk.com",
+    "title": "Clerk — Complete User Management",
+    "description": "More than authentication. Clerk gives you full stack auth and user management — so you can launch faster, scale easier, and stay focused on building your business."
+  },
+  "https://clerk.dev": {
+    "domain": "clerk.dev",
+    "title": "Clerk — Complete User Management",
+    "description": "308 redirects to clerk.com. More than authentication. Clerk gives you full stack auth and user management."
+  },
+  "https://codesandbox.io": {
+    "domain": "codesandbox.io",
+    "title": "CodeSandbox: Instant Cloud Development Environments",
+    "description": "Programmatically spin up isolated sandboxes for instant code execution in your AI agents and code playgrounds."
+  },
+  "https://coolshell.cn/": {
+    "domain": "coolshell.cn",
+    "title": "酷壳 – CoolShell.cn",
+    "description": "享受编程和技术所带来的快乐 – Coding Your Ambition"
+  },
+  "https://coolshell.cn/articles/20765.html": {
+    "domain": "coolshell.cn",
+    "title": "MegaEase的远程工作文化 | 酷 壳 - CoolShell",
+    "description": "MegaEase 创始人陈皓分享远程工作文化的实践经验，包括团队管理原则、微观操作方法和远程工作协议。"
+  },
+  "https://coolshell.cn/articles/22298.html": {
+    "domain": "coolshell.cn",
+    "title": "聊聊团队协同和协同工具 | 酷 壳 - CoolShell",
+    "description": "讨论企业 IM 工具的本质差别、国内外协同工具的区别，以及什么是真正好的协同工具。"
+  },
+  "https://cusdis.com/": {
+    "domain": "cusdis.com",
+    "title": "Cusdis - Lightweight, privacy-first, open-source comment system",
+    "description": "An open-source, lightweight, privacy-first alternative to Disqus that's easy to integrate with existing websites without user tracking."
+  },
+  "https://developer.apple.com/tutorials/swiftui": {
+    "domain": "developer.apple.com",
+    "title": "Introducing SwiftUI | Apple Developer Documentation"
+  },
+  "https://diagram.com": {
+    "domain": "diagram.com"
+  },
+  "https://discord.com": {
+    "domain": "discord.com",
+    "title": "Discord - Group Chat That's All Fun & Games",
+    "description": "Discord is great for playing games and chilling with friends, or even building a worldwide community. Customize your own space to talk, play, and hang out."
+  },
+  "https://emilkowal.ski/": {
+    "domain": "emilkowal.ski",
+    "title": "Emil Kowalski | Design Engineer",
+    "description": "Design engineer at Linear creating web animations, React components, and design education; previously at Vercel. (no meta description tag; summary from page content)"
+  },
+  "https://en.wikipedia.org/wiki/Cursor_(user_interface)": {
+    "domain": "en.wikipedia.org",
+    "title": "Cursor (user interface) - Wikipedia",
+    "description": "In human–computer interaction, a cursor is an indicator used to show the current position on a computer monitor or other display device that will respond to input."
+  },
+  "https://evanyou.me": {
+    "domain": "evanyou.me",
+    "title": "Evan You",
+    "description": "Founder of VoidZero, creator of Vue.js and Vite. Independent open source developer based in Singapore building next-generation JavaScript/TypeScript tooling."
+  },
+  "https://evervault.com/": {
+    "domain": "evervault.com",
+    "title": "Evervault — Flexible Payments Security",
+    "description": "Maximum protection, minimum compliance burden. Take control of your payments stack — easily tokenize cards, optimize margins, comply with PCI, avoid gateway lock-in, or spin-up card issuing programs."
+  },
+  "https://feedly.com": {
+    "domain": "feedly.com",
+    "title": "Feedly Threat Intelligence: Collect, analyze, and share actionable intelligence",
+    "description": "Feedly is the AI platform CTI teams use to track threats, contextualize what matters, and deliver tailored intel in minutes. (Feedly now markets threat intelligence on its homepage rather than the RSS reader)"
+  },
+  "https://feyapp.com": {
+    "domain": "feyapp.com",
+    "title": "Fey joined Wealthsimple",
+    "description": "301 redirects to fey.com. Fey's technology, design philosophy, and focus on clarity now helps shape Wealthsimple's investing and banking products. (product absorbed into Wealthsimple)"
+  },
+  "https://figma.com": {
+    "domain": "figma.com",
+    "title": "Figma: The collaborative canvas for design, code, and AI",
+    "description": "One workspace for your entire product development process. Made so your whole team can go from WIP to ship, together."
+  },
+  "https://fm.cali.so": {
+    "domain": "fm.cali.so",
+    "title": "TechniCality",
+    "description": "A podcast hosted by Cali Castle featuring interviews with notable figures in tech and gaming, including episodes with Anthony Fu and Sean Vesce."
+  },
+  "https://framer.com": {
+    "domain": "framer.com",
+    "title": "Framer: AI website builder for professional sites",
+    "description": "Create a professional website with Framer's no-code AI website builder. Design freely, manage CMS content, optimize SEO, collaborate, and publish fast."
+  },
+  "https://github.com/CaliCastle/cali.so": {
+    "domain": "github.com",
+    "title": "GitHub - CaliCastle/cali.so: Cali 的个人官网开源项目",
+    "description": "Cali 的个人博客网站 https://cali.so/ 的源代码。A personal website project built with Next.js, React, TypeScript, and Tailwind CSS."
+  },
+  "https://github.com/CaliCastle/cali.so/commit/2b10d8e45868b670e36b6e73c401304e5eae045e": {
+    "domain": "github.com",
+    "title": "feat: add blocked page and IP blocking · CaliCastle/cali.so@2b10d8e · GitHub",
+    "description": "Commit adding a blocked page feature and IP blocking functionality to the cali.so repository."
+  },
+  "https://github.com/CaliCastle/cali.so/commit/50635c7d94f9d7e0299ddc63a6fb190c6c0858c7": {
+    "domain": "github.com",
+    "title": "fix: add ratelimit to reactions endpoint · CaliCastle/cali.so@50635c7 · GitHub",
+    "description": "Commit adding Upstash Ratelimit sliding-window limits (30 req/10s GET, 50 req/10s PATCH) to the reactions API endpoint."
+  },
+  "https://github.com/pmndrs": {
+    "domain": "github.com",
+    "title": "Poimandres · GitHub",
+    "description": "Open source developer collective."
+  },
+  "https://github.com/vadimdemedes/ink": {
+    "domain": "github.com",
+    "title": "GitHub - vadimdemedes/ink: 🌈 React for interactive command-line apps",
+    "description": "Ink provides the same component-based UI building experience that React offers in the browser, but for command-line apps. It uses Yoga to build Flexbox layouts in the terminal."
+  },
+  "https://gitlab.com": {
+    "domain": "gitlab.com",
+    "title": "Finally, AI for the entire software lifecycle.",
+    "description": "301 redirects to about.gitlab.com. Your intelligent orchestration platform for DevSecOps."
+  },
+  "https://hashnode.com": {
+    "domain": "hashnode.com",
+    "title": "Hashnode — The Best Blogging Platform for Builders in Tech",
+    "description": "Write to think. Publish to connect. A community where engineers and tech leaders blog to sharpen ideas and build their reputation."
+  },
+  "https://hexo.io/zh-cn/": {
+    "domain": "hexo.io",
+    "title": "Hexo | 快速、简洁且高效的博客框架",
+    "description": "快速、简洁且高效的博客框架 — a fast, concise, and efficient blogging framework powered by Node.js with Markdown support, one-click deployment, and 448+ themes."
+  },
+  "https://icons8.com": {
+    "domain": "icons8.com",
+    "title": "Free Icons, Clipart Illustrations, Photos, and Music",
+    "description": "Download design elements for free: icons, photos, vector illustrations, and music for your videos. All the assets made by designers → consistent quality. (403 to some automated clients; metadata fetched with browser UA)"
+  },
+  "https://joebell.co.uk/": {
+    "domain": "joebell.co.uk",
+    "title": "Joe Bell",
+    "description": "Designer / Developer / Creator. (302 redirects to joebell.studio)"
+  },
+  "https://linear.app": {
+    "domain": "linear.app",
+    "title": "Linear – The product development system for teams and agents",
+    "description": "Purpose-built for planning and building products. Designed for the AI era."
+  },
+  "https://liveblocks.io": {
+    "domain": "liveblocks.io",
+    "title": "Liveblocks",
+    "description": "Liveblocks provides the realtime infrastructure to handle concurrent edits on shared data, so people and AI agents can collaborate without breaking your app."
+  },
+  "https://lutaonan.com/": {
+    "domain": "lutaonan.com",
+    "title": "Randy's Blog",
+    "description": "About life, technology and reading."
+  },
+  "https://medium.com": {
+    "domain": "medium.com",
+    "title": "Medium — Read and write stories",
+    "description": "A place to read, write, and deepen your understanding."
+  },
+  "https://music.apple.com/us/artist/nf/898094630?l=zh-Hans-CN": {
+    "domain": "music.apple.com",
+    "title": "Apple Music - 网页播放器",
+    "description": "[Artist page for NF; page is a client-rendered Apple Music web player shell, so artist-specific metadata was not served to the fetcher]"
+  },
+  "https://music.apple.com/us/artist/twenty-one-pilots/349736311?l=zh-Hans-CN": {
+    "domain": "music.apple.com",
+    "title": "Apple Music - 网页播放器",
+    "description": "[Artist page for Twenty One Pilots; page is a client-rendered Apple Music web player shell, so artist-specific metadata was not served to the fetcher]"
+  },
+  "https://nativescript.org/": {
+    "domain": "nativescript.org",
+    "title": "NativeScript",
+    "description": "[Live site, but heavily client-rendered: only the title and minimal content are served to fetchers; no meta description found]"
+  },
+  "https://neon.tech": {
+    "domain": "neon.tech",
+    "title": "Neon — Postgres backends for apps and agents",
+    "description": "308 redirects to neon.com. Serverless Postgres that scales and branches with your app. Built-in authentication, autoscaling compute, instant branching, and more."
+  },
+  "https://nextjs.org": {
+    "domain": "nextjs.org",
+    "title": "Next.js by Vercel - The React Framework",
+    "description": "Used by some of the world's largest companies, Next.js enables you to create high-quality web applications with the power of React components."
+  },
+  "https://nextjs.org/blog/next-13-4": {
+    "domain": "nextjs.org",
+    "title": "Next.js 13.4",
+    "description": "Next.js 13.4 moves App Router to stable, Turbopack to beta, and introduces experimental support for Server Actions."
+  },
+  "https://nextjs.org/docs/app/api-reference/next-config-js/rewrites": {
+    "domain": "nextjs.org",
+    "title": "rewrites",
+    "description": "Add rewrites to your Next.js app. (old docs path; now redirects internally to /docs/app/api-reference/config/next-config-js/rewrites)"
+  },
+  "https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions#action": {
+    "domain": "nextjs.org",
+    "title": "How to create forms with Server Actions",
+    "description": "Learn how to create forms in Next.js with React Server Actions. (old docs path; now redirects internally to /docs/app/guides/forms — the #action anchor no longer exists)"
+  },
+  "https://nextjs.org/docs/app/building-your-application/optimizing/metadata": {
+    "domain": "nextjs.org",
+    "title": "Metadata and OG images",
+    "description": "Learn how to add metadata to your pages and create dynamic OG images. (old docs path; now redirects internally to /docs/app/getting-started/metadata-and-og-images)"
+  },
+  "https://nextjs.org/docs/app/building-your-application/routing/router-handlers": {
+    "domain": "nextjs.org",
+    "title": "route.js",
+    "description": "API reference for the route.js special file. (old docs path; now redirects internally to /docs/app/api-reference/file-conventions/route)"
+  },
+  "https://nextjs.org/docs/app/building-your-application/routing/router-handlers#static-route-handlers": {
+    "domain": "nextjs.org",
+    "title": "route.js",
+    "description": "API reference for the route.js special file. (same page as above; old docs path redirects internally, and the #static-route-handlers anchor no longer exists on the new page)"
+  },
+  "https://nextra.site/": {
+    "domain": "nextra.site",
+    "title": "Nextra – Next.js Static Site Generator",
+    "description": "Simple, powerful and flexible site generation framework with everything you love from Next.js."
+  },
+  "https://notion.so": {
+    "domain": "notion.so",
+    "title": "The AI workspace that works for you. | Notion",
+    "description": "301 redirects to notion.com. Capture context, find answers, and automate tasks with AI built for your team."
+  },
+  "https://nuxt.com/blog/introducing-nuxt-devtools": {
+    "domain": "nuxt.com",
+    "title": "Introducing Nuxt DevTools · Nuxt Blog",
+    "description": "Nuxt DevTools is a visual tool to help developers understand their Nuxt applications and improve developer experience with transparency, performance insights, and interactive debugging."
+  },
+  "https://nuxt.studio/": {
+    "domain": "nuxt.studio",
+    "title": "Nuxt Studio",
+    "description": "Edit your Nuxt Content website in production. Self-hosted, open-source CMS for Nuxt Content websites. Edit content visually, manage media, and publish directly to Git."
+  },
+  "https://openai.com": {
+    "domain": "openai.com",
+    "description": "[Live site but returns HTTP 403 to automated clients (bot wall); metadata not fetchable]"
+  },
+  "https://paco.me": {
+    "domain": "paco.me",
+    "title": "Paco Coursey",
+    "description": "Crafting interfaces. Building polished software and web experiences. Experimenting with magical details in user interfaces. Webmaster at Linear."
+  },
+  "https://planetscale.com/": {
+    "domain": "planetscale.com",
+    "title": "PlanetScale - the world's fastest and most scalable cloud hosting for Vitess and Postgres",
+    "description": "PlanetScale offers the world's fastest and most scalable cloud hosting for Vitess and Postgres."
+  },
+  "https://planetscale.com/blog/planetscale-forever": {
+    "domain": "planetscale.com",
+    "title": "PlanetScale forever — PlanetScale",
+    "description": "PlanetScale is committed to providing a reliable and sustainable platform for our customers, not just in the short-term, but forever. For this reason, we are prioritizing profitability."
+  },
+  "https://pnpm.io/installation": {
+    "domain": "pnpm.io",
+    "title": "Installation | pnpm",
+    "description": "How to install pnpm: standalone scripts, Corepack, npm, Homebrew, and other package managers, with Node.js compatibility information."
+  },
+  "https://rauno.me": {
+    "domain": "rauno.me",
+    "title": "Rauno Freiberg",
+    "description": "Estonian interaction designer working with Vercel and Devouring Details, focusing on design craft and software history."
+  },
+  "https://raycast.com": {
+    "domain": "raycast.com",
+    "title": "Raycast - Your shortcut to everything",
+    "description": "A collection of powerful productivity tools all within an extendable launcher. Fast, ergonomic and reliable."
+  },
+  "https://react.dev/": {
+    "domain": "react.dev",
+    "title": "React",
+    "description": "React is the library for web and native user interfaces. Build user interfaces out of individual pieces called components written in JavaScript."
+  },
+  "https://react.email": {
+    "domain": "react.email",
+    "title": "React Email | The next generation of writing emails",
+    "description": "React Email is a next-generation collection of unstyled components for creating beautiful emails using React, Tailwind, and TypeScript."
+  },
+  "https://reactnative.dev/": {
+    "domain": "reactnative.dev",
+    "title": "React Native · Learn once, write anywhere",
+    "description": "Create native apps for Android, iOS, and more using React. React Native brings the best parts of developing with React to native development."
+  },
+  "https://resend.com": {
+    "domain": "resend.com",
+    "title": "Resend",
+    "description": "Resend is the email API for developers. Send transactional and marketing emails at scale with a simple, modern API."
+  },
+  "https://rode.com/en/interfaces-and-mixers/rodecaster-series/rodecaster-pro-ii": {
+    "domain": "rode.com",
+    "title": "RØDECaster Pro II | Integrated Audio Production Studio | RØDE",
+    "description": "Integrated Audio Production Studio featuring four balanced analog inputs, Revolution Preamps, APHEX audio processing, touchscreen interface, SMART pads, and dual USB connectivity for podcasting, streaming and music recording."
+  },
+  "https://roe.dev": {
+    "domain": "roe.dev",
+    "title": "Daniel Roe",
+    "description": "The personal website of Daniel Roe, Nuxt core team lead. (WebFetch hit a cookie-based redirect loop; verified live via direct HTTP request, 200 OK)"
+  },
+  "https://sanity.io/manage": {
+    "domain": "sanity.io",
+    "description": "[Login-gated Sanity management console (redirects to www.sanity.io/manage, 200 OK but SPA shell with no metadata); live for users]"
+  },
+  "https://sentry.io": {
+    "domain": "sentry.io",
+    "title": "Sentry",
+    "description": "[Live; Sentry serves an agent-targeted notice to automated clients instead of the human marketing page, so the real meta description was not retrievable]"
+  },
+  "https://shadcn.com/": {
+    "domain": "shadcn.com",
+    "title": "shadcn",
+    "description": "I'm a design engineer on the AI team at Vercel. I created shadcn/ui and shadcn/registry. I co-created v0 with Jared, Shu and Max."
+  },
+  "https://shop.zolplay.cn": {
+    "domain": "shop.zolplay.cn"
+  },
+  "https://shud.in": {
+    "domain": "shud.in",
+    "title": "Shu Ding",
+    "description": "Designer and developer at Vercel interested in web development, creative coding, game design, and human-computer interaction."
+  },
+  "https://slack.com": {
+    "domain": "slack.com",
+    "title": "Slack | AI Work Platform & Productivity Tools",
+    "description": "Slack connects your team with AI agents and productivity tools. All your people and AI agents working together."
+  },
+  "https://tfwiki.net/wiki/Transformers:_Heavy_Metal": {
+    "domain": "tfwiki.net",
+    "title": "Transformers: Heavy Metal",
+    "description": "A location-based augmented reality mobile game developed by Very Very Spaceship and Niantic that soft-launched in 2021 before being officially canceled in June 2022."
+  },
+  "https://twitter.com": {
+    "domain": "twitter.com",
+    "description": "[301 redirects to x.com, which returns HTTP 402 to automated clients; live for real users, metadata not fetchable]"
+  },
+  "https://twitter.com/CoooolXyh": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/HzaoHzao": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/Lakr233": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/PolarisC0": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/Shenqingchuan": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/__oQuery": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/_cuvii_": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/bearbig/status/1657997853585997824?s=20": {
+    "domain": "twitter.com",
+    "title": "Tweet by Bear Liu (@bearliu)",
+    "description": "我和陈皓的交集只是在社交媒体，但他突然离世的消息冲击实在太大…… (tweet verified live via Twitter syndication API; direct x.com fetch is blocked)"
+  },
+  "https://twitter.com/brotzky_": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/buaaxhm": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/dingyi": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/fanweixiao": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/ghosTM55": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/ghosTM55/status/1657946836643241985?s=20": {
+    "domain": "twitter.com",
+    "title": "Tweet by Thomas Yao (@ghosTM55)",
+    "description": "经过 @kevinzhow 确认，我们的挚友左耳朵耗子 @haoel 已于周六晚突发心梗辞世……R.I.P. (tweet verified live via Twitter syndication API; direct x.com fetch is blocked)"
+  },
+  "https://twitter.com/hi_caicai": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/huozhi": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/hwangdevs": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/jsngr": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/liulinboyi": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/liuyi0922": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/localhost_4173": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/luoleiorg": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/marcbouchenoire": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/miableem": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/patak_dev": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/pie6k": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/randyloop": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/real_kai42": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/sanxiaozhizi": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/shengxj1": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/strrlthedev": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/taylorotwell": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/taylorotwell/status/1534178479201259520?s=20": {
+    "domain": "twitter.com",
+    "title": "Tweet by Taylor Otwell (@taylorotwell)",
+    "description": "gm - laravel forever 🍊 (tweet verified live via Twitter syndication API; direct x.com fetch is blocked)"
+  },
+  "https://twitter.com/thecalicastle/status/1655421012530569216?s=20": {
+    "domain": "twitter.com",
+    "title": "Tweet by Cali Castle (@calicastle)",
+    "description": "今天晚上做客 MegaEase 做个设计分享会，主题是「How to Create Good UI/UX」 (tweet verified live via Twitter syndication API; direct x.com fetch is blocked)"
+  },
+  "https://twitter.com/theterryfei": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/uuoapp": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/wangjie000": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/zuozizhen": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://twitter.com/zzzgydi": {
+    "domain": "twitter.com",
+    "description": "[X profile; not verifiable — twitter.com 301s to x.com which returns HTTP 402 to automated clients]"
+  },
+  "https://x.com/thecalicastle/status/1667490519906410496?s=20": {
+    "domain": "x.com",
+    "title": "Tweet by Cali Castle (@calicastle)",
+    "description": "明年的美国旧金山👇 (with image; tweet verified live via Twitter syndication API; direct x.com fetch is blocked)"
+  },
+  "https://x.com/thecalicastle/status/1700895469281690015?s=20": {
+    "domain": "x.com",
+    "title": "Tweet by Cali Castle (@calicastle)",
+    "description": "佐玩首届「开发者交流会」已圆满结束！感谢来参与的每位朋友们！ (tweet verified live via Twitter syndication API; direct x.com fetch is blocked)"
+  },
+  "https://x.com/thecalicastle/status/1726632903738888412?s=20": {
+    "domain": "x.com",
+    "title": "Tweet by Cali Castle (@calicastle)",
+    "description": "昨天跟 @huozhi 聊的很开心～ 晚上还一起给我过了个生日 🎂 谢谢 @theterryfei @_cuvii_ (tweet verified live via Twitter syndication API; direct x.com fetch is blocked)"
+  },
+  "https://ui.nuxtlabs.com/getting-started": {
+    "domain": "ui.nuxtlabs.com",
+    "title": "Introduction",
+    "description": "301 redirects to ui.nuxt.com/getting-started. Nuxt UI is a comprehensive Vue UI component library (Nuxt optional), offering 125+ accessible, Tailwind CSS components for building modern web applications."
+  },
+  "https://ui.shadcn.com": {
+    "domain": "ui.shadcn.com",
+    "title": "The Foundation for your Design System - shadcn/ui",
+    "description": "A set of beautifully designed components that you can customize, extend, and build on. Start here then make it your own. Open Source. Open Code."
+  },
+  "https://umami.is/": {
+    "domain": "umami.is",
+    "title": "Umami – Privacy-Focused Web Analytics"
+  },
+  "https://upstash.com": {
+    "domain": "upstash.com",
+    "title": "Upstash: Serverless Data Platform",
+    "description": "The single platform for all your data needs - serverless Redis, Vector, QStash, Workflow, and Box for low-latency, globally distributed data."
+  },
+  "https://upwork.com": {
+    "domain": "upwork.com",
+    "description": "[Live site but serves an HTTP 403 bot-challenge page to automated clients; metadata not fetchable]"
+  },
+  "https://vercel.com": {
+    "domain": "vercel.com",
+    "title": "Agentic Infrastructure - Vercel",
+    "description": "Build agents on infrastructure that thinks like them. Deploy apps and agents in sandboxed VMs with durable backends, powered by hundreds of models."
+  },
+  "https://vercel.com/storage/edge-config": {
+    "domain": "vercel.com",
+    "title": "Edge Config: For ultra-low latency experimentation - Vercel",
+    "description": "Globally distributed data colocated with your compute. Run A/B testing, feature flags, dynamic redirects, and more without any additional network requests for near-instant reads."
+  },
+  "https://volta.net/": {
+    "domain": "volta.net",
+    "title": "Volta",
+    "description": "[Live (HTTP 200) but serves a client-rendered app shell with only the title 'Volta' and no meta description]"
+  },
+  "https://vuejs.org/": {
+    "domain": "vuejs.org",
+    "title": "Vue.js - The Progressive JavaScript Framework | Vue.js",
+    "description": "An approachable, performant and versatile framework for building web user interfaces."
+  },
+  "https://vvspaceship.website": {
+    "domain": "vvspaceship.website"
+  },
+  "https://workos.com/": {
+    "domain": "workos.com",
+    "title": "WorkOS — Your app, Enterprise Ready.",
+    "description": "Start selling to enterprise customers with just a few lines of code. Implement features like single sign-on in minutes instead of months."
+  },
+  "https://www.apple.com.cn/iphone-14-pro/": {
+    "domain": "www.apple.com.cn",
+    "title": "iPhone - Apple (中国大陆)",
+    "description": "[Original iPhone 14 Pro product page no longer exists; URL now redirects to Apple China's general iPhone lineup page]"
+  },
+  "https://www.bilibili.com/video/BV1kH4y157xg/": {
+    "domain": "www.bilibili.com",
+    "title": "【Cali 手把手教学】快速部署个人博客网站_哔哩哔哩_bilibili",
+    "description": "A tutorial video demonstrating how to deploy a personal blog website using cali.so with Vercel, Resend, Upstash, Clerk, and Sanity."
+  },
+  "https://www.ecosia.org/": {
+    "domain": "www.ecosia.org",
+    "description": "[Live site but serves an HTTP 403 'Ecosia Firewall' page to automated clients; metadata not fetchable]"
+  },
+  "https://www.npmjs.com/package/feed": {
+    "domain": "www.npmjs.com",
+    "description": "[Live npm package page for 'feed' but Cloudflare serves an HTTP 403 challenge to automated clients; metadata not fetchable]"
+  },
+  "https://www.radix-ui.com/": {
+    "domain": "www.radix-ui.com",
+    "title": "Radix UI",
+    "description": "An open source component library optimized for fast development, easy maintenance, and accessibility. Just import and go — no configuration required."
+  },
+  "https://www.shure.com/en-US/products/microphones/sm7b": {
+    "domain": "www.shure.com",
+    "title": "SM7B - Vocal Microphone - Shure USA",
+    "description": "Whether it's big-time broadcasting, professional podcasts or critical studio recordings, this legendary dynamic microphone delivers exceptional audio quality for vocal and speech applications."
+  },
+  "https://www.tiktok.com/business/en": {
+    "domain": "www.tiktok.com",
+    "title": "TikTok for Business | Marketing & Advertising on TikTok",
+    "description": "301 redirects to ads.tiktok.com/business/en. Turn attention into results with TikTok ads. Reach highly engaged audiences and turn attention into measurable business growth."
+  },
+  "https://www.urlbox.io/": {
+    "domain": "www.urlbox.io",
+    "title": "Website Screenshots You'd Stake Your Reputation On | Urlbox",
+    "description": "301 redirects to urlbox.com. Reliable website screenshot automation trusted by 1,700+ customers. Full-page captures, clean renders, and 99.99% uptime."
+  },
+  "https://www.w3.org/TR/CSS21/ui.html#propdef-cursor": {
+    "domain": "www.w3.org",
+    "title": "User interface",
+    "description": "CSS 2.1 specification chapter covering user interface properties: cursors, system colors, fonts, outlines, and magnification."
+  },
+  "https://xlog.app/": {
+    "domain": "xlog.app"
+  },
+  "https://youtu.be/Ctr-kHrBHeU?si=NJfSrdI0BwOSsw18": {
+    "domain": "youtu.be",
+    "title": "【Cali 手把手教学】快速部署个人博客网站",
+    "description": "YouTube video (redirects to www.youtube.com/watch?v=Ctr-kHrBHeU); title confirmed, description not served to the fetcher."
+  },
+  "https://zolplay.com": {
+    "domain": "zolplay.com",
+    "title": "Zolplay (Design Studio)",
+    "description": "A design studio for people with good taste. Based in Shenzhen, China. We've been building products, brands, and digital experiences since 2021."
+  }
+}

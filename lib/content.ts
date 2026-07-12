@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 
+import GithubSlugger from 'github-slugger'
 import matter from 'gray-matter'
 import { z } from 'zod'
 
@@ -31,6 +32,25 @@ export interface Post {
   cover?: PostCover
   readingMinutes: number
   body: string
+}
+
+export interface Heading {
+  id: string
+  text: string
+  level: 2 | 3
+}
+
+// Mirrors rehype-slug's ids (both use github-slugger), so TOC anchors
+// always match the rendered headings.
+export function extractHeadings(body: string): Heading[] {
+  const slugger = new GithubSlugger()
+  const withoutCode = body.replace(/```[\s\S]*?```/g, '')
+  const headings: Heading[] = []
+  for (const [, hashes, raw] of withoutCode.matchAll(/^(#{2,3})\s+(.+)$/gm)) {
+    const text = raw.replace(/[*_`~]/g, '').trim()
+    headings.push({ id: slugger.slug(text), text, level: hashes.length as 2 | 3 })
+  }
+  return headings
 }
 
 // CJK prose reads ~300 chars/min, Latin ~200 words/min

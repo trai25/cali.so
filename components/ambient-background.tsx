@@ -9,6 +9,13 @@ export function AmbientBackground() {
         <div className="column-guide-v" />
         <div className="column-guide-v" />
       </div>
+      {/* rulers ride above the edge fades — the instrument stays crisp */}
+      <div aria-hidden className="column-rulers">
+        <div className="column-ruler column-ruler-top" />
+        <div className="column-ruler column-ruler-bottom" />
+      </div>
+      <div aria-hidden className="scroll-fade scroll-fade-top" />
+      <div aria-hidden className="scroll-fade scroll-fade-bottom" />
     </>
   )
 }
