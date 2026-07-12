@@ -1,15 +1,26 @@
 # v2 Handoff
 
 Status snapshot for whoever (human or agent) picks this up. Last updated
-July 2026, on the long-lived `v2` branch.
+July 2026.
+
+> **Current working state (July 13, 2026)**: development lives in a git
+> worktree on branch `claude/whats-next-9a568d`. Everything after commit
+> `fed17bf` (rounds 13–13b below) is **uncommitted but verified** —
+> Cali commits by saying "lfg" (his alias for stage-all + conventional
+> commit); don't commit without it. Dev server: the Browser pane runs it
+> from `.claude/launch.json` (`autoPort: true` — do NOT hardcode a port;
+> next dev respects the assigned PORT env). Verify with the pane or the
+> `agent-browser` CLI. Production build is green with every route static
+> + 6h ISR revalidate (see round 13's live social data).
 
 ## Where things stand
 
 Working and verified (light/dark/mobile, production build green):
 
 - **Platform**: Next.js 16.3.0-preview.5, React 19, Tailwind v4, pnpm.
-  shadcn (radix base, nova preset) + the `@fluid` registry in
-  `components.json`. Fonts: Geist (Latin) + Frex Sans GB (CJK fallback,
+  shadcn + the `@fluid` registry in `components.json` (pinned to the
+  **Base UI flavor** — all popup primitives are `@base-ui/react`; no
+  Radix anywhere since round 11). Fonts: Geist (Latin) + Frex Sans GB (CJK fallback,
   OFL) via `app/fonts.ts`.
 - **Content layer** (`lib/content.ts`): fs + gray-matter + zod frontmatter,
   CJK-aware reading time, `next-mdx-remote` RSC + remark-gfm +
@@ -142,6 +153,39 @@ Working and verified (light/dark/mobile, production build green):
   prints the clean headshot (ink ∝ darkness), dark keeps the studio
   portrait, theme flips crossfade the two dot fields over 550ms.
 
+- **Round 13b (July 2026)**: the 打招呼/Say hi dock item was removed
+  (`components/say-hi.tsx` deleted — the morph-card pattern lives on in
+  git history at fed17bf if it's ever wanted back; `SayHiIcon` stays in
+  dock-icons). The dock is back to avatar/writing/photos/projects/偏好,
+  and the footer 联系 tree is the contact surface. Bottom ruler rides
+  12px lower (inset 18 → 6). Footer is a single row now — a
+  `[1fr_1fr_auto]` grid of 联系/索引/colophon (colophon bottom-right,
+  stacking back to 2-col + full-width on mobile), tree rails dimmed
+  40% → 22%. Prose `ul` markers are 5px squares (the dither cell
+  vocabulary) instead of en-dashes — note no current post uses a ul;
+  verified with an injected list. Records and books now sit on wooden
+  planks (`.room-shelf` wrap + `.room-shelf-plank`, oak/walnut per
+  theme, contact shadows per item). Neither shelf is an inner scroller
+  (overflow visible; vinyl sleeves compress on narrow screens via
+  `flex: 0 1 6rem`), and the bookshelf's old hairline shelf-line is
+  gone — books rest directly on the plank. Vinyl hover no longer scales the
+  sleeve — only the disc slides further out (−12% → −30%).
+
+- **Round 13 (July 2026)**: `/about` merged back into the homepage —
+  the taste sections (唱片机/书架/电影/仰望的人) now live below 写作;
+  the page and its footer link are gone. Social data went **live with
+  ISR**: `lib/social-live.ts` fetches GitHub (contributions + followers,
+  6h revalidate) and the YouTube subscriber count (12h) through the
+  fetch data cache from the root layout; every route stays static with
+  a 6h Revalidate column, so counts refresh without a redeploy. The
+  baked `content/*.json` are now fallback seeds (scripts still refresh
+  them); X stays manual — no public endpoint (handle is now
+  `calicastle`, count 24.3k). Footer 社交 → 联系/contact; hover cards
+  are non-interactive (`pointer-events/user-select: none`); the Email
+  card became an envelope (copy UX dropped — `ui/input-copy.tsx` and
+  `ui/tooltip.tsx` remain in the kit, unused); GitHub heatmap now shows
+  ~180 days (26×7 at 7px cells) with the past-year stat kept.
+
 - **Round 12 (July 2026)**: social cards simplified — Telegram is
   identity-only, YouTube drops its bio for a subscriber count (1.91K,
   baked via new `scripts/refresh-social.mjs` scrape), GitHub's stat line
@@ -242,8 +286,14 @@ Working and verified (light/dark/mobile, production build green):
 
 ## Work queue (rough order)
 
-1. **Pages**: `/about`, `/ama` (port from `main`, it's fully static) —
-   `/projects` shipped in round 3.
+1. **Pages**: `/ama` remains (see item 2) — `/projects` shipped in
+   round 3, `/about` shipped in round 13 then merged back into the homepage in
+   round 13b — the taste sections (唱片机, 书架, 电影) now sit below the main home
+   content (a 仰望的人 people list was tried and cut — too much like a
+   roll call). Hover-card positioners are pointer-events-none too, so
+   the whole card overlay is hit-test invisible. **Cali TODO**: `films` in
+   `lib/personal.ts` is placeholder data (books too) — replace with the
+   real ones. Home now carries hero, doorway row, 经历, latest 写作.
 2. **AMA page rebuild** (parked by Cali, July 2026): bring back `/ama` in
    the v2 design language. Explicitly NOT porting the v1 Alipay QR — Cali
    will connect Stripe himself, and booking becomes a **self-built

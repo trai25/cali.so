@@ -25,13 +25,14 @@ function creases(seed: string): string {
   return layers.join(', ')
 }
 
-// Favorite records as worn paper sleeves — seeded creases + grain over the
-// art, vinyl peeking out the top. Hover gives the sleeve a little more
-// room and slides the disc further out. The disc never spins.
+// Favorite records as worn paper sleeves — seeded creases + grain over
+// the art, vinyl peeking out the top. On hover only the disc slides a
+// little further out; the sleeve stays put on its shelf. Never spins.
 export function VinylShelf() {
   if (records.length === 0) return null
   return (
-    <ul className="vinyl-shelf" aria-label="喜欢的唱片">
+    <div className="room-shelf">
+      <ul className="vinyl-shelf" aria-label="喜欢的唱片">
       {records.map((record) => (
         <li key={`${record.artist}-${record.album}`} className="vinyl">
           <a
@@ -65,5 +66,7 @@ export function VinylShelf() {
         </li>
       ))}
     </ul>
+      <span className="room-shelf-plank" aria-hidden />
+    </div>
   )
 }

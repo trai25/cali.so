@@ -1,8 +1,9 @@
 import { Bookshelf } from '~/components/bookshelf'
+import { FilmTickets } from '~/components/film-tickets'
 import { HalftonePortrait } from '~/components/halftone-portrait'
-import { VinylShelf } from '~/components/vinyl-shelf'
 import { NavCards } from '~/components/nav-cards'
 import { PostRow } from '~/components/post-row'
+import { VinylShelf } from '~/components/vinyl-shelf'
 import { getAllPosts } from '~/lib/content'
 import { books, experience, records } from '~/lib/personal'
 import { projects } from '~/lib/projects'
@@ -101,32 +102,8 @@ export default function HomePage() {
         </ul>
       </section>
 
-      {records.length > 0 && (
-        <section className="mt-16">
-          <SectionTitle delay={200}><T zh="唱片机" en="On rotation" /></SectionTitle>
-          <div
-            className="enter mt-5"
-            style={{ '--enter-delay': '240ms' } as React.CSSProperties}
-          >
-            <VinylShelf />
-          </div>
-        </section>
-      )}
-
-      {books.length > 0 && (
-        <section className="mt-16">
-          <SectionTitle delay={260}><T zh="书架" en="Bookshelf" /></SectionTitle>
-          <div
-            className="enter mt-5"
-            style={{ '--enter-delay': '300ms' } as React.CSSProperties}
-          >
-            <Bookshelf />
-          </div>
-        </section>
-      )}
-
       <section className="mt-16">
-        <SectionTitle delay={320}><T zh="写作" en="Writing" /></SectionTitle>
+        <SectionTitle delay={200}><T zh="写作" en="Writing" /></SectionTitle>
         <ul className="focus-list mt-4 flex flex-col">
           {latest.map((post, index) => (
             <li
@@ -134,7 +111,7 @@ export default function HomePage() {
               className="enter-swing"
               // stagger from the center out, with a tiny swing
               style={
-                { '--enter-delay': `${360 + Math.abs(index - center) * 50}ms` } as React.CSSProperties
+                { '--enter-delay': `${240 + Math.abs(index - center) * 50}ms` } as React.CSSProperties
               }
             >
               <PostRow post={post} headingLevel="h3" />
@@ -142,6 +119,32 @@ export default function HomePage() {
           ))}
         </ul>
       </section>
+
+      {records.length > 0 && (
+        <section className="mt-16">
+          <SectionTitle delay={320}><T zh="唱片机" en="On rotation" /></SectionTitle>
+          <div className="enter mt-5" style={{ '--enter-delay': '360ms' } as React.CSSProperties}>
+            <VinylShelf />
+          </div>
+        </section>
+      )}
+
+      {books.length > 0 && (
+        <section className="mt-16">
+          <SectionTitle delay={380}><T zh="书架" en="Bookshelf" /></SectionTitle>
+          <div className="enter mt-5" style={{ '--enter-delay': '420ms' } as React.CSSProperties}>
+            <Bookshelf />
+          </div>
+        </section>
+      )}
+
+      <section className="mt-16">
+        <SectionTitle delay={440}><T zh="电影" en="Films" /></SectionTitle>
+        <div className="enter mt-5" style={{ '--enter-delay': '480ms' } as React.CSSProperties}>
+          <FilmTickets />
+        </div>
+      </section>
+
     </div>
   )
 }

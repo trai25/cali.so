@@ -57,3 +57,19 @@ export const books: Book[] = [
   { title: 'Universal Principles of UX', author: 'Irene Pereyra', art: '/images/books/universal-principles-ux.jpg', spine: 26, tone: 1 },
   { title: 'Rework', author: 'Jason Fried & DHH', art: '/images/books/rework.jpg', spine: 20, tone: 2, url: 'https://basecamp.com/books/rework' },
 ]
+
+// 电影 — 测试数据（TODO(Cali): 换成你反复重看的那些）
+export interface Film {
+  title: string
+  titleEn?: string
+  year: number
+  director: string
+}
+
+export const films: Film[] = [
+  { title: '星际穿越', titleEn: 'Interstellar', year: 2014, director: 'Christopher Nolan' },
+  { title: '她', titleEn: 'Her', year: 2013, director: 'Spike Jonze' },
+  { title: '银翼杀手 2049', titleEn: 'Blade Runner 2049', year: 2017, director: 'Denis Villeneuve' },
+  { title: '社交网络', titleEn: 'The Social Network', year: 2010, director: 'David Fincher' },
+  { title: '爆裂鼓手', titleEn: 'Whiplash', year: 2014, director: 'Damien Chazelle' },
+]

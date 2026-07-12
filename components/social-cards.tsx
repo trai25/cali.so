@@ -3,7 +3,6 @@
 import { PreviewCard } from '@base-ui/react/preview-card'
 import Image from 'next/image'
 
-import { InputCopy } from '~/components/ui/input-copy'
 
 import { T } from '~/lib/i18n'
 
@@ -23,7 +22,9 @@ export interface GitHubSnapshot {
   levels: string
 }
 
-const WEEKS = 52
+// heatmap shows the recent ~180 days (26 weeks); the stat below still
+// counts the full past year
+const WEEKS = 26
 const DAYS = 7
 
 export const GLYPHS: Record<string, { path: string; color?: string }> = {
@@ -85,7 +86,7 @@ function Card({
         {trigger}
       </PreviewCard.Trigger>
       <PreviewCard.Portal>
-        <PreviewCard.Positioner side="top" sideOffset={8} collisionPadding={16} className="z-[var(--z-card)]">
+        <PreviewCard.Positioner side="top" sideOffset={8} collisionPadding={16} className="pointer-events-none z-[var(--z-card)]">
           <PreviewCard.Popup className={className}>{children}</PreviewCard.Popup>
         </PreviewCard.Positioner>
       </PreviewCard.Portal>
@@ -184,7 +185,8 @@ export function GitHubCardBody({ data }: { data: GitHubSnapshot }) {
             <b>{data.followers}</b> <T zh="关注者" en="followers" /> ·{' '}
           </>
         )}
-        <b>{data.total.toLocaleString()}</b> <T zh="次贡献" en="contributions" />
+        <T zh="过去一年" en="Past year" /> <b>{data.total.toLocaleString()}</b>{' '}
+        <T zh="次贡献" en="contributions" />
         <Glyph service="github" />
       </span>
     </>
@@ -217,14 +219,15 @@ export function YouTubeCard({ data }: { data: SocialSnapshot }) {
 
 export function GitHubCard({ data }: { data: GitHubSnapshot }) {
   return (
-    <Card trigger="GitHub" href={`https://github.com/${data.user}`} className="link-card service-card service-card-gh">
+    <Card trigger="GitHub" href={`https://github.com/${data.user}`} className="link-card service-card">
       <GitHubCardBody data={data} />
     </Card>
   )
 }
 
-// Email gets the same tooltip treatment: the trigger opens mailto:, while
-// the card itself is a fluid InputCopy — click the address to copy it.
+// Email's card is a little paper envelope — flap, avatar stamp, and the
+// address written across the middle. Purely visual; the trigger itself
+// opens mailto:.
 export function EmailCard({ address }: { address: string }) {
   return (
     <PreviewCard.Root>
@@ -237,9 +240,15 @@ export function EmailCard({ address }: { address: string }) {
         Email
       </PreviewCard.Trigger>
       <PreviewCard.Portal>
-        <PreviewCard.Positioner side="top" sideOffset={8} collisionPadding={16} className="z-[var(--z-card)]">
-          <PreviewCard.Popup className="link-card service-card">
-            <InputCopy value={address} aria-label="复制邮箱 / Copy email" />
+        <PreviewCard.Positioner side="top" sideOffset={8} collisionPadding={16} className="pointer-events-none z-[var(--z-card)]">
+          <PreviewCard.Popup className="link-card email-envelope-card">
+            <span className="email-envelope" aria-hidden>
+              <span className="email-envelope-flap" />
+              <span className="email-envelope-stamp">
+                <Image src="/images/avatar.png" alt="" width={28} height={28} />
+              </span>
+              <span className="email-envelope-address">{address}</span>
+            </span>
           </PreviewCard.Popup>
         </PreviewCard.Positioner>
       </PreviewCard.Portal>

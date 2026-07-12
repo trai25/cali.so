@@ -7,7 +7,6 @@ import { usePathname } from 'next/navigation'
 import { PhotosIcon, ProjectsIcon, WritingIcon } from '~/components/dock-icons'
 import { LiquidGlass } from '~/components/liquid-glass'
 import { Preferences } from '~/components/preferences'
-import { SayHi } from '~/components/say-hi'
 import { T } from '~/lib/i18n'
 import { playTick } from '~/lib/sound'
 
@@ -68,7 +67,6 @@ export function Dock() {
         </DockItem>
       ))}
       <span className="dock-rule" aria-hidden />
-      <SayHi />
       <Preferences />
     </nav>
   )

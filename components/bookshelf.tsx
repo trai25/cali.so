@@ -26,7 +26,8 @@ export function Bookshelf() {
   if (books.length === 0) return null
 
   return (
-    <div className="shelf3" role="list" aria-label="书架">
+    <div className="room-shelf">
+      <div className="shelf3" role="list" aria-label="书架">
       {books.map((book, i) => {
         const isOpen = i === open
         let tilt = 0
@@ -95,6 +96,8 @@ export function Bookshelf() {
           </button>
         )
       })}
+      </div>
+      <span className="room-shelf-plank" aria-hidden />
     </div>
   )
 }

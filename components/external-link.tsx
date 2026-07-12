@@ -48,7 +48,7 @@ export function ExternalLink({
         {children}
       </PreviewCard.Trigger>
       <PreviewCard.Portal>
-        <PreviewCard.Positioner sideOffset={8} collisionPadding={16} className="z-[var(--z-card)]">
+        <PreviewCard.Positioner sideOffset={8} collisionPadding={16} className="pointer-events-none z-[var(--z-card)]">
           <PreviewCard.Popup className="link-card">
             <span className="link-card-site">
               {/* eslint-disable-next-line @next/next/no-img-element */}

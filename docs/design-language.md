@@ -127,7 +127,8 @@ open rich hover cards. The contract:
 - **Per-service design.** Each card is composed for its service — no generic
   "avatar + handle" template. The card's *content* also animates, not just
   its container:
-  - Code card: a real contribution graph (~52 week columns, hairline 0.5px
+  - Code card: a real contribution graph (26 week columns — the recent
+    ~180 days; the stat below still counts the past year, hairline 0.5px
     cell borders) whose cells **cascade in individually** — each cell rises
     from `translateY(4px) scale(0.92)` over ~0.48s with a per-cell stagger.
   - Films card: recent posters as a **fanned stack** (≈64×96px each,
@@ -226,11 +227,24 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
 - **Blog index rows**: one line per post — 64×44 dithered print thumb
   (still the shared morph element), title, dotted leader (the typewriter
   TOC register), tabular date. Rows swing in center-out.
+- **Hover cards are informational only**: `.link-card` carries
+  `pointer-events: none; user-select: none` — a card is a printed label,
+  never a control. Email's card is a little paper ENVELOPE (folded flap,
+  perforated avatar stamp, mono address); the trigger opens mailto:.
+- **Film tickets** (`components/film-tickets.tsx`, home): admission
+  stubs — card-stock slips with a dashed perforation, punched notches,
+  and a vertical 入场券 stub label; seeded tilts that straighten on
+  hover, same contract as post images.
+- **Room shelves** (`.room-shelf-plank`): records and books rest on an
+  actual wooden plank — edge grain drawn with layered CSS streaks over an
+  oak tone (walnut in dark), top highlight, wall shadow beneath, and
+  per-item contact shadows where things meet the wood. The shelf runs the
+  full column even when half empty — that's the point.
 - **Paper record sleeves** (`components/vinyl-shelf.tsx`): album art
   printed on worn paper — seeded crease streaks (2–3 diagonal light/dark
   gradients per album) under a grain overlay (`mix-blend-mode: overlay`).
-  The vinyl peeks out the top (−12%), and hover gives the sleeve a little
-  more room (scale 1.05) and the disc a little more air (−26%). The disc
+  The vinyl peeks out the top (−12%), and on hover only the disc slides
+  further out — the sleeve stays put on its shelf. The disc
   never spins. Sleeves without art fall back to the word-raster texture.
 - Future candidates: ascii-on-hover for photos, dithered media
   placeholders, line-screen section dividers. One instrument per page —

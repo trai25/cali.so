@@ -10,15 +10,18 @@ import { useEffect, useState } from 'react'
 // path render perpendicular to it.
 
 const SAG = 40 // rise at the viewport edge, px
-const INSET = 18 // where the apex hugs the page, matching the old guides
-const MAJOR = { len: 5, gap: 48, ink: 'rgb(255 255 255 / 0.47)' }
-const MINOR = { len: 2.5, gap: 12, ink: 'rgb(255 255 255 / 0.34)' }
+const INSET_TOP = 18 // where the top apex hugs the page
+const INSET_BOTTOM = 6 // bottom rides 12px lower, closer to the edge
+// barely-there inks: the rulers should be noticed on the second visit,
+// never the first
+const MAJOR = { len: 5, gap: 48, ink: 'rgb(255 255 255 / 0.18)' }
+const MINOR = { len: 2.5, gap: 12, ink: 'rgb(255 255 255 / 0.12)' }
 const H = 64 // svg canvas height; arcs clip against it like the viewport
 
 function Arc({ w, edge }: { w: number; edge: 'top' | 'bottom' }) {
   const r = (w * w) / (8 * SAG)
   // centerline apex of the major ticks; minors sit flush to the same guide
-  const apex = edge === 'top' ? INSET + MAJOR.len / 2 : H - INSET - MAJOR.len / 2
+  const apex = edge === 'top' ? INSET_TOP + MAJOR.len / 2 : H - INSET_BOTTOM - MAJOR.len / 2
   const chordY = edge === 'top' ? apex - SAG : apex + SAG
   const sweep = edge === 'top' ? 0 : 1
   const d = `M 0 ${chordY} A ${r} ${r} 0 0 ${sweep} ${w} ${chordY}`
