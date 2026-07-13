@@ -3840,25 +3840,21 @@ html[data-locale='en'] [data-en-block] {
   object-fit: cover;
 }
 
-/* construction sheet: app-tile geometry + the crossed project mark */
-.nc-blueprint {
-  color: var(--muted-foreground);
-}
-
-.nc-construction-sheet {
+/* standalone construction icon + the crossed project mark */
+.nc-project-icon {
   position: absolute;
   isolation: isolate;
-  width: 6.5rem;
+  width: 3.25rem;
   height: 3.25rem;
   left: 50%;
   top: 50%;
-  transform: translateX(-50%);
-  translate: 0 -50%;
+  transform: translate(-50%, -50%);
   overflow: hidden;
-  border: var(--border-hairline) solid color-mix(in oklab, var(--border) 78%, transparent);
+  border: var(--border-hairline) solid color-mix(in oklab, var(--foreground) 20%, var(--border));
   border-radius: 0.75rem;
-  background: color-mix(in oklab, var(--background) 88%, var(--muted));
-  box-shadow: var(--shadow-2);
+  background: color-mix(in oklab, var(--foreground) 4%, var(--background));
+  box-shadow: var(--shadow-3);
+  transition: transform 300ms var(--ease-spring);
 }
 
 @media (max-width: 39.99rem) {
@@ -3870,31 +3866,11 @@ html[data-locale='en'] [data-en-block] {
     min-width: 0;
     max-width: 100%;
   }
-
-  .nc-construction-sheet {
-    width: 3.25rem;
-    height: 3.25rem;
-  }
-}
-
-.nc-app-tile {
-  position: absolute;
-  z-index: 1;
-  top: 50%;
-  left: 50%;
-  width: 2.625rem;
-  height: 2.625rem;
-  border: var(--border-hairline) solid color-mix(in oklab, var(--foreground) 20%, var(--border));
-  border-radius: 0.625rem;
-  background: color-mix(in oklab, var(--foreground) 4%, var(--background));
-  box-shadow: var(--shadow-3);
-  transform: translate(-50%, -50%);
-  transition: transform 300ms var(--ease-spring);
 }
 
 .nc-construction-guides {
   position: absolute;
-  z-index: 2;
+  z-index: 1;
   inset: 0;
   width: 100%;
   height: 100%;
@@ -3910,7 +3886,7 @@ html[data-locale='en'] [data-en-block] {
 
 .nc-project-mark {
   position: absolute;
-  z-index: 3;
+  z-index: 2;
   top: 50%;
   left: 50%;
   width: 30px;
@@ -3918,7 +3894,6 @@ html[data-locale='en'] [data-en-block] {
   color: color-mix(in oklab, var(--foreground) 84%, var(--muted-foreground));
   overflow: visible;
   transform: translate(-50%, -50%);
-  transition: transform 300ms var(--ease-spring);
 }
 
 .nc-explode-a,
@@ -3930,11 +3905,7 @@ html[data-locale='en'] [data-en-block] {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .nav-card:hover .nc-app-tile {
-    transform: translate(-50%, calc(-50% - 2px));
-  }
-
-  .nav-card:hover .nc-project-mark {
+  .nav-card:hover .nc-project-icon {
     transform: translate(-50%, calc(-50% - 2px));
   }
 
@@ -3966,16 +3937,14 @@ html[data-locale='en'] [data-en-block] {
 @media (prefers-reduced-motion: reduce) {
   .nc-sheets span,
   .nc-polaroid,
-  .nc-app-tile,
-  .nc-project-mark,
+  .nc-project-icon,
   .nc-explode-a,
   .nc-explode-b,
   .nc-explode-c {
     transition: none;
   }
 
-  .nav-card:hover .nc-app-tile,
-  .nav-card:hover .nc-project-mark {
+  .nav-card:hover .nc-project-icon {
     transform: translate(-50%, -50%);
   }
 }

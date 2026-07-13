@@ -47,13 +47,12 @@ export function NavCards({
       </Link>
 
       <Link href="/projects" className="nav-card enter-swing" style={{ '--enter-delay': '240ms' } as React.CSSProperties}>
-        <span className="nc-vignette nc-blueprint" aria-hidden>
-          <span className="nc-construction-sheet">
-            <span className="nc-app-tile" />
-            <svg className="nc-construction-guides" viewBox="0 0 104 52" preserveAspectRatio="xMidYMid slice">
+        <span className="nc-vignette" aria-hidden>
+          <span className="nc-project-icon">
+            <svg className="nc-construction-guides" viewBox="0 0 52 52" preserveAspectRatio="xMidYMid meet">
               <g className="nc-guide-solid" fill="none">
-                <path d="M52 0V52M0 26H104M26 0L78 52M78 0L26 52" />
-                <circle cx="52" cy="26" r="21" />
+                <path d="M26 0V52M0 26H52M0 0L52 52M52 0L0 52" />
+                <circle cx="26" cy="26" r="21" />
               </g>
             </svg>
             {/* grouped so hover pulls the tools apart — an exploded diagram */}

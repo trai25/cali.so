@@ -415,16 +415,13 @@ copyright and clock occupy opposite halves of a two-column grid.
 
 ## Project index
 
-The homepage Projects doorway is a monochrome app-icon construction sheet:
-a fixed 104×52px rounded outer sheet on desktop becomes a centered 52×52px
-square below 40rem so all three vignettes stay inside their one-third cards.
-The guide geometry remains circular and crops around its center in the mobile
-square rather than stretching. A centered 42×42px rounded tile sits beneath
-solid center axes, two diagonals, and one circle. It retains the crossed project
-mark and its fine-pointer exploded-diagram response; the centered tile and mark
-lift together by 2px over the 300ms physical-object spring. Touch and
-reduced-motion presentations are static, and the Writing and Photos doorway
-vignettes remain independent.
+The homepage Projects doorway is one standalone monochrome 52×52px app icon.
+Its solid center axes, two diagonals, and circle are clipped by the icon's
+rounded square, with the crossed project mark centered above them. The whole
+icon lifts together by 2px over the 300ms physical-object spring while the mark
+retains its fine-pointer exploded-diagram response. Touch and reduced-motion
+presentations are static, and the Writing and Photos doorway vignettes remain
+independent.
 
 Project rows use a 4/8 grid: the linked name occupies the first four columns and
 the description the remaining eight. Both cells wrap naturally rather than
