@@ -3,6 +3,7 @@
 
 export interface Experience {
   company: string
+  companyEn: string
   role: string
   roleEn?: string
   from: number
@@ -11,10 +12,10 @@ export interface Experience {
 }
 
 export const experience: Experience[] = [
-  { company: '佐玩 Zolplay', role: '创始人 & CEO', roleEn: 'Founder & CEO', from: 2021, url: 'https://zolplay.com' },
-  { company: 'very very spaceship', role: 'Software Engineer II', from: 2018, to: 2020 },
-  { company: '8ninths', role: 'Full-stack & AR Engineer', from: 2017, to: 2018 },
-  { company: 'Abletive 电子音乐社区', role: '创始人 & 独立开发者', roleEn: 'Founder & indie dev', from: 2014, to: 2016 },
+  { company: '佐玩 Zolplay', companyEn: 'Zolplay', role: '创始人 & CEO', roleEn: 'Founder & CEO', from: 2021, url: 'https://zolplay.com' },
+  { company: 'very very spaceship', companyEn: 'very very spaceship', role: 'Software Engineer II', from: 2018, to: 2020 },
+  { company: '8ninths', companyEn: '8ninths', role: 'Full-stack & AR Engineer', from: 2017, to: 2018 },
+  { company: 'Abletive 电子音乐社区', companyEn: 'Abletive Electronic Music Community', role: '创始人 & 独立开发者', roleEn: 'Founder & indie dev', from: 2014, to: 2016 },
 ]
 
 export interface Record_ {

@@ -5,6 +5,7 @@ import { useReducedMotion } from 'framer-motion'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { ExternalLabel } from '~/components/external-mark'
+import { localize, useLocale } from '~/lib/locale-client'
 import { books } from '~/lib/personal'
 
 const DEFAULT_COVER_W = 148
@@ -131,6 +132,7 @@ const MAX_PROJECTED_SHELF_WIDTH = Math.max(
 // The books themselves are selection controls. The selected book's external
 // destination lives in the persistent annotation below the plank.
 export function Bookshelf() {
+  const locale = useLocale()
   const shouldReduceMotion = useReducedMotion()
   const [open, setOpen] = useState(0)
   const targetRef = useRef(0)
@@ -389,7 +391,7 @@ export function Bookshelf() {
         <ul
           ref={shelfRef}
           className="shelf3"
-          aria-label="书架"
+          aria-label={localize(locale, '书架', 'Bookshelf')}
           onClickCapture={handleShelfClickCapture}
           onPointerMove={handleShelfPointerMove}
           onPointerLeave={handleShelfPointerLeave}
@@ -471,8 +473,10 @@ export function Bookshelf() {
                 aria-current={isOpen ? 'true' : undefined}
                 aria-pressed={isOpen}
                 tabIndex={isOpen ? 0 : -1}
-                aria-label={`${book.title} — ${book.author}${
-                  isOpen ? '（当前展示）' : '（选择）'
+                aria-label={`${book.title} by ${book.author} ${
+                  isOpen
+                    ? localize(locale, '（当前展示）', '(currently shown)')
+                    : localize(locale, '（选择）', '(select)')
                 }`}
                 onKeyDown={(event) => handleBookKeyDown(event, i)}
                 onClick={(event) => settleOn(i, event.detail === 0 ? 'instant' : 'animated')}
@@ -491,7 +495,11 @@ export function Bookshelf() {
           href={selectedBook.url}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label={`${selectedBook.title} — ${selectedBook.author}（在新标签页中打开）`}
+          aria-label={`${selectedBook.title} by ${selectedBook.author} ${localize(
+            locale,
+            '（在新标签页中打开）',
+            '(opens in a new tab)',
+          )}`}
         >
           <ExternalLabel>{selectedBook.title}</ExternalLabel>
         </a>

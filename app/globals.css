@@ -1277,17 +1277,17 @@ html[data-visited] .enter-polaroid .polaroid {
 /* ── External links: inline favicon + preview hover card ──────────── */
 
 .external-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.08em;
+  display: inline;
 }
 
 .external-mark {
+  display: inline-block;
   width: 1rem;
   height: 1rem;
-  flex: none;
+  margin-inline-start: 0.08em;
   opacity: 0.6;
   transition: opacity 150ms ease;
+  vertical-align: -0.125em;
 }
 
 .external-label-text {
@@ -1699,6 +1699,8 @@ a:focus-visible .external-label .external-mark {
 }
 
 .shelf-annotation .external-label {
+  display: inline-flex;
+  align-items: center;
   max-width: 100%;
 }
 
@@ -2524,12 +2526,24 @@ a:focus-visible .external-label .external-mark {
   display: none;
 }
 
+[data-en-block] {
+  display: none;
+}
+
 html[data-locale='en'] [data-zh] {
   display: none;
 }
 
 html[data-locale='en'] [data-en] {
   display: inline;
+}
+
+html[data-locale='en'] [data-zh-block] {
+  display: none;
+}
+
+html[data-locale='en'] [data-en-block] {
+  display: block;
 }
 
 .locale-toggle {

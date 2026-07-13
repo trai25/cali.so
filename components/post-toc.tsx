@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 
 import type { PostRailNode } from '~/lib/content'
+import { localize, useLocale } from '~/lib/locale-client'
 
 const DESKTOP_QUERY = '(min-width: 64rem)'
 const DESKTOP_EXIT_DURATION = 0.2
@@ -24,20 +25,22 @@ function getReadingTop(target: HTMLElement) {
   return rectTop - new DOMMatrixReadOnly(transform).m42
 }
 
-export function PostToc({ nodes }: { nodes: PostRailNode[] }) {
+export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: PostRailNode[] }) {
+  const locale = useLocale()
+  const localizedNodes = locale === 'en' ? nodesEn : nodes
   const landmarks = useMemo(
     () =>
-      nodes.filter(
+      localizedNodes.filter(
         (node): node is Extract<PostRailNode, { kind: 'landmark' }> => node.kind === 'landmark',
       ),
-    [nodes],
+    [localizedNodes],
   )
   const phoneNodes = useMemo(() => {
-    const firstHeading = nodes.findIndex(
+    const firstHeading = localizedNodes.findIndex(
       (node) => node.kind === 'landmark' && node.variant === 'heading',
     )
-    return firstHeading > 0 ? nodes.slice(firstHeading) : nodes
-  }, [nodes])
+    return firstHeading > 0 ? localizedNodes.slice(firstHeading) : localizedNodes
+  }, [localizedNodes])
   const [open, setOpen] = useState(false)
   const [desktop, setDesktop] = useState(false)
   const [phone, setPhone] = useState(false)
@@ -54,6 +57,12 @@ export function PostToc({ nodes }: { nodes: PostRailNode[] }) {
   useEffect(() => {
     activeRef.current = active
   }, [active])
+
+  useEffect(() => {
+    const first = landmarks[0]?.id
+    activeRef.current = first
+    setActive(first)
+  }, [landmarks])
 
   function animateOpenState(nextOpen: boolean, pinRenderedState = false) {
     if (nextOpen === open) return
@@ -247,7 +256,7 @@ export function PostToc({ nodes }: { nodes: PostRailNode[] }) {
   if (landmarks.length < 2) return null
 
   const islandConcealed = !phoneQueryReady || (phone && !phoneIslandVisible)
-  const displayedNodes = phone ? phoneNodes : nodes
+  const displayedNodes = phone ? phoneNodes : localizedNodes
 
   return (
     <div
@@ -266,7 +275,11 @@ export function PostToc({ nodes }: { nodes: PostRailNode[] }) {
           ref={toggleRef}
           type="button"
           className="post-minimap-toggle"
-          aria-label={open ? '收起文章地图 / Close article map' : '展开文章地图 / Open article map'}
+          aria-label={
+            open
+              ? localize(locale, '收起文章地图', 'Close article map')
+              : localize(locale, '展开文章地图', 'Open article map')
+          }
           aria-expanded={open}
           aria-controls={RAIL_ID}
           onClick={() => animateOpenState(!open)}
@@ -328,7 +341,7 @@ export function PostToc({ nodes }: { nodes: PostRailNode[] }) {
         <nav
           id={RAIL_ID}
           className="post-minimap"
-          aria-label="文章地图 / Article map"
+          aria-label={localize(locale, '文章地图', 'Article map')}
           aria-hidden={!open}
           inert={open ? undefined : true}
         >

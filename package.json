@@ -7,6 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test:localization": "node --test scripts/localization.test.mjs",
     "test:port-post": "node --test scripts/port-post.test.mjs",
     "typecheck": "tsc --noEmit"
   },

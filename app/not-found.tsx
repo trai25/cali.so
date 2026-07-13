@@ -40,7 +40,10 @@ export default function NotFound() {
           </p>
         </div>
 
-        <nav className="error-actions" aria-label="错误恢复 / Error recovery">
+        <nav className="error-actions" aria-labelledby="error-recovery-label">
+          <span id="error-recovery-label" className="sr-only">
+            <T zh="错误恢复" en="Error recovery" />
+          </span>
           <ErrorHomeAction />
         </nav>
 

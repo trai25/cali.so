@@ -1,13 +1,14 @@
 import type { Metadata } from 'next'
 
 import { PostRow } from '~/components/post-row'
+import { LocalizedMetadata } from '~/components/localized-metadata'
 import { RevealScope } from '~/components/reveal-scope'
 import { getAllPosts } from '~/lib/content'
 import { T } from '~/lib/i18n'
 
 export const metadata: Metadata = {
-  title: '写作',
-  description: 'Cali 的博客文章',
+  title: 'Writing',
+  description: "Cali's blog posts",
 }
 
 export default function BlogIndexPage() {
@@ -24,6 +25,12 @@ export default function BlogIndexPage() {
 
   return (
     <div className="mx-auto w-full max-w-[37.5rem] px-6">
+      <LocalizedMetadata
+        titleZh="写作"
+        titleEn="Writing"
+        descriptionZh="Cali 的博客文章"
+        descriptionEn="Cali's blog posts"
+      />
       <h1 className="enter text-sm font-medium text-muted-foreground">
         <T zh="写作" en="Writing" />
       </h1>

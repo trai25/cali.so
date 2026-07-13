@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from 'react'
 
+import { localize, useLocale } from '~/lib/locale-client'
+
 const CELL = 3 // CSS px between dot centers
 const EDGE_FADE = 0.1 // fraction of each edge over which dots taper out
 const RADIUS = 150 // pointer influence radius (CSS px)
@@ -33,13 +35,16 @@ export function HalftonePortrait({
   srcLight,
   srcDark,
   alt,
+  altEn,
   className,
 }: {
   srcLight: string
   srcDark: string
   alt: string
+  altEn: string
   className?: string
 }) {
+  const locale = useLocale()
   const wrapperRef = useRef<HTMLSpanElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -272,7 +277,12 @@ export function HalftonePortrait({
         className="halftone-source"
         aria-hidden
       />
-      <canvas ref={canvasRef} role="img" aria-label={alt} className="halftone-canvas" />
+      <canvas
+        ref={canvasRef}
+        role="img"
+        aria-label={localize(locale, alt, altEn)}
+        className="halftone-canvas"
+      />
     </span>
   )
 }

@@ -113,9 +113,16 @@ Working and verified (light/dark/mobile, production build green):
   reading-line scroll-spy); vinyl sleeves are worn paper (seeded creases +
   grain, disc peeks out the top, no spin); hero caption removed;
   **bilingual chrome** (`lib/i18n.tsx`, CSS-swapped dual render — see
-  spec "Bilingual chrome"): nav/sections/dates/cards/projects all zh⇄en,
+  spec "Bilingual content"): nav/sections/dates/cards/projects all zh⇄en,
   footer 中/EN toggle, locale restored pre-paint. Experience roles and
   project descriptions carry `roleEn`/`descriptionEn` in their registries.
+
+- **English content pass (July 2026)**: all nine posts now pair their Chinese
+  `index.mdx` with a complete `index.en.mdx` translation. English mode switches
+  post titles, summaries, prose, headings, image alt/caption text, article-map
+  labels, projects, experience names, hover-card metadata, and accessible UI
+  labels. The English RSS feed is `/feed.en.xml`; the existing `/feed.xml`
+  remains Chinese.
 
 - **Round 5 (July 2026)**: home 写作 section uses the shared one-line
   `PostRow` (leader dots faded 25%); collage veil is now **scattered

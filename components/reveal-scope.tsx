@@ -17,12 +17,13 @@ export function RevealScope({
   children,
   className,
   style,
+  ...props
 }: {
   as?: 'div' | 'ul' | 'ol'
   children: React.ReactNode
   className?: string
   style?: React.CSSProperties
-}) {
+} & React.HTMLAttributes<HTMLElement>) {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -96,7 +97,7 @@ export function RevealScope({
   }, [])
 
   return (
-    <Comp ref={ref as React.Ref<never>} className={className} style={style}>
+    <Comp ref={ref as React.Ref<never>} className={className} style={style} {...props}>
       {children}
     </Comp>
   )

@@ -33,7 +33,7 @@ export default function HomePage() {
         <div className="enter max-w-[19rem]">
           <h1 className="text-sm font-semibold">Cali Castle</h1>
           <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-            <T zh="开发者、设计师、细节控、创始人。" en="Developer, designer, perfectionist, founder." />
+            <T zh="开发者、设计师、细节控、创始人。" en="Developer, designer, founder. Picky about details." />
           </p>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             <T
@@ -46,11 +46,11 @@ export default function HomePage() {
               rel="noreferrer"
               className="text-foreground underline decoration-border underline-offset-4 transition-colors duration-150 ease-[ease] hover:decoration-foreground"
             >
-              <ExternalLabel>佐玩</ExternalLabel>
+              <ExternalLabel><T zh="佐玩" en="Zolplay" /></ExternalLabel>
             </a>
             <T
               zh="创始人，目前带领着佐玩致力于创造一个充满创造力的工作环境，鼓励团队创造影响世界的产品。热爱开发、设计、创新，享受生活，以及在未知领域中探索。"
-              en=", where I lead a team building products that matter, in a workplace full of creativity. I love building, designing, innovating — and wandering into the unknown."
+              en=". I lead a creative team and still spend most of my time making things. I enjoy development, design, and unfamiliar problems."
             />
           </p>
         </div>
@@ -62,6 +62,7 @@ export default function HomePage() {
             srcLight="/images/headshot.jpg"
             srcDark="/images/portrait-square.jpg"
             alt="Cali 的半调网点肖像"
+            altEn="Cali's halftone portrait"
           />
         </div>
       </div>
@@ -86,17 +87,17 @@ export default function HomePage() {
                       rel="noreferrer"
                       className="font-medium transition-colors duration-150 ease-[ease] hover:text-foreground"
                     >
-                      <ExternalLabel>{job.company}</ExternalLabel>
+                      <ExternalLabel><T zh={job.company} en={job.companyEn} /></ExternalLabel>
                     </a>
                   ) : (
-                    <span className="font-medium">{job.company}</span>
+                    <span className="font-medium"><T zh={job.company} en={job.companyEn} /></span>
                   )}
                   <span className="text-muted-foreground">
                     <T zh={job.role} en={job.roleEn ?? job.role} />
                   </span>
                 </span>
                 <span className="shrink-0 text-muted-foreground tabular-nums">
-                  {job.from}–{job.to ?? <T zh="今" en="now" />}
+                  {job.from}<T zh="至" en=" to " />{job.to ?? <T zh="今" en="now" />}
                 </span>
               </div>
             </li>

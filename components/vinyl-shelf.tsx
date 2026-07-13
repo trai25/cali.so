@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 
 import { ExternalLabel } from '~/components/external-mark'
+import { localize, useLocale } from '~/lib/locale-client'
 import { records } from '~/lib/personal'
 
 const hitCorners = ['top-left', 'top-right', 'bottom-right', 'bottom-left'] as const
@@ -53,6 +54,7 @@ function creases(seed: string): string {
 // sleeves. Every interaction selects a sleeve; the separate annotation is
 // the only external destination.
 export function VinylShelf() {
+  const locale = useLocale()
   const initialIndex = Math.floor(records.length / 2)
   const [selectionPosition, setSelectionPosition] = useState(initialIndex)
   const [interactionPhase, setInteractionPhaseState] = useState<InteractionPhase>('idle')
@@ -474,7 +476,7 @@ export function VinylShelf() {
         <ul
           ref={shelfRef}
           className="vinyl-shelf"
-          aria-label="喜欢的唱片"
+          aria-label={localize(locale, '喜欢的唱片', 'Favorite records')}
           data-active-index={activeIndex}
           style={{ '--vinyl-selection-position': selectionPosition } as React.CSSProperties}
         >
@@ -484,7 +486,7 @@ export function VinylShelf() {
             const isActive = index === activeIndex
             const inwardAngle = Math.min(68, 16 * Math.min(distance, 1) + distance * 13)
             const scale = 1 - distance * 0.025 + Math.max(0, 1 - distance) * 0.08
-            const accessibleName = `${record.artist} — ${record.album} (${record.year})`
+            const accessibleName = `${record.artist}, ${record.album} (${record.year})`
             const spineTone = hashOf(accessibleName) % 5
 
             return (

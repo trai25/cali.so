@@ -351,14 +351,17 @@ from assistive technology. Escape closes a compact map and restores toggle
 focus. Reduced motion removes island, rail, content, tick, icon, and staggered
 item transitions.
 
-## Bilingual chrome
+## Bilingual content
 
-Chrome strings render in both languages in the static DOM
+Interface strings render in both languages in the static DOM
 (`lib/i18n.tsx`'s `<T zh en>` + `<LocalDate>`), and CSS shows one based on
 `html[data-locale]` — restored pre-paint from localStorage, flipped by the
-preferences dock. No locale routes, no hydration risk. Post bodies
-keep their own `lang` (the article pins `zh-CN` so CJK prose metrics hold
-in either chrome language).
+preferences dock. Locale-sensitive attributes use the same client-side locale
+store so accessible names never mix languages. No locale routes, no hydration
+risk. Each post keeps its Chinese source in `index.mdx` and a complete English
+translation in `index.en.mdx`; both are rendered statically, while block-level
+locale gates expose only the selected body and its matching document minimap.
+English heading IDs are prefixed to keep the dual DOM valid.
 
 ## Footer colophon
 
@@ -373,8 +376,8 @@ inside it, copyright and clock occupy opposite halves of a two-column grid.
 
 ## Project index
 
-Project rows use a 40/60 grid: the linked name occupies the left two parts and
-the description the right three. Both cells wrap naturally rather than
+Project rows use a 4/8 grid: the linked name occupies the first four columns and
+the description the remaining eight. Both cells wrap naturally rather than
 truncating, with 1rem of vertical padding per row so multi-line descriptions
 retain a calm rhythm on narrow screens.
 

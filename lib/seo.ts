@@ -6,3 +6,10 @@ export const seo = {
     process.env.NODE_ENV === 'production' ? 'https://cali.so' : 'http://localhost:3199',
   ),
 } as const
+
+export const seoEn = {
+  title: 'Cali Castle | Developer, designer, and founder',
+  description:
+    "I'm Cali, a developer, designer, and founder of Zolplay. I lead the team and still spend most of my time making products.",
+  url: seo.url,
+} as const

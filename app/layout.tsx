@@ -8,6 +8,7 @@ import './globals.css'
 import { fontVariables } from './fonts'
 import { AmbientBackground } from '~/components/ambient-background'
 import { Dock } from '~/components/dock'
+import { LocaleRestorer } from '~/components/locale-restorer'
 import { getGitHub, getSocial } from '~/lib/social-live'
 import { SiteFooter } from '~/components/site-footer'
 import { seo } from '~/lib/seo'
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
     default: 'Cali Castle',
     template: '%s | Cali Castle',
   },
-  description: 'Cali Castle — developer, designer, founder.',
+  description: 'Cali Castle, developer, designer, and founder of Zolplay.',
 }
 
 export default async function RootLayout({
@@ -32,7 +33,7 @@ export default async function RootLayout({
     <html lang="zh-CN" suppressHydrationWarning className={cn('font-sans', fontVariables)}>
       <head>
         {/* pre-paint: visited flag (skips polaroid pops on repeat hard
-            loads) + restore the chrome locale before first paint */}
+            loads) + restore the content locale before first paint */}
         <script
           dangerouslySetInnerHTML={{
             __html: `try{var d=document.documentElement;if(sessionStorage.v)d.dataset.visited="";sessionStorage.v=1;if(localStorage.locale==="en"){d.dataset.locale="en";d.lang="en"}}catch(e){}`,
@@ -41,6 +42,7 @@ export default async function RootLayout({
       </head>
       <body className="antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <LocaleRestorer />
           <AmbientBackground />
           <div className="flex min-h-screen flex-col pb-20">
             <main className="flex-1 pt-14">

@@ -10,7 +10,7 @@ export interface SocialSnapshot {
   name: string
   handle: string
   bio: string
-  bioEn?: string
+  bioEn: string
   followers?: string
 }
 
@@ -123,7 +123,7 @@ function Identity({
       </span>
       {withBio && (
         <span className="service-card-bio">
-          <T zh={data.bio} en={data.bioEn ?? data.bio} />
+          <T zh={data.bio} en={data.bioEn} />
         </span>
       )}
     </>
@@ -276,7 +276,7 @@ export function EmailCard({ address }: { address: string }) {
               </span>
               <span className="email-envelope-postmark" />
               <span className="email-envelope-address">
-                <span>TO / 收</span>
+                <span><T zh="收" en="TO" /></span>
                 {address}
               </span>
             </span>

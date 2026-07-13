@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react'
 import { DropdownContent, DropdownMenu, DropdownTrigger } from '~/components/ui/dropdown'
 import { TabItem, Tabs, TabsList } from '~/components/ui/tabs'
 import { T } from '~/lib/i18n'
+import { LOCALE_CHANGE_EVENT, localize, useLocale } from '~/lib/locale-client'
 import { playPreferenceSound, setSoundEnabled, soundEnabled } from '~/lib/sound'
 
 function Row({ zh, en, children }: { zh: string; en: string; children: React.ReactNode }) {
@@ -25,6 +26,7 @@ function Row({ zh, en, children }: { zh: string; en: string; children: React.Rea
 // 偏好 — the dock's preferences panel: language, theme, and UI sound,
 // each as full-width fluid tabs.
 export function Preferences() {
+  const activeLocale = useLocale()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [locale, setLocale] = useState<'zh' | 'en'>('zh')
@@ -51,6 +53,7 @@ export function Preferences() {
     } catch {
       /* private mode */
     }
+    window.dispatchEvent(new Event(LOCALE_CHANGE_EVENT))
     playPreferenceSound()
   }
 
@@ -61,7 +64,7 @@ export function Preferences() {
           <button
             type="button"
             className="dock-item"
-            aria-label="偏好设置 / Preferences"
+            aria-label={localize(activeLocale, '偏好设置', 'Preferences')}
           >
             <PreferencesIcon />
             <span className="dock-tip" aria-hidden>
@@ -73,9 +76,9 @@ export function Preferences() {
       <DropdownContent side="top" sideOffset={14} className="prefs-panel w-max">
         <Row zh="语言" en="Language">
           <Tabs value={mounted ? locale : 'zh'} onValueChange={applyLocale}>
-            <TabsList aria-label="语言 / Language">
+            <TabsList aria-label={localize(activeLocale, '语言', 'Language')}>
               <TabItem value="zh" label="中文" />
-              <TabItem value="en" label="EN" />
+              <TabItem value="en" label="English" />
             </TabsList>
           </Tabs>
         </Row>
@@ -87,10 +90,10 @@ export function Preferences() {
               playPreferenceSound()
             }}
           >
-            <TabsList aria-label="外观 / Theme">
-              <TabItem value="light" icon={Sun} label="" aria-label="浅色 / Light" />
-              <TabItem value="system" icon={Monitor} label="" aria-label="系统 / System" />
-              <TabItem value="dark" icon={Moon} label="" aria-label="深色 / Dark" />
+            <TabsList aria-label={localize(activeLocale, '外观', 'Theme')}>
+              <TabItem value="light" icon={Sun} label="" aria-label={localize(activeLocale, '浅色', 'Light')} />
+              <TabItem value="system" icon={Monitor} label="" aria-label={localize(activeLocale, '系统', 'System')} />
+              <TabItem value="dark" icon={Moon} label="" aria-label={localize(activeLocale, '深色', 'Dark')} />
             </TabsList>
           </Tabs>
         </Row>
@@ -105,9 +108,9 @@ export function Preferences() {
               if (on) playPreferenceSound()
             }}
           >
-            <TabsList aria-label="音效 / Sound">
-              <TabItem value="on" icon={Volume2} label="" aria-label="开 / On" />
-              <TabItem value="off" icon={VolumeX} label="" aria-label="关 / Off" />
+            <TabsList aria-label={localize(activeLocale, '音效', 'Sound')}>
+              <TabItem value="on" icon={Volume2} label="" aria-label={localize(activeLocale, '开', 'On')} />
+              <TabItem value="off" icon={VolumeX} label="" aria-label={localize(activeLocale, '关', 'Off')} />
             </TabsList>
           </Tabs>
         </Row>

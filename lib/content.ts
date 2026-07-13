@@ -17,6 +17,11 @@ const frontmatterSchema = z.object({
   coverCaption: z.string().optional(),
 })
 
+const translatedFrontmatterSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1),
+})
+
 export interface PostCover {
   src: string
   width: number
@@ -27,11 +32,15 @@ export interface PostCover {
 export interface Post {
   slug: string
   title: string
+  titleEn: string
   description?: string
+  descriptionEn: string
   publishedAt: Date
   cover?: PostCover
   readingMinutes: number
+  readingMinutesEn: number
   body: string
+  bodyEn: string
 }
 
 export const POST_ARTICLE_START_ID = 'post-article-start'
@@ -61,7 +70,7 @@ function cleanHeading(raw: string) {
 // Build a deliberately even document minimap. Heading IDs use the same
 // github-slugger algorithm as rehype-slug, while a fixed number of quiet ticks
 // separates every landmark so prose length never changes the rail's rhythm.
-export function buildPostRail(title: string, body: string): PostRailNode[] {
+export function buildPostRail(title: string, body: string, idPrefix = ''): PostRailNode[] {
   const slugger = new GithubSlugger()
   const lines = body.split(/\r?\n/)
   const nodes: PostRailNode[] = [
@@ -101,7 +110,7 @@ export function buildPostRail(title: string, body: string): PostRailNode[] {
       nodes.push({
         key: `landmark-${landmark}`,
         kind: 'landmark',
-        id: slugger.slug(label),
+        id: `${idPrefix}${slugger.slug(label)}`,
         label,
         variant: 'heading',
       })
@@ -128,6 +137,9 @@ export function getPost(slug: string): Post {
   const raw = readFileSync(path.join(POSTS_DIR, slug, 'index.mdx'), 'utf8')
   const { data, content } = matter(raw)
   const fm = frontmatterSchema.parse(data)
+  const translatedRaw = readFileSync(path.join(POSTS_DIR, slug, 'index.en.mdx'), 'utf8')
+  const { data: translatedData, content: translatedContent } = matter(translatedRaw)
+  const translatedFm = translatedFrontmatterSchema.parse(translatedData)
 
   let cover: PostCover | undefined
   if (fm.cover) {
@@ -144,11 +156,15 @@ export function getPost(slug: string): Post {
   return {
     slug,
     title: fm.title,
+    titleEn: translatedFm.title,
     description: fm.description,
+    descriptionEn: translatedFm.description,
     publishedAt: fm.publishedAt,
     cover,
     readingMinutes: readingMinutes(content),
+    readingMinutesEn: readingMinutes(translatedContent),
     body: content,
+    bodyEn: translatedContent,
   }
 }
 

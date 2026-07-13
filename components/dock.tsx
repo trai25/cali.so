@@ -9,6 +9,7 @@ import { PhotosIcon, ProjectsIcon, WritingIcon } from '~/components/dock-icons'
 import { LiquidGlass } from '~/components/liquid-glass'
 import { Preferences } from '~/components/preferences'
 import { T } from '~/lib/i18n'
+import { localize, useLocale } from '~/lib/locale-client'
 import { playDockSound } from '~/lib/sound'
 
 const ITEMS = [
@@ -34,13 +35,14 @@ function DockItem({
   onNavigate: (href: string, keyboardInitiated: boolean) => void
   children: React.ReactNode
 }) {
+  const locale = useLocale()
   return (
     <Link
       ref={itemRef}
       href={href}
       className="dock-item"
       data-active={active || undefined}
-      aria-label={`${zh} / ${en}`}
+      aria-label={localize(locale, zh, en)}
       aria-current={active ? 'page' : undefined}
       onClick={(event) => {
         if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
@@ -61,6 +63,7 @@ function DockItem({
 // else an icon. Circles inside a pill keep the radii concentric by
 // construction.
 export function Dock() {
+  const locale = useLocale()
   const pathname = usePathname()
   const activeHref = pathname === '/' ? '/' : ITEMS.find(({ href }) => pathname.startsWith(href))?.href
   const dockRef = useRef<HTMLElement | null>(null)
@@ -138,7 +141,7 @@ export function Dock() {
   useLayoutEffect(() => () => clearIndicatorFrame(), [])
 
   return (
-    <nav ref={dockRef} className="dock" aria-label="主导航 / Main navigation">
+    <nav ref={dockRef} className="dock" aria-label={localize(locale, '主导航', 'Main navigation')}>
       <LiquidGlass />
       <span ref={indicatorRef} className="dock-active-indicator" aria-hidden />
       <DockItem

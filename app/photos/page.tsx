@@ -1,13 +1,14 @@
 import type { Metadata } from 'next'
 
 import { ZoomImage } from '~/components/zoom-image'
+import { LocalizedMetadata } from '~/components/localized-metadata'
 import { T } from '~/lib/i18n'
 import { photos } from '~/lib/photos'
 import { tiltFromSlug } from '~/lib/polaroid'
 
 export const metadata: Metadata = {
-  title: '照片',
-  description: 'Cali 的照片墙',
+  title: 'Photos',
+  description: "Cali's photo wall",
 }
 
 
@@ -15,6 +16,12 @@ export default function PhotosPage() {
   const center = (photos.length - 1) / 2
   return (
     <div className="mx-auto w-full max-w-[37.5rem] px-6">
+      <LocalizedMetadata
+        titleZh="照片"
+        titleEn="Photos"
+        descriptionZh="Cali 的照片墙"
+        descriptionEn="Cali's photo wall"
+      />
       <h1 className="enter text-sm font-medium text-muted-foreground">
         <T zh="照片" en="Photos" />
       </h1>

@@ -4,7 +4,7 @@ import path from 'node:path'
 
 import Image from 'next/image'
 
-import { formatDate } from '~/lib/date'
+import { LocalDate, T } from '~/lib/i18n'
 
 interface TweetSnapshot {
   id: string
@@ -66,8 +66,8 @@ export function Tweet({ slug, id }: { slug: string; id: string }) {
         ))}
       </span>
       <span className="tweet-card-foot">
-        <time dateTime={tweet.createdAt}>{formatDate(new Date(tweet.createdAt))}</time>
-        {tweet.media === 'video' && <span>· 含视频</span>}
+        <time dateTime={tweet.createdAt}><LocalDate date={new Date(tweet.createdAt)} /></time>
+        {tweet.media === 'video' && <span><T zh="· 含视频" en="· Contains video" /></span>}
       </span>
     </a>
   )

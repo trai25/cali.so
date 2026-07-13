@@ -3,7 +3,9 @@ import previews from '~/content/link-previews.json'
 export interface LinkPreview {
   domain: string
   title?: string
+  titleEn?: string
   description?: string
+  descriptionEn?: string
 }
 
 const data = previews as Record<string, LinkPreview>

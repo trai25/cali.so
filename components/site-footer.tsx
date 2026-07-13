@@ -83,7 +83,10 @@ export function SiteFooter({
             </Link>
           </li>
           <li>
-            <a href="/feed.xml" className="footer-tree-link">
+            <a href="/feed.xml" className="footer-tree-link" data-zh>
+              RSS
+            </a>
+            <a href="/feed.en.xml" className="footer-tree-link" data-en>
               RSS
             </a>
           </li>

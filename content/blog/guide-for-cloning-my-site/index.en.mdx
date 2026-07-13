@@ -1,0 +1,348 @@
+---
+title: "How to Clone This Site and Launch a Blog for Free"
+description: "[2024 update] This tutorial shows you how to clone my personal blog, configure its services, and deploy your own version."
+---
+
+> 2024-03-13: I removed a few unnecessary steps and replaced the [PlanetScale](https://planetscale.com/) database with [Neon](https://neon.tech), because PlanetScale [announced that it would no longer offer a free database plan](https://planetscale.com/blog/planetscale-forever).
+
+**This tutorial also has a step-by-step video version:** [Bilibili link](https://www.bilibili.com/video/BV1kH4y157xg/) [YouTube link](https://youtu.be/Ctr-kHrBHeU?si=NJfSrdI0BwOSsw18)
+
+It's already 2023, and choosing how to build a blog is still difficult. I struggled with it too. I did not like many of the existing templates or approaches, so I used a Tailwind UI template as the starting point for the personal blog you are looking at now.
+
+More people have started using this setup, and many of them run into deployment problems. This tutorial shows you how to clone my personal blog and deploy your own version.
+
+## Other options
+
+Starting with other options may seem strange, but there are many good ways to build a blog. You do not have to use mine 😊. These are a few complete blogging tools I like:
+
+- [xLog](https://xlog.app/) (for people with little programming experience or some frontend knowledge; highly customizable; blockchain blogging)
+
+- [Hashnode](https://hashnode.com) (for people with no programming background; no coding required; a good editor; includes a newsletter)
+
+- [Nextra](https://nextra.site/) (for people with frontend experience; built with Next.js by Shu Ding; excellent Markdown support)
+
+- [Astro](https://astro.build/) (an elegant, content-first way to build sites; thanks to [@egoist](https://twitter.com/localhost_4173) for the reminder)
+
+- [Hexo](https://hexo.io/zh-cn/) (a long-established option for people with a little development experience; Node.js and Markdown)
+
+Honorable mentions:
+
+- [Cusdis](https://cusdis.com/) (a free comment system for your existing Hexo, React, Vue, or Svelte site; an open-source Disqus alternative made by [Randy](https://lutaonan.com/))
+
+- [Umami](https://umami.is/) (adds analytics to your website; a free, open-source alternative to Google Analytics and Vercel Analytics)
+
+- WordPress is still the eternal king, right?
+
+None of these services sponsored me. I recommend them because I like them.
+
+## Feature overview
+
+You can deploy all of these parts of the site for free:
+
+- Home page (`/`)
+
+- Blog (`/blog`, including a comment system)
+
+- Project list (`/projects`)
+
+- Guestbook (`/guestbook`)
+
+- CMS (`/studio`, for publishing and managing articles, editing the project list, and more)
+
+- Admin dashboard (`/admin`, for viewing comment data, sending newsletters, and more)
+
+The site requires the following third-party services:
+
+- Vercel (deployment platform, available for free)
+
+- Sanity (CMS, available for free)
+
+- Neon (PostgreSQL database for the comment system, newsletter system, and guestbook, available for free)
+
+- Resend (email delivery service, available for free)
+
+- Upstash (Redis service for article view counts, emoji reactions, and total site visits, available for free)
+
+The following third-party service is optional:
+
+- [urlbox](https://www.urlbox.io/) (generates link-preview snapshots, $9/month)
+
+## Clone the project and configure it locally
+
+Now, let's start setting it up.
+
+Fork my [GitHub repository](https://github.com/CaliCastle/cali.so) to your own GitHub account.
+
+Then use `git clone` to copy the repository into a local folder on your computer.
+
+Make sure [pnpm](https://pnpm.io/installation) is installed on your computer.
+
+`cd` into the directory you cloned and run:
+
+```sh
+pnpm i
+```
+
+This installs the project dependencies into `node_modules`.
+
+### Sanity content management
+
+Once the dependencies are installed, configure Sanity as the CMS (content management system).
+
+1. Go to [sanity.io/manage](https://sanity.io/manage) and sign in.
+
+1. Return to the command line and run `npm create sanity@latest -- --template clean --create-project "Cali Demo" --dataset production`. Remember to replace "Cali Demo" with your own project name.
+
+1. Press **Ctrl + C** to exit the command.
+
+Return to the [Sanity Dashboard](https://sanity.io/manage) and refresh the page. If you see this:
+
+![](./image-1.png#1302x422)
+
+your Sanity project is ready 🎉.
+
+Open the project details and copy the Project ID shown below:
+
+![](./image-2.png#1310x422)
+
+Run this inside your local project directory:
+
+```sh
+cp .env.example .env
+```
+
+Open the `.env` file in your editor.
+
+Fill in the Sanity CMS variables with your real values:
+
+```text title=".env"
+NEXT_PUBLIC_SANITY_DATASET="production"
+NEXT_PUBLIC_SANITY_PROJECT_ID="your project ID"
+```
+
+### Clerk authentication
+
+[Clerk](https://clerk.com/) handles user sign-in for the site.
+
+Create a Clerk application:
+
+1. Go to [clerk.com](https://clerk.com/).
+
+1. Click **Sign up** in the upper-right corner.
+
+1. Click **Add application** on the Dashboard page.
+
+1. Enter your project name and choose the authentication methods you want to enable, such as email, Google, or GitHub.
+
+The Clerk application is now registered.
+
+Then click the copy button to copy the environment variables shown here:
+
+![](./image-3.png#2130x1236)
+
+Return to the local project's `.env` file and replace the two lines in the Clerk section 🎉.
+
+### Neon (PostgreSQL database)
+
+[Neon](https://neon.tech) provides the database for comments, guestbook entries, and newsletters.
+
+Follow these steps:
+
+1. Go to the [Neon website](https://neon.tech/).
+
+1. Sign in.
+
+1. Follow the dashboard prompts to create a database.
+
+1. Enter a database name.
+
+1. Choose a **region**. You will need to select the same region in Vercel later. I recommend Singapore.
+
+Example:
+
+![](./image-4.png#1112x1302)
+
+Click Create project at the bottom 🎉.
+
+Next, get the connection details for the project. Make sure Pooled Connection is selected:
+
+![](./image-5.png#1814x1258)
+
+Copy `DATABASE_URL` into the local project's environment variables.
+
+To deploy the database, run this command:
+
+```sh
+pnpm db:push
+```
+
+When you see Changes applied, the database schema is ready 👍.
+
+That finishes the database setup 🎉.
+
+### Sending email with Resend
+
+[Resend](https://resend.com) sends the site's email.
+
+Email is sent in the following situations:
+
+- When someone subscribes to the newsletter, we send a subscription confirmation email.
+
+- When someone replies to another person's comment, we email the person who received the reply.
+
+- When someone leaves a guestbook entry, we send an email to `SITE_NOTIFICATION_EMAIL_TO`.
+
+So in `.env`, set `SITE_NOTIFICATION_EMAIL_TO` to the email address where you want to receive notifications about new guestbook entries:
+
+```text title=".env"
+SITE_NOTIFICATION_EMAIL_TO="yourname@example.com"
+NEXT_PUBLIC_SITE_EMAIL_FROM="hi@youremail.com"
+NEXT_PUBLIC_SITE_URL="https://example.com"
+```
+
+Create an API key in the Resend dashboard:
+
+1. Go to the [Resend website](https://resend.com/).
+
+1. Sign up or sign in.
+
+1. Click Add an API Key.
+
+![](./image-6.png#2034x896)
+
+Copy the API key into `.env`, replacing `RESEND_API_KEY`.
+
+### Upstash traffic statistics and API rate limiting
+
+To add total site visits and article view counts to the site, we need to register an Upstash account.
+
+Steps:
+
+1. Go to the [Upstash website](https://upstash.com/).
+
+1. Sign in.
+
+1. Click **Create database**.
+
+1. Enter a name, set Type to **Global**, and choose the same Primary region you selected for Neon. I still recommend Singapore.
+
+1. Find the **REST API** section.
+
+As shown here:
+
+![](./image-7.png#2418x1184)
+
+Copy these two values, then return to `.env` and fill them in:
+
+```text title=".env"
+UPSTASH_REDIS_REST_TOKEN="****"
+UPSTASH_REDIS_REST_URL="https://***.upstash.io"
+```
+
+## Deploy with Vercel
+
+The last step is deploying the project on Vercel:
+
+1. Go to the [Vercel website](https://vercel.com).
+
+1. Sign in or register.
+
+1. Select **Add new project** in the Dashboard.
+
+1. Import the repository you forked from GitHub.
+
+As shown below:
+
+![](./image-8.png#2566x1518)
+
+Expand the Environment variables section, return to your local `.env` file, and copy everything except the final two Vercel variables. Back on the website, click the input and paste.
+
+Finally, open the Functions settings in the left sidebar and select the same region as above. Again, I recommend Singapore.
+
+## Publish and manage articles
+
+Visit `/studio` to publish and manage articles in Sanity Studio.
+
+The first time you visit, Sanity will display this prompt:
+
+![](./image-9.png#1482x758)
+
+Click Continue.
+
+Then follow the prompt and click Add CORS origin.
+
+Sign in with the same account you used for Sanity at the beginning.
+
+You should now see the Studio page:
+
+![](./image-10.png#3544x2586)
+
+### Publish an article
+
+In the image above, click 1 and then 2 to create an article.
+
+Work through the editor from top to bottom: give the article a title, a URL slug (an English phrase with hyphens instead of spaces), a category, a publication date, an article image, and a description.
+
+Body is where we edit the article itself. When you're finished, remember to click Reading time below it to generate the reading time with one click.
+
+Once you've finished editing everything, click **Publish** in the bottom-right corner.
+
+The article is now published 👏.
+
+### Manage articles
+
+Managing articles is much like the publishing process above. Select the article you want to edit from the list, make your changes on the right, and click Publish again.
+
+### Configure the production domain
+
+Remember to open your project's settings in the [Sanity dashboard](https://sanity.io/manage) and enter the final deployed domain as shown here:
+
+![](./image-11.png#3544x2586)
+
+In field 3, enter your complete domain URL, such as `https://cali.so`. Finally, remember to check the box at position 4.
+
+## The Admin dashboard
+
+To access the Admin dashboard, first return to the Clerk dashboard:
+
+![](./image-12.png#1520x842)
+
+(If you aren't signed in yet, remember to click Sign in in the upper-right corner of the local site. Alternatively, visit `/admin` locally and you'll be redirected to the sign-in page.)
+
+Select the details for the account you used to sign in, then scroll down to the Metadata section:
+
+![](./image-13.png#2050x860)
+
+Click Edit next to Public:
+
+![](./image-14.png#1426x1284)
+
+Replace the JSON inside with:
+
+```json
+{
+  "siteOwner": true
+}
+```
+
+This marks the user as someone who can enter the Admin dashboard. Save the change.
+
+Now visit `/admin` in your local project, and you should have access:
+
+![](./image-15.png#3544x2586)
+
+## Publish a newsletter
+
+You can also publish a new newsletter from the Admin dashboard. Click Newsletters in the left sidebar, then click New to open the creation page.
+
+Enter Markdown in Body.
+
+## Conclusion
+
+I originally built each feature and connected each third-party service for my own website.
+
+Writing this down made me realize how many setup steps there are. I never expected so many people to use my repository for their own personal sites, which is why I wanted to explain the whole deployment process.
+
+If you run into a problem, leave a comment on this article or email me at cali@zolplay.com.
+
+I'll add more features when I have time, so stay tuned!

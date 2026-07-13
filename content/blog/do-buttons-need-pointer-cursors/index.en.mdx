@@ -1,0 +1,88 @@
+---
+title: "Do Buttons Really Need Pointer Cursors?"
+description: "Buttons are everywhere on the web, but native macOS and Windows apps share an interesting detail: hovering over a button does not turn the cursor into a pointing hand."
+---
+
+Many people may never have noticed this. Browsing the web every day has taught us that a pointing-hand cursor means, "You can click this."
+
+That idea is a misconception, or at least a habit created by more than a decade of website UI and UX.
+
+## Buttons Without the Pointing Hand
+
+Here are two kinds of buttons on a page with no CSS:
+
+![](./image-1.gif#800x508 "Native browser buttons do not use the pointing-hand cursor")
+
+Neither one triggers the pointing-hand cursor. Chrome is a native app, and its visible buttons use the default cursor too.
+
+Now look at the native System Settings app on macOS:
+
+![](./image-2.gif#1430x1048 "Almost nothing in macOS System Settings uses the pointing-hand cursor")
+
+Its buttons, navigation links, and switches all keep the default cursor.
+
+Why?
+
+Because the hand was designed for hyperlinks.
+
+## The Pointing Hand Is for Hyperlinks
+
+The [W3C user interface guidelines](https://www.w3.org/TR/CSS21/ui.html#propdef-cursor) say:
+
+> The cursor is a pointer that indicates a link.
+
+In other words, a hyperlink is the reason to change the cursor into a pointing hand.
+
+The [Wikipedia page for cursors](https://en.wikipedia.org/wiki/Cursor_(user_interface)) says the same thing:
+
+> When hovering over a hyperlink, a mouseover event changes the pointer into a hand with an extended index finger. Usually, an informative tooltip about the link may pop up, which disappears when the user moves the pointer away.
+
+Again, the hand appears when the pointer is over a hyperlink.
+
+So what counts as a hyperlink?
+
+Modern CSS means you often cannot tell whether an interface element is a link or a button just by looking at it.
+
+Frontend developers make buttons that do not look like buttons and links that do not look like links, so the distinction has gradually blurred.
+
+That is why an `a` tag and a `button` tag often need the same or similar CSS to make both of them look pressable.
+
+## The Illusion of Interactivity
+
+I no longer think a pointing-hand cursor is what tells people an element is interactive.
+
+The button itself should respond when the mouse moves over it. A change in the border, background color, position, or opacity can tell someone that the element is interactive.
+
+Visit Apple's website and you will notice that the buttons on its [product pages](https://www.apple.com.cn/iphone-14-pro/) only gain a pointing-hand cursor:
+
+![](./image-3.gif#800x532 "Apple's website also uses the pointing-hand cursor")
+
+I do not think Apple handles this detail particularly well. The cursor changes, but the button itself gives no visual response.
+
+There is no universally right treatment here. The right choice depends on the interface.
+
+As developers and designers, we want interactions to feel clear and natural for the people using them.
+
+**[Adam Pietrasiak](https://twitter.com/pie6k)** shared a similar thought on Twitter:
+
+> Don't use the pointing-hand cursor for clickable elements. The pointing-hand cursor is popular on the web, but desktop apps rarely use it. If you use a pointer cursor in a desktop app, it will feel like a website.
+
+<Tweet id="1657361356322947072" />
+
+## Conclusion
+
+So, do buttons really need pointer cursors?
+
+**It depends.**
+
+- Building a website? Use them. Add `cursor: pointer` to every `button`, because most people already expect that behavior.
+
+- Building a native desktop app? You probably do not need them. A pointing-hand cursor can make the app feel less native because most desktop apps do not use one for buttons.
+
+If you care about UI and UX details as much as [Linear](https://linear.app), you can let users choose:
+
+![](./image-4.gif#800x460 "Linear's settings let users customize the pointing-hand cursor")
+
+Linear provides a "Use pointer cursors" switch in its preferences, so every interactive element can use either the default arrow or the pointing hand.
+
+There is still no single correct answer, but it is an interesting interaction design detail to think about.

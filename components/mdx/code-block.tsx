@@ -3,7 +3,10 @@
 import { Check, Copy } from 'lucide-react'
 import { useRef, useState } from 'react'
 
+import { localize, useLocale } from '~/lib/locale-client'
+
 export function CodeBlockPre(props: React.HTMLAttributes<HTMLPreElement>) {
+  const locale = useLocale()
   const preRef = useRef<HTMLPreElement>(null)
   const [copied, setCopied] = useState(false)
 
@@ -21,7 +24,7 @@ export function CodeBlockPre(props: React.HTMLAttributes<HTMLPreElement>) {
       <button
         type="button"
         onClick={copy}
-        aria-label="复制代码"
+        aria-label={localize(locale, copied ? '已复制代码' : '复制代码', copied ? 'Code copied' : 'Copy code')}
         className="code-copy"
         data-copied={copied || undefined}
       >

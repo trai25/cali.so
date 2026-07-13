@@ -1,0 +1,132 @@
+---
+title: "How to Protect Your Site With Upstash"
+description: "Someone was deliberately hammering one of my APIs and driving up my Redis bill. I used Upstash rate limits and IP blocking to stop them."
+---
+
+Disclosure: [Upstash](https://upstash.com) did not sponsor this article.
+
+## How it started
+
+A couple of days ago, I added emoji reactions to my blog posts. I wanted a little interaction without opening the door to full comments, so reactions felt right.
+
+Slack, iMessage, Twitter DMs, and Telegram all have reactions (*cough* unlike WeChat). Slack and Telegram handle them especially well.
+
+Last night, I opened my article commemorating Hao and saw something strange 🤨
+
+![](./image-1.png#1130x848)
+
+Had someone really pressed 🙏 31,000 times?
+
+The next most popular reaction, "hug," had only 123 presses. Something was clearly wrong.
+
+I opened the Upstash dashboard to see whether someone was flooding my API. They were.
+
+![](./image-2.png#1130x418 "Upstash traffic chart")
+
+The bandwidth chart showed my Upstash Redis reads and writes climbing from around midnight, peaking at 1,000 requests per second. I stared at it and thought, "Who is this? What kind of blood feud do they have with me? This is absurd."
+
+I had rushed the emoji reaction feature out in one afternoon. Because it was for my personal site, I had not thought through every risk. With more time, I might have added unit tests, end-to-end tests, and security checks to prevent abusive access.
+
+I did not expect someone to attack it on the day I shipped it.
+
+So what did the attack cost me?
+
+My blog runs entirely on Serverless and Edge infrastructure, so its Redis-style KV store also needs to support Serverless. After comparing the options, I settled on Upstash as the most reliable provider.
+
+Upstash charges by usage, which is reasonable: every 100,000 reads and writes cost $0.40.
+
+Every bogus Redis request added to my bill.
+
+I went straight into defense mode.
+
+## Rate limiting
+
+I responded in two stages. First, I spent ten minutes adding Upstash's official rate limiter to the API.
+
+![](./image-3.png#1468x1330 "Rate-limiting example code")
+
+You can see the complete code in my [GitHub commit](https://github.com/CaliCastle/cali.so/commit/50635c7d94f9d7e0299ddc63a6fb190c6c0858c7).
+
+I checked the Upstash dashboard again. It worked!
+
+Relieved, I went to bed.
+
+The person was not done.
+
+The next morning, Upstash still showed a steady line of usage:
+
+![](./image-4.png#1192x894 "Upstash traffic chart the next morning")
+
+I was speechless. They were still sending requests as fast as the rate limit allowed...
+
+"All right, then," I thought. If they wanted to force me to block their IP, I would. Let us see them keep going after that.
+
+## IP blocking
+
+I had had enough. In the Upstash dashboard, I found the IP responsible for the most rate-limited requests. I had included each caller's IP in the rate-limit key so I could analyze the traffic later.
+
+I wanted the block to take effect quickly without rebuilding and redeploying the site. Vercel's [Edge Config](https://vercel.com/storage/edge-config) was a good fit.
+
+Edge Config stores configuration I can change on the fly. I already used it for short-link redirects; for example, cali.so/twitter sends visitors to my Twitter profile.
+
+I added the person's IP address to Edge Config:
+
+![](./image-5.png#1918x1230 "Screenshot of Vercel Edge Config")
+
+A Next.js project can read Edge Config anywhere the Edge runtime is available. With Edge Middleware, I could check the IP before handling any request:
+
+![](./image-6.png#1810x1510 "Next.js Edge Middleware example code")
+
+The code is tiny, which is exactly what I wanted.
+
+See the complete code change in this [GitHub commit](https://github.com/CaliCastle/cali.so/commit/2b10d8e45868b670e36b6e73c401304e5eae045e).
+
+Any IP on the Vercel blacklist is now denied access to every page and API by default.
+
+![](./image-7.png#2440x1766 "The page shown after an IP is blocked")
+
+Much better.
+
+I committed the code, and Vercel deployed it in two minutes.
+
+Soon afterward, the result was obvious.
+
+Here is the complete traffic chart:
+
+![](./image-8.png#1376x846 "Complete Upstash traffic chart")
+
+The three marked periods show:
+
+- 1: The person began flooding me with traffic.
+
+- 2: I enabled rate limiting.
+
+- 3: I blocked the IP.
+
+Sigh. The person seems to have stopped for now. I still have no idea why they did it. Was the whole point to make me spend more money?
+
+If they return with a new IP, adding it to the list takes me almost no effort. Spinning up a new DigitalOcean VPS each time costs them more. If they come back, I am ready.
+
+You might ask why I used third-party services for something as basic as rate limiting and an IP blacklist. NGINX can do both.
+
+## Why I chose Serverless
+
+I chose a Serverless architecture. The name does not mean servers disappear. It means the server is abstracted away, so there is no single instance sitting in a data center and running for you around the clock.
+
+That lets developers focus on code instead of managing a VPS or standalone server. I can spend my time on the product instead of building infrastructure, checking whether an instance is down, watching NGINX, or chasing database errors.
+
+It is like sugar-free cola. It contains no sucrose, but it still uses a sugar substitute for sweetness.
+
+I love this kind of Serverless architecture, which is why I deploy almost every web project on Vercel.
+
+Developer experience really matters to me.
+
+## Conclusion
+
+The internet has no shortage of people willing to cause trouble. Public resources need basic protections such as rate limits and IP blocking. They do not need OpenAI-level risk controls, but they should not be left wide open.
+
+The [Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions#action) announced in Next.js 13.4 may reduce the need to write API endpoints for your own websites and apps. Without a public API endpoint, there is less for someone else to hammer.
+
+There is no permanent answer to this cat-and-mouse game. You still need solid protection on the server.
+
+Protect your site and watch the usage on every third-party service you pay for. Do not give people like this an easy opening.

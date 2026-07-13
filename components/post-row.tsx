@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { DitherVeil } from '~/components/dither-veil'
 import type { Post } from '~/lib/content'
 import { formatMonthDay, formatShortDate } from '~/lib/date'
-import { LocalDate } from '~/lib/i18n'
+import { LocalDate, T } from '~/lib/i18n'
 
 // The compact post row: dithered print thumb · title · dotted leader · date.
 // Mobile titles may use two lines; thumb and title stay shared morph elements.
@@ -39,7 +39,7 @@ export function PostRow({
         className="blog-row-title"
         style={{ viewTransitionName: `title-${post.slug}` } as React.CSSProperties}
       >
-        {post.title}
+        <T zh={post.title} en={post.titleEn} />
       </Heading>
       <span className="blog-row-leader" aria-hidden />
       <time
