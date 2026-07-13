@@ -332,6 +332,7 @@ export function PostToc({ nodes }: { nodes: PostRailNode[] }) {
           aria-hidden={!open}
           inert={open ? undefined : true}
         >
+          <div className="post-minimap-phone-surface backdrop-blur-[12px]" aria-hidden />
           <div className="post-minimap-clip">
             <div className="post-minimap-nodes">
               {displayedNodes.map((node) => (

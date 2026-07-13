@@ -197,18 +197,20 @@ Working and verified (light/dark/mobile, production build green):
   top-center translucent reading island: the collapsed 44px pill carries a
   circular document-progress ring, the article title, and an animated chevron;
   it develops after the title card clears the reading line and retreats on a
-  return to the hero. Opening grows the same clipped surface around the
-  internally scrolling tick map, which begins at the first heading instead of
+  return to the hero. Opening reveals the same clipped surface with
+  compositor-only opacity and transform around the internally scrolling tick
+  map, which begins at the first heading instead of
   repeating the article title, while the post stays still underneath. Outside
   taps and landmark selections collapse the compact map. Map
   items remain mounted and use Motion's DOM animator rather than leaking native
   view-transition snapshots. All layouts keep inert/ARIA, Escape, and
   reduced-motion behavior. Compact 1px nodes use
-  two-line-clamped labels and a viewport-aware max height. Every tick and
-  landmark shares the same 9px vertical step; labels overlay that fixed track
-  and shift right when active, hovered, or keyboard-focused to clear the lead
-  tick. The old back-to-writing link is gone. Motion staggers item entry and
-  exit from the center with a subtle vertical swing.
+  two-line-clamped labels and a viewport-aware max height. Fine-pointer layouts
+  use a 9px vertical step; coarse-pointer layouts use 11px so the four steps
+  between landmarks provide non-overlapping 44px hit regions. Labels overlay
+  that fixed track and shift right when active, hovered, or keyboard-focused to
+  clear the lead tick. The old back-to-writing link is gone. Motion staggers
+  item entry and exit from the center with a subtle vertical swing.
 
 - **Current July 13 taste-shelf polish (uncommitted)**: the homepage sections
   now read 让我来劲的音乐 / Music That Gets Me Going and 启发我的书 / Books

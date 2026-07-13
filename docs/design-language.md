@@ -322,9 +322,10 @@ on the x-axis. Across that compact range, opening the rail also develops a
 masked 8px backdrop blur that fades into the page and leaves when the rail
 closes, keeping overlapping prose quiet without shifting it. The rail itself
 has no panel background, border, or back link: compact 1px ticks and
-two-line-clamped labels sit directly in the margin. Every tick and landmark
-shares the same fixed vertical step; labels overlay that track so wrapping
-never changes its cadence.
+two-line-clamped labels sit directly in the margin. Fine-pointer layouts use a
+9px vertical step; coarse-pointer layouts use an 11px step so the four steps
+between landmarks provide non-overlapping 44px hit regions. Labels overlay that
+fixed track so wrapping never changes its cadence.
 Active, hovered, and keyboard-focused labels shift right to clear the longer
 lead tick.
 
@@ -332,9 +333,10 @@ Below 40rem the same map becomes a top-center reading island. Its collapsed
 44px surface is a true pill showing circular document progress, the
 one-line-clamped article title, and a vertical chevron. It develops after the
 title card clears the reading line, then retreats when the reader returns to the
-post hero. Opening it grows one continuous translucent surface around the tick
-map; the expanded list starts at the first heading because the article title
-already remains in the island header. The post stays in place underneath.
+post hero. Opening reveals one continuous translucent surface around the tick
+map using opacity and transform only. The expanded list starts at the first
+heading because the article title already remains in the island header. The
+post stays in place underneath.
 Landmark jumps collapse the compact map after selection; tapping outside or
 pressing Escape also closes it. It keeps bottom-dock and safe-area
 clearance, and the map scrolls internally when its fixed rhythm exceeds the
