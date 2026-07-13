@@ -27,12 +27,12 @@ export default function ProjectsPage() {
               href={project.url}
               target="_blank"
               rel="noreferrer"
-              className="hairline-top group flex items-baseline gap-3 py-3 text-sm"
+              className="hairline-top group grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-start gap-x-4 py-4 text-sm"
             >
-              <span className="shrink-0 font-medium transition-colors duration-150 ease-[ease] group-hover:text-foreground">
+              <span className="min-w-0 font-medium transition-colors duration-150 ease-[ease] group-hover:text-foreground [&_.external-label]:max-w-full">
                 <ExternalLabel>{project.name}</ExternalLabel>
               </span>
-              <span className="text-muted-foreground"><T zh={project.description} en={project.descriptionEn ?? project.description} /></span>
+              <span className="min-w-0 text-muted-foreground"><T zh={project.description} en={project.descriptionEn ?? project.description} /></span>
             </a>
           </li>
         ))}

@@ -8,9 +8,9 @@ its behavior spec is the contract.
 The header is sticky (z `--z-nav`) with a two-layer progressive-blur
 backdrop (8px masked to ~58%, 18px hugging the top edge, background tint
 82%→transparent) so passing content fades under the chrome; the top
-viewport fade lives there, the bottom one stays a fixed overlay. The footer
-is a single Swiss grid with a quiet, left-aligned colophon first, followed by
-the contact and index trees.
+viewport fade lives there, the bottom one stays a fixed overlay. On desktop,
+the footer is a single Swiss grid with a quiet, left-aligned colophon first,
+followed by the contact and index trees.
 
 ## Motion system
 
@@ -230,9 +230,10 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
   paper. Captions on covers are
   braille numerals (`lib/braille.ts`); readable dates stay for assistive
   tech.
-- **Blog index rows**: one line per post — 64×44 dithered print thumb
-  (still the shared morph element), title, dotted leader (the typewriter
-  TOC register), tabular date. Rows swing in center-out.
+- **Blog index rows**: one catalog row per post — 64×44 dithered print thumb
+  (still the shared morph element), title, dotted leader (the typewriter TOC
+  register), tabular date. Desktop titles remain one line; below 40rem they may
+  use two lines before truncating. Rows swing in center-out.
 - **Hover cards are informational only**: `.link-card` carries
   `pointer-events: none; user-select: none` — a card is a printed label,
   never a control. Email's card is a little paper ENVELOPE (folded flap,
@@ -318,23 +319,21 @@ in either chrome language).
 
 ## Footer colophon
 
-The leftmost colophon shows Cali's `UTC+8` timezone, a muted tabular live
-Asia/Taipei time, and a small redundant analog clock. The digital `<time>` is
-the accessible source; the clock face is decorative and deliberately quieter
-than the footer trees. Its fixed placeholder dimensions avoid hydration shift,
-and the second-aligned timer pauses while the page is hidden.
+The leftmost desktop colophon puts the copyright at the top and Cali's local
+clock at the bottom. The clock shows the `UTC+8` timezone, a muted tabular live
+Asia/Taipei time, and a small redundant analog face. The digital `<time>` is the
+accessible source; the clock face is decorative and deliberately quieter than
+the footer trees. Its fixed placeholder dimensions avoid hydration shift, and
+the second-aligned timer pauses while the page is hidden. On mobile, contact and
+index remain a two-column row and the colophon follows them as the final row;
+inside it, copyright and clock occupy opposite halves of a two-column grid.
 
-Above it, “上一位访客来自 … / Last visitor from …” appears only when the
-privacy-preserving visitor exchange succeeds. After hydration the client sends
-at most one same-origin POST per browser every 30 minutes. The endpoint reads
-only Vercel's sanitized city and two-letter country headers, atomically swaps
-one JSON record through Upstash Redis, expires it after 30 days, and returns the
-previous value. A two-second global guard limits automated overwrite bursts. It
-never stores or returns IP addresses, coordinates, timestamps, user agents,
-referrers, or history in the shared visitor record. Bots, prefetches, `DNT: 1`,
-and Global Privacy Control are ignored.
-Missing geolocation or `UPSTASH_REDIS_REST_URL` /
-`UPSTASH_REDIS_REST_TOKEN` quietly leaves the fixed footer slot hidden.
+## Project index
+
+Project rows use a 40/60 grid: the linked name occupies the left two parts and
+the description the right three. Both cells wrap naturally rather than
+truncating, with 1rem of vertical padding per row so multi-line descriptions
+retain a calm rhythm on narrow screens.
 
 ## Back pill
 
@@ -445,8 +444,7 @@ reduced motion. Decorative instances set `role="img"` + `aria-label` (or
 ## Static by default
 
 Blog, feeds, and OG images are statically generated; interactive data (hover
-cards, now-playing) revalidates on ISR timers. The visitor exchange is the
-narrow exception: a private, no-store POST route runs after hydration and does
-not make page rendering dynamic. Fonts are preloaded (except the CJK fallback,
-which loads on demand); above-the-fold images get `rel="preload"`. Page
-scrollbars are never customized; code-block scrollbars may be.
+cards, now-playing) revalidates on ISR timers. Fonts are preloaded (except the
+CJK fallback, which loads on demand); above-the-fold images get
+`rel="preload"`. Page scrollbars are never customized; code-block scrollbars
+may be.

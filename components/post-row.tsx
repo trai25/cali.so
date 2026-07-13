@@ -6,8 +6,8 @@ import type { Post } from '~/lib/content'
 import { formatMonthDay, formatShortDate } from '~/lib/date'
 import { LocalDate } from '~/lib/i18n'
 
-// The one-line post row: dithered print thumb · title · dotted leader ·
-// date. The thumb and title stay shared morph elements into the post.
+// The compact post row: dithered print thumb · title · dotted leader · date.
+// Mobile titles may use two lines; thumb and title stay shared morph elements.
 export function PostRow({
   post,
   headingLevel = 'h2',

@@ -2438,10 +2438,22 @@ a:focus-visible .external-label .external-mark {
 }
 
 .blog-row-title {
+  min-width: 0;
   font-weight: var(--font-weight-medium);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+@media (max-width: 39.99rem) {
+  .blog-row-title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
 }
 
 /* dotted leader between title and date — the typewriter TOC register */
@@ -2747,12 +2759,12 @@ html[data-locale='en'] [data-en] {
 }
 
 .footer-colophon {
-  /* First cell of the single footer row, resting quietly on the baseline. */
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.625rem;
-  align-self: end;
+  /* First desktop cell, but the final row after both trees on mobile. */
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  gap: 1.5rem;
+  align-self: stretch;
   text-align: left;
   font-size: 0.75rem;
   letter-spacing: 0.02em;
@@ -2761,23 +2773,22 @@ html[data-locale='en'] [data-en] {
   user-select: none;
 }
 
-.footer-visitor-origin {
-  /* Reserve exactly one annotation line while the private request settles. */
-  height: 1.4em;
-  max-width: min(18rem, 100%);
-  overflow: hidden;
-  color: var(--muted-foreground);
-  font-size: 0.875rem;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.011em;
-  line-height: 1.4;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  visibility: hidden;
+.footer-colophon .footer-local-time {
+  justify-self: end;
 }
 
-.footer-visitor-origin[data-visible] {
-  visibility: visible;
+@media (min-width: 40rem) {
+  .footer-colophon {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.625rem;
+  }
+
+  .footer-colophon .footer-local-time {
+    justify-self: auto;
+  }
 }
 
 .footer-local-time {

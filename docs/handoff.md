@@ -172,18 +172,11 @@ Working and verified (light/dark/mobile, production build green):
   gone — books rest directly on the plank. Vinyl hover no longer scales the
   sleeve — only the disc slides further out (−12% → −30%).
 
-- **Current July 13 polish pass (uncommitted)**: the footer colophon now
-  carries Cali's live Asia/Taipei clock (`UTC+8`) and a persisted
-  previous-global-visitor origin. `components/visitor-origin.tsx` posts at most
-  once per browser every 30 minutes to `app/api/visitor/route.ts`; the route rejects cross-origin
-  calls and ignores bots, prefetches, DNT, and GPC. It sanitizes Vercel's city
-  and country headers, then uses one raw Upstash REST Lua call to rate-limit and
-  atomically replace a 30-day `cali.so:previous-global-visitor:v1` JSON value.
-  Keys are namespaced by deployment environment. Configure
-  `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`; missing env or geo
-  hides the line without affecting the static page. Only city and two-letter
-  country are stored in the shared record. Never add IP, coordinates,
-  timestamps, user agent, referrer, or a visit history to that record.
+- **Current July 13 footer revision (uncommitted)**: the desktop colophon puts
+  copyright at the top and Cali's live Asia/Taipei clock (`UTC+8`) at the
+  bottom. The previous-visitor experiment was removed. On mobile, contact and
+  index stay side by side and the colophon follows them as the final row, with
+  copyright and clock placed in opposite columns.
 
 - **Round 13 (July 2026)**: `/about` merged back into the homepage —
   the taste sections moved below 写作 (唱片机/书架 remain; the movie and

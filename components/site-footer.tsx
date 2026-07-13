@@ -10,7 +10,6 @@ import {
   XCard,
   YouTubeCard,
 } from '~/components/social-cards'
-import { VisitorOrigin } from '~/components/visitor-origin'
 import { T } from '~/lib/i18n'
 
 function Tree({
@@ -43,13 +42,8 @@ export function SiteFooter({
   github: GitHubSnapshot
 }) {
   return (
-    <footer className="mx-auto mt-24 w-full max-w-[37.5rem] px-6 pb-12 text-sm text-muted-foreground">
+    <footer className="mx-auto mt-24 w-full max-w-[37.5rem] px-6 pb-24 text-sm text-muted-foreground sm:pb-12">
       <div className="hairline-top grid grid-cols-2 gap-x-6 gap-y-8 pt-8 sm:grid-cols-3">
-        <div className="footer-colophon col-span-2 sm:col-span-1">
-          <VisitorOrigin />
-          <FooterClock />
-          <p>© {new Date().getFullYear()} Cali Castle</p>
-        </div>
         <Tree zh="联系" en="contact">
           <li>
             <XCard data={social.x} />
@@ -94,6 +88,10 @@ export function SiteFooter({
             </a>
           </li>
         </Tree>
+        <div className="footer-colophon col-span-2 sm:order-first sm:col-span-1">
+          <p>© {new Date().getFullYear()} Cali Castle</p>
+          <FooterClock />
+        </div>
       </div>
     </footer>
   )
