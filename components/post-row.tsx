@@ -20,18 +20,21 @@ export function PostRow({
   const Heading = headingLevel
   return (
     <Link href={`/blog/${post.slug}`} className="group blog-row hairline-top">
-      {post.cover ? (
-        <span
-          className="print-thumb"
-          aria-hidden
-          style={{ viewTransitionName: `cover-${post.slug}` } as React.CSSProperties}
-        >
-          <Image src={post.cover.src} alt="" width={64} height={44} sizes="64px" className="print-thumb-img" />
-          <DitherVeil src={post.cover.src} />
-        </span>
-      ) : (
-        <span className="print-thumb print-thumb-empty" aria-hidden />
-      )}
+      <span className="print-pile" aria-hidden>
+        <span className="print-pile-sheet" />
+        <span className="print-pile-sheet" />
+        {post.cover ? (
+          <span
+            className="print-thumb"
+            style={{ viewTransitionName: `cover-${post.slug}` } as React.CSSProperties}
+          >
+            <Image src={post.cover.src} alt="" width={64} height={44} sizes="64px" className="print-thumb-img" />
+            <DitherVeil src={post.cover.src} />
+          </span>
+        ) : (
+          <span className="print-thumb print-thumb-empty" />
+        )}
+      </span>
       <Heading
         className="blog-row-title"
         style={{ viewTransitionName: `title-${post.slug}` } as React.CSSProperties}

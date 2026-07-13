@@ -9,7 +9,7 @@ import { PhotosIcon, ProjectsIcon, WritingIcon } from '~/components/dock-icons'
 import { LiquidGlass } from '~/components/liquid-glass'
 import { Preferences } from '~/components/preferences'
 import { T } from '~/lib/i18n'
-import { playTick } from '~/lib/sound'
+import { playDockSound } from '~/lib/sound'
 
 const ITEMS = [
   { href: '/blog', zh: '写作', en: 'Writing', icon: WritingIcon },
@@ -45,8 +45,8 @@ function DockItem({
       onClick={(event) => {
         if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
           onNavigate(href, event.detail === 0)
+          if (!active) playDockSound()
         }
-        playTick()
       }}
     >
       {children}

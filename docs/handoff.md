@@ -178,8 +178,52 @@ Working and verified (light/dark/mobile, production build green):
   index stay side by side and the colophon follows them as the final row, with
   copyright and clock placed in opposite columns.
 
+- **Current July 13 post polish (uncommitted)**: blog catalog thumbnails now
+  sit over two static paper sheets while the foreground 64×44 dither print
+  remains the shared cover morph. Opening a post leaves the shared h1 in charge
+  of the transition, develops its metadata after the 320ms morph window, then
+  brings in the prose at 520ms. Reduced motion disables the full sequence.
+
+- **Current July 13 post minimap (uncommitted)**: the old desktop-only heading
+  list and separate back pill are replaced by a collapsible document minimap.
+  The title and h2/h3 landmarks are separated by three quiet ticks regardless
+  of section length, and remain hash-linked, focusable jump targets tracked
+  against a fixed 100px reading line. It opens by default at ≥64rem with a
+  one-time center-out develop on mount, and becomes a borderless left-edge
+  compact rail from 40–63.99rem that reveals in place without moving itself or
+  the article horizontally. Across that compact range, its open state carries a
+  masked 8px backdrop blur that fades into the page and disappears when closed
+  so overlapping prose stays legible. Below 40rem it becomes a
+  top-center translucent reading island: the collapsed 44px pill carries a
+  circular document-progress ring, the article title, and an animated chevron;
+  it develops after the title card clears the reading line and retreats on a
+  return to the hero. Opening grows the same clipped surface around the
+  internally scrolling tick map, which begins at the first heading instead of
+  repeating the article title, while the post stays still underneath. Outside
+  taps and landmark selections collapse the compact map. Map
+  items remain mounted and use Motion's DOM animator rather than leaking native
+  view-transition snapshots. All layouts keep inert/ARIA, Escape, and
+  reduced-motion behavior. Compact 1px nodes use
+  two-line-clamped labels and a viewport-aware max height. Every tick and
+  landmark shares the same 9px vertical step; labels overlay that fixed track
+  and shift right when active, hovered, or keyboard-focused to clear the lead
+  tick. The old back-to-writing link is gone. Motion staggers item entry and
+  exit from the center with a subtle vertical swing.
+
+- **Current July 13 taste-shelf polish (uncommitted)**: the homepage sections
+  now read 让我动起来的音乐 / Music That Gets Me Going and 启发我的书 / Books
+  That Inspire Me. Selected album/book annotations use muted foreground ink,
+  and record sleeves gained a quiet layered drop shadow.
+
+- **Current July 13 sound split (uncommitted)**: dock destination changes and
+  preference changes no longer share one tick. The requested Cuelume package
+  supplies `chime` for dock navigation and `success` for language/theme/sound
+  changes. Accepted blog post cover toggles use `sparkle` when developing the
+  dither print and `droplet` when clearing it. Clicking the already-active dock
+  destination remains silent.
+
 - **Round 13 (July 2026)**: `/about` merged back into the homepage —
-  the taste sections moved below 写作 (唱片机/书架 remain; the movie and
+  the taste sections moved below 写作 (music/books remain; the movie and
   people experiments were later cut); the page and its footer link are gone.
   Social data went **live with
   ISR**: `lib/social-live.ts` fetches GitHub (contributions + followers,
@@ -287,8 +331,8 @@ Working and verified (light/dark/mobile, production build green):
   a fluid `@fluid/dropdown` panel (opens upward) holding language, theme,
   and a new **UI sound** preference as full-width fluid tabs. Sound is
   off by default (`lib/sound.ts`, localStorage `sound`); when on, dock
-  navigation and preference changes play a tiny WebAudio tick — the
-  hook future sounds should use. The footer's 偏好 tree column moved
+  navigation and preference changes play distinct Cuelume WebAudio cues through
+  the shared `lib/sound.ts` preference wrapper. The footer's 偏好 tree column moved
   here (footer is now two trees + colophon); the old standalone
   locale/theme toggle components are deleted.
 
@@ -310,9 +354,7 @@ Working and verified (light/dark/mobile, production build green):
    newsletters tables stay; Resend already in env. Single allowlisted email,
    15-min single-use token, rate-limited request, signed httpOnly ~30d
    session cookie.
-4. **Remaining visual polish**: staged title card on post open and
-   print-pile list thumbnails.
-5. **Cutover checklist** (do NOT do early): crawl live v1 URLs and verify
+4. **Cutover checklist** (do NOT do early): crawl live v1 URLs and verify
    100% (issue #75 acceptance criteria); drop `comments`/`guestbook` tables
    (data already archived privately); decommission Sanity only after all
    content verified in prod; gate on Next 16.3 stable (ADR-0005).

@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react'
 import { DropdownContent, DropdownMenu, DropdownTrigger } from '~/components/ui/dropdown'
 import { TabItem, Tabs, TabsList } from '~/components/ui/tabs'
 import { T } from '~/lib/i18n'
-import { playTick, setSoundEnabled, soundEnabled } from '~/lib/sound'
+import { playPreferenceSound, setSoundEnabled, soundEnabled } from '~/lib/sound'
 
 function Row({ zh, en, children }: { zh: string; en: string; children: React.ReactNode }) {
   return (
@@ -51,7 +51,7 @@ export function Preferences() {
     } catch {
       /* private mode */
     }
-    playTick()
+    playPreferenceSound()
   }
 
   return (
@@ -84,7 +84,7 @@ export function Preferences() {
             value={mounted && theme ? theme : 'system'}
             onValueChange={(v) => {
               setTheme(v)
-              playTick()
+              playPreferenceSound()
             }}
           >
             <TabsList aria-label="外观 / Theme">
@@ -99,9 +99,10 @@ export function Preferences() {
             value={mounted && sound ? 'on' : 'off'}
             onValueChange={(v) => {
               const on = v === 'on'
+              if (!on) playPreferenceSound()
               setSoundEnabled(on)
               setSound(on)
-              if (on) playTick()
+              if (on) playPreferenceSound()
             }}
           >
             <TabsList aria-label="音效 / Sound">

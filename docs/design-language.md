@@ -117,7 +117,9 @@ prints dropped on the sheet (rotate from base+1.5°, `scale(0.85)`, 350ms),
 (`html[data-visited]`, set pre-paint). Entrance and reveal animations use
 `animation-fill-mode: backwards` — a forwards fill would pin the keyframe
 value and dead-lock hover transitions on the same properties. Reduced
-motion disables every entrance.
+motion disables every entrance. The staged post opening under Fluid page
+transitions is the one longer route-level sequence and follows that section's
+timing instead of this ordinary entrance budget.
 
 ## Hover cards as craft objects
 
@@ -231,9 +233,11 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
   braille numerals (`lib/braille.ts`); readable dates stay for assistive
   tech.
 - **Blog index rows**: one catalog row per post — 64×44 dithered print thumb
-  (still the shared morph element), title, dotted leader (the typewriter TOC
-  register), tabular date. Desktop titles remain one line; below 40rem they may
-  use two lines before truncating. Rows swing in center-out.
+  (still the shared morph element) resting over two quiet paper sheets, title,
+  dotted leader (the typewriter TOC register), tabular date. The sheets are
+  static decoration; they never join the morph or change the row geometry.
+  Desktop titles remain one line; below 40rem they may use two lines before
+  truncating. Rows swing in center-out.
 - **Hover cards are informational only**: `.link-card` carries
   `pointer-events: none; user-select: none` — a card is a printed label,
   never a control. Email's card is a little paper ENVELOPE (folded flap,
@@ -243,8 +247,8 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
   oak tone (walnut in dark), top highlight, wall shadow beneath, and
   per-item contact shadows where things meet the wood. The plank runs the
   full framed width even when half empty — that's the point. A persistent
-  plain-text annotation directly below it names the selected object and is
-  the shelf's only external link. Covers always select; they never navigate.
+  muted plain-text annotation directly below it names the selected object and
+  is the shelf's only external link. Covers always select; they never navigate.
   Record and book spines use static cover-derived color and contrasting ink
   values stored with the shelf data, so SSR output is stable and no color is
   sampled at interaction time.
@@ -258,7 +262,9 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
   balanced on both sides. The records themselves are not rendered; the visual
   system is entirely about paper sleeves, cover art, and their spines. One tap
   brings a sleeve forward; tapping the active sleeve leaves it selected. The
-  covers keep the default cursor and only inactive sleeves lift slightly on a
+  sleeves carry a quiet layered drop shadow so their paper edges separate from
+  one another without floating away from the plank. Covers keep the default
+  cursor and only inactive sleeves lift slightly on a
   fine-pointer hover. The shelf is clipped to a centered 37.5rem frame. Pointer
   drag and horizontal trackpad wheel input pan the stack continuously; vertical
   wheel input remains native page scrolling. Releasing the pointer or ending a
@@ -301,12 +307,47 @@ sharp.** Applications:
 
 ## Post marginalia
 
-At ≥64rem the post's left margin carries its wayfinding: the back pill on
-top, the table of contents below (fixed, 11rem wide, 13px, muted at 75%
-opacity; the section being read — last heading above the ⅓-viewport
-reading line — holds full foreground ink). Clicking smooth-scrolls
-(instant under reduced motion); headings carry `scroll-margin-top` to
-clear the edge fade. Below 64rem the margin chrome is simply absent.
+Post wayfinding is a collapsible document minimap fixed to the left edge. The
+title and h2/h3 headings are labeled landmarks, with three short ticks between
+every pair. The even rhythm is deliberately independent of section length. The
+active landmark is the last one above the fixed 100px reading line, with
+page-top and page-bottom overrides. Its tick expands
+with `scaleX` and returns to full foreground ink. Landmark activation updates
+the hash, lands the target 100px below the viewport edge, and focuses it.
+
+At ≥64rem the minimap opens by default and develops once on mount with the same
+center-out item stagger used by its toggle. From 40–63.99rem it starts closed
+and reveals in place over the left gutter without moving itself or the article
+on the x-axis. Across that compact range, opening the rail also develops a
+masked 8px backdrop blur that fades into the page and leaves when the rail
+closes, keeping overlapping prose quiet without shifting it. The rail itself
+has no panel background, border, or back link: compact 1px ticks and
+two-line-clamped labels sit directly in the margin. Every tick and landmark
+shares the same fixed vertical step; labels overlay that track so wrapping
+never changes its cadence.
+Active, hovered, and keyboard-focused labels shift right to clear the longer
+lead tick.
+
+Below 40rem the same map becomes a top-center reading island. Its collapsed
+44px surface is a true pill showing circular document progress, the
+one-line-clamped article title, and a vertical chevron. It develops after the
+title card clears the reading line, then retreats when the reader returns to the
+post hero. Opening it grows one continuous translucent surface around the tick
+map; the expanded list starts at the first heading because the article title
+already remains in the island header. The post stays in place underneath.
+Landmark jumps collapse the compact map after selection; tapping outside or
+pressing Escape also closes it. It keeps bottom-dock and safe-area
+clearance, and the map scrolls internally when its fixed rhythm exceeds the
+available height. Larger layouts remain transparent and borderless.
+
+Every toggle exposes `aria-expanded`/`aria-controls` and morphs its chevron
+between directions. Map items remain mounted inside the clipped shell and
+animate through Motion's DOM animator with a tiny center-out stagger, vertical
+develop, and two-degree swing. Avoid native view-transition snapshots here:
+they live above the island's clipping boundary. A closed map is inert and hidden
+from assistive technology. Escape closes a compact map and restores toggle
+focus. Reduced motion removes island, rail, content, tick, icon, and staggered
+item transitions.
 
 ## Bilingual chrome
 
@@ -335,13 +376,6 @@ the description the right three. Both cells wrap naturally rather than
 truncating, with 1rem of vertical padding per row so multi-line descriptions
 retain a calm rhythm on narrow screens.
 
-## Back pill
-
-Post pages float a 36px circular back control in the left margin (fixed at
-≥52rem, inline above the cover below that), hairline ring + tooltip shadow,
-color-only hover. It returns to the index, so the cover/title morph plays
-in reverse.
-
 ## Liquid glass dock
 
 The dock pill is real glass: a runtime-built displacement map (rounded-rect
@@ -358,6 +392,12 @@ Safari/Firefox can't run SVG filters in `backdrop-filter` and get a plain
 frosted pane (blur 6px) instead. The `backdrop-filter` must stay inline:
 LightningCSS strips the raw property from stylesheets.
 
+When UI sound is enabled, moving to a different dock destination uses Cuelume's
+soft two-note `chime` cue; changing language, theme, or sound uses its warm
+three-note `success` cue; and toggling a blog post cover uses its quick
+`sparkle` cue when developing the dither print and `droplet` when clearing it
+back to the photo. Re-selecting the current dock destination stays silent.
+
 ## Fluid page transitions
 
 Index → post navigation continues the selective-focus grammar: the origin
@@ -372,8 +412,9 @@ generated, and the transition plays over already-available content.
 Implementation: `experimental.viewTransition` + `view-transition-name` pairs
 (`cover-<slug>` via PolaroidCover's `morph` prop, `title-<slug>` on row
 title/post h1). Root: old page 250ms fade + `blur(2px)` defocus, new page
-300ms focus-in; shared groups 320ms `--ease-swift`. Entrance choreography on
-the destination chains after the morph window.
+300ms focus-in; shared groups 320ms `--ease-swift`. The shared h1 remains
+unanimated, metadata develops from 320–570ms, and the prose starts at 520ms.
+This overlap hands the title card into reading without delaying navigation.
 
 ## Instant-photo cover treatment
 

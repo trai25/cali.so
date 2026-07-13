@@ -1,39 +1,60 @@
-// UI sound preference + the one sound we make: a tiny tick on navigation.
-// On by default; an explicit preference lives in localStorage.
+import { play, setEnabled } from 'cuelume'
 
-let ctx: AudioContext | null = null
+// UI sound preference + semantic cues from Cuelume. An explicit preference
+// lives in localStorage; the library only owns synthesis and playback.
+
+let engineDisableTimer: ReturnType<typeof setTimeout> | undefined
+let inMemorySoundEnabled = true
 
 export function soundEnabled(): boolean {
   try {
     const preference = localStorage.getItem('sound')
-    return preference === null ? true : preference === 'on'
+    return preference === null ? inMemorySoundEnabled : preference === 'on'
   } catch {
-    return true
+    return inMemorySoundEnabled
   }
 }
 
 export function setSoundEnabled(on: boolean) {
+  inMemorySoundEnabled = on
   try {
     localStorage.sound = on ? 'on' : 'off'
   } catch {
     /* private mode */
   }
+
+  if (engineDisableTimer !== undefined) {
+    clearTimeout(engineDisableTimer)
+    engineDisableTimer = undefined
+  }
+
+  if (on) {
+    setEnabled(true)
+    return
+  }
+
+  // Let the final preference cue start after a suspended AudioContext resumes.
+  // Updating storage first prevents any later interaction from starting a cue.
+  engineDisableTimer = setTimeout(() => {
+    setEnabled(false)
+    engineDisableTimer = undefined
+  }, 350)
 }
 
-export function playTick() {
-  if (!soundEnabled()) return
-  try {
-    ctx ??= new AudioContext()
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
-    osc.type = 'sine'
-    osc.frequency.value = 1180
-    gain.gain.setValueAtTime(0.035, ctx.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.07)
-    osc.connect(gain).connect(ctx.destination)
-    osc.start()
-    osc.stop(ctx.currentTime + 0.08)
-  } catch {
-    /* no audio available */
-  }
+function playCue(cue: 'chime' | 'droplet' | 'sparkle' | 'success') {
+  const enabled = soundEnabled()
+  setEnabled(enabled)
+  if (enabled) play(cue)
+}
+
+export function playDockSound() {
+  playCue('chime')
+}
+
+export function playPreferenceSound() {
+  playCue('success')
+}
+
+export function playCoverSound(on: boolean) {
+  playCue(on ? 'sparkle' : 'droplet')
 }

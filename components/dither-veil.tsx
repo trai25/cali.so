@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from 'react'
 
+import { playCoverSound } from '~/lib/sound'
+
 const PIXEL = 2.5 // CSS px per dither cell
 const ASCII_CELL = 7 // CSS px per ascii character cell
 // density ramp signed with the site's own letters: only characters from
@@ -311,7 +313,9 @@ export function DitherVeil({ src, mode = 'dither' }: { src: string; mode?: 'dith
 
     const onToggle = () => {
       if (playing || !prepared) return
-      target = target === 16 ? 0 : 16
+      const nextTarget = target === 16 ? 0 : 16
+      playCoverSound(nextTarget === 16)
+      target = nextTarget
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         const { rect } = prepared
         if (stepTimer) clearTimeout(stepTimer)

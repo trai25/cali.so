@@ -34,23 +34,86 @@ export interface Post {
   body: string
 }
 
-export interface Heading {
-  id: string
-  text: string
-  level: 2 | 3
+export const POST_ARTICLE_START_ID = 'post-article-start'
+
+export type PostRailNode =
+  | { key: string; kind: 'tick' }
+  | {
+      key: string
+      kind: 'landmark'
+      id: string
+      label: string
+      variant: 'title' | 'heading'
+    }
+
+const fencePattern = /^\s{0,3}(`{3,}|~{3,})/
+const headingPattern = /^\s{0,3}(#{2,3})\s+(.+?)\s*$/
+const TICKS_BETWEEN_LANDMARKS = 3
+
+function cleanHeading(raw: string) {
+  return raw
+    .replace(/\s+#+\s*$/, '')
+    .replace(/!?(?:\[([^\]]+)\])\([^)]*\)/g, '$1')
+    .replace(/[*_`~]/g, '')
+    .trim()
 }
 
-// Mirrors rehype-slug's ids (both use github-slugger), so TOC anchors
-// always match the rendered headings.
-export function extractHeadings(body: string): Heading[] {
+// Build a deliberately even document minimap. Heading IDs use the same
+// github-slugger algorithm as rehype-slug, while a fixed number of quiet ticks
+// separates every landmark so prose length never changes the rail's rhythm.
+export function buildPostRail(title: string, body: string): PostRailNode[] {
   const slugger = new GithubSlugger()
-  const withoutCode = body.replace(/```[\s\S]*?```/g, '')
-  const headings: Heading[] = []
-  for (const [, hashes, raw] of withoutCode.matchAll(/^(#{2,3})\s+(.+)$/gm)) {
-    const text = raw.replace(/[*_`~]/g, '').trim()
-    headings.push({ id: slugger.slug(text), text, level: hashes.length as 2 | 3 })
+  const lines = body.split(/\r?\n/)
+  const nodes: PostRailNode[] = [
+    {
+      key: 'title',
+      kind: 'landmark',
+      id: POST_ARTICLE_START_ID,
+      label: title,
+      variant: 'title',
+    },
+  ]
+  let index = 0
+  let landmark = 0
+
+  while (index < lines.length) {
+    const line = lines[index]
+    if (!line.trim()) {
+      index += 1
+      continue
+    }
+
+    const fence = line.match(fencePattern)?.[1]
+    if (fence) {
+      const closingFence = new RegExp(`^\\s{0,3}${fence[0]}{${fence.length},}\\s*$`)
+      index += 1
+      while (index < lines.length && !closingFence.test(lines[index])) index += 1
+      if (index < lines.length) index += 1
+      continue
+    }
+
+    const heading = line.match(headingPattern)
+    if (heading) {
+      const label = cleanHeading(heading[2])
+      for (let tick = 0; tick < TICKS_BETWEEN_LANDMARKS; tick += 1) {
+        nodes.push({ key: `gap-${landmark}-${tick}`, kind: 'tick' })
+      }
+      nodes.push({
+        key: `landmark-${landmark}`,
+        kind: 'landmark',
+        id: slugger.slug(label),
+        label,
+        variant: 'heading',
+      })
+      landmark += 1
+      index += 1
+      continue
+    }
+
+    index += 1
   }
-  return headings
+
+  return nodes
 }
 
 // CJK prose reads ~300 chars/min, Latin ~200 words/min

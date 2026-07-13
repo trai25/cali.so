@@ -133,7 +133,9 @@ export default function HomePage() {
 
       {records.length > 0 && (
         <section className="mt-16">
-          <SectionTitle delay={320}><T zh="唱片机" en="On rotation" /></SectionTitle>
+          <SectionTitle delay={320}>
+            <T zh="让我动起来的音乐" en="Music That Gets Me Going" />
+          </SectionTitle>
           <div className="enter mt-5" style={{ '--enter-delay': '360ms' } as React.CSSProperties}>
             <VinylShelf />
           </div>
@@ -142,7 +144,9 @@ export default function HomePage() {
 
       {books.length > 0 && (
         <section className="mt-16">
-          <SectionTitle delay={380}><T zh="书架" en="Bookshelf" /></SectionTitle>
+          <SectionTitle delay={380}>
+            <T zh="启发我的书" en="Books That Inspire Me" />
+          </SectionTitle>
           <div className="enter mt-5" style={{ '--enter-delay': '420ms' } as React.CSSProperties}>
             <Bookshelf />
           </div>
