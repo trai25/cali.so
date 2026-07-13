@@ -2,6 +2,7 @@
 
 import { PreviewCard } from '@base-ui/react/preview-card'
 
+import { ExternalLabel } from '~/components/external-mark'
 import type { LinkPreview } from '~/lib/link-previews'
 
 // External prose links: inline favicon prefix, and — with build-time
@@ -27,7 +28,7 @@ export function ExternalLink({
     return (
       <a href={href} target="_blank" rel="noreferrer" className="external-link">
         {icon}
-        {children}
+        <ExternalLabel>{children}</ExternalLabel>
       </a>
     )
   }
@@ -45,7 +46,7 @@ export function ExternalLink({
         closeDelay={100}
       >
         {icon}
-        {children}
+        <ExternalLabel>{children}</ExternalLabel>
       </PreviewCard.Trigger>
       <PreviewCard.Portal>
         <PreviewCard.Positioner sideOffset={8} collisionPadding={16} className="pointer-events-none z-[var(--z-card)]">

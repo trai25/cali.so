@@ -3,7 +3,7 @@
 import { PreviewCard } from '@base-ui/react/preview-card'
 import Image from 'next/image'
 
-
+import { ExternalLabel } from '~/components/external-mark'
 import { T } from '~/lib/i18n'
 
 export interface SocialSnapshot {
@@ -83,7 +83,7 @@ function Card({
         delay={300}
         closeDelay={120}
       >
-        {trigger}
+        <ExternalLabel>{trigger}</ExternalLabel>
       </PreviewCard.Trigger>
       <PreviewCard.Portal>
         <PreviewCard.Positioner side="top" sideOffset={8} collisionPadding={16} className="pointer-events-none z-[var(--z-card)]">
@@ -108,7 +108,13 @@ function Identity({
   return (
     <>
       <span className="service-card-head">
-        <Image src={avatar} alt="" width={40} height={40} className="service-card-avatar" />
+        <Image
+          src={avatar}
+          alt=""
+          width={40}
+          height={40}
+          className="service-card-avatar"
+        />
         <span className="service-card-names">
           <span className="service-card-name">{data.name}</span>
           <span className="service-card-sub">@{data.handle}</span>
@@ -132,7 +138,11 @@ function Identity({
 export function XCardBody({ data }: { data: SocialSnapshot }) {
   return (
     <>
-      <Identity data={data} avatar="/images/headshot.jpg" service="x" />
+      <Identity
+        data={data}
+        avatar="/images/headshot.jpg"
+        service="x"
+      />
       {data.followers && (
         <span className="service-card-stat">
           <b>{data.followers}</b> <T zh="关注者" en="followers" />
@@ -149,7 +159,12 @@ export function TelegramCardBody({ data }: { data: SocialSnapshot }) {
 export function YouTubeCardBody({ data }: { data: SocialSnapshot }) {
   return (
     <>
-      <Identity data={data} avatar="/images/headshot.jpg" service="youtube" withBio={false} />
+      <Identity
+        data={data}
+        avatar="/images/headshot.jpg"
+        service="youtube"
+        withBio={false}
+      />
       {data.followers && (
         <span className="service-card-stat">
           <b>{data.followers}</b> <T zh="订阅者" en="subscribers" />
@@ -185,8 +200,7 @@ export function GitHubCardBody({ data }: { data: GitHubSnapshot }) {
             <b>{data.followers}</b> <T zh="关注者" en="followers" /> ·{' '}
           </>
         )}
-        <T zh="过去一年" en="Past year" /> <b>{data.total.toLocaleString()}</b>{' '}
-        <T zh="次贡献" en="contributions" />
+        <b>{data.total.toLocaleString()}</b> <T zh="次贡献" en="contributions" />
         <Glyph service="github" />
       </span>
     </>
@@ -225,9 +239,9 @@ export function GitHubCard({ data }: { data: GitHubSnapshot }) {
   )
 }
 
-// Email's card is a little paper envelope — flap, avatar stamp, and the
-// address written across the middle. Purely visual; the trigger itself
-// opens mailto:.
+// Email's card is the front of a mailed envelope: stamps, cancellation
+// marks, sender, recipient, and folded seams. Purely visual; the trigger
+// itself opens mailto:.
 export function EmailCard({ address }: { address: string }) {
   return (
     <PreviewCard.Root>
@@ -244,10 +258,27 @@ export function EmailCard({ address }: { address: string }) {
           <PreviewCard.Popup className="link-card email-envelope-card">
             <span className="email-envelope" aria-hidden>
               <span className="email-envelope-flap" />
-              <span className="email-envelope-stamp">
-                <Image src="/images/avatar.png" alt="" width={28} height={28} />
+              <span className="email-envelope-return">
+                <span>FROM</span>
+                CALI CASTLE
+                <br />
+                TAIPEI
               </span>
-              <span className="email-envelope-address">{address}</span>
+              <span className="email-envelope-stamps">
+                <span className="email-envelope-stamp email-envelope-stamp-portrait">
+                  <Image src="/images/avatar.png" alt="" width={32} height={32} />
+                  <span>CALI · 20</span>
+                </span>
+                <span className="email-envelope-stamp email-envelope-stamp-mark">
+                  <span className="email-envelope-stamp-star">✦</span>
+                  <span>POST · 26</span>
+                </span>
+              </span>
+              <span className="email-envelope-postmark" />
+              <span className="email-envelope-address">
+                <span>TO / 收</span>
+                {address}
+              </span>
             </span>
           </PreviewCard.Popup>
         </PreviewCard.Positioner>

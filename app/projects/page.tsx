@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 
+import { ExternalLabel } from '~/components/external-mark'
 import { projects } from '~/lib/projects'
 import { T } from '~/lib/i18n'
 
@@ -29,7 +30,7 @@ export default function ProjectsPage() {
               className="hairline-top group flex items-baseline gap-3 py-3 text-sm"
             >
               <span className="shrink-0 font-medium transition-colors duration-150 ease-[ease] group-hover:text-foreground">
-                {project.name}
+                <ExternalLabel>{project.name}</ExternalLabel>
               </span>
               <span className="text-muted-foreground"><T zh={project.description} en={project.descriptionEn ?? project.description} /></span>
             </a>

@@ -12,11 +12,10 @@ import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import { cva, type VariantProps } from "class-variance-authority";
 import type { IconComponent } from "~/lib/icon-context";
 import { cn } from "~/lib/utils";
-import { useShape } from "~/lib/shape-context";
 
 const buttonVariants = cva(
   [
-    "group relative isolate inline-flex items-center justify-center outline-none cursor-pointer",
+    "group relative isolate inline-flex items-center justify-center rounded-md outline-none cursor-pointer",
     "transition-colors duration-80",
     "disabled:opacity-50 disabled:pointer-events-none",
     "focus-visible:ring-1 focus-visible:ring-[color:var(--focus-ring,#6B97FF)]",
@@ -129,7 +128,6 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           : size === "icon-lg"
             ? "h-10 w-10"
             : "h-8 w-8";
-    const shape = useShape();
     const bgClass = active
       ? activeBgVariants[variant ?? "primary"]
       : bgVariants[variant ?? "primary"];
@@ -213,7 +211,6 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         iconLeft: !isIconOnly && !!LeadingIcon,
         iconRight: !isIconOnly && !!TrailingIcon,
       }),
-      shape.button,
       className
     );
 

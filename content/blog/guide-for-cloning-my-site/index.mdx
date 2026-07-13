@@ -19,23 +19,23 @@ coverHeight: 675
 
 开头就介绍其他方案可能有点反人类，但其实现在市面上有好多不同的博客建站方案，选择很多，你不一定非要用我的 😊，在这里我先推荐一些我个人比较看好的完整博客方案：
 
-[xLog](https://xlog.app/)（偏向零编程或有前端基础的人，可自定义度高，区块链博客）
+- [xLog](https://xlog.app/)（偏向零编程或有前端基础的人，可自定义度高，区块链博客）
 
-[Hashnode](https://hashnode.com)（偏向零编程基础的人，也不涉及编程，编辑体验良好，自带 Newsletter）
+- [Hashnode](https://hashnode.com)（偏向零编程基础的人，也不涉及编程，编辑体验良好，自带 Newsletter）
 
-[Nextra](https://nextra.site/)（偏向有前端基础的人，Next.js，Shu Ding 作品，Markdown 支持等，一流的，不用多说了）
+- [Nextra](https://nextra.site/)（偏向有前端基础的人，Next.js，Shu Ding 作品，Markdown 支持等，一流的，不用多说了）
 
-[Astro](https://astro.build/)（Content 优先的建站方式，挺优雅的，感谢 [@egoist](https://twitter.com/localhost_4173) 提醒）
+- [Astro](https://astro.build/)（Content 优先的建站方式，挺优雅的，感谢 [@egoist](https://twitter.com/localhost_4173) 提醒）
 
-[Hexo](https://hexo.io/zh-cn/)（老牌了，偏微开发基础的人，Node.js, Markdown）
+- [Hexo](https://hexo.io/zh-cn/)（老牌了，偏微开发基础的人，Node.js, Markdown）
 
 Honorable mentions：
 
-[Cusdis](https://cusdis.com/)（免费给你现有的 Hexo、React、Vue、Svelte 网站加评论系统，[Randy](https://lutaonan.com/) 出品的 Disqus 开源替代品）
+- [Cusdis](https://cusdis.com/)（免费给你现有的 Hexo、React、Vue、Svelte 网站加评论系统，[Randy](https://lutaonan.com/) 出品的 Disqus 开源替代品）
 
-[Umami](https://umami.is/)（给网站加统计，开源免费的 Google Analytics/Vercel Analytics 替代品）
+- [Umami](https://umami.is/)（给网站加统计，开源免费的 Google Analytics/Vercel Analytics 替代品）
 
-Wordpress 永远的王，对吧？
+- Wordpress 永远的王，对吧？
 
 我没有接受以上任何形式的赞助，咱就是发自内心的推荐。
 
@@ -43,33 +43,33 @@ Wordpress 永远的王，对吧？
 
 本站包括以下可完全免费部署的功能：
 
-主页（`/`）
+- 主页（`/`）
 
-博客（`/blog`，附带评论系统）
+- 博客（`/blog`，附带评论系统）
 
-项目列表（`/projects`）
+- 项目列表（`/projects`）
 
-留言墙（`/guestbook`）
+- 留言墙（`/guestbook`）
 
-后台 CMS（`/studio`，发布管理文章，编辑项目列表等）
+- 后台 CMS（`/studio`，发布管理文章，编辑项目列表等）
 
-Admin 后台（`/admin`，查看评论数据，发送 Newsletter 等）
+- Admin 后台（`/admin`，查看评论数据，发送 Newsletter 等）
 
 以下是网站必需的第三方服务：
 
-Vercel（部署服务平台，可白嫖）
+- Vercel（部署服务平台，可白嫖）
 
-Sanity（后台 CMS，可白嫖）
+- Sanity（后台 CMS，可白嫖）
 
-Neon（PostgreSQL 数据库，用来承载评论系统、Newsletter 系统与留言墙，可白嫖）
+- Neon（PostgreSQL 数据库，用来承载评论系统、Newsletter 系统与留言墙，可白嫖）
 
-Resend（Email 发送服务，可白嫖）
+- Resend（Email 发送服务，可白嫖）
 
-Upstash（Redis 服务，涉及文章阅读量，文章表情回复和网站访问量，可白嫖）
+- Upstash（Redis 服务，涉及文章阅读量，文章表情回复和网站访问量，可白嫖）
 
 以下是可选的第三方服务：
 
-[urlbox](https://www.urlbox.io/) （用来生成链接预览快照图，$9/月）
+- [urlbox](https://www.urlbox.io/) （用来生成链接预览快照图，$9/月）
 
 ## 项目克隆与本地配置
 
@@ -93,11 +93,11 @@ pnpm i
 
 安装完成以后我们需要先配置一下我们的 Sanity 来做我们的后台 CMS（内容管理系统）。
 
-前往 [sanity.io/manage](https://sanity.io/manage) 登录
+1. 前往 [sanity.io/manage](https://sanity.io/manage) 登录
 
-回到命令行，运行 `npm create sanity@latest -- --template clean --create-project "Cali Demo" --dataset production`，记得把「Cali Demo」替换成你的项目名称
+1. 回到命令行，运行 `npm create sanity@latest -- --template clean --create-project "Cali Demo" --dataset production`，记得把「Cali Demo」替换成你的项目名称
 
-按 **Ctrl + C** 退出命令即可
+1. 按 **Ctrl + C** 退出命令即可
 
 回到 [Sanity Dashboard](https://sanity.io/manage) 刷新一下页面，如果你看到了：
 
@@ -130,13 +130,13 @@ NEXT_PUBLIC_SANITY_PROJECT_ID="你的 project ID"
 
 我们只需：
 
-前往 [clerk.com](https://clerk.com/)
+1. 前往 [clerk.com](https://clerk.com/)
 
-点击右上角** Sign up** 注册
+1. 点击右上角** Sign up** 注册
 
-在 Dashboard 页面点击 **Add application**
+1. 在 Dashboard 页面点击 **Add application**
 
-填入你的项目名字，选择你想打开的鉴权机制（邮箱，Google，GitHub 等）
+1. 填入你的项目名字，选择你想打开的鉴权机制（邮箱，Google，GitHub 等）
 
 就完成了 Clerk 的应用注册，非常简单！
 
@@ -152,15 +152,15 @@ NEXT_PUBLIC_SANITY_PROJECT_ID="你的 project ID"
 
 步骤如下：
 
-前往 [Neon 官网](https://neon.tech/)
+1. 前往 [Neon 官网](https://neon.tech/)
 
-登录
+1. 登录
 
-根据后台步骤提示创建一个 database
+1. 根据后台步骤提示创建一个 database
 
-输入数据库名称
+1. 输入数据库名称
 
-选择 **region** 的时候需要注意，你现在选择的区域要在等会配置 Vercel 的时候选择对应的 region，个人推荐「新加坡」
+1. 选择 **region** 的时候需要注意，你现在选择的区域要在等会配置 Vercel 的时候选择对应的 region，个人推荐「新加坡」
 
 示例：
 
@@ -190,11 +190,11 @@ pnpm db:push
 
 以下情况会发送邮件：
 
-当有人订阅 Newsletter 时，我们发送订阅确认的邮件
+- 当有人订阅 Newsletter 时，我们发送订阅确认的邮件
 
-当有人回复他人评论时，我们发送邮件给被回复者
+- 当有人回复他人评论时，我们发送邮件给被回复者
 
-当有人在留言墙留言时，我们发送邮件给`SITE_NOTIFICATION_EMAIL_TO`
+- 当有人在留言墙留言时，我们发送邮件给`SITE_NOTIFICATION_EMAIL_TO`
 
 所以我们需要配置一下 `SITE_NOTIFICATION_EMAIL_TO` 为你想接收新留言提醒的邮箱地址，在 `.env` 里：
 
@@ -206,11 +206,11 @@ NEXT_PUBLIC_SITE_URL="https://example.com"
 
 我们接下来前往 Resend 后台创建获取我们的 API key 吧：
 
-前往 [Resend 官网](https://resend.com/)
+1. 前往 [Resend 官网](https://resend.com/)
 
-注册/登录
+1. 注册/登录
 
-点击 Add an API Key
+1. 点击 Add an API Key
 
 ![](./image-6.png#2034x896)
 
@@ -222,15 +222,15 @@ NEXT_PUBLIC_SITE_URL="https://example.com"
 
 步骤：
 
-前往 [Upstash 官网](https://upstash.com/)
+1. 前往 [Upstash 官网](https://upstash.com/)
 
-登录
+1. 登录
 
-点击 **Create database**
+1. 点击 **Create database**
 
-填入名称，Type 选 **Global**，Primary region 选「PlanetScale 选择的区域」，依然推荐新加坡
+1. 填入名称，Type 选 **Global**，Primary region 选「PlanetScale 选择的区域」，依然推荐新加坡
 
-找到 **REST API** 区域
+1. 找到 **REST API** 区域
 
 如图：
 
@@ -247,13 +247,13 @@ UPSTASH_REDIS_REST_URL="https://***.upstash.io"
 
 最后一步至关重要，我们需要前往 Vercel 进行部署我们的项目，步骤：
 
-前往 [Vercel 官网](https://vercel.com)
+1. 前往 [Vercel 官网](https://vercel.com)
 
-登录/注册
+1. 登录/注册
 
-在 Dashboard 里选择 **Add new project**
+1. 在 Dashboard 里选择 **Add new project**
 
-从 GitHub 导入你 fork 后的仓库
+1. 从 GitHub 导入你 fork 后的仓库
 
 如下图所示
 

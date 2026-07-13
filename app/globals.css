@@ -97,6 +97,7 @@
 }
 
 :root {
+    --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
@@ -267,6 +268,273 @@
   border-top: var(--border-hairline) solid var(--border);
 }
 
+/* ── 404 proof sheet ─────────────────────────────────────────────── */
+
+.error-sheet {
+  min-height: calc(100svh - 3.5rem);
+  display: grid;
+  place-items: center;
+  padding-block: 2rem 4rem;
+}
+
+.error-proof {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  min-height: 34rem;
+  overflow: hidden;
+  padding: 1.25rem;
+  box-shadow: inset 0 0 0 var(--border-hairline) var(--border);
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--border) 45%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--border) 45%, transparent) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.error-proof::before,
+.error-proof::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+.error-proof::before {
+  inset: 3.5rem 1.25rem auto;
+  height: var(--border-hairline);
+  background: var(--border);
+}
+
+.error-proof::after {
+  inset: auto 1.25rem 3.5rem;
+  height: var(--border-hairline);
+  background: var(--border);
+}
+
+.error-proof-meta,
+.error-proof-footer {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--muted-foreground);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+}
+
+.error-proof-footer {
+  position: absolute;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  left: 1.25rem;
+}
+
+.error-registration {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(26rem, 74%);
+  aspect-ratio: 1;
+  border: var(--border-hairline) solid color-mix(in oklab, var(--muted-foreground) 30%, transparent);
+  border-radius: 50%;
+  transform: translate(-50%, -54%);
+  pointer-events: none;
+}
+
+.error-registration::before,
+.error-registration::after,
+.error-registration span::before,
+.error-registration span::after {
+  content: '';
+  position: absolute;
+  background: color-mix(in oklab, var(--muted-foreground) 30%, transparent);
+}
+
+.error-registration::before {
+  top: 50%;
+  right: -2rem;
+  left: -2rem;
+  height: var(--border-hairline);
+}
+
+.error-registration::after {
+  top: -2rem;
+  bottom: -2rem;
+  left: 50%;
+  width: var(--border-hairline);
+}
+
+.error-registration span::before {
+  inset: 50% auto auto 50%;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: inset 0 0 0 var(--border-hairline) color-mix(in oklab, var(--muted-foreground) 42%, transparent);
+  transform: translate(-50%, -50%);
+}
+
+.error-registration span::after {
+  inset: 50% auto auto 50%;
+  width: 0.3rem;
+  height: 0.3rem;
+  transform: translate(-50%, -50%);
+}
+
+.error-code {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 4.8rem;
+  color: var(--foreground);
+  font-size: clamp(7.5rem, 30vw, 13.5rem);
+  font-weight: var(--font-weight-medium);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.13em;
+  line-height: 0.72;
+  user-select: none;
+}
+
+.error-code span {
+  display: block;
+  transform-origin: center;
+  transition:
+    transform 350ms var(--ease-spring),
+    text-shadow 350ms var(--ease-swift);
+}
+
+.error-code span:nth-child(1) {
+  transform: translate(-0.03em, -0.04em) rotate(-1.5deg);
+  text-shadow: 0.025em 0 color-mix(in oklab, var(--muted-foreground) 24%, transparent);
+}
+
+.error-code span:nth-child(2) {
+  transform: translateY(0.035em) rotate(1deg);
+  text-shadow: -0.02em 0 color-mix(in oklab, var(--muted-foreground) 24%, transparent);
+}
+
+.error-code span:nth-child(3) {
+  transform: translate(0.02em, -0.015em) rotate(2deg);
+  text-shadow: 0 0.025em color-mix(in oklab, var(--muted-foreground) 24%, transparent);
+}
+
+.error-loose-pixel {
+  position: absolute;
+  z-index: 2;
+  width: 0.45rem;
+  height: 0.45rem;
+  background: var(--foreground);
+  pointer-events: none;
+  animation: error-pixel-wander 2.8s steps(4, end) infinite;
+}
+
+.error-loose-pixel-a {
+  top: 26%;
+  left: 16%;
+}
+
+.error-loose-pixel-b {
+  top: 42%;
+  right: 13%;
+  animation-delay: -0.9s;
+}
+
+.error-loose-pixel-c {
+  top: 18%;
+  right: 28%;
+  width: 0.3rem;
+  height: 0.3rem;
+  animation-delay: -1.8s;
+}
+
+@keyframes error-pixel-wander {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: translate(0, 0);
+  }
+  25% {
+    opacity: 0.8;
+    transform: translate(7px, -5px);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translate(-4px, 7px);
+  }
+  75% {
+    opacity: 1;
+    transform: translate(5px, 4px);
+  }
+}
+
+.error-message {
+  position: relative;
+  z-index: 2;
+  margin-top: 4rem;
+}
+
+.error-kicker {
+  margin-bottom: 0.5rem;
+  color: var(--muted-foreground);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+}
+
+.error-actions {
+  position: relative;
+  z-index: 2;
+  margin-top: 1.25rem;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .error-proof:hover .error-code span {
+    transform: none;
+    text-shadow: 0 0 transparent;
+  }
+}
+
+@media (max-width: 30rem) {
+  .error-sheet {
+    padding-block: 1rem 3rem;
+  }
+
+  .error-proof {
+    min-height: 32rem;
+    padding: 1rem;
+  }
+
+  .error-proof::before {
+    inset-inline: 1rem;
+  }
+
+  .error-code {
+    margin-top: 5.25rem;
+    font-size: clamp(6.75rem, 35vw, 9rem);
+  }
+
+  .error-message {
+    margin-top: 4.5rem;
+  }
+
+  .error-proof-footer {
+    right: 1rem;
+    left: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .error-code span {
+    transition: none;
+  }
+
+  .error-loose-pixel {
+    animation: none;
+  }
+}
+
 /* ── Ambient background: paper grain + drafting guides ────────────── */
 
 .paper-grain {
@@ -288,26 +556,6 @@
   pointer-events: none;
   user-select: none;
   opacity: var(--guide-opacity);
-}
-
-/* fine dotted rules marking the content column, like a drafting sheet */
-.column-guides::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(37.5rem, calc(100% - 32px));
-  height: 1px;
-  background: radial-gradient(
-      circle,
-      color-mix(in oklab, var(--muted-foreground) 60%, transparent) 0.5px,
-      transparent 0.5px
-    )
-    0 0 / 4px 1px repeat-x;
-}
-
-.column-guides::before {
-  top: 16px;
 }
 
 /* full-height dashed verticals boxing the column, drafting-sheet style */
@@ -1012,6 +1260,45 @@ html[data-visited] .enter-polaroid .polaroid {
 
 /* ── External links: inline favicon + preview hover card ──────────── */
 
+.external-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.08em;
+}
+
+.external-mark {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  opacity: 0.6;
+  transition: opacity 150ms ease;
+}
+
+.external-label-text {
+  min-width: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .external-label .external-mark {
+    transition: opacity 150ms ease, transform 180ms ease;
+  }
+
+  a:hover .external-label .external-mark {
+    opacity: 0.95;
+    transform: translate(1.5px, -1.5px);
+  }
+}
+
+a:focus-visible .external-label .external-mark {
+  opacity: 0.95;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .external-label .external-mark {
+    transition: none;
+  }
+}
+
 .external-link img {
   display: inline-block;
   width: 14px;
@@ -1184,67 +1471,231 @@ html[data-visited] .enter-polaroid .polaroid {
 /* ── Email envelope: the hover card is a little piece of mail ─────── */
 
 .email-envelope-card {
-  padding: 0.625rem;
+  overflow: hidden;
+  padding: 0;
+  border-radius: 5px;
+  background: var(--paper);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--paper-ink) 30%, transparent),
+    var(--shadow-tooltip),
+    var(--shadow-medium);
 }
 
 .email-envelope {
+  --mail-red: oklch(0.58 0.12 25);
+  --mail-blue: oklch(0.53 0.09 245);
+
   position: relative;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  height: 8.5rem;
+  display: block;
+  height: 9.25rem;
   overflow: hidden;
-  border-radius: 4px;
-  background: var(--card);
-  box-shadow: inset 0 0 0 1px var(--border);
+  color: var(--paper-ink);
+  background:
+    radial-gradient(circle at 18% 24%, color-mix(in oklab, var(--paper-ink) 4%, transparent) 0 0.5px, transparent 0.75px),
+    var(--paper);
+  background-size: 13px 11px, auto;
 }
 
-/* the flap: a folded triangle drawn with clipped, slightly deeper paper */
-.email-envelope-flap {
-  position: absolute;
-  inset: 0 0 auto;
-  height: 52%;
-  clip-path: polygon(0 0, 100% 0, 50% 100%);
-  background: color-mix(in oklab, var(--foreground) 4%, var(--card));
-  box-shadow: inset 0 -1px 0 var(--border);
-}
-
-.email-envelope-flap::after {
+/* postal edge: quiet red/blue registration ink around the paper */
+.email-envelope::before {
   content: '';
   position: absolute;
   inset: 0;
-  clip-path: polygon(0 0, 100% 0, 50% 100%);
-  box-shadow: inset 0 0 0 1px var(--border);
+  z-index: 4;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(135deg, var(--mail-red) 0 7px, transparent 7px 14px, var(--mail-blue) 14px 21px, transparent 21px 28px) top / 100% 3px no-repeat,
+    repeating-linear-gradient(135deg, var(--mail-red) 0 7px, transparent 7px 14px, var(--mail-blue) 14px 21px, transparent 21px 28px) bottom / 100% 3px no-repeat,
+    repeating-linear-gradient(45deg, var(--mail-red) 0 7px, transparent 7px 14px, var(--mail-blue) 14px 21px, transparent 21px 28px) left / 3px 100% no-repeat,
+    repeating-linear-gradient(45deg, var(--mail-red) 0 7px, transparent 7px 14px, var(--mail-blue) 14px 21px, transparent 21px 28px) right / 3px 100% no-repeat;
+  opacity: 0.62;
+}
+
+/* closed front flap: lower seams meet under the recipient address */
+.email-envelope-flap {
+  position: absolute;
+  inset: auto 0 0;
+  height: 66%;
+  clip-path: polygon(0 100%, 0 75%, 50% 25%, 100% 75%, 100% 100%);
+  background: color-mix(in oklab, var(--paper-ink) 3%, var(--paper));
+  filter: drop-shadow(0 -1px 0 color-mix(in oklab, var(--paper-ink) 34%, transparent));
+}
+
+.email-envelope-return {
+  position: absolute;
+  top: 1.05rem;
+  left: 1.05rem;
+  z-index: 1;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 7px;
+  line-height: 1.45;
+  letter-spacing: 0.08em;
+  color: color-mix(in oklab, var(--paper-ink) 78%, transparent);
+}
+
+.email-envelope-return > span {
+  display: block;
+  margin-bottom: 1px;
+  font-size: 6px;
+  letter-spacing: 0.16em;
+  opacity: 0.72;
+}
+
+.email-envelope-stamps {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.8rem;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.2rem;
 }
 
 .email-envelope-stamp {
-  position: absolute;
-  top: 0.625rem;
-  right: 0.625rem;
-  padding: 3px;
-  background: var(--card);
-  /* perforated stamp edge */
-  outline: 1px dashed var(--border);
-  outline-offset: -1px;
-  rotate: 2deg;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 3px dotted var(--paper);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  line-height: 1;
+  color: color-mix(in oklab, var(--paper-ink) 90%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--paper-ink) 36%, transparent);
 }
 
-.email-envelope-stamp img {
+.email-envelope-stamp-portrait {
+  width: 3rem;
+  height: 3.65rem;
+  rotate: 2deg;
+  background: color-mix(in oklab, var(--mail-red) 11%, var(--paper));
+}
+
+.email-envelope-stamp-portrait img {
   display: block;
+  width: 2rem;
+  height: 2rem;
+  object-fit: cover;
+  filter: grayscale(1) contrast(1.08);
+}
+
+.email-envelope-stamp-portrait span,
+.email-envelope-stamp-mark > span:last-child {
+  margin-top: 0.2rem;
+  font-size: 5px;
+  letter-spacing: 0.06em;
+}
+
+.email-envelope-stamp-mark {
+  width: 2.25rem;
+  height: 2.85rem;
+  margin-top: 0.25rem;
+  rotate: -3deg;
+  background: color-mix(in oklab, var(--mail-blue) 10%, var(--paper));
+}
+
+.email-envelope-stamp-star {
+  font-size: 1rem;
+  color: color-mix(in oklab, var(--mail-blue) 66%, var(--paper-ink));
+}
+
+/* cancellation circle and three horizontal ink bars overlap the postage */
+.email-envelope-postmark {
+  position: absolute;
+  top: 1.35rem;
+  right: 4.2rem;
+  z-index: 3;
+  width: 2.1rem;
+  height: 2.1rem;
+  border: 1px solid color-mix(in oklab, var(--paper-ink) 58%, transparent);
+  border-radius: 999px;
+  rotate: -8deg;
+  opacity: 0.72;
+}
+
+.email-envelope-postmark::before {
+  content: '13 JUL';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 5px;
+  letter-spacing: 0.04em;
+}
+
+.email-envelope-postmark::after {
+  content: '';
+  position: absolute;
+  top: 0.5rem;
+  left: 1.65rem;
+  width: 2.8rem;
+  height: 1rem;
+  background: repeating-linear-gradient(to bottom, color-mix(in oklab, var(--paper-ink) 58%, transparent) 0 1px, transparent 1px 5px);
 }
 
 .email-envelope-address {
-  position: relative;
-  margin-bottom: 1.75rem;
+  position: absolute;
+  top: 5.45rem;
+  left: 3.3rem;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 13px;
-  letter-spacing: 0.02em;
+  line-height: 1.35;
+  letter-spacing: 0.035em;
+  color: color-mix(in oklab, var(--paper-ink) 92%, transparent);
+  white-space: nowrap;
+}
+
+.email-envelope-address > span {
+  margin-bottom: 0.25rem;
+  font-size: 6px;
+  letter-spacing: 0.18em;
+  opacity: 0.68;
 }
 
 /* ── Room shelves: records and books rest on a real wooden plank ──── */
 
 .room-shelf {
   position: relative;
+}
+
+.shelf-annotation {
+  position: relative;
+  display: flex;
+  width: max-content;
+  max-width: calc(100% - 2rem);
+  height: 1.75rem;
+  margin: 0.375rem auto 0;
+  align-items: center;
+  justify-content: center;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.shelf-annotation::before {
+  content: '';
+  position: absolute;
+  inset: -0.5rem;
+}
+
+.shelf-annotation .external-label {
+  max-width: 100%;
+}
+
+.shelf-annotation .external-label-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shelf-annotation:focus-visible {
+  border-radius: 2px;
+  outline: 1px solid var(--focus-ring);
+  outline-offset: 3px;
 }
 
 /* the plank's front face: edge grain drawn with layered streaks over an
@@ -1289,83 +1740,6 @@ html[data-visited] .enter-polaroid .polaroid {
   height: 5px;
   background: radial-gradient(50% 100% at 50% 100%, rgb(0 0 0 / 0.3), transparent 78%);
   pointer-events: none;
-}
-
-/* ── Film tickets: perforated admission stubs at seeded tilts ─────── */
-
-.film-strip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.875rem 1rem;
-}
-
-.film-ticket {
-  display: flex;
-  align-items: stretch;
-  background: var(--card);
-  box-shadow: 0 0 0 1px var(--border), 0 2px 10px rgb(0 0 0 / 0.06);
-  transform: rotate(var(--tilt, 0deg));
-  transition: transform 300ms var(--ease-swift), box-shadow 300ms var(--ease-swift);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .film-ticket:hover {
-    transform: rotate(0deg) translateY(-2px);
-    box-shadow: 0 0 0 1px var(--border), var(--shadow-medium);
-  }
-}
-
-/* the tear-off stub: rotated label behind a perforation line with
-   punched notches top and bottom */
-.film-ticket-stub {
-  display: flex;
-  align-items: center;
-  padding: 0 0.4rem;
-  border-right: 1px dashed var(--border);
-  position: relative;
-  writing-mode: vertical-rl;
-  font-size: 8px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--muted-foreground);
-  user-select: none;
-}
-
-.film-ticket-stub::before,
-.film-ticket-stub::after {
-  content: '';
-  position: absolute;
-  right: -4.5px;
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--background);
-  box-shadow: inset 0 0 0 1px var(--border);
-}
-
-.film-ticket-stub::before {
-  top: -4.5px;
-}
-
-.film-ticket-stub::after {
-  bottom: -4.5px;
-}
-
-.film-ticket-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  padding: 0.55rem 0.75rem 0.5rem;
-}
-
-.film-ticket-title {
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.film-ticket-meta {
-  font-size: 11px;
-  color: var(--muted-foreground);
 }
 
 /* ── Post images: scattered prints that straighten on attention ───── */
@@ -1454,36 +1828,196 @@ html[data-visited] .enter-polaroid .polaroid {
 
 /* ── Vinyl shelf (components/vinyl-shelf.tsx) ─────────────────────── */
 
+.vinyl-room {
+  left: 50%;
+  width: min(37.5rem, calc(100vw - 2rem));
+  transform: translateX(-50%);
+}
+
+.vinyl-viewport {
+  position: relative;
+  overflow: clip;
+  cursor: grab;
+}
+
+.vinyl-room[data-vinyl-interaction='panning'] .vinyl-viewport {
+  cursor: grabbing;
+}
+
 .vinyl-shelf {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 0.875rem;
-  /* headroom for the discs peeking out the top */
-  padding-top: 1.75rem;
-  /* everything stands on the plank — no inner scroller; sleeves
-     compress together on narrow screens instead */
-  overflow-x: visible;
+  --vinyl-spread: 48%;
+
+  display: grid;
+  place-items: end center;
+  margin: 0;
+  padding: 2.5rem 0 0;
+  list-style: none;
+  overflow: visible;
+  isolation: isolate;
+  perspective: 900px;
+  perspective-origin: center bottom;
 }
 
 .vinyl {
   position: relative;
-  flex: 0 1 6rem;
-  min-width: 0;
+  grid-area: 1 / 1;
+  width: clamp(7.25rem, 27vw, 9.5rem);
+  z-index: var(--vinyl-stack-order);
+  pointer-events: none;
 }
 
-.vinyl a {
+.vinyl-trigger {
   display: block;
   position: relative;
+  width: 100%;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  cursor: default;
+  pointer-events: none;
+  touch-action: manipulation;
+  transform: translateX(calc(var(--vinyl-offset) * var(--vinyl-spread)))
+    rotateY(calc(var(--vinyl-direction) * var(--vinyl-inward-angle) * -1deg))
+    scale(var(--vinyl-scale));
+  transform-origin: bottom center;
+  transform-style: preserve-3d;
+  transition: transform 330ms var(--ease-spring);
+  will-change: transform;
+}
+
+/* Pointer ownership follows the rendered sleeve quadrilateral, not each
+   transformed button's axis-aligned bounding box. The viewport routes hover,
+   drag, wheel, and click through the same selection model. */
+
+.vinyl-hit-corner {
+  position: absolute;
+  z-index: -1;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.vinyl-hit-corner[data-corner='top-left'] {
+  top: 0;
+  left: 0;
+}
+
+.vinyl-hit-corner[data-corner='top-right'] {
+  top: 0;
+  right: 0;
+}
+
+.vinyl-hit-corner[data-corner='bottom-right'] {
+  right: 0;
+  bottom: 0;
+}
+
+.vinyl-hit-corner[data-corner='bottom-left'] {
+  bottom: 0;
+  left: 0;
+}
+
+.vinyl[data-position='before'] .vinyl-trigger {
+  transform-origin: right bottom;
+}
+
+.vinyl[data-position='after'] .vinyl-trigger {
+  transform-origin: left bottom;
+}
+
+.vinyl-object {
+  position: relative;
+  display: block;
+  width: 100%;
+  transform: translate(0, 0);
+  transform-style: preserve-3d;
+  transition: transform 300ms var(--ease-spring);
+}
+
+.vinyl-room[data-vinyl-interaction='panning'] .vinyl-trigger,
+.vinyl-room[data-vinyl-interaction='panning'] .vinyl-object,
+.vinyl-room[data-vinyl-interaction='instant'] .vinyl-trigger,
+.vinyl-room[data-vinyl-interaction='instant'] .vinyl-object {
+  transition: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .vinyl-trigger:not([data-active])[data-pointer-owned] .vinyl-object {
+    transform: translateX(calc(var(--vinyl-direction) * 2px)) translateY(-5px);
+  }
+}
+
+.vinyl-trigger:focus-visible {
+  border-radius: 2px;
+  outline: 1px solid var(--focus-ring);
+  outline-offset: 4px;
 }
 
 .vinyl-sleeve {
   position: relative;
+  z-index: 2;
   display: block;
   aspect-ratio: 1;
   background: var(--paper);
   box-shadow: 0 0 0 1px rgb(0 0 0 / 0.08), 0 2px 5px -1px rgb(0 0 0 / 0.2);
   overflow: hidden;
-  transition: transform 300ms var(--ease-swift), box-shadow 300ms var(--ease-swift);
+  backface-visibility: hidden;
+  transform: translateZ(7px);
+}
+
+/* Real 3D side faces: the cover sits 7px forward and these planes bridge
+   the depth. The face revealed by each inward turn becomes the sleeve spine. */
+.vinyl-spine {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--vinyl-spine-ink, oklch(0.28 0.012 95));
+  background:
+    linear-gradient(to right, rgb(0 0 0 / 0.18), transparent 35%, rgb(255 255 255 / 0.14) 70%, rgb(0 0 0 / 0.12)),
+    var(--vinyl-spine-color, var(--paper));
+  box-shadow:
+    inset 1px 0 rgb(255 255 255 / 0.16),
+    inset -1px 0 rgb(0 0 0 / 0.18);
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.vinyl-spine > span {
+  max-height: calc(100% - 10px);
+  overflow: hidden;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 5px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  writing-mode: vertical-rl;
+}
+
+.vinyl-spine-left {
+  transform: rotateY(-90deg);
+  transform-origin: left center;
+}
+
+.vinyl-spine-right {
+  right: 0;
+  left: auto;
+  transform: rotateY(90deg);
+  transform-origin: right center;
+}
+
+.vinyl-spine-right > span {
+  transform: rotate(180deg);
 }
 
 .vinyl-art {
@@ -1542,68 +2076,89 @@ html[data-visited] .enter-polaroid .polaroid {
   color: var(--paper-ink);
 }
 
-.vinyl-disc {
-  position: absolute;
-  top: 0;
-  left: 5%;
-  width: 90%;
-  aspect-ratio: 1;
-  border-radius: 999px;
-  background:
-    radial-gradient(circle at 50% 50%, transparent 0 18%, rgb(255 255 255 / 0.05) 30%, transparent 32%, rgb(255 255 255 / 0.05) 44%, transparent 46%, rgb(255 255 255 / 0.05) 58%, transparent 60%),
-    oklch(0.2 0.005 95);
-  display: grid;
-  place-items: center;
-  transform: translateY(-12%);
-  transition: transform 300ms var(--ease-swift);
-}
-
-.vinyl-label {
-  width: 34%;
-  aspect-ratio: 1;
-  border-radius: 999px;
-  background: var(--paper);
-  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.15), inset 0 0 0 6px oklch(0.55 0.09 55);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  /* the sleeve stays put on its shelf — only the disc slides out a
-     little further */
-  .vinyl a:hover .vinyl-disc {
-    transform: translateY(-30%);
+@media (max-width: 30rem) {
+  .vinyl-shelf {
+    --vinyl-spread: 40%;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .vinyl-disc,
-  .vinyl-sleeve {
+  .vinyl-trigger,
+  .vinyl-sleeve,
+  .vinyl-object {
     transition: none;
+  }
+
+  .vinyl-trigger:not([data-active])[data-pointer-owned] .vinyl-object {
+    transform: none;
   }
 }
 
 /* ── Bookshelf: 3D accordion (components/bookshelf.tsx) ───────────── */
 
+.bookshelf-viewport {
+  width: 100%;
+  height: 216px;
+  overflow: clip;
+}
+
 .shelf3 {
   display: flex;
   align-items: flex-end;
-  gap: 4px;
+  gap: 1px;
+  width: var(--bookshelf-layout-width);
   height: 216px;
-  /* books rest directly on the wooden plank — no hairline shelf line,
-     no inner scroller */
-  overflow-x: visible;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  transform: scale(var(--bookshelf-scale));
+  transform-origin: left bottom;
 }
 
-
-.book3 {
+.book3-frame {
   position: relative;
   height: 210px;
   flex-shrink: 0;
+}
+
+.book3 {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  text-decoration: none;
   perspective: 1200px;
-  transform-origin: bottom center;
-  transition:
-    width 650ms cubic-bezier(0.65, 0, 0.35, 1),
-    transform 650ms cubic-bezier(0.65, 0, 0.35, 1);
-  cursor: pointer;
+  cursor: default;
+  touch-action: manipulation;
+  transition: transform 180ms var(--ease-swift);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .book3[data-hover] {
+    transform: translateY(-5px);
+  }
+}
+
+/* The visual spine stays tightly packed, while its nonvisual hit area meets
+   the 44px touch target. Shelf click capture resolves overlaps by proximity. */
+.book3::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: max(100%, calc(44px / var(--bookshelf-scale)));
+  transform: translateX(-50%);
+}
+
+.book3:focus-visible {
+  border-radius: 2px;
+  outline: 1px solid var(--focus-ring);
+  outline-offset: 3px;
 }
 
 .book3-inner {
@@ -1614,7 +2169,7 @@ html[data-visited] .enter-polaroid .polaroid {
   height: 100%;
   transform-style: preserve-3d;
   transform-origin: left center;
-  transition: transform 650ms cubic-bezier(0.65, 0, 0.35, 1);
+  will-change: transform;
 }
 
 .book3-cover {
@@ -1624,12 +2179,15 @@ html[data-visited] .enter-polaroid .polaroid {
   overflow: hidden;
   border-radius: 2px 4px 4px 2px;
   filter: drop-shadow(2px 4px 15px rgb(0 0 0 / 0.14));
+  user-select: none;
 }
 
 .book3-cover img {
+  display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center bottom;
 }
 
 .book3-cover-blank {
@@ -1653,40 +2211,49 @@ html[data-visited] .enter-polaroid .polaroid {
   top: 0;
   left: 0;
   height: 100%;
-  transform: rotateY(90deg);
+  transform: rotateY(-90deg);
   transform-origin: left center;
   backface-visibility: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.25rem;
   padding: 0.625rem 0;
-  writing-mode: vertical-rl;
-  background: color-mix(in oklab, var(--paper) calc(100% - var(--book-tone, 0) * 7%), var(--paper-ink));
+  color: var(--book-ink, var(--paper-ink));
+  background:
+    linear-gradient(to right, rgb(0 0 0 / 0.12), transparent 35%, rgb(255 255 255 / 0.12) 75%, rgb(0 0 0 / 0.08)),
+    var(--book-spine, var(--paper));
   box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08);
   border-radius: 2px;
 }
 
 .book3-spine-title {
-  font-size: 0.6875rem;
-  font-weight: var(--font-weight-medium);
-  color: oklch(0.28 0.012 95);
-  white-space: nowrap;
+  min-height: 0;
+  flex: 1;
   overflow: hidden;
-  text-overflow: ellipsis;
-  max-height: 70%;
+  font-size: 0.625rem;
+  font-weight: var(--font-weight-medium);
+  color: inherit;
+  white-space: nowrap;
+  writing-mode: vertical-rl;
 }
 
 .book3-spine-author {
-  font-size: 0.5625rem;
-  color: var(--paper-ink);
+  flex: none;
+  font-size: 0.5rem;
+  color: inherit;
+  opacity: 0.72;
   white-space: nowrap;
+  writing-mode: vertical-rl;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .book3,
-  .book3-inner {
+  .book3 {
     transition: none;
+  }
+
+  .book3[data-hover] {
+    transform: none;
   }
 }
 
@@ -1744,7 +2311,10 @@ html[data-visited] .enter-polaroid .polaroid {
 }
 
 .service-card-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 999px;
+  object-fit: cover;
   box-shadow: inset 0 0 0 1px var(--border);
 }
 
@@ -2177,14 +2747,117 @@ html[data-locale='en'] [data-en] {
 }
 
 .footer-colophon {
-  /* last cell of the single footer row, resting on the baseline */
+  /* First cell of the single footer row, resting quietly on the baseline. */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.625rem;
   align-self: end;
-  text-align: right;
+  text-align: left;
   font-size: 0.75rem;
   letter-spacing: 0.02em;
   color: color-mix(in oklab, var(--muted-foreground) 85%, transparent);
   font-variant-numeric: tabular-nums;
   user-select: none;
+}
+
+.footer-visitor-origin {
+  /* Reserve exactly one annotation line while the private request settles. */
+  height: 1.4em;
+  max-width: min(18rem, 100%);
+  overflow: hidden;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.011em;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  visibility: hidden;
+}
+
+.footer-visitor-origin[data-visible] {
+  visibility: visible;
+}
+
+.footer-local-time {
+  display: flex;
+  min-height: 1.375rem;
+  align-items: center;
+  gap: 0.5rem;
+  color: color-mix(in oklab, var(--muted-foreground) 88%, transparent);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  text-align: left;
+}
+
+.footer-local-clock {
+  width: 1.375rem;
+  height: 1.375rem;
+  flex: none;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+}
+
+.footer-clock-ring,
+.footer-clock-ticks {
+  opacity: 0.28;
+  stroke-width: 1;
+}
+
+.footer-clock-ticks {
+  stroke-linecap: round;
+}
+
+.footer-clock-hour,
+.footer-clock-minute,
+.footer-clock-second {
+  stroke-linecap: round;
+}
+
+.footer-clock-hour {
+  opacity: 0.78;
+  stroke-width: 1.6;
+}
+
+.footer-clock-minute {
+  opacity: 0.72;
+  stroke-width: 1.2;
+}
+
+.footer-clock-second {
+  opacity: 0.42;
+  stroke-width: 0.75;
+}
+
+.footer-clock-pin {
+  fill: currentColor;
+  stroke: none;
+}
+
+.footer-time-readout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.footer-time-readout > span {
+  color: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
+  font-size: 0.625rem;
+  letter-spacing: 0.06em;
+}
+
+.footer-time-readout time {
+  color: color-mix(in oklab, var(--muted-foreground) 90%, transparent);
+}
+
+.footer-time-readout time {
+  display: block;
+  min-width: 8ch;
+  white-space: nowrap;
 }
 
 /* ── Global pill dock (components/dock.tsx) ───────────────────────── */
@@ -2244,15 +2917,32 @@ html[data-locale='en'] [data-en] {
   color: var(--foreground);
 }
 
-.dock-dot {
+.dock-active-indicator {
+  --dock-indicator-x: 0px;
+
   position: absolute;
-  bottom: 2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 3px;
-  height: 3px;
+  z-index: 1;
+  bottom: 8px;
+  left: 0;
+  width: 4px;
+  height: 4px;
   border-radius: 999px;
   background: var(--foreground);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(calc(var(--dock-indicator-x) - 50%), 0, 0);
+  transition:
+    transform 220ms var(--ease-swift),
+    opacity 120ms ease;
+  will-change: transform;
+}
+
+.dock-active-indicator[data-ready] {
+  opacity: 1;
+}
+
+.dock-active-indicator[data-instant] {
+  transition: none;
 }
 
 .dock-avatar {
@@ -2312,7 +3002,8 @@ html[data-locale='en'] [data-en] {
 
 @media (prefers-reduced-motion: reduce) {
   .dock-tip,
-  .dock-item {
+  .dock-item,
+  .dock-active-indicator {
     transition: none;
   }
 }
@@ -2338,6 +3029,22 @@ html[data-locale='en'] [data-en] {
   font-size: 0.8125rem;
   color: var(--muted-foreground);
   user-select: none;
+}
+
+/* Preserve the original compact controls, but use full foreground ink for
+   the selected pill so the active value remains obvious in both themes. */
+.prefs-panel [data-tabs-indicator='selected'] {
+  display: none;
+}
+
+.prefs-panel [role='tab'][aria-selected='true'] {
+  border-radius: 999px;
+  background: var(--foreground);
+}
+
+.prefs-panel [role='tab'][aria-selected='true'] svg,
+.prefs-panel [role='tab'][aria-selected='true'] > span > span:last-child {
+  color: var(--background) !important;
 }
 
 /* ── Home nav cards: analog vignettes on soft surfaces ────────────── */

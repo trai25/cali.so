@@ -1,13 +1,14 @@
 // UI sound preference + the one sound we make: a tiny tick on navigation.
-// Off by default; the preference lives in localStorage.
+// On by default; an explicit preference lives in localStorage.
 
 let ctx: AudioContext | null = null
 
 export function soundEnabled(): boolean {
   try {
-    return localStorage.sound === 'on'
+    const preference = localStorage.getItem('sound')
+    return preference === null ? true : preference === 'on'
   } catch {
-    return false
+    return true
   }
 }
 

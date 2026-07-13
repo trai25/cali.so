@@ -287,6 +287,7 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
           {/* Active segment indicator */}
           {selectedRect && (
             <motion.div
+              data-tabs-indicator="selected"
               className={cn(
                 "absolute pointer-events-none",
                 surfaceClasses(indicatorLevel),

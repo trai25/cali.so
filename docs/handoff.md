@@ -104,9 +104,8 @@ Working and verified (light/dark/mobile, production build green):
   header nav; vinyl shelf revamped with real album art (iTunes fetch,
   `public/images/records/`) + peeking disc; bookshelf is now the 3D
   accordion (open cover + neighbors leaning in, 650ms easeInOutCubic) —
-  **test covers from Open Library are stand-ins** (`identity-designed.jpg`
-  is actually Logo Design Love; `icons` missing); Cali: replace
-  `lib/personal.ts` books + `public/images/books/` with the real shelf.
+  **test covers from Open Library were stand-ins**; they were replaced with
+  Cali's real ten-book shelf in the July 13 taste-shelf pass.
 
 - **Round 4 (July 2026)**: post pages grew a left-margin **table of
   contents** (`components/post-toc.tsx` + `extractHeadings` in
@@ -173,9 +172,23 @@ Working and verified (light/dark/mobile, production build green):
   gone — books rest directly on the plank. Vinyl hover no longer scales the
   sleeve — only the disc slides further out (−12% → −30%).
 
+- **Current July 13 polish pass (uncommitted)**: the footer colophon now
+  carries Cali's live Asia/Taipei clock (`UTC+8`) and a persisted
+  previous-global-visitor origin. `components/visitor-origin.tsx` posts at most
+  once per browser every 30 minutes to `app/api/visitor/route.ts`; the route rejects cross-origin
+  calls and ignores bots, prefetches, DNT, and GPC. It sanitizes Vercel's city
+  and country headers, then uses one raw Upstash REST Lua call to rate-limit and
+  atomically replace a 30-day `cali.so:previous-global-visitor:v1` JSON value.
+  Keys are namespaced by deployment environment. Configure
+  `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`; missing env or geo
+  hides the line without affecting the static page. Only city and two-letter
+  country are stored in the shared record. Never add IP, coordinates,
+  timestamps, user agent, referrer, or a visit history to that record.
+
 - **Round 13 (July 2026)**: `/about` merged back into the homepage —
-  the taste sections (唱片机/书架/电影/仰望的人) now live below 写作;
-  the page and its footer link are gone. Social data went **live with
+  the taste sections moved below 写作 (唱片机/书架 remain; the movie and
+  people experiments were later cut); the page and its footer link are gone.
+  Social data went **live with
   ISR**: `lib/social-live.ts` fetches GitHub (contributions + followers,
   6h revalidate) and the YouTube subscriber count (12h) through the
   fetch data cache from the root layout; every route stays static with
@@ -290,12 +303,11 @@ Working and verified (light/dark/mobile, production build green):
 
 1. **Pages**: `/ama` remains (see item 2) — `/projects` shipped in
    round 3, `/about` shipped in round 13 then merged back into the homepage in
-   round 13b — the taste sections (唱片机, 书架, 电影) now sit below the main home
+   round 13b — the taste sections (唱片机, 书架) now sit below the main home
    content (a 仰望的人 people list was tried and cut — too much like a
    roll call). Hover-card positioners are pointer-events-none too, so
-   the whole card overlay is hit-test invisible. **Cali TODO**: `films` in
-   `lib/personal.ts` is placeholder data (books too) — replace with the
-   real ones. Home now carries hero, doorway row, 经历, latest 写作.
+   the whole card overlay is hit-test invisible. Home now carries hero,
+   doorway row, 经历, latest 写作, and Cali's real taste shelves.
 2. **AMA page rebuild** (parked by Cali, July 2026): bring back `/ama` in
    the v2 design language. Explicitly NOT porting the v1 Alipay QR — Cali
    will connect Stripe himself, and booking becomes a **self-built
@@ -305,9 +317,8 @@ Working and verified (light/dark/mobile, production build green):
    newsletters tables stay; Resend already in env. Single allowlisted email,
    15-min single-use token, rate-limited request, signed httpOnly ~30d
    session cookie.
-4. **Per-service hover cards** (films/music per the
-   design-language contract — the external-link preview card is the shared
-   base), staged title card on post open, print-pile list thumbnails.
+4. **Remaining visual polish**: staged title card on post open and
+   print-pile list thumbnails.
 5. **Cutover checklist** (do NOT do early): crawl live v1 URLs and verify
    100% (issue #75 acceptance criteria); drop `comments`/`guestbook` tables
    (data already archived privately); decommission Sanity only after all

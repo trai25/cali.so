@@ -1,4 +1,4 @@
-import { formatDate } from '~/lib/date'
+import { formatDate, SITE_TIME_ZONE } from '~/lib/date'
 
 // Bilingual chrome without routes or hydration risk: both languages are
 // in the static DOM; CSS shows one based on html[data-locale], which a
@@ -17,6 +17,7 @@ const enFormatter = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
   month: 'short',
   day: 'numeric',
+  timeZone: SITE_TIME_ZONE,
 })
 
 export function LocalDate({ date }: { date: Date }) {

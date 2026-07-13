@@ -3,6 +3,7 @@ import Link from 'next/link'
 
 import { DitherVeil } from '~/components/dither-veil'
 import type { Post } from '~/lib/content'
+import { formatMonthDay, formatShortDate } from '~/lib/date'
 import { LocalDate } from '~/lib/i18n'
 
 // The one-line post row: dithered print thumb · title · dotted leader ·
@@ -10,9 +11,11 @@ import { LocalDate } from '~/lib/i18n'
 export function PostRow({
   post,
   headingLevel = 'h2',
+  dateStyle = 'full',
 }: {
   post: Post
   headingLevel?: 'h2' | 'h3'
+  dateStyle?: 'full' | 'month-day' | 'short'
 }) {
   const Heading = headingLevel
   return (
@@ -40,7 +43,9 @@ export function PostRow({
         dateTime={post.publishedAt.toISOString()}
         className="shrink-0 text-muted-foreground tabular-nums"
       >
-        <LocalDate date={post.publishedAt} />
+        {dateStyle === 'month-day' && formatMonthDay(post.publishedAt)}
+        {dateStyle === 'short' && formatShortDate(post.publishedAt)}
+        {dateStyle === 'full' && <LocalDate date={post.publishedAt} />}
       </time>
     </Link>
   )

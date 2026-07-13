@@ -8,9 +8,9 @@ its behavior spec is the contract.
 The header is sticky (z `--z-nav`) with a two-layer progressive-blur
 backdrop (8px masked to ~58%, 18px hugging the top edge, background tint
 82%→transparent) so passing content fades under the chrome; the top
-viewport fade lives there, the bottom one stays a fixed overlay. The
-footer is two rows: service links + locale/theme toggles above, © + RSS
-below.
+viewport fade lives there, the bottom one stays a fixed overlay. The footer
+is a single Swiss grid with a quiet, left-aligned colophon first, followed by
+the contact and index trees.
 
 ## Motion system
 
@@ -121,7 +121,7 @@ motion disables every entrance.
 
 ## Hover cards as craft objects
 
-Inline mentions of external presences (social profile, code, films, music)
+Inline mentions of external presences (social profile, code, music)
 open rich hover cards. The contract:
 
 - **Per-service design.** Each card is composed for its service — no generic
@@ -131,9 +131,6 @@ open rich hover cards. The contract:
     ~180 days; the stat below still counts the past year, hairline 0.5px
     cell borders) whose cells **cascade in individually** — each cell rises
     from `translateY(4px) scale(0.92)` over ~0.48s with a per-cell stagger.
-  - Films card: recent posters as a **fanned stack** (≈64×96px each,
-    overlapping by −8px), each poster entering **blur(4px) → sharp** with a
-    per-poster delay.
   - Social card: avatar, name + verified mark, bio, follower stats in
     `tabular-nums`.
   - Music card: current/last track with artwork.
@@ -148,7 +145,7 @@ open rich hover cards. The contract:
   fine)` and are simply absent on touch — the trigger is a plain link to the
   destination (or inert text if there is no destination). The card is an
   enhancement, never the content.
-- **Data at build time.** Card data (grid, films, tracks) is fetched at build
+- **Data at build time.** Card data (grid, tracks) is fetched at build
   / ISR, not on hover; an open card never spinners on network.
 - All content animations inside cards respect `prefers-reduced-motion`.
 - **Implemented service cards** (`components/social-cards.tsx`, chrome
@@ -165,6 +162,15 @@ open rich hover cards. The contract:
   (favicon + domain, title, two-line description) on the shared hover-card
   primitive (`components/external-link.tsx`). Refresh the metadata with
   `node scripts/refresh-link-previews.mjs`.
+- **External-link mark.** Text links that leave the site carry the shared
+  northeast arrow inline; internal links, RSS, and Email do not. Shelf covers
+  are selection controls only. Each shelf instead keeps one plain-text
+  annotation below its plank; that annotation is the selected object's sole
+  external-link surface and carries the northeast mark inline. The label text
+  remains at normal opacity. The mark rests at 60% opacity and, when the
+  annotation is hovered or focus-visible, transitions to 95% opacity and
+  `translate(1.5px, -1.5px)` over 180ms `ease`. Reduced motion disables the
+  movement.
 
 ## Image lightbox
 
@@ -231,21 +237,42 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
   `pointer-events: none; user-select: none` — a card is a printed label,
   never a control. Email's card is a little paper ENVELOPE (folded flap,
   perforated avatar stamp, mono address); the trigger opens mailto:.
-- **Film tickets** (`components/film-tickets.tsx`, home): admission
-  stubs — card-stock slips with a dashed perforation, punched notches,
-  and a vertical 入场券 stub label; seeded tilts that straighten on
-  hover, same contract as post images.
 - **Room shelves** (`.room-shelf-plank`): records and books rest on an
   actual wooden plank — edge grain drawn with layered CSS streaks over an
   oak tone (walnut in dark), top highlight, wall shadow beneath, and
-  per-item contact shadows where things meet the wood. The shelf runs the
-  full column even when half empty — that's the point.
-- **Paper record sleeves** (`components/vinyl-shelf.tsx`): album art
-  printed on worn paper — seeded crease streaks (2–3 diagonal light/dark
-  gradients per album) under a grain overlay (`mix-blend-mode: overlay`).
-  The vinyl peeks out the top (−12%), and on hover only the disc slides
-  further out — the sleeve stays put on its shelf. The disc
-  never spins. Sleeves without art fall back to the word-raster texture.
+  per-item contact shadows where things meet the wood. The plank runs the
+  full framed width even when half empty — that's the point. A persistent
+  plain-text annotation directly below it names the selected object and is
+  the shelf's only external link. Covers always select; they never navigate.
+  Record and book spines use static cover-derived color and contrasting ink
+  values stored with the shelf data, so SSR output is stable and no color is
+  sampled at interaction time.
+- **Paper record sleeves** (`components/vinyl-shelf.tsx`): larger worn-paper
+  sleeves form a horizontal cover stack with one active album enlarged in
+  front. Sleeves on either side turn inward in 3D; rotation increases with
+  distance so nearby albums retain more cover while distant albums read
+  increasingly as a spine. Each sleeve is a shallow 3D object with two rendered
+  side faces carrying its album and artist, not a shaded strip painted over the
+  cover. The middle item is selected by default so the first composition is
+  balanced on both sides. The records themselves are not rendered; the visual
+  system is entirely about paper sleeves, cover art, and their spines. One tap
+  brings a sleeve forward; tapping the active sleeve leaves it selected. The
+  covers keep the default cursor and only inactive sleeves lift slightly on a
+  fine-pointer hover. The shelf is clipped to a centered 37.5rem frame. Pointer
+  drag and horizontal trackpad wheel input pan the stack continuously; vertical
+  wheel input remains native page scrolling. Releasing the pointer or ending a
+  horizontal wheel gesture snaps to the nearest sleeve. The frame is tuned for
+  nine albums: one centered selection and four progressively turned sleeves on
+  either side. Sleeves without art retain the word-raster fallback.
+- **Bookshelf** (`components/bookshelf.tsx`): one book opens at a time while
+  the other books remain as tightly packed spines with 1px seams. The books are
+  ordered by relevance to Cali's work as a designer, developer, and founder,
+  rather than alphabetically or by color. Active covers keep their intrinsic
+  aspect ratio at a fixed 210px book height; source dimensions drive the 3D
+  projection, so square and narrow editions render whole without shifting the
+  shelf. A closed book selects and opens into the accordion; activating the
+  open book leaves it selected. The annotation below the plank is the only link
+  to its official author or publisher page.
 - Future candidates: ascii-on-hover for photos, dithered media
   placeholders, line-screen section dividers. One instrument per page —
   never stack rasters over each other.
@@ -285,9 +312,29 @@ clear the edge fade. Below 64rem the margin chrome is simply absent.
 Chrome strings render in both languages in the static DOM
 (`lib/i18n.tsx`'s `<T zh en>` + `<LocalDate>`), and CSS shows one based on
 `html[data-locale]` — restored pre-paint from localStorage, flipped by the
-footer toggle. No routes, no hydration risk, fully static. Post bodies
+preferences dock. No locale routes, no hydration risk. Post bodies
 keep their own `lang` (the article pins `zh-CN` so CJK prose metrics hold
 in either chrome language).
+
+## Footer colophon
+
+The leftmost colophon shows Cali's `UTC+8` timezone, a muted tabular live
+Asia/Taipei time, and a small redundant analog clock. The digital `<time>` is
+the accessible source; the clock face is decorative and deliberately quieter
+than the footer trees. Its fixed placeholder dimensions avoid hydration shift,
+and the second-aligned timer pauses while the page is hidden.
+
+Above it, “上一位访客来自 … / Last visitor from …” appears only when the
+privacy-preserving visitor exchange succeeds. After hydration the client sends
+at most one same-origin POST per browser every 30 minutes. The endpoint reads
+only Vercel's sanitized city and two-letter country headers, atomically swaps
+one JSON record through Upstash Redis, expires it after 30 days, and returns the
+previous value. A two-second global guard limits automated overwrite bursts. It
+never stores or returns IP addresses, coordinates, timestamps, user agents,
+referrers, or history in the shared visitor record. Bots, prefetches, `DNT: 1`,
+and Global Privacy Control are ignored.
+Missing geolocation or `UPSTASH_REDIS_REST_URL` /
+`UPSTASH_REDIS_REST_TOKEN` quietly leaves the fixed footer slot hidden.
 
 ## Back pill
 
@@ -362,11 +409,10 @@ The page reads as a sheet of working paper, not a void:
 - **Grain**: a tiled noise texture over the whole page (fixed, tiled,
   `pointer-events: none`), at an opacity just past the threshold of
   perception. Light and dark modes get separately tuned strengths.
-- **Guides**: the content column is boxed like a drafting sheet — fine
-  dotted rules (0.5px dots at 4px spacing) running the column width near the
-  top and bottom viewport edges, plus full-height dashed vertical hairlines
-  (2px dash / 2px gap) at both column edges. All at hairline weight,
-  ~16px insets.
+- **Guides**: the content column is boxed by full-height dashed vertical
+  hairlines (2px dash / 2px gap) at both column edges. The top horizontal
+  dashed rule is intentionally absent; the bottom ruler and both bent ruler
+  arcs remain. All are hairline-weight marks at ~16px insets.
 - No full-page dot matrix — texture comes from grain, structure from guides.
 - Everything in this layer is `pointer-events: none`, `user-select: none`,
   and must be missable: noticed on the second visit, not the first.
@@ -399,7 +445,8 @@ reduced motion. Decorative instances set `role="img"` + `aria-label` (or
 ## Static by default
 
 Blog, feeds, and OG images are statically generated; interactive data (hover
-cards, now-playing) revalidates on ISR timers. Fonts are preloaded (except
-the CJK fallback, which loads on demand); above-the-fold images get
-`rel="preload"`. Page scrollbars are never customized; code-block scrollbars
-may be.
+cards, now-playing) revalidates on ISR timers. The visitor exchange is the
+narrow exception: a private, no-store POST route runs after hydration and does
+not make page rendering dynamic. Fonts are preloaded (except the CJK fallback,
+which loads on demand); above-the-fold images get `rel="preload"`. Page
+scrollbars are never customized; code-block scrollbars may be.

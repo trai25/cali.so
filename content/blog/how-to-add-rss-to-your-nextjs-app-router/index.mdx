@@ -43,13 +43,13 @@ pnpm i rss && pnpm i -D @types/rss
 
 首先就是我们需要明确自己的 RSS 订阅最终地址是什么，常见的地址后缀有：
 
-`/feed`
+- `/feed`
 
-`/feed.xml`
+- `/feed.xml`
 
-`/rss`
+- `/rss`
 
-`/rss.xml`
+- `/rss.xml`
 
 那么如果你跟我一样，就会想让自己的网站适配到每一个地址都可以访问。
 
@@ -162,13 +162,13 @@ module.exports = {
 
 这样就完成了在你的网站可以通过以下4个地址访问到你的 RSS 订阅：
 
-`/feed`
+- `/feed`
 
-`/feed.xml`
+- `/feed.xml`
 
-`/rss`
+- `/rss`
 
-`/rss.xml`
+- `/rss.xml`
 
 ## 小技巧
 
@@ -198,11 +198,11 @@ export const metadata = {
 
 本次知识点回顾：
 
-我们运用了 [**Static Route Handler**](https://nextjs.org/docs/app/building-your-application/routing/router-handlers#static-route-handlers) 来生成静态的 `/feed.xml`；
+1. 我们运用了 [**Static Route Handler**](https://nextjs.org/docs/app/building-your-application/routing/router-handlers#static-route-handlers) 来生成静态的 `/feed.xml`；
 
-我们运用了 [**Rewrites**](https://nextjs.org/docs/app/api-reference/next-config-js/rewrites) 来实现多路由的重写映射；
+1. 我们运用了 [**Rewrites**](https://nextjs.org/docs/app/api-reference/next-config-js/rewrites) 来实现多路由的重写映射；
 
-我们运用了 [**Metadata**](https://nextjs.org/docs/app/building-your-application/optimizing/metadata) 来为网站添加 RSS Autodiscovery；
+1. 我们运用了 [**Metadata**](https://nextjs.org/docs/app/building-your-application/optimizing/metadata) 来为网站添加 RSS Autodiscovery；
 
 最后奉上我在 [Feedly](https://feedly.com) 里测试添加 RSS 后的效果图：
 

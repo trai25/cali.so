@@ -1,9 +1,15 @@
-import { Geist } from 'next/font/google'
+import { Geist, Geist_Mono } from 'next/font/google'
 import localFont from 'next/font/local'
 
 const geist = Geist({
   subsets: ['latin'],
   variable: '--font-geist',
+  display: 'swap',
+})
+
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-geist-mono',
   display: 'swap',
 })
 
@@ -19,4 +25,4 @@ const frexSansGB = localFont({
   preload: false,
 })
 
-export const fontVariables = [geist.variable, frexSansGB.variable].join(' ')
+export const fontVariables = [geist.variable, geistMono.variable, frexSansGB.variable].join(' ')

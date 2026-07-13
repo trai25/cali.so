@@ -1,5 +1,7 @@
+import Link from 'next/link'
+
 import { Bookshelf } from '~/components/bookshelf'
-import { FilmTickets } from '~/components/film-tickets'
+import { ExternalLabel } from '~/components/external-mark'
 import { HalftonePortrait } from '~/components/halftone-portrait'
 import { NavCards } from '~/components/nav-cards'
 import { PostRow } from '~/components/post-row'
@@ -44,7 +46,7 @@ export default function HomePage() {
               rel="noreferrer"
               className="text-foreground underline decoration-border underline-offset-4 transition-colors duration-150 ease-[ease] hover:decoration-foreground"
             >
-              佐玩
+              <ExternalLabel>佐玩</ExternalLabel>
             </a>
             <T
               zh="创始人，目前带领着佐玩致力于创造一个充满创造力的工作环境，鼓励团队创造影响世界的产品。热爱开发、设计、创新，享受生活，以及在未知领域中探索。"
@@ -84,7 +86,7 @@ export default function HomePage() {
                       rel="noreferrer"
                       className="font-medium transition-colors duration-150 ease-[ease] hover:text-foreground"
                     >
-                      {job.company}
+                      <ExternalLabel>{job.company}</ExternalLabel>
                     </a>
                   ) : (
                     <span className="font-medium">{job.company}</span>
@@ -103,7 +105,16 @@ export default function HomePage() {
       </section>
 
       <section className="mt-16">
-        <SectionTitle delay={200}><T zh="写作" en="Writing" /></SectionTitle>
+        <div className="flex items-center justify-between gap-4">
+          <SectionTitle delay={200}><T zh="写作" en="Writing" /></SectionTitle>
+          <Link
+            href="/blog"
+            className="enter relative shrink-0 text-sm text-muted-foreground transition-colors duration-150 ease-[ease] after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] hover:text-foreground focus-visible:rounded-sm focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-4"
+            style={{ '--enter-delay': '200ms' } as React.CSSProperties}
+          >
+            <T zh="查看全部" en="View all" />
+          </Link>
+        </div>
         <ul className="focus-list mt-4 flex flex-col">
           {latest.map((post, index) => (
             <li
@@ -114,7 +125,7 @@ export default function HomePage() {
                 { '--enter-delay': `${240 + Math.abs(index - center) * 50}ms` } as React.CSSProperties
               }
             >
-              <PostRow post={post} headingLevel="h3" />
+              <PostRow post={post} headingLevel="h3" dateStyle="short" />
             </li>
           ))}
         </ul>
@@ -137,14 +148,6 @@ export default function HomePage() {
           </div>
         </section>
       )}
-
-      <section className="mt-16">
-        <SectionTitle delay={440}><T zh="电影" en="Films" /></SectionTitle>
-        <div className="enter mt-5" style={{ '--enter-delay': '480ms' } as React.CSSProperties}>
-          <FilmTickets />
-        </div>
-      </section>
-
     </div>
   )
 }
