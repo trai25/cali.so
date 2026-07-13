@@ -65,11 +65,13 @@ function Card({
   href,
   children,
   className,
+  triggerClassName = 'footer-tree-link',
 }: {
-  trigger: string
+  trigger: React.ReactNode
   href: string
   children: React.ReactNode
   className: string
+  triggerClassName?: string
 }) {
   return (
     <PreviewCard.Root>
@@ -79,7 +81,7 @@ function Card({
         href={href}
         target="_blank"
         rel="noreferrer"
-        className="footer-tree-link"
+        className={triggerClassName}
         delay={300}
         closeDelay={120}
       >
@@ -152,6 +154,41 @@ export function XCardBody({ data }: { data: SocialSnapshot }) {
   )
 }
 
+export function XiaohongshuCardBody() {
+  return (
+    <span className="xiaohongshu-card-content" data-profile-id="5cbba503000000001101b6a2">
+      <span className="service-card-head">
+        <Image
+          src="/images/headshot.jpg"
+          alt=""
+          width={40}
+          height={40}
+          className="service-card-avatar"
+        />
+        <span className="service-card-names">
+          <span className="service-card-name">Cali Castle</span>
+          <span className="service-card-sub">小红书号 calicastle</span>
+        </span>
+        <span className="service-card-glyph xiaohongshu-card-wordmark" aria-hidden>
+          <Image
+            src="/images/xiaohongshu-wordmark.svg"
+            alt=""
+            width={48}
+            height={23}
+          />
+        </span>
+      </span>
+      <span className="service-card-bio xiaohongshu-card-bio">
+        <span>设计工程师，Cali 宝宝助手 app 开发者设计师</span>
+        <span>@佐玩 Zolplay 创始人 CEO</span>
+      </span>
+      <span className="service-card-stat">
+        <b>10+</b> 粉丝 · <b>1千+</b> 获赞与收藏
+      </span>
+    </span>
+  )
+}
+
 export function TelegramCardBody({ data }: { data: SocialSnapshot }) {
   return <Identity data={data} avatar="/images/avatar.png" service="telegram" withBio={false} />
 }
@@ -207,9 +244,22 @@ export function GitHubCardBody({ data }: { data: GitHubSnapshot }) {
   )
 }
 
-export function XCard({ data }: { data: SocialSnapshot }) {
+export function XCard({
+  data,
+  trigger = 'X/Twitter',
+  triggerClassName,
+}: {
+  data: SocialSnapshot
+  trigger?: React.ReactNode
+  triggerClassName?: string
+}) {
   return (
-    <Card trigger="X/Twitter" href={`https://x.com/${data.handle}`} className="link-card service-card">
+    <Card
+      trigger={trigger}
+      href={`https://x.com/${data.handle}`}
+      className="link-card service-card"
+      triggerClassName={triggerClassName}
+    >
       <XCardBody data={data} />
     </Card>
   )
@@ -231,10 +281,42 @@ export function YouTubeCard({ data }: { data: SocialSnapshot }) {
   )
 }
 
-export function GitHubCard({ data }: { data: GitHubSnapshot }) {
+export function GitHubCard({
+  data,
+  trigger = 'GitHub',
+  triggerClassName,
+}: {
+  data: GitHubSnapshot
+  trigger?: React.ReactNode
+  triggerClassName?: string
+}) {
   return (
-    <Card trigger="GitHub" href={`https://github.com/${data.user}`} className="link-card service-card">
+    <Card
+      trigger={trigger}
+      href={`https://github.com/${data.user}`}
+      className="link-card service-card"
+      triggerClassName={triggerClassName}
+    >
       <GitHubCardBody data={data} />
+    </Card>
+  )
+}
+
+export function XiaohongshuCard({
+  trigger = '小红书',
+  triggerClassName,
+}: {
+  trigger?: React.ReactNode
+  triggerClassName?: string
+}) {
+  return (
+    <Card
+      trigger={trigger}
+      href="https://xhslink.com/m/7vluP5ANiNE"
+      className="link-card service-card xiaohongshu-card"
+      triggerClassName={triggerClassName}
+    >
+      <XiaohongshuCardBody />
     </Card>
   )
 }
@@ -242,16 +324,24 @@ export function GitHubCard({ data }: { data: GitHubSnapshot }) {
 // Email's card is the front of a mailed envelope: stamps, cancellation
 // marks, sender, recipient, and folded seams. Purely visual; the trigger
 // itself opens mailto:.
-export function EmailCard({ address }: { address: string }) {
+export function EmailCard({
+  address,
+  trigger = 'Email',
+  triggerClassName = 'footer-tree-link',
+}: {
+  address: string
+  trigger?: React.ReactNode
+  triggerClassName?: string
+}) {
   return (
     <PreviewCard.Root>
       <PreviewCard.Trigger
         href={`mailto:${address}`}
-        className="footer-tree-link"
+        className={triggerClassName}
         delay={300}
         closeDelay={120}
       >
-        Email
+        {trigger}
       </PreviewCard.Trigger>
       <PreviewCard.Portal>
         <PreviewCard.Positioner side="top" sideOffset={8} collisionPadding={16} className="pointer-events-none z-[var(--z-card)]">

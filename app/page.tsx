@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Bookshelf } from '~/components/bookshelf'
 import { ExternalLabel } from '~/components/external-mark'
 import { HalftonePortrait } from '~/components/halftone-portrait'
+import { HomeIntroduction } from '~/components/home-introduction'
 import { NavCards } from '~/components/nav-cards'
 import { PostRow } from '~/components/post-row'
 import { VinylShelf } from '~/components/vinyl-shelf'
@@ -10,6 +11,7 @@ import { getAllPosts } from '~/lib/content'
 import { books, experience, records } from '~/lib/personal'
 import { projects } from '~/lib/projects'
 import { T } from '~/lib/i18n'
+import { getGitHub, getSocial } from '~/lib/social-live'
 
 function SectionTitle({ children, delay }: { children: React.ReactNode; delay: number }) {
   return (
@@ -22,7 +24,8 @@ function SectionTitle({ children, delay }: { children: React.ReactNode; delay: n
   )
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [social, github] = await Promise.all([getSocial(), getGitHub()])
   const posts = getAllPosts()
   const latest = posts.slice(0, 5)
   const center = (latest.length - 1) / 2
@@ -32,30 +35,12 @@ export default function HomePage() {
       <div className="flex flex-col-reverse justify-between gap-10 sm:flex-row sm:items-start">
         <div className="enter max-w-[19rem]">
           <h1 className="text-sm font-semibold">Cali Castle</h1>
-          <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-            <T zh="开发者、设计师、细节控、创始人。" en="Developer, designer, founder. Picky about details." />
-          </p>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            <T
-              zh="我是 Cali，"
-              en={<>I&apos;m Cali, founder of </>}
-            />
-            <a
-              href="https://zolplay.com"
-              target="_blank"
-              rel="noreferrer"
-              className="text-foreground underline decoration-border underline-offset-4 transition-colors duration-150 ease-[ease] hover:decoration-foreground"
-            >
-              <ExternalLabel><T zh="佐玩" en="Zolplay" /></ExternalLabel>
-            </a>
-            <T
-              zh="创始人，目前带领着佐玩致力于创造一个充满创造力的工作环境，鼓励团队创造影响世界的产品。热爱开发、设计、创新，享受生活，以及在未知领域中探索。"
-              en=". I lead a creative team and still spend most of my time making things. I enjoy development, design, and unfamiliar problems."
-            />
-          </p>
+          <div className="mt-4">
+            <HomeIntroduction social={social.x} github={github} />
+          </div>
         </div>
         <div
-          className="enter w-44 shrink-0 sm:w-60"
+          className="enter w-[9.35rem] shrink-0 sm:w-60"
           style={{ '--enter-delay': '80ms' } as React.CSSProperties}
         >
           <HalftonePortrait
@@ -79,25 +64,25 @@ export default function HomePage() {
               style={{ '--enter-delay': `${150 + i * 40}ms` } as React.CSSProperties}
             >
               <div className="experience-row text-sm">
-                <span className="flex items-baseline gap-3">
+                <div className="experience-details">
                   {job.url ? (
                     <a
                       href={job.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="font-medium transition-colors duration-150 ease-[ease] hover:text-foreground"
+                      className="experience-company font-medium transition-colors duration-150 ease-[ease] hover:text-foreground"
                     >
                       <ExternalLabel><T zh={job.company} en={job.companyEn} /></ExternalLabel>
                     </a>
                   ) : (
-                    <span className="font-medium"><T zh={job.company} en={job.companyEn} /></span>
+                    <span className="experience-company font-medium"><T zh={job.company} en={job.companyEn} /></span>
                   )}
-                  <span className="text-muted-foreground">
+                  <span className="experience-role text-muted-foreground">
                     <T zh={job.role} en={job.roleEn ?? job.role} />
                   </span>
-                </span>
-                <span className="shrink-0 text-muted-foreground tabular-nums">
-                  {job.from}<T zh="至" en=" to " />{job.to ?? <T zh="今" en="now" />}
+                </div>
+                <span className="experience-date text-muted-foreground tabular-nums">
+                  {job.from}—{job.to ?? <T zh="现在" en="now" />}
                 </span>
               </div>
             </li>
