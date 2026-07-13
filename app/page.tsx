@@ -134,7 +134,7 @@ export default function HomePage() {
       {records.length > 0 && (
         <section className="mt-16">
           <SectionTitle delay={320}>
-            <T zh="让我动起来的音乐" en="Music That Gets Me Going" />
+            <T zh="让我来劲的音乐" en="Music That Gets Me Going" />
           </SectionTitle>
           <div className="enter mt-5" style={{ '--enter-delay': '360ms' } as React.CSSProperties}>
             <VinylShelf />

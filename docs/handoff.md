@@ -211,7 +211,7 @@ Working and verified (light/dark/mobile, production build green):
   exit from the center with a subtle vertical swing.
 
 - **Current July 13 taste-shelf polish (uncommitted)**: the homepage sections
-  now read 让我动起来的音乐 / Music That Gets Me Going and 启发我的书 / Books
+  now read 让我来劲的音乐 / Music That Gets Me Going and 启发我的书 / Books
   That Inspire Me. Selected album/book annotations use muted foreground ink,
   and record sleeves gained a quiet layered drop shadow.
 
