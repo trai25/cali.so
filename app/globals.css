@@ -929,6 +929,15 @@
   font-size: 0.875em;
 }
 
+.newsletter-archive-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-block: 1.5rem;
+  border-radius: 0.25rem;
+  box-shadow: 0 0 0 1px var(--border);
+}
+
 /* ── Code blocks (rehype-pretty-code + shiki dual themes) ─────────── */
 
 .code-frame {
