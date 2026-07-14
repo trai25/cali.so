@@ -1,0 +1,59 @@
+import 'server-only'
+
+import { availabilityRepository } from '../availability/repository'
+import { createAvailabilityService } from '../availability/service'
+import { authenticateOwnerRequest } from '../auth/http'
+import { getOwnerAuth } from '../auth/server'
+import { createGoogleCalendarClient } from '../google/client'
+import { googleRepository } from '../google/repository'
+import { createGoogleCalendarService } from '../google/service'
+import { getServerEnv } from '../server-env'
+import { createSecretBox } from '../secrets'
+
+export const AMA_OWNER_TIME_ZONE = 'Asia/Taipei'
+const GOOGLE_REQUEST_TIMEOUT_MS = 8_000
+
+let services: ReturnType<typeof createServices> | undefined
+
+function fetchWithTimeout(input: string | URL | Request, init: RequestInit = {}) {
+  const timeout = AbortSignal.timeout(GOOGLE_REQUEST_TIMEOUT_MS)
+  const signal = init.signal ? AbortSignal.any([init.signal, timeout]) : timeout
+  return fetch(input, { ...init, signal })
+}
+
+function createServices() {
+  const environment = getServerEnv()
+  const clock = { now: () => new Date() }
+  const google = createGoogleCalendarService({
+    ownerEmail: environment.ADMIN_EMAIL,
+    baseUrl: environment.SITE_URL,
+    repository: googleRepository,
+    provider: createGoogleCalendarClient({
+      clientId: environment.GOOGLE_CLIENT_ID,
+      clientSecret: environment.GOOGLE_CLIENT_SECRET,
+      fetch: fetchWithTimeout,
+      clock,
+    }),
+    secretBox: createSecretBox(environment.AMA_ENCRYPTION_KEY),
+    clock,
+  })
+  const availability = createAvailabilityService({
+    repository: availabilityRepository,
+    calendar: google,
+    ownerTimeZone: AMA_OWNER_TIME_ZONE,
+    clock,
+  })
+
+  return { google, availability, baseUrl: environment.SITE_URL }
+}
+
+export function getAmaAdminServices() {
+  services ??= createServices()
+  return services
+}
+
+export const ownerRequestAuthenticator = {
+  authenticate(request: Request) {
+    return authenticateOwnerRequest(getOwnerAuth(), request)
+  },
+}
