@@ -42,12 +42,12 @@ export function NewsletterRetiredPageView({ locale }: { locale: Locale }) {
         className="hairline-y py-8"
         aria-labelledby="newsletter-retired-title"
       >
-        <p className="font-mono text-[0.6875rem] tracking-[0.16em] text-muted-foreground">
+        <p className="font-mono text-sm tracking-[-0.011em] text-muted-foreground">
           CONFIRMATION_RETIRED
         </p>
         <h1
           id="newsletter-retired-title"
-          className="mt-4 text-xl font-semibold tracking-tight"
+          className="mt-4 text-sm font-semibold tracking-[-0.011em]"
         >
           <T
             zh="Newsletter 确认链接已停用"

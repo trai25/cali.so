@@ -8,9 +8,7 @@ const NEWSLETTERS_DIR = path.join(process.cwd(), 'content/newsletters')
 
 const newsletterFrontmatterSchema = z.object({
   title: z.string().min(1),
-  titleEn: z.string().min(1),
   description: z.string().min(1),
-  descriptionEn: z.string().min(1),
 })
 
 export const archivedNewsletterIds = ['1'] as const
@@ -37,6 +35,19 @@ export function getArchivedNewsletter(id: ArchivedNewsletterId) {
   const raw = readFileSync(path.join(NEWSLETTERS_DIR, id, 'index.mdx'), 'utf8')
   const { data, content } = matter(raw)
   const frontmatter = newsletterFrontmatterSchema.parse(data)
+  const englishRaw = readFileSync(
+    path.join(NEWSLETTERS_DIR, id, 'index.en.mdx'),
+    'utf8',
+  )
+  const { data: englishData, content: englishContent } = matter(englishRaw)
+  const englishFrontmatter = newsletterFrontmatterSchema.parse(englishData)
 
-  return { id, ...frontmatter, body: content }
+  return {
+    id,
+    ...frontmatter,
+    titleEn: englishFrontmatter.title,
+    descriptionEn: englishFrontmatter.description,
+    body: content,
+    bodyEn: englishContent,
+  }
 }

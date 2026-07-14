@@ -3,6 +3,7 @@ import { MDXRemote } from 'next-mdx-remote/rsc'
 import remarkGfm from 'remark-gfm'
 
 import { RevealScope } from '~/components/reveal-scope'
+import { mdxComponents } from '~/components/mdx/mdx-components'
 import { T } from '~/lib/i18n'
 import { localeMetadata } from '~/lib/locale-metadata'
 import type { Locale } from '~/lib/locale-route'
@@ -58,11 +59,12 @@ export function NewsletterArchivePageView({
   locale: Locale
 }) {
   const newsletter = getArchivedNewsletter(id)
+  const english = locale === 'en'
 
   return (
     <article className="mx-auto box-border w-full max-w-[37.5rem] px-6">
       <header className="hairline-bottom mb-10 pb-8">
-        <p className="font-mono text-[0.6875rem] tracking-[0.16em] text-muted-foreground">
+        <p className="font-mono text-sm tracking-[-0.011em] text-muted-foreground">
           {`ARCHIVE / ${id.padStart(3, '0')}`}
         </p>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-balance">
@@ -76,10 +78,13 @@ export function NewsletterArchivePageView({
         </p>
       </header>
 
-      <RevealScope lang="zh-CN" className="prose enter">
+      <RevealScope lang={english ? 'en' : 'zh-CN'} className="prose enter">
         <MDXRemote
-          source={newsletter.body}
-          components={{ img: NewsletterImage }}
+          source={english ? newsletter.bodyEn : newsletter.body}
+          components={{
+            ...mdxComponents(`newsletters/${id}`, locale),
+            img: NewsletterImage,
+          }}
           options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
         />
       </RevealScope>

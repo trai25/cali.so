@@ -278,6 +278,13 @@
     },
     {
       "kind": "redirect",
+      "source": "/blocked",
+      "destination": "/",
+      "probes": ["/blocked"],
+      "status": 308
+    },
+    {
+      "kind": "redirect",
       "source": "/sign-in/:path*",
       "destination": "/",
       "probes": ["/sign-in", "/sign-in/legacy"],
