@@ -274,8 +274,8 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
   (still the shared morph element) resting over two quiet paper sheets, title,
   dotted leader (the typewriter TOC register), tabular date. The sheets are
   static decoration; they never join the morph or change the row geometry.
-  Desktop titles remain one line; below 40rem they may use two lines before
-  truncating. Rows swing in center-out.
+  Desktop titles remain one line; below 40rem they may use two balanced lines
+  before truncating. Rows swing in center-out.
 - **Hover cards are informational only**: `.link-card` carries
   `pointer-events: none; user-select: none` — a card is a printed label,
   never a control. Email's card is a little paper ENVELOPE (folded flap,
@@ -423,10 +423,20 @@ retains its fine-pointer exploded-diagram response. Touch and reduced-motion
 presentations are static, and the Writing and Photos doorway vignettes remain
 independent.
 
-Project rows use a 4/8 grid: the linked name occupies the first four columns and
-the description the remaining eight. Both cells wrap naturally rather than
-truncating, with 1rem of vertical padding per row so multi-line descriptions
-retain a calm rhythm on narrow screens.
+The project page opens with a short bilingual note, then one intentionally
+ordered list. Each linked row is a compact artifact: a fixed 36px project icon,
+the project name and domain, then its description. Narrow screens keep the icon
+in the first column and stack all copy in the second, with natural wrapping and
+no horizontal overflow. On wider screens, the name and description share the
+same top edge regardless of either cell's line count. The introduction, project
+names, and descriptions use balanced wrapping wherever they break.
+
+On fine pointers, attending to a project lifts its icon by 1px and develops
+quiet crop marks around it while the domain and northeast mark gain contrast;
+the shared selective-focus treatment softens the other rows. The row never
+expands or moves. Touch is a plain whole-row link, keyboard focus uses the
+neutral focus ring without motion, and reduced motion keeps every artifact
+still.
 
 ## Liquid glass dock
 
