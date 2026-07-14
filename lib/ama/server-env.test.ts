@@ -9,6 +9,7 @@ const validEnvironment = {
   ADMIN_EMAIL: 'owner@example.com',
   SESSION_SECRET: 's'.repeat(64),
   AMA_ENCRYPTION_KEY: Buffer.alloc(32).toString('base64'),
+  RATE_LIMIT_HASH_KEY: Buffer.alloc(32, 2).toString('base64'),
   GOOGLE_CLIENT_ID: 'google-client-id.apps.googleusercontent.com',
   GOOGLE_CLIENT_SECRET: 'google-client-secret',
   UPSTASH_REDIS_REST_URL: 'https://example.upstash.io',
@@ -22,6 +23,51 @@ describe('AMA server environment', () => {
 
     expect(environment.ADMIN_EMAIL).toBe('owner@example.com')
     expect(environment.AUTH_RATE_LIMIT_MAX_REQUESTS).toBe(5)
+    expect(environment.ADMIN_MUTATION_RATE_LIMIT_MAX_REQUESTS).toBe(30)
+    expect(environment.features).toEqual({
+      publicMutations: false,
+      payments: false,
+      bookingFinalization: false,
+      admin: false,
+      google: false,
+      tencent: false,
+    })
+  })
+
+  it('enables each sensitive feature only through an explicit switch', () => {
+    const environment = parseServerEnv({
+      ...validEnvironment,
+      AMA_PUBLIC_MUTATIONS_ENABLED: 'true',
+      AMA_PAYMENTS_ENABLED: 'true',
+      AMA_BOOKING_FINALIZATION_ENABLED: 'true',
+      AMA_ADMIN_ENABLED: 'true',
+      AMA_GOOGLE_INTEGRATION_ENABLED: 'true',
+      AMA_TENCENT_INTEGRATION_ENABLED: 'true',
+    })
+
+    expect(environment.features).toEqual({
+      publicMutations: true,
+      payments: true,
+      bookingFinalization: true,
+      admin: true,
+      google: true,
+      tencent: true,
+    })
+  })
+
+  it('rejects ambiguous feature-switch values', () => {
+    expect(() =>
+      parseServerEnv({ ...validEnvironment, AMA_ADMIN_ENABLED: 'yes' }),
+    ).toThrowError(/AMA_ADMIN_ENABLED/)
+  })
+
+  it('rejects migration credentials in the runtime environment', () => {
+    expect(() =>
+      parseServerEnv({
+        ...validEnvironment,
+        MIGRATION_DATABASE_URL: 'postgresql://migration:secret@db.example/cali',
+      }),
+    ).toThrowError(/MIGRATION_DATABASE_URL/)
   })
 
   it('reports invalid field names without exposing secret values', () => {

@@ -96,8 +96,11 @@ export function createOwnerAuth(dependencies: OwnerAuthDependencies) {
     },
 
     async requestMagicLink(email: string, requestKey: string) {
-      const limit = await rateLimiter.limit(requestKey)
-      if (!limit.success || normalizeEmail(email) !== ownerEmail) return
+      const requestLimit = await rateLimiter.limit(`request:${requestKey}`)
+      if (normalizeEmail(email) !== ownerEmail) return
+
+      const ownerLimit = await rateLimiter.limit('owner-recipient')
+      if (!requestLimit.success || !ownerLimit.success) return
 
       const now = clock.now()
       const expiresAt = new Date(now.getTime() + MAGIC_LINK_LIFETIME_MS)

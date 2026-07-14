@@ -3,7 +3,7 @@
 import { Monitor, Moon, Sun, Volume2, VolumeX } from 'lucide-react'
 
 import { PreferencesIcon } from '~/components/dock-icons'
-import { useTheme } from 'next-themes'
+import { useTheme } from '~/components/theme-provider'
 import { useEffect, useState } from 'react'
 
 import { DropdownContent, DropdownMenu, DropdownTrigger } from '~/components/ui/dropdown'
