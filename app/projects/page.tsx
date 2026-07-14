@@ -1,27 +1,43 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
 
 import { ExternalLabel } from '~/components/external-mark'
 import { LocalizedMetadata } from '~/components/localized-metadata'
-import { projects } from '~/lib/projects'
 import { T } from '~/lib/i18n'
+import { projects } from '~/lib/projects'
 
 export const metadata: Metadata = {
   title: 'Projects',
-  description: 'Things Cali has made',
+  description: 'Products, open-source tools, and small experiments Cali has made over the years',
 }
 
 export default function ProjectsPage() {
   const center = (projects.length - 1) / 2
+
   return (
     <div className="mx-auto w-full max-w-[37.5rem] px-6">
       <LocalizedMetadata
         titleZh="项目"
         titleEn="Projects"
-        descriptionZh="Cali 做过的一些东西"
-        descriptionEn="Things Cali has made"
+        descriptionZh="这些年做过的一些产品、开源工具和小实验"
+        descriptionEn="Products, open-source tools, and small experiments Cali has made over the years"
       />
-      <h1 className="enter text-sm font-medium text-muted-foreground"><T zh="项目" en="Projects" /></h1>
-      <ul className="mt-6 flex flex-col">
+      <header className="max-w-[34rem]">
+        <h1 className="enter text-sm font-medium text-muted-foreground">
+          <T zh="项目" en="Projects" />
+        </h1>
+        <p
+          className="enter mt-4 text-balance text-sm leading-relaxed text-foreground"
+          style={{ '--enter-delay': '70ms' } as React.CSSProperties}
+        >
+          <T
+            zh="这些年做过的一些产品、开源工具和小实验。有些实用，有些只是好玩，但每一个我都认真做过。"
+            en="A collection of products, open-source tools, and small experiments I’ve made over the years. Some useful, some playful, all made with care."
+          />
+        </p>
+      </header>
+
+      <ul className="focus-list mt-10 flex flex-col">
         {projects.map((project, index) => (
           <li
             key={project.name}
@@ -34,12 +50,33 @@ export default function ProjectsPage() {
               href={project.url}
               target="_blank"
               rel="noreferrer"
-              className="hairline-top group grid grid-cols-12 items-start gap-x-4 py-4 text-sm"
+              className="project-row hairline-top group"
             >
-              <span className="col-span-4 min-w-0 font-medium transition-colors duration-150 ease-[ease] group-hover:text-foreground [&_.external-label]:max-w-full">
-                <ExternalLabel><T zh={project.name} en={project.nameEn} /></ExternalLabel>
+              <span className="project-icon-frame" aria-hidden="true">
+                <Image
+                  src={project.icon}
+                  alt=""
+                  width={36}
+                  height={36}
+                  className="project-icon"
+                />
               </span>
-              <span className="col-span-8 min-w-0 text-muted-foreground"><T zh={project.description} en={project.descriptionEn ?? project.description} /></span>
+              <span className="project-identity">
+                <span className="project-name font-medium">
+                  <ExternalLabel>
+                    <T zh={project.name} en={project.nameEn} />
+                  </ExternalLabel>
+                </span>
+                <span className="project-domain text-muted-foreground">
+                  {project.domain}
+                </span>
+              </span>
+              <span className="project-description text-muted-foreground">
+                <T
+                  zh={project.description}
+                  en={project.descriptionEn ?? project.description}
+                />
+              </span>
             </a>
           </li>
         ))}
