@@ -10,21 +10,21 @@ const prepaintScriptHash = `'sha256-${createHash('sha256')
 
 function contentSecurityPolicy(scriptSources: string, styleSources: string) {
   return [
-  "default-src 'self'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-  "object-src 'none'",
-  `script-src ${scriptSources}`,
-  "script-src-attr 'none'",
-  `style-src ${styleSources}`,
-  "img-src 'self' data: blob: https://www.google.com https://zolplay.com",
-  "font-src 'self' data:",
-  "connect-src 'self'",
-  "media-src 'self' blob:",
-  "worker-src 'self' blob:",
-  "frame-src 'none'",
-  "manifest-src 'self'",
+    "default-src 'self'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+    `script-src ${scriptSources}`,
+    "script-src-attr 'none'",
+    `style-src ${styleSources}`,
+    "img-src 'self' data: blob: https://www.google.com https://zolplay.com",
+    "font-src 'self' data:",
+    "connect-src 'self'",
+    "media-src 'self' blob:",
+    "worker-src 'self' blob:",
+    "frame-src 'none'",
+    "manifest-src 'self'",
   ].join('; ')
 }
 
