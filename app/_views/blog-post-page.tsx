@@ -13,6 +13,7 @@ import { LocalDate, T } from '~/lib/i18n'
 import { localeMetadata } from '~/lib/locale-metadata'
 import type { Locale } from '~/lib/locale-route'
 import rehypePrefixIds from '~/lib/rehype-prefix-ids'
+import { postViewTransitionName } from '~/lib/view-transition-name'
 
 export function generatePostStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }))
@@ -73,7 +74,7 @@ export async function BlogPostPageView({ slug, locale }: { slug: string; locale:
             <h1
               id={POST_ARTICLE_START_ID}
               className="mt-10 text-2xl font-semibold tracking-tight text-balance"
-              style={{ viewTransitionName: `title-${post.slug}` } as React.CSSProperties}
+              style={{ viewTransitionName: postViewTransitionName('title', post.slug) } as React.CSSProperties}
             >
               <T zh={post.title} en={post.titleEn} />
             </h1>

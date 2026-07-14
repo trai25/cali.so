@@ -4,6 +4,7 @@ import { DitherVeil } from '~/components/dither-veil'
 import type { PostCover } from '~/lib/content'
 import { tiltFromSlug } from '~/lib/polaroid'
 import { cn } from '~/lib/utils'
+import { postViewTransitionName } from '~/lib/view-transition-name'
 
 export function PolaroidCover({
   slug,
@@ -38,7 +39,7 @@ export function PolaroidCover({
       style={
         {
           ...(tilted && { '--tilt': `${tiltFromSlug(slug)}deg` }),
-          ...(morph && { viewTransitionName: `cover-${slug}` }),
+          ...(morph && { viewTransitionName: postViewTransitionName('cover', slug) }),
         } as React.CSSProperties
       }
     >
