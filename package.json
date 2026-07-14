@@ -2,7 +2,7 @@
   "name": "cali.so",
   "version": "3.0.0-dev",
   "private": true,
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE",
   "packageManager": "pnpm@10.12.1",
   "scripts": {
     "dev": "next dev",
