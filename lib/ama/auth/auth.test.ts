@@ -189,6 +189,7 @@ describe('owner authentication HTTP contract', () => {
     expect(response.status).toBe(303)
     expect(response.headers.get('location')).toBe('https://cali.so/admin/login?sent=1')
     expect(fixture.sentLinks).toHaveLength(0)
+    expect(fixture.rateLimitKeys).toEqual(['request:untrusted-proxy'])
   })
 
   it('rejects an expired magic link', async () => {
