@@ -35,10 +35,9 @@ const nextConfig: NextConfig = {
     },
   ],
 
-  // v1 URL back-compat (issue #75): every URL Google or anyone else has
-  // indexed must keep working. Routes that survive in v2 (blog, feeds,
-  // newsletters, ama, about, projects) are served natively; everything
-  // below covers what moved or was retired.
+  // Legacy URL back-compat (issue #75): every URL Google or anyone else has
+  // indexed must keep working. Issue #101 owns the complete v3 native and
+  // replacement contract; the rules below are the current compatibility base.
   redirects: async () => [
     // Social shortlinks (in bios and shared posts since v1)
     { source: '/twitter', destination: 'https://x.com/thecalicastle', permanent: true },
@@ -49,7 +48,7 @@ const nextConfig: NextConfig = {
     { source: '/github', destination: 'https://github.com/CaliCastle', permanent: true },
     { source: '/bilibili', destination: 'https://space.bilibili.com/8350251', permanent: true },
 
-    // Retired in v2 (ADR-0003, ADR-0004)
+    // Retired in v3 (ADR-0003, ADR-0004)
     { source: '/guestbook', destination: '/', permanent: true },
     { source: '/sign-in', destination: '/', permanent: true },
     { source: '/sign-in/:path*', destination: '/', permanent: true },

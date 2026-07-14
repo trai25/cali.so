@@ -1,6 +1,6 @@
 # cali.so
 
-Cali Castle's personal site — v2 is a ground-up rewrite starting from a clean slate.
+Cali Castle's personal site. v3 is a ground-up rewrite starting from a clean slate.
 
 **Picking up work?** Read `docs/handoff.md` first — current status, work queue, and gotchas.
 
@@ -20,7 +20,7 @@ All UI work follows the spec in `docs/design-language.md` (motion tokens, typogr
 
 ### Domain docs
 
-Multi-context: `CONTEXT-MAP.md` at the root points to per-context `CONTEXT.md` files, added as the v2 architecture takes shape. See `docs/agents/domain.md`.
+Multi-context: `CONTEXT-MAP.md` at the root points to per-context `CONTEXT.md` files, added as the v3 architecture takes shape. See `docs/agents/domain.md`.
 
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know

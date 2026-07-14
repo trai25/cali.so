@@ -1,16 +1,14 @@
-# v2 Design Language
+# v3 Design Language
 
-The visual and interaction spec for cali.so v2. It extends the component stack
+The visual and interaction spec for cali.so v3. It extends the component stack
 in ADR-0006 (motion is information, not decoration). Rules here are written to
 be buildable: when a value is stated, use it; when a component is described,
 its behavior spec is the contract.
 
-The header is sticky (z `--z-nav`) with a two-layer progressive-blur
-backdrop (8px masked to ~58%, 18px hugging the top edge, background tint
-82%→transparent) so passing content fades under the chrome; the top
-viewport fade lives there, the bottom one stays a fixed overlay. On desktop,
-the footer is a single Swiss grid with a quiet, left-aligned colophon first,
-followed by the contact and index trees.
+The primary navigation is a fixed bottom-center pill dock at z `--z-nav`.
+Viewport-edge fades and the drafting guides remain ambient rather than
+navigation chrome. On desktop, the footer is a single Swiss grid with a quiet,
+left-aligned colophon first, followed by the contact and index trees.
 
 ## Motion system
 
@@ -175,17 +173,18 @@ open rich hover cards. The contract:
   fine)` and are simply absent on touch — the trigger is a plain link to the
   destination (or inert text if there is no destination). The card is an
   enhancement, never the content.
-- **Data at build time.** Card data (grid, tracks) is fetched at build
-  / ISR, not on hover; an open card never spinners on network.
+- **Data before interaction.** Card data is fetched through static generation
+  or ISR, never on hover; an open card never shows a network spinner.
 - All content animations inside cards respect `prefers-reduced-motion`.
 - **Implemented service cards** (`components/social-cards.tsx`, chrome
   social links): the X card (avatar, name/@handle, bio, follower stat) and
-  the code card — a real 52×7 contribution grid, 4px cells on 1px gaps,
+  the code card: a recent 26×7 contribution grid, 4px cells on 1px gaps,
   ink = foreground alpha ramp (7/30/52/74/100%), each cell cascading in
-  (`translateY(4px) scale(0.92)`, 480ms, ~1.1ms/cell stagger). Data baked
-  at build into `content/social.json` + `content/github.json`
-  (`scripts/refresh-github.mjs`); zero network on hover; snapshots never
-  spinner. Touch follows the plain link.
+  (`translateY(4px) scale(0.92)`, 480ms, ~1.1ms/cell stagger). GitHub data
+  revalidates through the Next data cache every 6 hours and the YouTube count
+  every 12 hours. `content/social.json` and `content/github.json` are committed
+  fallback seeds; X remains manual because it has no public endpoint. There is
+  zero network work on hover. Touch follows the plain link.
 - **Homepage contact line.** X, GitHub, and email reuse the exact footer card
   bodies through alternate inline trigger labels. The Chinese-only
   Xiaohongshu trigger opens a fixed-size service card with the local headshot,
@@ -220,9 +219,8 @@ click, or the first scroll puts it back. The inline image keeps its spot
 
 ## Portrait & avatar
 
-The site carries its author: the header shows the line-art avatar, and on
-hover it blinks into the real photo (150ms crossfade, hover-capable pointers
-only). The home page opens with the halftone portrait hero (below).
+The site carries its author: the bottom dock uses the portrait as its Home
+item. The home page opens with the halftone portrait hero (below).
 Illustration, photo, and print are three registers of the same person; use
 the illustration where chrome should stay quiet, the photo where a human
 moment is wanted, the print where the page itself should feel authored.
@@ -237,9 +235,9 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
   boxed image — prints must dissolve into the paper in both themes.
 - **The halftone portrait hero** (`components/halftone-portrait.tsx`): the
   home portrait rendered as a dot screen on canvas — dot radius ∝ auto-leveled
-  luminance (p5–p95 stretch), ~5.5px cells, dots taper at the edges and
+  luminance (p5–p95 stretch), 3px cells, dots taper through the outer 10% and
   below a 6% floor so the figure emerges from nothing. A fine pointer swells
-  (+40%) and repels (≤7px) dots within ~150px, smoothed per-frame (0.16
+  (+8%) and repels (≤3px) dots within ~150px, smoothed per-frame (0.16
   lerp, rAF only while active). Touch and reduced motion get the static
   print; no-JS gets the photo printed down (grayscale, 85%). Its wrapper is
   149.6px wide on mobile (15% below the original 176px presentation) and
@@ -546,8 +544,8 @@ reduced motion. Decorative instances set `role="img"` + `aria-label` (or
 
 ## Static by default
 
-Blog, feeds, and OG images are statically generated; interactive data (hover
-cards, now-playing) revalidates on ISR timers. Fonts are preloaded (except the
-CJK fallback, which loads on demand); above-the-fold images get
+Blog, feeds, and OG images are statically generated. GitHub and YouTube social
+data revalidate on ISR timers and fall back to committed snapshots. Fonts are
+preloaded (except the CJK fallback, which loads on demand); above-the-fold images get
 `rel="preload"`. Page scrollbars are never customized; code-block scrollbars
 may be.
