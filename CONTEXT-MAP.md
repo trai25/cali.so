@@ -6,4 +6,5 @@ and `docs/adr/` (context-scoped decisions). System-wide ADRs live in `docs/adr/`
 
 ## Contexts
 
-_None yet — the v2 rewrite starts from a clean slate._
+- [AMA Booking](./lib/ama/CONTEXT.md) — sells and manages Cali's paid
+  one-to-one AMA sessions
