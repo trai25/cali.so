@@ -51,8 +51,9 @@ export function Preferences() {
     playPreferenceSound()
 
     if (pathname && pathname !== '/admin' && !pathname.startsWith('/admin/')) {
-      const suffix = `${window.location.search}${window.location.hash}`
-      window.location.assign(localePath(nextLocale, `${pathname}${suffix}`))
+      // Assigning pathname preserves the query and hash while keeping the
+      // destination on this origin. localePath rejects malformed segments.
+      window.location.pathname = localePath(nextLocale, pathname)
       return
     }
 
