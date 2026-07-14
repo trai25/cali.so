@@ -114,8 +114,10 @@ Working and verified (light/dark/mobile, production build green):
   grain, disc peeks out the top, no spin); hero caption removed;
   **bilingual chrome** (`lib/i18n.tsx`, CSS-swapped dual render — see
   spec "Bilingual content"): nav/sections/dates/cards/projects all zh⇄en,
-  footer 中/EN toggle, locale restored pre-paint. Experience roles and
-  project descriptions carry `roleEn`/`descriptionEn` in their registries.
+  footer 中/EN toggle. The later route-localization pass supersedes its
+  localStorage-only selection with unprefixed Chinese routes and `/en` English
+  routes. Experience roles and project descriptions carry
+  `roleEn`/`descriptionEn` in their registries.
 
 - **English content pass (July 2026)**: all nine posts now pair their Chinese
   `index.mdx` with a complete `index.en.mdx` translation. English mode switches

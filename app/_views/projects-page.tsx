@@ -1,27 +1,14 @@
-import type { Metadata } from 'next'
 import Image from 'next/image'
 
 import { ExternalLabel } from '~/components/external-mark'
-import { LocalizedMetadata } from '~/components/localized-metadata'
 import { T } from '~/lib/i18n'
 import { projects } from '~/lib/projects'
 
-export const metadata: Metadata = {
-  title: 'Projects',
-  description: 'Products, open-source tools, and small experiments Cali has made over the years',
-}
-
-export default function ProjectsPage() {
+export function ProjectsPageView() {
   const center = (projects.length - 1) / 2
 
   return (
     <div className="mx-auto w-full max-w-[37.5rem] px-6">
-      <LocalizedMetadata
-        titleZh="项目"
-        titleEn="Projects"
-        descriptionZh="这些年做过的一些产品、开源工具和小实验"
-        descriptionEn="Products, open-source tools, and small experiments Cali has made over the years"
-      />
       <header className="max-w-[34rem]">
         <h1 className="enter text-sm font-medium text-muted-foreground">
           <T zh="项目" en="Projects" />
@@ -67,15 +54,10 @@ export default function ProjectsPage() {
                     <T zh={project.name} en={project.nameEn} />
                   </ExternalLabel>
                 </span>
-                <span className="project-domain text-muted-foreground">
-                  {project.domain}
-                </span>
+                <span className="project-domain text-muted-foreground">{project.domain}</span>
               </span>
               <span className="project-description text-muted-foreground">
-                <T
-                  zh={project.description}
-                  en={project.descriptionEn ?? project.description}
-                />
+                <T zh={project.description} en={project.descriptionEn ?? project.description} />
               </span>
             </a>
           </li>

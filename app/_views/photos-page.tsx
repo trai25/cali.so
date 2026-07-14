@@ -1,27 +1,13 @@
-import type { Metadata } from 'next'
-
 import { ZoomImage } from '~/components/zoom-image'
-import { LocalizedMetadata } from '~/components/localized-metadata'
 import { T } from '~/lib/i18n'
 import { photos } from '~/lib/photos'
 import { tiltFromSlug } from '~/lib/polaroid'
 
-export const metadata: Metadata = {
-  title: 'Photos',
-  description: "Cali's photo wall",
-}
-
-
-export default function PhotosPage() {
+export function PhotosPageView() {
   const center = (photos.length - 1) / 2
+
   return (
     <div className="mx-auto w-full max-w-[37.5rem] px-6">
-      <LocalizedMetadata
-        titleZh="照片"
-        titleEn="Photos"
-        descriptionZh="Cali 的照片墙"
-        descriptionEn="Cali's photo wall"
-      />
       <h1 className="enter text-sm font-medium text-muted-foreground">
         <T zh="照片" en="Photos" />
       </h1>
@@ -29,7 +15,6 @@ export default function PhotosPage() {
         {photos.map((photo, index) => (
           <div
             key={photo.src}
-            // Gabriel's tip: stagger from the center out, with a tiny swing
             className="photo-item enter-swing"
             style={
               {

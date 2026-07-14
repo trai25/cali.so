@@ -1,17 +1,10 @@
-import type { Metadata } from 'next'
-
 import { PostRow } from '~/components/post-row'
-import { LocalizedMetadata } from '~/components/localized-metadata'
 import { RevealScope } from '~/components/reveal-scope'
 import { getAllPosts } from '~/lib/content'
 import { T } from '~/lib/i18n'
+import type { Locale } from '~/lib/locale-route'
 
-export const metadata: Metadata = {
-  title: 'Writing',
-  description: "Cali's blog posts",
-}
-
-export default function BlogIndexPage() {
+export function BlogIndexPageView({ locale }: { locale: Locale }) {
   const posts = getAllPosts()
   const postsByYear = new Map<number, typeof posts>()
 
@@ -25,12 +18,6 @@ export default function BlogIndexPage() {
 
   return (
     <div className="mx-auto w-full max-w-[37.5rem] px-6">
-      <LocalizedMetadata
-        titleZh="写作"
-        titleEn="Writing"
-        descriptionZh="Cali 的博客文章"
-        descriptionEn="Cali's blog posts"
-      />
       <h1 className="enter text-sm font-medium text-muted-foreground">
         <T zh="写作" en="Writing" />
       </h1>
@@ -51,14 +38,18 @@ export default function BlogIndexPage() {
                   <li
                     key={post.slug}
                     className="enter-swing"
-                    // center-out stagger within each year group
                     style={
                       {
                         '--enter-delay': `${120 + Math.abs(index - center) * 50}ms`,
                       } as React.CSSProperties
                     }
                   >
-                    <PostRow post={post} headingLevel="h3" dateStyle="month-day" />
+                    <PostRow
+                      post={post}
+                      headingLevel="h3"
+                      dateStyle="month-day"
+                      locale={locale}
+                    />
                   </li>
                 ))}
               </RevealScope>

@@ -5,6 +5,7 @@ import { DitherVeil } from '~/components/dither-veil'
 import type { Post } from '~/lib/content'
 import { formatMonthDay, formatShortDate } from '~/lib/date'
 import { LocalDate, T } from '~/lib/i18n'
+import { localePath, type Locale } from '~/lib/locale-route'
 
 // The compact post row: dithered print thumb · title · dotted leader · date.
 // Mobile titles may use two lines; thumb and title stay shared morph elements.
@@ -12,14 +13,16 @@ export function PostRow({
   post,
   headingLevel = 'h2',
   dateStyle = 'full',
+  locale = 'zh',
 }: {
   post: Post
   headingLevel?: 'h2' | 'h3'
   dateStyle?: 'full' | 'month-day' | 'short'
+  locale?: Locale
 }) {
   const Heading = headingLevel
   return (
-    <Link href={`/blog/${post.slug}`} className="group blog-row hairline-top">
+    <Link href={localePath(locale, `/blog/${post.slug}`)} className="group blog-row hairline-top">
       <span className="print-pile" aria-hidden>
         <span className="print-pile-sheet" />
         <span className="print-pile-sheet" />
