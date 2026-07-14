@@ -106,6 +106,34 @@ Titles do the work: post listings are title + date, no descriptions. Titles
 are short, concrete, and conversational — "为什么按钮不需要手指光标" not
 "关于按钮光标设计的一些思考与实践". Section headers are one or two words.
 
+## Homepage introduction
+
+The homepage opens with four short bilingual paragraphs: Cali is a father of
+two and a design engineer who loves getting the details just right, Zolplay is
+introduced as an AI-native design studio creating products, brands, and digital
+experiences, a casual generalist note connects curiosity and craft to having
+fun with the team, and a final contact line links to X, GitHub, and email.
+Chinese also includes Xiaohongshu. Those inline contact triggers reuse the footer's
+fixed-size informational preview cards and remain plain destination links on
+touch. The personal sentence carries two decorative 18px
+marks: the supplied design-engineer figure and the supplied orbital sparkle
+for getting details just right. The orbital mark precedes its phrase in both
+locales. Inline text establishes the shared baseline while each mark centers
+against that text, so neither localized phrase shifts vertically. Hovering the
+associated phrase on a fine pointer, or pressing it on touch, produces one
+brief response with no looping or layout movement. On a fine-pointer hover,
+both localized design-engineer labels pick up the same restrained, static
+rainbow gradient. The three
+characters in 刚刚好 and the three words in "details just right" rise in
+sequence to `translateY(-5px) scale(1.03)` over a one-second spring, staggered
+by 80ms, then settle back at their origin as the animation's end state. English
+punctuation stays inside the unbreakable phrase wrapper but outside the
+animated units, keeping its baseline and position stable. The Zolplay mention
+uses the shared external-link preview, its fixed favicon slot, and the standard
+northeast mark. Decorative marks stay out of the accessibility tree, reduced
+motion keeps every mark and text unit static, and the text remains complete
+without them.
+
 ## Entrance choreography
 
 Entrances continue the selective-focus grammar: blocks *develop* into
@@ -158,6 +186,14 @@ open rich hover cards. The contract:
   at build into `content/social.json` + `content/github.json`
   (`scripts/refresh-github.mjs`); zero network on hover; snapshots never
   spinner. Touch follows the plain link.
+- **Homepage contact line.** X, GitHub, and email reuse the exact footer card
+  bodies through alternate inline trigger labels. The Chinese-only
+  Xiaohongshu trigger opens a fixed-size service card with the local headshot,
+  Xiaohongshu's official text wordmark, profile name and account number,
+  two-line bio, and follower/engagement snapshot; it links directly to
+  `https://xhslink.com/m/7vluP5ANiNE`. Its
+  popup is informational and noninteractive, and touch follows that link
+  without opening a separate surface.
 - **The implemented base: external-link previews.** Every external link in
   prose carries a 14px inline favicon (fixed slot, no layout shift) and — when
   build-time metadata exists in `content/link-previews.json` — a preview card
@@ -205,7 +241,9 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
   below a 6% floor so the figure emerges from nothing. A fine pointer swells
   (+40%) and repels (≤7px) dots within ~150px, smoothed per-frame (0.16
   lerp, rAF only while active). Touch and reduced motion get the static
-  print; no-JS gets the photo printed down (grayscale, 85%).
+  print; no-JS gets the photo printed down (grayscale, 85%). Its wrapper is
+  149.6px wide on mobile (15% below the original 176px presentation) and
+  returns to the fixed 240px size from the 40rem breakpoint onward.
 - **Rulers**: measuring ticks (48px major / 12px minor) ride top and
   bottom as arcs of an enormous circle (fixed 40px rise at the viewport
   edge, so R = w²/8s at any width) — a bent steel rule whose ends bow away
@@ -367,14 +405,23 @@ English heading IDs are prefixed to keep the dual DOM valid.
 
 The leftmost desktop colophon puts the copyright at the top and Cali's local
 clock at the bottom. The clock shows the `UTC+8` timezone, a muted tabular live
-Asia/Taipei time, and a small redundant analog face. The digital `<time>` is the
-accessible source; the clock face is decorative and deliberately quieter than
-the footer trees. Its fixed placeholder dimensions avoid hydration shift, and
-the second-aligned timer pauses while the page is hidden. On mobile, contact and
-index remain a two-column row and the colophon follows them as the final row;
-inside it, copyright and clock occupy opposite halves of a two-column grid.
+Asia/Taipei time in 12-hour `h:mm AM/PM` format without seconds, and a small
+redundant analog face. The digital `<time>` is the accessible source; the clock
+face is decorative and deliberately quieter than the footer trees. Its fixed
+placeholder dimensions avoid hydration shift, and the second-aligned timer
+pauses while the page is hidden. On mobile, contact and index remain a
+two-column row and the colophon follows them as the final row; inside it,
+copyright and clock occupy opposite halves of a two-column grid.
 
 ## Project index
+
+The homepage Projects doorway is one standalone monochrome 52×52px app icon.
+Its solid center axes, two diagonals, and circle are clipped by the icon's
+rounded square, with the crossed project mark centered above them. The whole
+icon lifts together by 2px over the 300ms physical-object spring while the mark
+retains its fine-pointer exploded-diagram response. Touch and reduced-motion
+presentations are static, and the Writing and Photos doorway vignettes remain
+independent.
 
 Project rows use a 4/8 grid: the linked name occupies the first four columns and
 the description the remaining eight. Both cells wrap naturally rather than

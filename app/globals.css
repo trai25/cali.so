@@ -1309,8 +1309,248 @@ a:focus-visible .external-label .external-mark {
   opacity: 0.95;
 }
 
+/* ── Homepage introduction: small marks, deliberate responses ───── */
+
+.home-intro-trigger {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.18em;
+  white-space: nowrap;
+  touch-action: manipulation;
+}
+
+.home-design-mark,
+.home-details-mark {
+  display: inline-block;
+  align-self: center;
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  color: var(--foreground);
+  pointer-events: none;
+  user-select: none;
+  vertical-align: -0.25em;
+}
+
+.home-design-laptop,
+.home-design-sparkle,
+.home-zolplay-link .external-link > img {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.home-design-laptop,
+.home-zolplay-link .external-link > img {
+  transition: transform 150ms var(--ease-swift);
+}
+
+.home-detail-units {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.home-detail-words .home-detail-unit + .home-detail-unit {
+  margin-inline-start: 0.22em;
+}
+
+.home-detail-unit {
+  display: inline-block;
+  transform-origin: center bottom;
+}
+
+.home-detail-period {
+  display: inline-block;
+}
+
+.home-design-sparkle {
+  opacity: 0.72;
+}
+
+.home-intro-trigger.home-intro-tap .home-design-laptop {
+  animation: home-intro-laptop-tap 220ms var(--ease-swift);
+}
+
+.home-intro-trigger.home-intro-tap .home-design-sparkle-a {
+  animation: home-intro-twinkle 220ms var(--ease-swift);
+}
+
+.home-intro-trigger.home-intro-tap .home-design-sparkle-b {
+  animation: home-intro-twinkle 220ms 45ms var(--ease-swift);
+}
+
+.home-intro-trigger.home-intro-tap .home-design-sparkle-dot {
+  animation: home-intro-twinkle 180ms 90ms var(--ease-swift);
+}
+
+.home-intro-trigger.home-intro-tap .home-detail-unit {
+  animation: home-detail-hop 1s var(--ease-spring);
+}
+
+.home-intro-trigger.home-intro-tap .home-detail-unit:nth-child(2) {
+  animation-delay: 80ms;
+}
+
+.home-intro-trigger.home-intro-tap .home-detail-unit:nth-child(3) {
+  animation-delay: 160ms;
+}
+
+.home-zolplay-link {
+  white-space: nowrap;
+  touch-action: manipulation;
+}
+
+.home-contact-link {
+  color: var(--foreground);
+  text-decoration-line: underline;
+  text-decoration-color: var(--border);
+  text-underline-offset: 0.25rem;
+  transition: text-decoration-color 150ms ease;
+  touch-action: manipulation;
+}
+
+.home-contact-link .external-label {
+  white-space: nowrap;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .home-contact-link:hover {
+    text-decoration-color: var(--foreground);
+  }
+}
+
+.home-zolplay-link:active .external-link > img {
+  transform: translateY(-1px) rotate(-4deg);
+}
+
+.home-zolplay-link .external-mark {
+  transition: opacity 150ms ease, transform 180ms ease;
+}
+
+.home-zolplay-link:active .external-mark {
+  opacity: 0.95;
+  transform: translate(1.5px, -1.5px);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .home-intro-trigger:hover .home-design-label {
+    color: transparent;
+    background-image: linear-gradient(
+      100deg,
+      color-mix(in oklch, var(--foreground) 35%, #ff5c5c),
+      color-mix(in oklch, var(--foreground) 35%, #f6b73c),
+      color-mix(in oklch, var(--foreground) 35%, #44c77a),
+      color-mix(in oklch, var(--foreground) 35%, #4aa8ff),
+      color-mix(in oklch, var(--foreground) 35%, #b56cff)
+    );
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .home-intro-trigger:hover .home-detail-unit {
+    animation: home-detail-hop 1s var(--ease-spring);
+  }
+
+  .home-intro-trigger:hover .home-detail-unit:nth-child(2) {
+    animation-delay: 80ms;
+  }
+
+  .home-intro-trigger:hover .home-detail-unit:nth-child(3) {
+    animation-delay: 160ms;
+  }
+
+  .home-intro-trigger:hover .home-design-laptop {
+    transform: translateY(1.5px);
+  }
+
+  .home-intro-trigger:hover .home-design-sparkle-a {
+    animation: home-intro-twinkle 220ms var(--ease-swift);
+  }
+
+  .home-intro-trigger:hover .home-design-sparkle-b {
+    animation: home-intro-twinkle 220ms 45ms var(--ease-swift);
+  }
+
+  .home-intro-trigger:hover .home-design-sparkle-dot {
+    animation: home-intro-twinkle 180ms 90ms var(--ease-swift);
+  }
+
+  .home-zolplay-link:hover .external-link > img {
+    transform: translateY(-1px) rotate(-4deg);
+  }
+}
+
+@keyframes home-detail-hop {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+
+  28% {
+    transform: translateY(-5px) scale(1.03);
+    animation-timing-function: var(--ease-spring);
+  }
+
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes home-intro-laptop-tap {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  45% {
+    transform: translateY(1.5px);
+  }
+}
+
+@keyframes home-intro-twinkle {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: scale(1);
+  }
+
+  45% {
+    opacity: 1;
+    transform: scale(1.22);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .external-label .external-mark {
+    transition: none;
+  }
+
+  .home-design-laptop,
+  .home-design-sparkle,
+  .home-detail-unit,
+  .home-zolplay-link .external-link > img {
+    animation: none;
+    transition: none;
+    transform: none;
+  }
+
+  .home-intro-trigger:is(:hover, :active) .home-design-laptop,
+  .home-intro-trigger:is(:hover, :active) .home-design-sparkle,
+  .home-intro-trigger:is(:hover, :active) .home-detail-unit,
+  .home-intro-trigger.home-intro-tap .home-design-laptop,
+  .home-intro-trigger.home-intro-tap .home-design-sparkle,
+  .home-intro-trigger.home-intro-tap .home-detail-unit,
+  .home-zolplay-link:is(:hover, :active) .external-link > img,
+  .home-zolplay-link:is(:hover, :active) .external-mark {
+    animation: none;
+    transition: none;
+    transform: none;
+  }
+
+  .home-zolplay-link {
+    transition: none;
+  }
+
+  .home-contact-link {
     transition: none;
   }
 }
@@ -2281,11 +2521,30 @@ a:focus-visible .external-label .external-mark {
 /* ── Experience rows ──────────────────────────────────────────────── */
 
 .experience-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: start;
   gap: 1rem;
   padding: 0.625rem 0;
+}
+
+.experience-details {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.125rem;
+}
+
+.experience-company,
+.experience-role {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.experience-date {
+  white-space: nowrap;
 }
 
 /* ── Per-service hover cards (components/social-cards.tsx) ────────── */
@@ -2374,6 +2633,34 @@ a:focus-visible .external-label .external-mark {
 .service-card-stat b {
   font-weight: var(--font-weight-medium);
   color: var(--foreground);
+}
+
+.xiaohongshu-card {
+  box-sizing: border-box;
+  height: 10.25rem;
+}
+
+.xiaohongshu-card-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.xiaohongshu-card-wordmark {
+  width: 3rem;
+  user-select: none;
+}
+
+.xiaohongshu-card-wordmark img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.xiaohongshu-card-bio {
+  display: flex;
+  flex-direction: column;
 }
 
 /* 26-week (~180 day) contribution grid; cells cascade in individually
@@ -3553,33 +3840,60 @@ html[data-locale='en'] [data-en-block] {
   object-fit: cover;
 }
 
-/* blueprint paper: fine grid + the cube */
-.nc-blueprint {
-  color: var(--muted-foreground);
-}
-
-.nc-blueprint::before {
-  content: '';
+/* standalone construction icon + the crossed project mark */
+.nc-project-icon {
   position: absolute;
-  top: 0.125rem;
-  bottom: 0.125rem;
+  isolation: isolate;
+  width: 3.25rem;
+  height: 3.25rem;
   left: 50%;
-  width: 6.5rem;
-  transform: translateX(-50%);
-  border-radius: 3px;
-  background:
-    repeating-linear-gradient(to right, color-mix(in oklab, var(--muted-foreground) 20%, transparent) 0 0.5px, transparent 0.5px 7px),
-    repeating-linear-gradient(to bottom, color-mix(in oklab, var(--muted-foreground) 20%, transparent) 0 0.5px, transparent 0.5px 7px),
-    var(--paper);
-  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.06);
+  top: 50%;
+  transform: translate(-50%, -50%);
+  overflow: hidden;
+  border: var(--border-hairline) solid color-mix(in oklab, var(--foreground) 20%, var(--border));
+  border-radius: 0.75rem;
+  background: color-mix(in oklab, var(--foreground) 4%, var(--background));
+  box-shadow: var(--shadow-3);
+  transition: transform 300ms var(--ease-spring);
 }
 
-.nc-blueprint svg {
-  position: relative;
+@media (max-width: 39.99rem) {
+  .nav-card {
+    min-width: 0;
+  }
+
+  .nc-vignette {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+.nc-construction-guides {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.nc-guide-solid {
+  stroke: color-mix(in oklab, var(--foreground) 25%, transparent);
+  stroke-width: 0.65;
+  vector-effect: non-scaling-stroke;
+}
+
+.nc-project-mark {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
   width: 30px;
   height: 30px;
-  color: var(--paper-ink);
+  color: color-mix(in oklab, var(--foreground) 84%, var(--muted-foreground));
   overflow: visible;
+  transform: translate(-50%, -50%);
 }
 
 .nc-explode-a,
@@ -3591,6 +3905,10 @@ html[data-locale='en'] [data-en-block] {
 }
 
 @media (hover: hover) and (pointer: fine) {
+  .nav-card:hover .nc-project-icon {
+    transform: translate(-50%, calc(-50% - 2px));
+  }
+
   .nav-card:hover .nc-explode-a {
     transform: translate(1.5px, -1.5px) rotate(3deg);
   }
@@ -3619,9 +3937,14 @@ html[data-locale='en'] [data-en-block] {
 @media (prefers-reduced-motion: reduce) {
   .nc-sheets span,
   .nc-polaroid,
+  .nc-project-icon,
   .nc-explode-a,
   .nc-explode-b,
   .nc-explode-c {
     transition: none;
+  }
+
+  .nav-card:hover .nc-project-icon {
+    transform: translate(-50%, -50%);
   }
 }

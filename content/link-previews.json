@@ -667,7 +667,9 @@
   },
   "https://zolplay.com": {
     "domain": "zolplay.com",
-    "title": "Zolplay (Design Studio)",
-    "description": "A Shenzhen design studio building products, brands, and digital experiences since 2021."
+    "title": "佐玩（AI 原生设计工作室）",
+    "titleEn": "Zolplay (AI-native Design Studio)",
+    "description": "一家位于深圳的 AI 原生设计工作室，打造产品、品牌与数字体验。",
+    "descriptionEn": "A Shenzhen-based AI-native design studio creating products, brands, and digital experiences."
   }
 }

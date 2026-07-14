@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-const taipeiTime = new Intl.DateTimeFormat('en-GB', {
+const taipeiClockTime = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'Asia/Taipei',
   hourCycle: 'h23',
   hour: '2-digit',
@@ -10,11 +10,18 @@ const taipeiTime = new Intl.DateTimeFormat('en-GB', {
   second: '2-digit',
 })
 
+const taipeiTimeLabel = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'Asia/Taipei',
+  hour12: true,
+  hour: 'numeric',
+  minute: '2-digit',
+})
+
 function timeParts(date: Date | null) {
-  if (!date) return { hour: 0, minute: 0, second: 0, label: '--:--:--' }
+  if (!date) return { hour: 0, minute: 0, second: 0, label: '--:-- --' }
 
   const parts = Object.fromEntries(
-    taipeiTime
+    taipeiClockTime
       .formatToParts(date)
       .filter((part) => part.type !== 'literal')
       .map((part) => [part.type, part.value]),
@@ -27,7 +34,7 @@ function timeParts(date: Date | null) {
     hour,
     minute,
     second,
-    label: taipeiTime.format(date),
+    label: taipeiTimeLabel.format(date),
   }
 }
 
