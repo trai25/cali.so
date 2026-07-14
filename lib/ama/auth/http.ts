@@ -43,6 +43,10 @@ function readCookie(request: Request, name: string) {
   return undefined
 }
 
+export function authenticateOwnerRequest(auth: OwnerAuth, request: Request) {
+  return auth.authenticate(readCookie(request, AUTH_SESSION_COOKIE))
+}
+
 export function createMagicLinkRequestHandler(
   auth: OwnerAuth,
   defer: Defer = (task) => task(),

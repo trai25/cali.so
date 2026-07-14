@@ -1,34 +1,108 @@
 import type { Metadata } from 'next'
 
-import { T } from '~/lib/i18n'
+import { getAmaAdminServices } from '~/lib/ama/admin/server'
+
+import {
+  AdminDashboard,
+  type AdminQueryNotices,
+  type GoogleConnectionStatus,
+} from './AdminDashboard'
 
 export const metadata: Metadata = {
   title: 'AMA Admin',
   robots: { index: false, follow: false },
 }
 
-export default function AdminPage() {
+const availabilityNotices = new Set(['saved', 'invalid', 'failed'] as const)
+const calendarNotices = new Set([
+  'disconnected',
+  'connected',
+  'expired',
+  'revoked',
+  'denied-scope',
+  'unavailable',
+] as const)
+
+function first(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value
+}
+
+function queryNotices(input: {
+  availability?: string | string[]
+  calendar?: string | string[]
+}): AdminQueryNotices {
+  const availability = first(input.availability)
+  const calendar = first(input.calendar)
+  return {
+    availability: availabilityNotices.has(
+      availability as AdminQueryNotices['availability'] & string,
+    )
+      ? (availability as AdminQueryNotices['availability'])
+      : undefined,
+    calendar: calendarNotices.has(calendar as GoogleConnectionStatus)
+      ? (calendar as GoogleConnectionStatus)
+      : undefined,
+  }
+}
+
+function connectionStatus(status: string | undefined): GoogleConnectionStatus {
+  if (status === 'connected' || status === 'expired' || status === 'revoked') {
+    return status
+  }
+  if (status === 'denied_scope') return 'denied-scope'
+  if (status === 'error') return 'unavailable'
+  return 'disconnected'
+}
+
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    availability?: string | string[]
+    calendar?: string | string[]
+  }>
+}) {
+  const { availability, google } = getAmaAdminServices()
+  const windowsPromise = availability.list()
+  const connectionPromise = google.getConnection()
+  const previewPromise = availability.preview()
+  const [windows, connection, preview, params] = await Promise.all([
+    windowsPromise,
+    connectionPromise,
+    previewPromise,
+    searchParams,
+  ])
+
+  const persistedStatus = connectionStatus(connection?.status)
+  const status =
+    persistedStatus === 'connected' && preview.status !== 'connected'
+      ? preview.status
+      : persistedStatus
+
   return (
-    <div className="mx-auto w-full max-w-[37.5rem] px-6">
-      <header className="flex min-h-11 items-center justify-between gap-6">
-        <div>
-          <p className="text-sm text-muted-foreground">AMA / ADMIN</p>
-          <h1 className="mt-1 text-sm font-semibold">
-            <T zh="管理" en="Admin" />
-          </h1>
-        </div>
-        <form action="/api/admin/auth/logout" method="post">
-          <button
-            type="submit"
-            className="relative min-h-11 touch-manipulation px-2 text-sm text-muted-foreground outline-none transition-colors duration-150 ease-[ease] [@media(hover:hover)_and_(pointer:fine)]:hover:text-foreground focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground motion-reduce:transition-none"
-          >
-            <T zh="退出" en="Sign out" />
-          </button>
-        </form>
-      </header>
-      <div className="mt-12 border-t border-dashed border-border pt-6 text-sm text-muted-foreground">
-        <T zh="AMA 管理工具将在这里出现。" en="AMA management tools will appear here." />
-      </div>
-    </div>
+    <AdminDashboard
+      windows={windows.map(({ id, isoWeekday, startMinute, endMinute }) => ({
+        id,
+        isoWeekday,
+        startMinute,
+        endMinute,
+      }))}
+      googleConnection={{
+        status,
+        identity:
+          connection?.calendarId && connection.status !== 'disconnected'
+            ? {
+                calendarId: connection.calendarId,
+                summary: connection.calendarSummary,
+                email: connection.calendarEmail,
+              }
+            : null,
+      }}
+      previewSlots={preview.slots.map((slot) => ({
+        startsAt: slot.startsAt.toISOString(),
+        endsAt: slot.endsAt.toISOString(),
+      }))}
+      notices={queryNotices(params)}
+    />
   )
 }

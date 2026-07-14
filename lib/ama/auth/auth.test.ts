@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  authenticateOwnerRequest,
   createLogoutHandler,
   createMagicLinkRequestHandler,
   createMagicLinkVerifyHandler,
@@ -276,5 +277,34 @@ describe('owner authentication HTTP contract', () => {
     expect(logoutResponse.headers.get('location')).toBe('https://cali.so/admin/login')
     expect(logoutResponse.headers.get('set-cookie')).toContain('Max-Age=0')
     expect(await fixture.auth.authenticate(sessionCookie)).toBe(false)
+  })
+
+  it('authenticates protected API requests from the signed owner cookie', async () => {
+    const fixture = createFixture()
+    await requestMagicLink(
+      createMagicLinkRequestHandler(fixture.auth),
+      'owner@example.com',
+    )
+    const response = await createMagicLinkVerifyHandler(fixture.auth)(
+      new Request(fixture.sentLinks[0]),
+    )
+    const session = cookieValue(response)
+
+    await expect(
+      authenticateOwnerRequest(
+        fixture.auth,
+        new Request('https://cali.so/api/admin/ama/availability', {
+          headers: { cookie: `${AUTH_SESSION_COOKIE}=${session}` },
+        }),
+      ),
+    ).resolves.toBe(true)
+    await expect(
+      authenticateOwnerRequest(
+        fixture.auth,
+        new Request('https://cali.so/api/admin/ama/availability', {
+          headers: { cookie: `${AUTH_SESSION_COOKIE}=forged` },
+        }),
+      ),
+    ).resolves.toBe(false)
   })
 })

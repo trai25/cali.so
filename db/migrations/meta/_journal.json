@@ -8,6 +8,27 @@
       "when": 1783992000000,
       "tag": "0001_ama_owner_auth",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784011897171,
+      "tag": "0002_ama_availability",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784011975962,
+      "tag": "0003_ama_google_calendar",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784012013999,
+      "tag": "0004_ama_google_oauth",
+      "breakpoints": true
     }
   ]
 }

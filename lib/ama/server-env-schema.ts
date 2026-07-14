@@ -30,6 +30,8 @@ const serverEnvironmentSchema = z.object({
   ADMIN_EMAIL: z.email().transform((value) => value.trim().toLowerCase()),
   SESSION_SECRET: z.string().min(32),
   AMA_ENCRYPTION_KEY: z.string().refine(isBase64Key),
+  GOOGLE_CLIENT_ID: z.string().trim().min(1),
+  GOOGLE_CLIENT_SECRET: z.string().trim().min(1),
   UPSTASH_REDIS_REST_URL: z.url(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1),
   SITE_URL: z

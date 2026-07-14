@@ -9,6 +9,8 @@ const validEnvironment = {
   ADMIN_EMAIL: 'owner@example.com',
   SESSION_SECRET: 's'.repeat(64),
   AMA_ENCRYPTION_KEY: Buffer.alloc(32).toString('base64'),
+  GOOGLE_CLIENT_ID: 'google-client-id.apps.googleusercontent.com',
+  GOOGLE_CLIENT_SECRET: 'google-client-secret',
   UPSTASH_REDIS_REST_URL: 'https://example.upstash.io',
   UPSTASH_REDIS_REST_TOKEN: 'redis-secret',
   SITE_URL: 'https://cali.so',
@@ -42,5 +44,16 @@ describe('AMA server environment', () => {
     expect(() =>
       parseServerEnv({ ...validEnvironment, RESEND_FROM_EMAIL: 'Cali <@@@>' }),
     ).toThrowError(/RESEND_FROM_EMAIL/)
+  })
+
+  it('requires Google OAuth credentials without exposing their values', () => {
+    const { GOOGLE_CLIENT_SECRET: _missing, ...missingSecret } = validEnvironment
+    expect(() => parseServerEnv(missingSecret)).toThrowError(/GOOGLE_CLIENT_SECRET/)
+
+    try {
+      parseServerEnv({ ...validEnvironment, GOOGLE_CLIENT_SECRET: '' })
+    } catch (error) {
+      expect(String(error)).not.toContain('google-client-secret')
+    }
   })
 })

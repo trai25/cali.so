@@ -19,6 +19,7 @@
     "@base-ui/react": "^1.6.0",
     "@hugeicons/core-free-icons": "^4.2.2",
     "@hugeicons/react": "^1.1.9",
+    "@js-temporal/polyfill": "^0.5.1",
     "@neondatabase/serverless": "^1.1.0",
     "@phosphor-icons/react": "^2.1.10",
     "@tabler/icons-react": "^3.44.0",
@@ -56,12 +57,14 @@
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.4",
     "@tailwindcss/postcss": "^4.1.0",
+    "@testing-library/react": "^16.3.2",
     "@types/mdx": "^2.0.14",
     "@types/node": "^24.0.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@types/rss": "^0.0.32",
     "drizzle-kit": "^0.31.10",
+    "jsdom": "^29.1.1",
     "tailwindcss": "^4.1.0",
     "typescript": "^5.8.0",
     "vitest": "^4.1.10"
