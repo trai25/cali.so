@@ -1,3 +1,5 @@
+import type { AmaFeature, AmaSecurity } from '../security/service'
+
 export interface OwnerRequestAuthenticator {
   authenticate(request: Request): Promise<boolean>
 }
@@ -34,8 +36,11 @@ export interface AdminGoogleService {
 type HandlerDependencies<T> = {
   authenticator: OwnerRequestAuthenticator
   service: T
+  security: AmaSecurity
   baseUrl: URL
 }
+
+type AdminRequestMode = 'browser-mutation' | 'provider-callback'
 
 function redirect(baseUrl: URL, pathOrUrl: string | URL) {
   const location = pathOrUrl instanceof URL ? pathOrUrl : new URL(pathOrUrl, baseUrl)
@@ -49,13 +54,24 @@ function redirect(baseUrl: URL, pathOrUrl: string | URL) {
   })
 }
 
-async function requireOwner(
-  authenticator: OwnerRequestAuthenticator,
+async function enforceAdminRequestPolicy(
+  dependencies: HandlerDependencies<unknown>,
   request: Request,
-  baseUrl: URL,
+  requiredFeatures: readonly AmaFeature[],
+  mode: AdminRequestMode,
 ) {
-  if (await authenticator.authenticate(request)) return null
-  return redirect(baseUrl, '/admin/login')
+  const { authenticator, security, baseUrl } = dependencies
+  const blocked = mode === 'browser-mutation'
+    ? await security.protectBrowserMutation(request, requiredFeatures)
+    : security.protectFeatures(request, requiredFeatures)
+  if (blocked) return blocked
+
+  if (!(await authenticator.authenticate(request))) {
+    security.recordAuthenticationDenial(request)
+    return redirect(baseUrl, '/admin/login')
+  }
+
+  return security.limitAdminMutation(request)
 }
 
 function formString(formData: FormData, name: string) {
@@ -120,14 +136,18 @@ function availabilityWindowFrom(formData: FormData): AvailabilityWindowInput | n
   return { isoWeekday: weekday, startMinute, endMinute }
 }
 
-export function createAvailabilityMutationHandler({
-  authenticator,
-  service,
-  baseUrl,
-}: HandlerDependencies<AvailabilityMutationService>) {
+export function createAvailabilityMutationHandler(
+  dependencies: HandlerDependencies<AvailabilityMutationService>,
+) {
+  const { service, baseUrl } = dependencies
   return async function POST(request: Request) {
-    const unauthorized = await requireOwner(authenticator, request, baseUrl)
-    if (unauthorized) return unauthorized
+    const blocked = await enforceAdminRequestPolicy(
+      dependencies,
+      request,
+      ['admin'],
+      'browser-mutation',
+    )
+    if (blocked) return blocked
 
     try {
       const formData = await request.formData()
@@ -146,6 +166,10 @@ export function createAvailabilityMutationHandler({
         else return redirect(baseUrl, '/admin?availability=invalid')
       }
 
+      dependencies.security.recordPrivilegedAction(
+        request,
+        'availability_mutation.succeeded',
+      )
       return redirect(baseUrl, '/admin?availability=saved')
     } catch {
       return redirect(baseUrl, '/admin?availability=failed')
@@ -153,30 +177,40 @@ export function createAvailabilityMutationHandler({
   }
 }
 
-export function createGoogleConnectHandler({
-  authenticator,
-  service,
-  baseUrl,
-}: HandlerDependencies<AdminGoogleService>) {
-  return async function GET(request: Request) {
-    const unauthorized = await requireOwner(authenticator, request, baseUrl)
-    if (unauthorized) return unauthorized
+export function createGoogleConnectHandler(
+  dependencies: HandlerDependencies<AdminGoogleService>,
+) {
+  const { service, baseUrl } = dependencies
+  return async function POST(request: Request) {
+    const blocked = await enforceAdminRequestPolicy(
+      dependencies,
+      request,
+      ['admin', 'google'],
+      'browser-mutation',
+    )
+    if (blocked) return blocked
     try {
-      return redirect(baseUrl, await service.begin())
+      const providerUrl = await service.begin()
+      dependencies.security.recordPrivilegedAction(request, 'google_connect.started')
+      return redirect(baseUrl, providerUrl)
     } catch {
       return redirect(baseUrl, '/admin?calendar=unavailable')
     }
   }
 }
 
-export function createGoogleCallbackHandler({
-  authenticator,
-  service,
-  baseUrl,
-}: HandlerDependencies<AdminGoogleService>) {
+export function createGoogleCallbackHandler(
+  dependencies: HandlerDependencies<AdminGoogleService>,
+) {
+  const { service, baseUrl } = dependencies
   return async function GET(request: Request) {
-    const unauthorized = await requireOwner(authenticator, request, baseUrl)
-    if (unauthorized) return unauthorized
+    const blocked = await enforceAdminRequestPolicy(
+      dependencies,
+      request,
+      ['admin', 'google'],
+      'provider-callback',
+    )
+    if (blocked) return blocked
     const params = new URL(request.url).searchParams
     try {
       const result = await service.complete({
@@ -184,6 +218,10 @@ export function createGoogleCallbackHandler({
         code: params.get('code'),
         error: params.get('error'),
       })
+      dependencies.security.recordPrivilegedAction(
+        request,
+        'google_callback.completed',
+      )
       return redirect(baseUrl, `/admin?calendar=${result}`)
     } catch {
       return redirect(baseUrl, '/admin?calendar=unavailable')
@@ -191,16 +229,24 @@ export function createGoogleCallbackHandler({
   }
 }
 
-export function createGoogleDisconnectHandler({
-  authenticator,
-  service,
-  baseUrl,
-}: HandlerDependencies<AdminGoogleService>) {
+export function createGoogleDisconnectHandler(
+  dependencies: HandlerDependencies<AdminGoogleService>,
+) {
+  const { service, baseUrl } = dependencies
   return async function POST(request: Request) {
-    const unauthorized = await requireOwner(authenticator, request, baseUrl)
-    if (unauthorized) return unauthorized
+    const blocked = await enforceAdminRequestPolicy(
+      dependencies,
+      request,
+      ['admin', 'google'],
+      'browser-mutation',
+    )
+    if (blocked) return blocked
     try {
       await service.disconnect()
+      dependencies.security.recordPrivilegedAction(
+        request,
+        'google_disconnect.succeeded',
+      )
       return redirect(baseUrl, '/admin?calendar=disconnected')
     } catch {
       return redirect(baseUrl, '/admin?calendar=unavailable')

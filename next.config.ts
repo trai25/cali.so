@@ -1,5 +1,7 @@
 import type { NextConfig } from 'next'
 
+import { securityHeaders } from './lib/security/headers'
+
 const nextConfig: NextConfig = {
   // Pin the project root: when developing from a git worktree nested inside
   // another checkout, Next's lockfile-based root inference walks too far up.
@@ -11,7 +13,10 @@ const nextConfig: NextConfig = {
 
   // Shared-element morphs (cover/title) on route navigation; browsers
   // without the View Transitions API just navigate instantly.
-  experimental: { viewTransition: true },
+  experimental: {
+    viewTransition: true,
+    sri: { algorithm: 'sha256' },
+  },
 
   images: {
     // Post images are served from content/ via app/content/[...path]/route.ts;
@@ -22,6 +27,13 @@ const nextConfig: NextConfig = {
       { pathname: '/_next/static/**' },
     ],
   },
+
+  headers: async () => [
+    {
+      source: '/:path*',
+      headers: [...securityHeaders],
+    },
+  ],
 
   // v1 URL back-compat (issue #75): every URL Google or anyone else has
   // indexed must keep working. Routes that survive in v2 (blog, feeds,

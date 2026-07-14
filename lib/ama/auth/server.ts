@@ -33,7 +33,7 @@ export function getOwnerAuth() {
   })
   const limiterKey = createHmac(
     'sha256',
-    Buffer.from(environment.AMA_ENCRYPTION_KEY, 'base64'),
+    Buffer.from(environment.RATE_LIMIT_HASH_KEY, 'base64'),
   )
     .update('ama-auth-rate-limit')
     .digest()
@@ -72,6 +72,7 @@ export function getOwnerAuth() {
 }
 
 export async function isOwnerAuthenticated() {
+  if (!getServerEnv().features.admin) return false
   const cookieStore = await cookies()
   return getOwnerAuth().authenticate(cookieStore.get(AUTH_SESSION_COOKIE)?.value)
 }

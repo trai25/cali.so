@@ -5,10 +5,11 @@ import {
 } from '~/lib/ama/admin/server'
 
 export async function GET(request: Request) {
-  const { google, baseUrl } = getAmaAdminServices()
+  const { google, security, baseUrl } = getAmaAdminServices()
   return createGoogleCallbackHandler({
     authenticator: ownerRequestAuthenticator,
     service: google,
+    security,
     baseUrl,
   })(request)
 }

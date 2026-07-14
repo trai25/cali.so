@@ -11,6 +11,7 @@
     "db:validate": "node --test scripts/ama-migrations.test.mjs",
     "start": "next start",
     "test:ama": "vitest run lib/ama && pnpm db:validate",
+    "test:security": "vitest run lib/security",
     "test:localization": "node --test scripts/localization.test.mjs",
     "test:port-post": "node --test scripts/port-post.test.mjs",
     "typecheck": "tsc --noEmit"
@@ -38,7 +39,6 @@
     "motion": "^12.42.2",
     "next": "16.3.0-preview.5",
     "next-mdx-remote": "^6.0.0",
-    "next-themes": "^0.4.6",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "rehype-pretty-code": "^0.14.4",

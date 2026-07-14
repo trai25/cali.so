@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+
+vi.mock('server-only', () => ({}))
 
 import {
   authenticateOwnerRequest,
@@ -13,12 +15,14 @@ import {
   type AuthSessionRecord,
   type LoginTokenRecord,
 } from './service'
+import { createAmaSecurity, type SecurityAuditEvent } from '../security/service'
 
 function createFixture() {
   let now = new Date('2026-07-14T04:00:00.000Z')
   const tokens = new Map<string, LoginTokenRecord>()
   const sessions = new Map<string, AuthSessionRecord>()
   const sentLinks: string[] = []
+  const rateLimitKeys: string[] = []
   let rateLimitAllowsRequest = true
 
   const repository: AuthRepository = {
@@ -67,7 +71,8 @@ function createFixture() {
       repository,
       clock: { now: () => now },
       rateLimiter: {
-        async limit() {
+        async limit(key) {
+          rateLimitKeys.push(key)
           return { success: rateLimitAllowsRequest }
         },
       },
@@ -80,11 +85,30 @@ function createFixture() {
   }
 
   const auth = authFor('owner@example.com')
+  const securityEvents: SecurityAuditEvent[] = []
+  const security = createAmaSecurity({
+    baseUrl: new URL('https://cali.so'),
+    features: {
+      publicMutations: false,
+      payments: false,
+      bookingFinalization: false,
+      admin: true,
+      google: true,
+      tencent: false,
+    },
+    pseudonymKey: Buffer.alloc(32, 5),
+    rateLimiter: { async limit() { return { success: true } } },
+    audit: { write(event) { securityEvents.push(event) } },
+    requestId: () => 'auth-request-id',
+  })
 
   return {
     auth,
     authFor,
+    security,
+    securityEvents,
     sentLinks,
+    rateLimitKeys,
     setNow(value: string) {
       now = new Date(value)
     },
@@ -98,9 +122,13 @@ function requestMagicLink(handler: (request: Request) => Promise<Response>, emai
   const body = new FormData()
   body.set('email', email)
   return handler(
-    new Request('https://attacker.example/api/admin/auth/request', {
+    new Request('https://cali.so/api/admin/auth/request', {
       method: 'POST',
-      headers: { 'x-forwarded-for': '203.0.113.5' },
+      headers: {
+        origin: 'https://cali.so',
+        'sec-fetch-site': 'same-origin',
+        'x-forwarded-for': '203.0.113.5',
+      },
       body,
     }),
   )
@@ -116,7 +144,7 @@ function cookieValue(response: Response) {
 describe('owner authentication HTTP contract', () => {
   it('does not reveal whether an email is allowlisted', async () => {
     const fixture = createFixture()
-    const handler = createMagicLinkRequestHandler(fixture.auth)
+    const handler = createMagicLinkRequestHandler(fixture.auth, fixture.security)
 
     const denied = await requestMagicLink(handler, 'guest@example.com')
     const allowed = await requestMagicLink(handler, 'OWNER@example.com')
@@ -126,12 +154,17 @@ describe('owner authentication HTTP contract', () => {
     expect(denied.headers.get('location')).toBe('https://cali.so/admin/login?sent=1')
     expect(allowed.headers.get('location')).toBe(denied.headers.get('location'))
     expect(fixture.sentLinks).toHaveLength(1)
+    expect(fixture.rateLimitKeys).toEqual([
+      'request:untrusted-proxy',
+      'request:untrusted-proxy',
+      'owner-recipient',
+    ])
   })
 
   it('returns the same response before deferred delivery work runs', async () => {
     const fixture = createFixture()
     const tasks: Array<() => Promise<void>> = []
-    const handler = createMagicLinkRequestHandler(fixture.auth, (task) => {
+    const handler = createMagicLinkRequestHandler(fixture.auth, fixture.security, (task) => {
       tasks.push(task)
     })
 
@@ -149,25 +182,29 @@ describe('owner authentication HTTP contract', () => {
     fixture.denyRateLimit()
 
     const response = await requestMagicLink(
-      createMagicLinkRequestHandler(fixture.auth),
+      createMagicLinkRequestHandler(fixture.auth, fixture.security),
       'owner@example.com',
     )
 
     expect(response.status).toBe(303)
     expect(response.headers.get('location')).toBe('https://cali.so/admin/login?sent=1')
     expect(fixture.sentLinks).toHaveLength(0)
+    expect(fixture.rateLimitKeys).toEqual(['request:untrusted-proxy'])
   })
 
   it('rejects an expired magic link', async () => {
     const fixture = createFixture()
     await requestMagicLink(
-      createMagicLinkRequestHandler(fixture.auth),
+      createMagicLinkRequestHandler(fixture.auth, fixture.security),
       'owner@example.com',
     )
     const link = fixture.sentLinks[0]
     fixture.setNow('2026-07-14T04:15:00.001Z')
 
-    const response = await createMagicLinkVerifyHandler(fixture.auth)(new Request(link))
+    const response = await createMagicLinkVerifyHandler(
+      fixture.auth,
+      fixture.security,
+    )(new Request(link))
 
     expect(response.status).toBe(303)
     expect(response.headers.get('location')).toBe(
@@ -179,10 +216,10 @@ describe('owner authentication HTTP contract', () => {
   it('consumes a magic link exactly once under concurrent requests', async () => {
     const fixture = createFixture()
     await requestMagicLink(
-      createMagicLinkRequestHandler(fixture.auth),
+      createMagicLinkRequestHandler(fixture.auth, fixture.security),
       'owner@example.com',
     )
-    const verify = createMagicLinkVerifyHandler(fixture.auth)
+    const verify = createMagicLinkVerifyHandler(fixture.auth, fixture.security)
 
     const responses = await Promise.all([
       verify(new Request(fixture.sentLinks[0])),
@@ -199,22 +236,28 @@ describe('owner authentication HTTP contract', () => {
   it('rejects links and sessions issued to a previous allowlisted owner', async () => {
     const fixture = createFixture()
     await requestMagicLink(
-      createMagicLinkRequestHandler(fixture.auth),
+      createMagicLinkRequestHandler(fixture.auth, fixture.security),
       'owner@example.com',
     )
     const oldLink = fixture.sentLinks[0]
     const newOwner = fixture.authFor('new-owner@example.com')
 
-    const oldLinkResponse = await createMagicLinkVerifyHandler(newOwner)(
+    const oldLinkResponse = await createMagicLinkVerifyHandler(
+      newOwner,
+      fixture.security,
+    )(
       new Request(oldLink),
     )
     expect(cookieValue(oldLinkResponse)).toBeUndefined()
 
     await requestMagicLink(
-      createMagicLinkRequestHandler(fixture.auth),
+      createMagicLinkRequestHandler(fixture.auth, fixture.security),
       'owner@example.com',
     )
-    const oldSessionResponse = await createMagicLinkVerifyHandler(fixture.auth)(
+    const oldSessionResponse = await createMagicLinkVerifyHandler(
+      fixture.auth,
+      fixture.security,
+    )(
       new Request(fixture.sentLinks[1]),
     )
     expect(await newOwner.authenticate(cookieValue(oldSessionResponse))).toBe(false)
@@ -223,11 +266,14 @@ describe('owner authentication HTTP contract', () => {
   it('sets a signed 30-day secure session cookie', async () => {
     const fixture = createFixture()
     await requestMagicLink(
-      createMagicLinkRequestHandler(fixture.auth),
+      createMagicLinkRequestHandler(fixture.auth, fixture.security),
       'owner@example.com',
     )
 
-    const response = await createMagicLinkVerifyHandler(fixture.auth)(
+    const response = await createMagicLinkVerifyHandler(
+      fixture.auth,
+      fixture.security,
+    )(
       new Request(fixture.sentLinks[0]),
     )
     const setCookie = response.headers.get('set-cookie') ?? ''
@@ -243,10 +289,13 @@ describe('owner authentication HTTP contract', () => {
   it('expires sessions after 30 days', async () => {
     const fixture = createFixture()
     await requestMagicLink(
-      createMagicLinkRequestHandler(fixture.auth),
+      createMagicLinkRequestHandler(fixture.auth, fixture.security),
       'owner@example.com',
     )
-    const response = await createMagicLinkVerifyHandler(fixture.auth)(
+    const response = await createMagicLinkVerifyHandler(
+      fixture.auth,
+      fixture.security,
+    )(
       new Request(fixture.sentLinks[0]),
     )
     const sessionCookie = cookieValue(response)
@@ -258,18 +307,25 @@ describe('owner authentication HTTP contract', () => {
   it('revokes the current session on logout and clears its cookie', async () => {
     const fixture = createFixture()
     await requestMagicLink(
-      createMagicLinkRequestHandler(fixture.auth),
+      createMagicLinkRequestHandler(fixture.auth, fixture.security),
       'owner@example.com',
     )
-    const loginResponse = await createMagicLinkVerifyHandler(fixture.auth)(
+    const loginResponse = await createMagicLinkVerifyHandler(
+      fixture.auth,
+      fixture.security,
+    )(
       new Request(fixture.sentLinks[0]),
     )
     const sessionCookie = cookieValue(loginResponse)
 
-    const logoutResponse = await createLogoutHandler(fixture.auth)(
-      new Request('https://attacker.example/api/admin/auth/logout', {
+    const logoutResponse = await createLogoutHandler(fixture.auth, fixture.security)(
+      new Request('https://cali.so/api/admin/auth/logout', {
         method: 'POST',
-        headers: { cookie: `${AUTH_SESSION_COOKIE}=${sessionCookie}` },
+        headers: {
+          cookie: `${AUTH_SESSION_COOKIE}=${sessionCookie}`,
+          origin: 'https://cali.so',
+          'sec-fetch-site': 'same-origin',
+        },
       }),
     )
 
@@ -277,15 +333,43 @@ describe('owner authentication HTTP contract', () => {
     expect(logoutResponse.headers.get('location')).toBe('https://cali.so/admin/login')
     expect(logoutResponse.headers.get('set-cookie')).toContain('Max-Age=0')
     expect(await fixture.auth.authenticate(sessionCookie)).toBe(false)
+    expect(fixture.securityEvents.at(-1)?.event).toBe('admin_logout.succeeded')
+  })
+
+  it('rejects cross-site login requests before scheduling mail work', async () => {
+    const fixture = createFixture()
+    const body = new FormData()
+    body.set('email', 'owner@example.com')
+
+    const response = await createMagicLinkRequestHandler(
+      fixture.auth,
+      fixture.security,
+    )(
+      new Request('https://cali.so/api/admin/auth/request', {
+        method: 'POST',
+        headers: {
+          origin: 'https://attacker.example',
+          'sec-fetch-site': 'cross-site',
+        },
+        body,
+      }),
+    )
+
+    expect(response.status).toBe(403)
+    expect(fixture.sentLinks).toEqual([])
+    expect(fixture.securityEvents[0]?.event).toBe('browser_mutation.denied')
   })
 
   it('authenticates protected API requests from the signed owner cookie', async () => {
     const fixture = createFixture()
     await requestMagicLink(
-      createMagicLinkRequestHandler(fixture.auth),
+      createMagicLinkRequestHandler(fixture.auth, fixture.security),
       'owner@example.com',
     )
-    const response = await createMagicLinkVerifyHandler(fixture.auth)(
+    const response = await createMagicLinkVerifyHandler(
+      fixture.auth,
+      fixture.security,
+    )(
       new Request(fixture.sentLinks[0]),
     )
     const session = cookieValue(response)

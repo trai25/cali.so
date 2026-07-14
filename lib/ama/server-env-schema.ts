@@ -23,27 +23,149 @@ function isResendSender(value: string) {
   return z.email().safeParse(mailbox).success
 }
 
-const serverEnvironmentSchema = z.object({
-  DATABASE_URL: z.string().refine(isPostgresUrl),
-  RESEND_API_KEY: z.string().min(1),
-  RESEND_FROM_EMAIL: z.string().min(3).refine(isResendSender),
-  ADMIN_EMAIL: z.email().transform((value) => value.trim().toLowerCase()),
-  SESSION_SECRET: z.string().min(32),
-  AMA_ENCRYPTION_KEY: z.string().refine(isBase64Key),
-  GOOGLE_CLIENT_ID: z.string().trim().min(1),
-  GOOGLE_CLIENT_SECRET: z.string().trim().min(1),
-  UPSTASH_REDIS_REST_URL: z.url(),
-  UPSTASH_REDIS_REST_TOKEN: z.string().min(1),
-  SITE_URL: z
-    .url()
-    .refine((value) => {
-      const url = new URL(value)
-      return url.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(url.hostname)
-    })
-    .transform((value) => new URL(value)),
-  AUTH_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(5),
-  AUTH_RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().positive().default(900),
-})
+function isHttpsUrl(value: string) {
+  try {
+    return new URL(value).protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+const featureSwitch = z
+  .enum(['true', 'false'])
+  .default('false')
+  .transform((value) => value === 'true')
+
+const redisRestUrl = z.url().refine(isHttpsUrl)
+
+const serverEnvironmentSchema = z
+  .object({
+    DATABASE_URL: z.string().refine(isPostgresUrl),
+    MIGRATION_DATABASE_URL: z.never().optional(),
+    RESEND_API_KEY: z.string().min(1),
+    RESEND_FROM_EMAIL: z.string().min(3).refine(isResendSender),
+    ADMIN_EMAIL: z.email().transform((value) => value.trim().toLowerCase()),
+    SESSION_SECRET: z.string().min(32),
+    AMA_ENCRYPTION_KEY: z.string().refine(isBase64Key),
+    RATE_LIMIT_HASH_KEY: z.string().refine(isBase64Key),
+    GOOGLE_CLIENT_ID: z.string().trim().min(1),
+    GOOGLE_CLIENT_SECRET: z.string().trim().min(1),
+    UPSTASH_REDIS_REST_URL: redisRestUrl.optional(),
+    UPSTASH_REDIS_REST_TOKEN: z.string().trim().min(1).optional(),
+    KV_REST_API_URL: redisRestUrl.optional(),
+    KV_REST_API_TOKEN: z.string().trim().min(1).optional(),
+    SITE_URL: z
+      .url()
+      .refine((value) => {
+        const url = new URL(value)
+        return url.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(url.hostname)
+      })
+      .transform((value) => new URL(value)),
+    AUTH_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(5),
+    AUTH_RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().positive().default(900),
+    ADMIN_MUTATION_RATE_LIMIT_MAX_REQUESTS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(30),
+    ADMIN_MUTATION_RATE_LIMIT_WINDOW_SECONDS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(60),
+    AMA_PUBLIC_MUTATIONS_ENABLED: featureSwitch,
+    AMA_PAYMENTS_ENABLED: featureSwitch,
+    AMA_BOOKING_FINALIZATION_ENABLED: featureSwitch,
+    AMA_ADMIN_ENABLED: featureSwitch,
+    AMA_GOOGLE_INTEGRATION_ENABLED: featureSwitch,
+    AMA_TENCENT_INTEGRATION_ENABLED: featureSwitch,
+  })
+  .superRefine(
+    (
+      {
+        UPSTASH_REDIS_REST_URL,
+        UPSTASH_REDIS_REST_TOKEN,
+        KV_REST_API_URL,
+        KV_REST_API_TOKEN,
+      },
+      context,
+    ) => {
+      const upstashPairComplete = Boolean(
+        UPSTASH_REDIS_REST_URL && UPSTASH_REDIS_REST_TOKEN,
+      )
+      const marketplacePairComplete = Boolean(
+        KV_REST_API_URL && KV_REST_API_TOKEN,
+      )
+
+      if (
+        Boolean(UPSTASH_REDIS_REST_URL) !== Boolean(UPSTASH_REDIS_REST_TOKEN)
+      ) {
+        context.addIssue({
+          code: 'custom',
+          path: [
+            UPSTASH_REDIS_REST_URL
+              ? 'UPSTASH_REDIS_REST_TOKEN'
+              : 'UPSTASH_REDIS_REST_URL',
+          ],
+          message:
+            'Upstash Redis credentials must be configured as a complete pair',
+        })
+      }
+
+      if (Boolean(KV_REST_API_URL) !== Boolean(KV_REST_API_TOKEN)) {
+        context.addIssue({
+          code: 'custom',
+          path: [KV_REST_API_URL ? 'KV_REST_API_TOKEN' : 'KV_REST_API_URL'],
+          message:
+            'Vercel KV credentials must be configured as a complete pair',
+        })
+      }
+
+      if (!upstashPairComplete && !marketplacePairComplete) {
+        if (!UPSTASH_REDIS_REST_URL) {
+          context.addIssue({
+            code: 'custom',
+            path: ['UPSTASH_REDIS_REST_URL'],
+            message: 'A complete Redis credential pair is required',
+          })
+        }
+        if (!UPSTASH_REDIS_REST_TOKEN) {
+          context.addIssue({
+            code: 'custom',
+            path: ['UPSTASH_REDIS_REST_TOKEN'],
+            message: 'A complete Redis credential pair is required',
+          })
+        }
+      }
+    },
+  )
+  .transform(
+    ({
+      UPSTASH_REDIS_REST_URL,
+      UPSTASH_REDIS_REST_TOKEN,
+      KV_REST_API_URL,
+      KV_REST_API_TOKEN,
+      AMA_PUBLIC_MUTATIONS_ENABLED,
+      AMA_PAYMENTS_ENABLED,
+      AMA_BOOKING_FINALIZATION_ENABLED,
+      AMA_ADMIN_ENABLED,
+      AMA_GOOGLE_INTEGRATION_ENABLED,
+      AMA_TENCENT_INTEGRATION_ENABLED,
+      ...environment
+    }) => ({
+      ...environment,
+      UPSTASH_REDIS_REST_URL: UPSTASH_REDIS_REST_URL ?? KV_REST_API_URL!,
+      UPSTASH_REDIS_REST_TOKEN: UPSTASH_REDIS_REST_TOKEN ?? KV_REST_API_TOKEN!,
+      features: {
+        publicMutations: AMA_PUBLIC_MUTATIONS_ENABLED,
+        payments: AMA_PAYMENTS_ENABLED,
+        bookingFinalization: AMA_BOOKING_FINALIZATION_ENABLED,
+        admin: AMA_ADMIN_ENABLED,
+        google: AMA_GOOGLE_INTEGRATION_ENABLED,
+        tencent: AMA_TENCENT_INTEGRATION_ENABLED,
+      },
+    }),
+  )
 
 export type ServerEnvironment = z.output<typeof serverEnvironmentSchema>
 

@@ -5,10 +5,11 @@ import {
 } from '~/lib/ama/admin/server'
 
 export async function POST(request: Request) {
-  const { availability, baseUrl } = getAmaAdminServices()
+  const { availability, security, baseUrl } = getAmaAdminServices()
   return createAvailabilityMutationHandler({
     authenticator: ownerRequestAuthenticator,
     service: availability,
+    security,
     baseUrl,
   })(request)
 }

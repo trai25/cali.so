@@ -5,10 +5,11 @@ import {
 } from '~/lib/ama/admin/server'
 
 export async function POST(request: Request) {
-  const { google, baseUrl } = getAmaAdminServices()
+  const { google, security, baseUrl } = getAmaAdminServices()
   return createGoogleDisconnectHandler({
     authenticator: ownerRequestAuthenticator,
     service: google,
+    security,
     baseUrl,
   })(request)
 }

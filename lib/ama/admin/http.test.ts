@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+
+vi.mock('server-only', () => ({}))
 
 import {
   createAvailabilityMutationHandler,
@@ -9,18 +11,23 @@ import {
   type AvailabilityMutationService,
   type OwnerRequestAuthenticator,
 } from './http'
+import { createAmaSecurity, type SecurityAuditEvent } from '../security/service'
 
 function formRequest(path: string, values: Record<string, string>, authenticated = true) {
   const body = new FormData()
   for (const [key, value] of Object.entries(values)) body.set(key, value)
-  return new Request(`https://attacker.example${path}`, {
+  return new Request(`https://cali.so${path}`, {
     method: 'POST',
-    headers: authenticated ? { cookie: 'owner=valid' } : undefined,
+    headers: {
+      origin: 'https://cali.so',
+      'sec-fetch-site': 'same-origin',
+      ...(authenticated ? { cookie: 'owner=valid' } : {}),
+    },
     body,
   })
 }
 
-function fixture() {
+function fixture(rateLimitAllows = true) {
   const mutations: unknown[] = []
   const authenticator: OwnerRequestAuthenticator = {
     async authenticate(request) {
@@ -52,7 +59,39 @@ function fixture() {
       googleEvents.push(['disconnect'])
     },
   }
-  return { authenticator, availability, google, mutations, googleEvents }
+  const securityEvents: SecurityAuditEvent[] = []
+  const security = createAmaSecurity({
+    baseUrl: new URL('https://cali.so'),
+    features: {
+      publicMutations: false,
+      payments: false,
+      bookingFinalization: false,
+      admin: true,
+      google: true,
+      tencent: false,
+    },
+    pseudonymKey: Buffer.alloc(32, 4),
+    rateLimiter: {
+      async limit() {
+        return { success: rateLimitAllows }
+      },
+    },
+    audit: {
+      write(event) {
+        securityEvents.push(event)
+      },
+    },
+    requestId: () => 'admin-request-id',
+  })
+  return {
+    authenticator,
+    availability,
+    google,
+    mutations,
+    googleEvents,
+    security,
+    securityEvents,
+  }
 }
 
 describe('AMA admin HTTP contract', () => {
@@ -61,6 +100,7 @@ describe('AMA admin HTTP contract', () => {
     const handler = createAvailabilityMutationHandler({
       authenticator: f.authenticator,
       service: f.availability,
+      security: f.security,
       baseUrl: new URL('https://cali.so'),
     })
 
@@ -82,6 +122,7 @@ describe('AMA admin HTTP contract', () => {
     const handler = createAvailabilityMutationHandler({
       authenticator: f.authenticator,
       service: f.availability,
+      security: f.security,
       baseUrl: new URL('https://cali.so'),
     })
 
@@ -124,6 +165,7 @@ describe('AMA admin HTTP contract', () => {
     const handler = createAvailabilityMutationHandler({
       authenticator: f.authenticator,
       service: f.availability,
+      security: f.security,
       baseUrl: new URL('https://cali.so'),
     })
 
@@ -147,6 +189,7 @@ describe('AMA admin HTTP contract', () => {
     const handler = createAvailabilityMutationHandler({
       authenticator: f.authenticator,
       service: f.availability,
+      security: f.security,
       baseUrl: new URL('https://cali.so'),
     })
 
@@ -174,12 +217,18 @@ describe('AMA admin HTTP contract', () => {
     const handler = createGoogleConnectHandler({
       authenticator: f.authenticator,
       service: f.google,
+      security: f.security,
       baseUrl: new URL('https://cali.so'),
     })
 
     const response = await handler(
-      new Request('https://attacker.example/api/admin/ama/google/connect', {
-        headers: { cookie: 'owner=valid' },
+      new Request('https://cali.so/api/admin/ama/google/connect', {
+        method: 'POST',
+        headers: {
+          cookie: 'owner=valid',
+          origin: 'https://cali.so',
+          'sec-fetch-site': 'same-origin',
+        },
       }),
     )
 
@@ -193,6 +242,7 @@ describe('AMA admin HTTP contract', () => {
     const handler = createGoogleCallbackHandler({
       authenticator: f.authenticator,
       service: f.google,
+      security: f.security,
       baseUrl: new URL('https://cali.so'),
     })
     const request = new Request(
@@ -213,6 +263,7 @@ describe('AMA admin HTTP contract', () => {
     const handler = createGoogleDisconnectHandler({
       authenticator: f.authenticator,
       service: f.google,
+      security: f.security,
       baseUrl: new URL('https://cali.so'),
     })
 
@@ -225,5 +276,52 @@ describe('AMA admin HTTP contract', () => {
     expect(response.headers.get('location')).toBe(
       'https://cali.so/admin?calendar=disconnected',
     )
+  })
+
+  it('rejects cross-site admin mutations before authentication or service work', async () => {
+    const f = fixture()
+    const handler = createAvailabilityMutationHandler({
+      authenticator: {
+        async authenticate() {
+          throw new Error('authentication must not run')
+        },
+      },
+      service: f.availability,
+      security: f.security,
+      baseUrl: new URL('https://cali.so'),
+    })
+
+    const response = await handler(
+      new Request('https://cali.so/api/admin/ama/availability', {
+        method: 'POST',
+        headers: {
+          origin: 'https://attacker.example',
+          'sec-fetch-site': 'cross-site',
+          cookie: 'owner=valid',
+        },
+      }),
+    )
+
+    expect(response.status).toBe(403)
+    expect(f.mutations).toEqual([])
+    expect(f.securityEvents[0]?.event).toBe('browser_mutation.denied')
+  })
+
+  it('rate limits authenticated admin mutations before service work', async () => {
+    const f = fixture(false)
+    const handler = createGoogleDisconnectHandler({
+      authenticator: f.authenticator,
+      service: f.google,
+      security: f.security,
+      baseUrl: new URL('https://cali.so'),
+    })
+
+    const response = await handler(
+      formRequest('/api/admin/ama/google/disconnect', {}),
+    )
+
+    expect(response.status).toBe(429)
+    expect(f.googleEvents).toEqual([])
+    expect(f.securityEvents[0]?.event).toBe('admin_mutation.rate_limited')
   })
 })
