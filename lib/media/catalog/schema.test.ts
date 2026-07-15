@@ -14,6 +14,7 @@ const migrations = [
     '../../../db/migrations/0007_photo_publication_revision.sql',
     import.meta.url,
   ),
+  new URL('../../../db/migrations/0008_media_purge_progress.sql', import.meta.url),
 ]
 
 const checksum = 'a'.repeat(64)

@@ -19,6 +19,7 @@
     "test:media:ingestion": "vitest run lib/media/ingestion lib/media/privacy",
     "test:media:photo-selection": "vitest run lib/media/photo-selection",
     "test:media:processing": "vitest run lib/media/processing --exclude='**/*.live.test.ts'",
+    "test:media:purge": "vitest run lib/media/purge",
     "test:media:storage": "vitest run lib/media/storage --exclude='**/*.live.test.ts'",
     "test:media:storage:live": "pnpm test:media:storage:live:server && pnpm test:media:storage:live:browser",
     "test:media:storage:live:server": "vitest run lib/media/storage/bunny.live.test.ts",
