@@ -60,6 +60,12 @@ const nextConfig: NextConfig = {
       source: '/:path*',
       headers: [...securityHeaders],
     },
+    {
+      // The global policy is intentionally useful for public navigation, but
+      // admin API responses must never disclose their origin to another site.
+      source: '/api/admin/:path*',
+      headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }],
+    },
   ],
 
   // The checked-in manifest is the v3 cutover contract for every preserved,
