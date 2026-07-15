@@ -333,12 +333,12 @@ export function createMediaLocationLabelHandler(
     if (!dependencies.geocoding) {
       return json(503, { error: 'feature_disabled' })
     }
+    audit(dependencies, request, 'media_location_label.requested')
     try {
       const suggestion = await dependencies.geocoding.suggestLocationLabel({
         ownerUserId: access.principal.id,
         mediaAssetId,
       })
-      audit(dependencies, request, 'media_location_label.requested')
       return json(200, { suggestion })
     } catch (error) {
       return errorResponse(error)

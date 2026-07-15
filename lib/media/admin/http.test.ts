@@ -4,6 +4,7 @@ vi.mock('server-only', () => ({}))
 
 import { createAmaSecurity, type SecurityAuditEvent } from '../../ama/security/service'
 import { MediaAssetReviewError } from '../asset-review/service'
+import { MediaGeocodingError } from '../geocoding/service'
 import { PhotoSelectionError } from '../photo-selection/service'
 import {
   createMediaAssetActionHandler,
@@ -455,6 +456,31 @@ describe('Media admin HTTP contract', () => {
       suggestion: { zhHans: '旧金山', en: 'San Francisco' },
     })
     expect(f.calls).toEqual([{ ownerUserId: 'owner_01', mediaAssetId }])
+    expect(f.auditEvents.at(-1)?.event).toBe(
+      'media_location_label.requested',
+    )
+  })
+
+  it('audits private location access when geocoding fails', async () => {
+    const f = fixture()
+    const handler = createMediaLocationLabelHandler({
+      authenticator: f.authenticator,
+      security: f.security,
+      geocoding: {
+        async suggestLocationLabel() {
+          throw new MediaGeocodingError('dependency_unavailable')
+        },
+      },
+    })
+
+    const response = await handler(
+      request(`/api/admin/media/assets/${mediaAssetId}/location-label`, {
+        method: 'POST',
+      }),
+      mediaAssetId,
+    )
+
+    expect(response.status).toBe(503)
     expect(f.auditEvents.at(-1)?.event).toBe(
       'media_location_label.requested',
     )
