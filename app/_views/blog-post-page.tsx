@@ -48,14 +48,15 @@ export function blogPostMetadata(locale: Locale, slug: string) {
 async function CachedPostBody({
   locale,
   slug,
-  source,
 }: {
   locale: Locale
   slug: string
-  source: string
 }) {
   'use cache'
   cacheLife('max')
+
+  const post = getPost(slug)
+  const source = locale === 'en' ? post.bodyEn : post.body
 
   const prefixIdsPlugin: [typeof rehypePrefixIds, { prefix: string }] = [
     rehypePrefixIds,
@@ -92,7 +93,6 @@ export async function BlogPostPageView({ slug, locale }: { slug: string; locale:
   const rail = buildPostRail(post.title, post.body)
   const railEn = buildPostRail(post.titleEn, post.bodyEn, 'en-')
   const english = locale === 'en'
-  const source = english ? post.bodyEn : post.body
 
   return (
     <>
@@ -132,11 +132,7 @@ export async function BlogPostPageView({ slug, locale }: { slug: string; locale:
           </div>
         </header>
         <RevealScope lang={english ? 'en' : 'zh-CN'} className="post-body-stage prose enter mt-10">
-          <CachedPostBody
-            source={source}
-            slug={post.slug}
-            locale={locale}
-          />
+          <CachedPostBody slug={post.slug} locale={locale} />
         </RevealScope>
       </article>
     </>
