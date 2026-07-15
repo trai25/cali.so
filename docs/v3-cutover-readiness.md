@@ -60,20 +60,21 @@ The following passed from the frozen installation:
   library code, excluding only explicitly live provider suites.
 - 125 AMA tests and 5 migration checks.
 - 3 security tests.
-- 157 localization checks.
+- 148 localization checks.
 - 19 Media Library catalog tests.
 - 17 Media Library ingestion and privacy tests.
 - 9 Media Library processing tests.
 - 40 Media Library storage tests.
 - 4 port-post tests.
 - Production build with 78 generated pages.
-- 5 Instant Navigation browser tests.
-- 52 legacy URL probes against the production server.
+- 6 Instant Navigation and keyboard browser tests.
+- 53 legacy URL probes against the production server.
+- 354 internal links and 147 live external links across all 28 sitemap pages.
 - Public discovery and failure-handling verification.
 - Disabled production security-boundary verification.
 - OSV audit of 613 production packages with no findings.
 - Full-SHA GitHub Action reference check.
-- Redacted Gitleaks 8.30.1 scan across 355 commits with no findings.
+- Redacted Gitleaks 8.30.1 scan across 363 commits with no findings.
 - `git diff --check origin/main`.
 
 The content check exposed five trailing spaces in two historical MDX files.
@@ -103,27 +104,67 @@ Local evidence filenames:
 - `og-zh.png`
 - `og-en.png`
 
-Follow-up local production-server checks confirmed visible keyboard focus for
-the first six tab stops; Chinese and English Projects and Photos pages without
-horizontal overflow; valid nine-item Chinese and English feeds; localized
-Chinese and English Open Graph images; and zero `ScrollTimeline` or other
-animations attached to the viewport edge fades under reduced motion. The PR
-Preview must repeat the release matrix against Vercel rather than assuming the
-local result proves hosted behavior.
+Follow-up production-server checks confirmed the complete Preferences keyboard
+path, theme selection, Escape dismissal and trigger-focus restoration, post
+navigation, lightbox activation and focus restoration, and article-map
+activation and dismissal. They also confirmed Chinese and English Projects and
+Photos pages without horizontal overflow; valid nine-item Chinese and English
+feeds; localized Chinese and English Open Graph images; and zero running
+animations under reduced motion. The PR Preview must repeat the release matrix
+against Vercel rather than assuming the local result proves hosted behavior.
+
+Final review artifacts after the accessibility corrections:
+
+- `final-home-en-desktop.png`
+- `final-preferences-en-desktop.png`
+- `final-home-en-mobile-reduced.png`
+
+## Review disposition
+
+- The missing public-link gate is closed by `pnpm verify:links` and its CI
+  integration. Same-repository runs crawl every sitemap page, reject broken
+  internal targets, and live-check external targets. A repeated 404 or 410 is
+  a failure; transient provider or TLS failures remain visible as inconclusive
+  rather than making repository release status depend on another service's
+  uptime. The final run had no inconclusive targets.
+- The keyboard-coverage gap is closed by the sixth Playwright test and by
+  replacing the Preferences menu with the correct popover semantics. Shared
+  controls now follow the 44-pixel target, 14-pixel chrome, reduced-motion,
+  and motion-token contracts.
+- Media Library storage, catalog, processing, and ingestion foundations were
+  explicitly merged into `v2` by the maintainer after the original launch
+  scope was written. They remain unreachable, do not replace static public
+  media, and are not being presented as a shipped v3 feature. Migration `0005`
+  must not run solely for this public cutover.
+- The merged Media schema's `lifecycle` column conflicts with the Media
+  glossary. Rewriting merged migration `0005` would be unsafe, so the additive
+  vocabulary correction is tracked as post-launch issue
+  [#134](https://github.com/CaliCastle/cali.so/issues/134). It does not affect
+  the unreachable launch surface.
+- Remaining type below 14 pixels is limited to the design language's explicit
+  13-pixel code exception and text printed onto physical craft objects such as
+  polaroids, record sleeves, book covers, and the illustrated envelope. It is
+  object artwork rather than site chrome.
+- The compact localized-text component name `T` is retained as an established
+  JSX convention whose `zh` and `en` props make its role explicit. The small
+  duplicated Google status mapping is retained inside the disabled owner-only
+  AMA surface; neither judgement finding is a cutover defect.
 
 ## Migration and provider boundary
 
-Migrations `0001` through `0005` are additive AMA and Media Library foundations.
-Their checked-in snapshots and migration tests pass. The v3 public site does
-not require AMA, admin, payment, Google, Tencent, or Media Library routes to be
-enabled. Static repository content remains authoritative at launch.
+Migrations `0001` through `0004` are additive AMA foundations. Migration `0005`
+is the unreachable post-launch Media Library catalog. Their checked-in
+snapshots and migration tests pass, but the v3 public site requires none of
+these private capabilities or tables. Static repository content remains
+authoritative at launch, and no migration should run solely for the public
+cutover.
 
 Before cutover, an authorized operator must:
 
 1. confirm the production runtime role has only the required CRUD grants;
 2. confirm Vercel has no migration credential;
-3. apply pending migrations with the separate migration role, if the target
-   schema is behind;
+3. apply only separately approved pending migrations with the migration role;
+   do not apply `0005` merely to launch the public site;
 4. leave all six capability switches explicitly false; and
 5. smoke-test the public site without exercising disabled provider workflows.
 

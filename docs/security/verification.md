@@ -10,14 +10,14 @@ file; use GitHub private vulnerability reporting.
   vulnerability reporting.
 - [x] `.github/dependabot.yml` covers pnpm/npm dependencies and GitHub Actions.
 - [x] `.github/workflows/security.yml` runs the build, typecheck, AMA,
-  migration, localization, disabled-boundary, and CodeQL checks on pull
-  requests targeting any branch and on pushes to integration or production;
-  CodeQL also runs on a schedule and manually.
+  migration, localization, public-link, navigation, disabled-boundary, and
+  CodeQL checks on pull requests targeting any branch and on pushes to
+  integration or production; CodeQL also runs on a schedule and manually.
 - [x] Workflow actions are pinned to full, verified commit SHAs with release
   tag comments.
 - [x] Workflow permissions default to read-only; only the CodeQL job adds the
   required `security-events: write` permission.
-- [x] Gitleaks 8.30.1 scanned all reachable refs and 355 commits on
+- [x] Gitleaks 8.30.1 scanned all reachable refs and 363 commits on
   2026-07-15 with redaction enabled; no findings were reported. Re-run before
   launch and rotate any real credential before discussing cleanup publicly.
 
