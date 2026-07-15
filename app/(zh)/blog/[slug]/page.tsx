@@ -1,6 +1,6 @@
 import {
   blogPostMetadata,
-  BlogPostPageView,
+  BlogPostRoute,
   generatePostStaticParams,
 } from '../../../_views/blog-post-page'
 
@@ -10,10 +10,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return blogPostMetadata('zh', (await params).slug)
 }
 
-export default async function ChineseBlogPostPage({
+export default function ChineseBlogPostPage({
   params,
 }: {
   params: Promise<{ slug: string }>
 }) {
-  return <BlogPostPageView slug={(await params).slug} locale="zh" />
+  return <BlogPostRoute params={params} locale="zh" />
 }

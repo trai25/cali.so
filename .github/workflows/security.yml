@@ -22,6 +22,25 @@ jobs:
     name: Quality
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      DATABASE_URL: postgresql://runtime:runtime@127.0.0.1:5432/cali
+      RESEND_API_KEY: re_ci
+      RESEND_FROM_EMAIL: Cali <test@example.com>
+      ADMIN_EMAIL: owner@example.com
+      SESSION_SECRET: ci-session-secret-ci-session-secret-ci-session-secret
+      AMA_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      RATE_LIMIT_HASH_KEY: AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI=
+      GOOGLE_CLIENT_ID: ci.apps.googleusercontent.com
+      GOOGLE_CLIENT_SECRET: ci-google-secret
+      UPSTASH_REDIS_REST_URL: https://example.upstash.io
+      UPSTASH_REDIS_REST_TOKEN: ci-redis-token
+      SITE_URL: https://cali.so
+      AMA_PUBLIC_MUTATIONS_ENABLED: "false"
+      AMA_PAYMENTS_ENABLED: "false"
+      AMA_BOOKING_FINALIZATION_ENABLED: "false"
+      AMA_ADMIN_ENABLED: "false"
+      AMA_GOOGLE_INTEGRATION_ENABLED: "false"
+      AMA_TENCENT_INTEGRATION_ENABLED: "false"
     steps:
       - name: Check out repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -64,25 +83,9 @@ jobs:
 
       - name: Build
         run: pnpm build
-        env:
-          DATABASE_URL: postgresql://runtime:runtime@127.0.0.1:5432/cali
-          RESEND_API_KEY: re_ci
-          RESEND_FROM_EMAIL: Cali <test@example.com>
-          ADMIN_EMAIL: owner@example.com
-          SESSION_SECRET: ci-session-secret-ci-session-secret-ci-session-secret
-          AMA_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
-          RATE_LIMIT_HASH_KEY: AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI=
-          GOOGLE_CLIENT_ID: ci.apps.googleusercontent.com
-          GOOGLE_CLIENT_SECRET: ci-google-secret
-          UPSTASH_REDIS_REST_URL: https://example.upstash.io
-          UPSTASH_REDIS_REST_TOKEN: ci-redis-token
-          SITE_URL: https://cali.so
-          AMA_PUBLIC_MUTATIONS_ENABLED: "false"
-          AMA_PAYMENTS_ENABLED: "false"
-          AMA_BOOKING_FINALIZATION_ENABLED: "false"
-          AMA_ADMIN_ENABLED: "false"
-          AMA_GOOGLE_INTEGRATION_ENABLED: "false"
-          AMA_TENCENT_INTEGRATION_ENABLED: "false"
+
+      - name: Test instant navigations
+        run: pnpm test:navigation
 
       - name: Verify legacy URL contract
         run: pnpm verify:legacy-urls

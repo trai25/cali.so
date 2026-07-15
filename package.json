@@ -13,6 +13,7 @@
     "db:validate": "node --test scripts/ama-migrations.test.mjs",
     "start": "next start",
     "test:ama": "vitest run lib/ama && pnpm db:validate",
+    "test:navigation": "NEXT_INSTANT_NAVIGATION_TEST=1 next build && playwright test",
     "test:security": "vitest run lib/security",
     "test:localization": "node --test scripts/localization.test.mjs",
     "test:media:catalog": "vitest run lib/media/catalog",
@@ -71,6 +72,8 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.4",
+    "@next/playwright": "16.3.0-preview.6",
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4.1.0",
     "@testing-library/react": "^16.3.2",
     "@types/mdx": "^2.0.14",
