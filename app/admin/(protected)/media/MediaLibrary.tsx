@@ -806,9 +806,13 @@ export function MediaLibrary({
       await fetch(`/api/admin/media/assets/${mediaAsset.id}/alt-text`, {
         method: 'POST',
       }).catch(() => null)
-      await reloadAssets()
-      setView('active')
-      setSelectedId(mediaAsset.id)
+      try {
+        await reloadAssets()
+        setView('active')
+        setSelectedId(mediaAsset.id)
+      } catch {
+        // The upload is complete even when the follow-up library refresh fails.
+      }
     } catch (error) {
       patchQueue(item.id, {
         status: 'failed',
