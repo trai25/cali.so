@@ -7,6 +7,13 @@ const formatter = new Intl.DateTimeFormat('zh-CN', {
   timeZone: SITE_TIME_ZONE,
 })
 
+const englishFormatter = new Intl.DateTimeFormat('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  timeZone: SITE_TIME_ZONE,
+})
+
 const monthDayFormatter = new Intl.DateTimeFormat('en-US', {
   month: '2-digit',
   day: '2-digit',
@@ -22,6 +29,10 @@ const shortDateFormatter = new Intl.DateTimeFormat('en-US', {
 
 export function formatDate(date: Date): string {
   return formatter.format(date)
+}
+
+export function formatDateEn(date: Date): string {
+  return englishFormatter.format(date)
 }
 
 export function formatMonthDay(date: Date): string {

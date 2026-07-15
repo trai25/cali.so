@@ -4,7 +4,7 @@ How the engineering skills should consume this repo's domain documentation when 
 
 ## Layout: multi-context
 
-This repo uses the multi-context layout: `CONTEXT-MAP.md` at the root points at one `CONTEXT.md` per context. The v2 site is a ground-up rewrite, so the map starts empty — contexts are added lazily as `/domain-modeling` resolves terms and decisions, not scaffolded upfront.
+This repo uses the multi-context layout: `CONTEXT-MAP.md` at the root points at one `CONTEXT.md` per context. The v3 site is a ground-up rewrite, so contexts are added lazily as `/domain-modeling` resolves terms and decisions, not scaffolded upfront.
 
 ## Before exploring, read these
 
@@ -24,7 +24,7 @@ If any of these files don't exist, **proceed silently**. Don't flag their absenc
     └── docs/adr/                      ← context-specific decisions
 ```
 
-Context directories are wherever the v2 architecture puts them — register each in `CONTEXT-MAP.md` when its `CONTEXT.md` is created.
+Context directories are wherever the v3 architecture puts them; register each in `CONTEXT-MAP.md` when its `CONTEXT.md` is created.
 
 ## Use the glossary's vocabulary
 

@@ -7,10 +7,15 @@ are promotional artwork from Apple Music, publishers, authors, or retailers.
 
 | File | Source |
 | --- | --- |
+| `public/images/records/trench.jpg` | [Apple Music](https://music.apple.com/us/album/trench/1422828208) |
 | `public/images/records/tim.jpg` | [Apple Music](https://music.apple.com/us/album/tim/1462628887) |
+| `public/images/records/the-fall-off.jpg` | [Apple Music](https://music.apple.com/us/album/the-fall-off/1875080726) |
 | `public/images/records/hope.jpg` | [Apple Music](https://music.apple.com/us/album/hope/1670412644) |
+| `public/images/records/breach.jpg` | [Apple Music](https://music.apple.com/us/album/breach/1827507396) |
 | `public/images/records/melodie.jpg` | [Apple Music](https://music.apple.com/us/album/melodie/1806154705) |
+| `public/images/records/after-hours.jpg` | [Apple Music](https://music.apple.com/us/album/after-hours/1499378108) |
 | `public/images/records/2001.jpg` | [Apple Music](https://music.apple.com/us/album/2001/1440782221) |
+| `public/images/records/death-of-slim-shady.jpg` | [Apple Music](https://music.apple.com/us/album/the-death-of-slim-shady-coup-de-gr%C3%A2ce/1755022177) |
 
 ## Book covers
 
@@ -19,7 +24,7 @@ are promotional artwork from Apple Music, publishers, authors, or retailers.
 | The Creative Act | [Penguin Random House](https://images4.penguinrandomhouse.com/cover/9780593652886) |
 | Rework | [Basecamp](https://basecamp.com/assets/images/books/rework.png) |
 | Grid Systems in Graphic Design | [Niggli](https://niggli.ch/en/products/rastersysteme-fur-die-visuelle-gestaltung) |
-| Make Something Wonderful | [Steve Jobs Archive](https://book.stevejobsarchive.com/) |
+| Make Something Wonderful: Steve Jobs in His Own Words | [Steve Jobs Archive](https://book.stevejobsarchive.com/) |
 | How to American | [Hachette](https://www.hachettebookgroup.com/titles/jimmy-o-yang/how-to-american/9780306903502/) |
 | The Great CEO Within | [Amazon](https://www.amazon.com/Great-CEO-Within-Tactical-Building/dp/0578599287) |
 | Just Enough Design | [Chronicle Books](https://www.chroniclebooks.com/products/just-enough-design-pb) |
