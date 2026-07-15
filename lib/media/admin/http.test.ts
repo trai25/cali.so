@@ -10,6 +10,8 @@ import {
   createMediaUploadIntentHandler,
 } from './http'
 
+const mediaAssetId = '11111111-1111-4111-8111-111111111111'
+
 function request(
   path: string,
   options: {
@@ -115,6 +117,46 @@ describe('Media admin HTTP contract', () => {
     })
 
     const response = await handler(request('/api/admin/media/assets?view=all'))
+
+    expect(response.status).toBe(400)
+    expect(f.calls).toEqual([])
+  })
+
+  it('rejects oversized JSON when Content-Length is absent', async () => {
+    const f = fixture()
+    const handler = createMediaAssetActionHandler({
+      authenticator: f.authenticator,
+      security: f.security,
+      review: {
+        async updateDisplayMetadata(input) {
+          f.calls.push(input)
+          return input
+        },
+        async approveAltText(input) {
+          f.calls.push(input)
+          return input
+        },
+        async archive(input) {
+          f.calls.push(input)
+          return input
+        },
+        async restore(input) {
+          f.calls.push(input)
+          return input
+        },
+      },
+    })
+    const oversized = JSON.stringify({
+      intent: 'archive',
+      padding: 'x'.repeat(32_768),
+    })
+
+    const response = await handler(
+      request(`/api/admin/media/assets/${mediaAssetId}`, {
+        body: oversized,
+      }),
+      mediaAssetId,
+    )
 
     expect(response.status).toBe(400)
     expect(f.calls).toEqual([])
