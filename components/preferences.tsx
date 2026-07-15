@@ -43,6 +43,11 @@ export function Preferences() {
 
   function applyLocale(next: string) {
     const nextLocale = next as Locale
+    const nextPathname =
+      pathname && pathname !== '/admin' && !pathname.startsWith('/admin/')
+        ? localePath(nextLocale, pathname)
+        : null
+
     try {
       localStorage.locale = nextLocale
     } catch {
@@ -50,10 +55,10 @@ export function Preferences() {
     }
     playPreferenceSound()
 
-    if (pathname && pathname !== '/admin' && !pathname.startsWith('/admin/')) {
+    if (nextPathname) {
       // Assigning pathname preserves the query and hash while keeping the
       // destination on this origin. localePath rejects malformed segments.
-      window.location.pathname = localePath(nextLocale, pathname)
+      window.location.pathname = nextPathname
       return
     }
 
