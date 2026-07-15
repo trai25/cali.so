@@ -12,6 +12,9 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
+// Authentication state intentionally renders per request.
+export const instant = false
+
 export default async function AdminLoginPage({
   searchParams,
 }: {

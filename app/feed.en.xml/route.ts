@@ -1,11 +1,10 @@
 import RSS from 'rss'
+import { cacheLife } from 'next/cache'
 
 import { getAllPosts } from '~/lib/content'
 import { seoEn } from '~/lib/seo'
 
-export const dynamic = 'force-static'
-
-export function GET() {
+export function buildEnglishFeedXml() {
   const siteUrl = new URL('/en', seoEn.url).href
 
   const feed = new RSS({
@@ -30,7 +29,18 @@ export function GET() {
     })
   }
 
-  return new Response(feed.xml(), {
+  return feed.xml()
+}
+
+async function getEnglishFeedXml() {
+  'use cache'
+  cacheLife('max')
+
+  return buildEnglishFeedXml()
+}
+
+export async function GET() {
+  return new Response(await getEnglishFeedXml(), {
     headers: { 'content-type': 'application/xml' },
   })
 }

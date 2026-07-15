@@ -1,4 +1,6 @@
-import { getAllPosts, getPost } from '~/lib/content'
+import { notFound } from 'next/navigation'
+
+import { getAllPosts, getPost, isPostSlug } from '~/lib/content'
 import { createPostOgImage } from '~/lib/og-image'
 
 export function generateStaticParams() {
@@ -14,6 +16,8 @@ export default async function OpengraphImage({
 }: {
   params: Promise<{ slug: string }>
 }) {
-  const post = getPost((await params).slug)
+  const { slug } = await params
+  if (!isPostSlug(slug)) notFound()
+  const post = getPost(slug)
   return createPostOgImage(post, 'zh')
 }

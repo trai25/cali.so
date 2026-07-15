@@ -4,14 +4,23 @@ import path from 'node:path'
 import matter from 'gray-matter'
 import { z } from 'zod'
 
+import {
+  archivedNewsletterIds,
+  type ArchivedNewsletterId,
+} from './public-content-routes'
+
+export {
+  archivedNewsletterIds,
+  isArchivedNewsletterId,
+  type ArchivedNewsletterId,
+} from './public-content-routes'
+
 const NEWSLETTERS_DIR = path.join(process.cwd(), 'content/newsletters')
 
 const newsletterFrontmatterSchema = z.object({
   title: z.string().min(1),
   description: z.string().min(1),
 })
-
-export const archivedNewsletterIds = ['1'] as const
 
 export const archivedNewsletterImages = {
   '/content/newsletters/1/cover.png': { width: 1200, height: 675 },
@@ -24,12 +33,6 @@ export const archivedNewsletterImages = {
   '/content/newsletters/1/tutorial-dropdown.jpg': { width: 480, height: 360 },
   '/content/newsletters/1/tutorial-animation.jpg': { width: 480, height: 360 },
 } as const
-
-export type ArchivedNewsletterId = (typeof archivedNewsletterIds)[number]
-
-export function isArchivedNewsletterId(id: string): id is ArchivedNewsletterId {
-  return archivedNewsletterIds.some((knownId) => knownId === id)
-}
 
 export function getArchivedNewsletter(id: ArchivedNewsletterId) {
   const raw = readFileSync(path.join(NEWSLETTERS_DIR, id, 'index.mdx'), 'utf8')

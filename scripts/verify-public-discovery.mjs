@@ -125,19 +125,27 @@ async function verifyDiscoveryFiles(baseUrl) {
 }
 
 async function verifyNotFound(baseUrl) {
-  const response = await fetch(new URL('/release-check-missing', baseUrl))
-  assert.equal(response.status, 404)
-  const body = await response.text()
-  const visibleDocument = body.replace(
-    /<script\b[^>]*>[\s\S]*?<\/script>/gi,
-    '',
-  )
-  assert.match(visibleDocument, /This page slipped off the grid/)
-  assert.match(visibleDocument, /Go home/)
-  assert.doesNotMatch(
-    visibleDocument,
-    /(?:node_modules|\/Users\/|Error:|at\s+\w+\s*\()/,
-  )
+  for (const pathname of [
+    '/release-check-missing',
+    '/blog/not-a-published-post',
+    '/en/blog/not-a-published-post',
+    '/newsletters/not-an-id',
+    '/en/newsletters/not-an-id',
+  ]) {
+    const response = await fetch(new URL(pathname, baseUrl))
+    assert.equal(response.status, 404, `${pathname} status`)
+    const body = await response.text()
+    const visibleDocument = body.replace(
+      /<script\b[^>]*>[\s\S]*?<\/script>/gi,
+      '',
+    )
+    assert.match(visibleDocument, /This page slipped off the grid/)
+    assert.match(visibleDocument, /Go home/)
+    assert.doesNotMatch(
+      visibleDocument,
+      /(?:node_modules|\/Users\/|Error:|at\s+\w+\s*\()/,
+    )
+  }
 }
 
 const server = await openProductionServer(process.env.PUBLIC_DISCOVERY_BASE_URL)

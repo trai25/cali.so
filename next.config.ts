@@ -22,6 +22,8 @@ const legacyRewrites = legacyUrlManifest.entries.flatMap((entry) =>
 )
 
 const nextConfig: NextConfig = {
+  cacheComponents: true,
+
   // Pin the project root: when developing from a git worktree nested inside
   // another checkout, Next's lockfile-based root inference walks too far up.
   turbopack: { root: import.meta.dirname },
