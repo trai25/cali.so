@@ -43,7 +43,7 @@ export function NewsletterRetiredPageView({ locale }: { locale: Locale }) {
         aria-labelledby="newsletter-retired-title"
       >
         <p className="font-mono text-sm tracking-[-0.011em] text-muted-foreground">
-          CONFIRMATION_RETIRED
+          <T zh="确认链接已停用" en="CONFIRMATION_RETIRED" />
         </p>
         <h1
           id="newsletter-retired-title"
@@ -62,7 +62,7 @@ export function NewsletterRetiredPageView({ locale }: { locale: Locale }) {
         </p>
         <nav
           className="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-sm"
-          aria-label="Newsletter options"
+          aria-label={locale === 'en' ? 'Newsletter options' : 'Newsletter 选项'}
         >
           <a
             href={feed}

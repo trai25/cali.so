@@ -65,7 +65,10 @@ export function NewsletterArchivePageView({
     <article className="mx-auto box-border w-full max-w-[37.5rem] px-6">
       <header className="hairline-bottom mb-10 pb-8">
         <p className="font-mono text-sm tracking-[-0.011em] text-muted-foreground">
-          {`ARCHIVE / ${id.padStart(3, '0')}`}
+          <T
+            zh={`存档 / ${id.padStart(3, '0')}`}
+            en={`ARCHIVE / ${id.padStart(3, '0')}`}
+          />
         </p>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-balance">
           <T zh={newsletter.title} en={newsletter.titleEn} />
