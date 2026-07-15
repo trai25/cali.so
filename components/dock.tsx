@@ -5,12 +5,21 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useLayoutEffect, useRef } from 'react'
 
-import { PhotosIcon, ProjectsIcon, WritingIcon } from '~/components/dock-icons'
+import {
+  PhotosIcon,
+  PreferencesIcon,
+  ProjectsIcon,
+  WritingIcon,
+} from '~/components/dock-icons'
 import { LiquidGlass } from '~/components/liquid-glass'
 import { Preferences } from '~/components/preferences'
 import { T } from '~/lib/i18n'
 import { localize, useLocale } from '~/lib/locale-client'
-import { localePath, unlocalizedPathname } from '~/lib/locale-route'
+import {
+  localePath,
+  type Locale,
+  unlocalizedPathname,
+} from '~/lib/locale-route'
 import { playDockSound } from '~/lib/sound'
 
 const ITEMS = [
@@ -57,6 +66,74 @@ function DockItem({
         <T zh={zh} en={en} />
       </span>
     </Link>
+  )
+}
+
+function DockFallbackItem({
+  href,
+  locale,
+  zh,
+  en,
+  children,
+}: {
+  href: string
+  locale: Locale
+  zh: string
+  en: string
+  children: React.ReactNode
+}) {
+  return (
+    <Link
+      href={localePath(locale, href)}
+      className="dock-item"
+      aria-label={localize(locale, zh, en)}
+    >
+      {children}
+      <span className="dock-tip" aria-hidden>
+        <T zh={zh} en={en} />
+      </span>
+    </Link>
+  )
+}
+
+export function DockFallback({ locale }: { locale: Locale }) {
+  return (
+    <nav
+      className="dock"
+      aria-label={localize(locale, '主导航', 'Main navigation')}
+      aria-busy="true"
+    >
+      <LiquidGlass />
+      <DockFallbackItem href="/" locale={locale} zh="首页" en="Home">
+        <span className="dock-avatar">
+          <Image src="/images/avatar.png" alt="" width={26} height={26} />
+        </span>
+      </DockFallbackItem>
+      <span className="dock-rule" aria-hidden />
+      {ITEMS.map(({ href, zh, en, icon: Icon }) => (
+        <DockFallbackItem
+          key={href}
+          href={href}
+          locale={locale}
+          zh={zh}
+          en={en}
+        >
+          <Icon />
+        </DockFallbackItem>
+      ))}
+      <span className="dock-rule" aria-hidden />
+      <button
+        type="button"
+        className="dock-item"
+        aria-label={localize(locale, '偏好设置加载中', 'Loading preferences')}
+        disabled
+      >
+        <PreferencesIcon />
+        <span className="dock-tip" aria-hidden>
+          <T zh="偏好" en="Preferences" />
+        </span>
+      </button>
+    </nav>
   )
 }
 

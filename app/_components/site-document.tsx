@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
 // Experimental React channel export — available because next.config.ts sets
 // experimental.viewTransition (see docs/design-language.md, page transitions)
-import { ViewTransition } from 'react'
+import { Suspense, ViewTransition } from 'react'
 
 import { AmbientBackground } from '~/components/ambient-background'
-import { Dock } from '~/components/dock'
+import { Dock, DockFallback } from '~/components/dock'
 import { LocaleRestorer } from '~/components/locale-restorer'
 import { SiteFooter } from '~/components/site-footer'
 import { ThemeProvider } from '~/components/theme-provider'
@@ -60,7 +60,9 @@ export async function SiteDocument({
             </main>
             <SiteFooter social={social} github={github} locale={locale} />
           </div>
-          <Dock />
+          <Suspense fallback={<DockFallback locale={locale} />}>
+            <Dock />
+          </Suspense>
         </ThemeProvider>
       </body>
     </html>
