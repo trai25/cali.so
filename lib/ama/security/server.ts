@@ -4,6 +4,7 @@ import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
 
 import { getServerEnv } from '../server-env'
+import { amaSecurityAuditSink } from './audit-server'
 import { createAmaSecurity } from './service'
 
 let security: ReturnType<typeof createAmaSecurity> | undefined
@@ -31,11 +32,7 @@ export function getAmaSecurity() {
     pseudonymKey: Buffer.from(environment.RATE_LIMIT_HASH_KEY, 'base64'),
     rateLimiter: limiter,
     retryAfterSeconds: environment.ADMIN_MUTATION_RATE_LIMIT_WINDOW_SECONDS,
-    audit: {
-      write(event) {
-        console.warn(JSON.stringify(event))
-      },
-    },
+    audit: amaSecurityAuditSink,
   })
   return security
 }

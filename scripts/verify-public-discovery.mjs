@@ -128,14 +128,17 @@ async function verifyNotFound(baseUrl) {
   const response = await fetch(new URL('/release-check-missing', baseUrl))
   assert.equal(response.status, 404)
   const body = await response.text()
-  const visibleDocument = body.replace(
-    /<script\b[^>]*>[\s\S]*?<\/script>/gi,
-    '',
-  )
-  assert.match(visibleDocument, /This page slipped off the grid/)
-  assert.match(visibleDocument, /Go home/)
+  const document = new JSDOM(body).window.document
+  for (const element of document.querySelectorAll(
+    'script, style, template, noscript',
+  )) {
+    element.remove()
+  }
+  const visibleText = document.body?.textContent ?? ''
+  assert.match(visibleText, /This page slipped off the grid/)
+  assert.match(visibleText, /Go home/)
   assert.doesNotMatch(
-    visibleDocument,
+    visibleText,
     /(?:node_modules|\/Users\/|Error:|at\s+\w+\s*\()/,
   )
 }

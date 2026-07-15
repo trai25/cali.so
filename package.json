@@ -6,6 +6,7 @@
   "packageManager": "pnpm@10.12.1",
   "scripts": {
     "dev": "next dev",
+    "audit:prod": "node scripts/audit-production-dependencies.mjs",
     "build": "next build",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
@@ -21,6 +22,7 @@
     "test:port-post": "node --test scripts/port-post.test.mjs",
     "verify:legacy-urls": "node scripts/verify-legacy-url-contract.mjs",
     "verify:public-discovery": "node scripts/verify-public-discovery.mjs",
+    "verify:security-boundary": "node scripts/verify-production-security-boundary.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

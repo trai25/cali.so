@@ -6,9 +6,6 @@ on:
       - v2
       - main
   pull_request:
-    branches:
-      - v2
-      - main
   schedule:
     - cron: "17 1 * * 1"
   workflow_dispatch:
@@ -56,6 +53,9 @@ jobs:
       - name: Test localization
         run: pnpm test:localization
 
+      - name: Audit production dependencies
+        run: pnpm audit:prod
+
       - name: Build
         run: pnpm build
         env:
@@ -83,6 +83,9 @@ jobs:
 
       - name: Verify public discovery and failure handling
         run: pnpm verify:public-discovery
+
+      - name: Verify disabled production security boundary
+        run: pnpm verify:security-boundary
 
   codeql:
     name: CodeQL

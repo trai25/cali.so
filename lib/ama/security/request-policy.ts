@@ -32,3 +32,9 @@ export function browserMutationDeniedResponse() {
     headers: securityDenialHeaders(),
   })
 }
+
+export function featureUnavailableResponse(retryAfterSeconds?: number) {
+  const headers = securityDenialHeaders()
+  if (retryAfterSeconds) headers.set('retry-after', String(retryAfterSeconds))
+  return new Response(null, { status: 503, headers })
+}
