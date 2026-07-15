@@ -17,6 +17,7 @@
     "test:security": "vitest run lib/security",
     "test:localization": "node --test scripts/localization.test.mjs",
     "test:media:catalog": "vitest run lib/media/catalog",
+    "test:media:ingestion": "vitest run lib/media/ingestion lib/media/privacy",
     "test:media:processing": "vitest run lib/media/processing --exclude='**/*.live.test.ts'",
     "test:media:storage": "vitest run lib/media/storage --exclude='**/*.live.test.ts'",
     "test:media:storage:live": "pnpm test:media:storage:live:server && pnpm test:media:storage:live:browser",

@@ -252,6 +252,31 @@ describe('Bunny Media Storage', () => {
     expect(original).toEqual(bytes)
   })
 
+  it('reads Rendition bytes through the authenticated storage client', async () => {
+    const bytes = new TextEncoder().encode('public jpeg bytes')
+    const send = vi.fn(async (_command: unknown) => ({
+      Body: {
+        transformToByteArray: async () => bytes,
+      },
+    }))
+    const storage = createBunnyStorage(config, {
+      renditionsClient: { send } as never,
+    })
+    const key = 'renditions/asset_01/photo-1600-v1.jpg'
+
+    await expect(storage.readRendition(key)).resolves.toEqual(bytes)
+
+    const command = send.mock.calls[0]?.[0]
+    expect(command).toBeInstanceOf(GetObjectCommand)
+    if (!(command instanceof GetObjectCommand)) {
+      throw new TypeError('Expected GetObject')
+    }
+    expect(command.input).toEqual({
+      Bucket: 'cali-media-renditions-preview',
+      Key: key,
+    })
+  })
+
   it('deletes Originals and Renditions individually from their own zones', async () => {
     const originalsSend = vi.fn(async (_command: unknown) => ({}))
     const renditionsSend = vi.fn(async (_command: unknown) => ({}))
