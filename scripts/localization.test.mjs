@@ -8,6 +8,7 @@ import matter from 'gray-matter'
 
 const repositoryRoot = join(dirname(fileURLToPath(import.meta.url)), '..')
 const blogRoot = join(repositoryRoot, 'content', 'blog')
+const newsletterRoot = join(repositoryRoot, 'content', 'newsletters')
 const linkPreviewsPath = join(repositoryRoot, 'content', 'link-previews.json')
 const hanPattern = /\p{Script=Han}/u
 const dashPattern = /[—–]/u
@@ -16,10 +17,10 @@ function withoutFencedCode(source) {
   return source.replace(/^```[^\n]*\n[\s\S]*?^```[ \t]*$/gm, '')
 }
 
-function relativeImageReferences(source) {
+function localImageReferences(source) {
   return [
     ...withoutFencedCode(source).matchAll(
-      /!\[[^\]]*\]\((\.\/[^\s)]+)(?:\s+"[^"]*")?\)/g,
+      /!\[[^\]]*\]\(((?:\.\/|\/content\/)[^\s)]+)(?:\s+"[^"]*")?\)/g,
     ),
   ].map(([, reference]) => reference)
 }
@@ -46,8 +47,8 @@ function assertOccurrencesPreserved(original, english, description) {
   }
 }
 
-async function blogDirectories() {
-  const entries = await readdir(blogRoot, { withFileTypes: true })
+async function contentDirectories(root) {
+  const entries = await readdir(root, { withFileTypes: true })
 
   return entries
     .filter((entry) => entry.isDirectory())
@@ -56,7 +57,7 @@ async function blogDirectories() {
 }
 
 test('every blog post has a complete English source', async (t) => {
-  for (const directory of await blogDirectories()) {
+  for (const directory of await contentDirectories(blogRoot)) {
     const originalPath = join(blogRoot, directory, 'index.mdx')
 
     let originalSource
@@ -118,14 +119,78 @@ test('every blog post has a complete English source', async (t) => {
       )
 
       assertOccurrencesPreserved(
-        relativeImageReferences(original.content),
-        relativeImageReferences(english.content),
+        localImageReferences(original.content),
+        localImageReferences(english.content),
         `${directory}/index.en.mdx is missing image reference`,
       )
       assertOccurrencesPreserved(
         mdxComponentInvocations(original.content),
         mdxComponentInvocations(english.content),
         `${directory}/index.en.mdx is missing MDX component invocation`,
+      )
+    })
+  }
+})
+
+test('every newsletter archive has a complete English source', async (t) => {
+  for (const directory of await contentDirectories(newsletterRoot)) {
+    const originalPath = join(newsletterRoot, directory, 'index.mdx')
+    const originalSource = await readFile(originalPath, 'utf8')
+
+    await t.test(directory, async () => {
+      const englishPath = join(newsletterRoot, directory, 'index.en.mdx')
+      let englishSource
+
+      try {
+        englishSource = await readFile(englishPath, 'utf8')
+      } catch (error) {
+        assert.notEqual(
+          error?.code,
+          'ENOENT',
+          `${directory} has index.mdx but is missing index.en.mdx`,
+        )
+        throw error
+      }
+
+      const english = matter(englishSource)
+
+      assert.doesNotMatch(
+        originalSource,
+        dashPattern,
+        `${directory}/index.mdx must not contain em or en dashes`,
+      )
+      assert.doesNotMatch(
+        englishSource,
+        dashPattern,
+        `${directory}/index.en.mdx must not contain em or en dashes`,
+      )
+      assert.equal(
+        typeof english.data.title,
+        'string',
+        `${directory} must have an English title`,
+      )
+      assert.ok(
+        english.data.title.trim(),
+        `${directory} must have a nonempty English title`,
+      )
+      assert.equal(
+        typeof english.data.description,
+        'string',
+        `${directory} must have an English description`,
+      )
+      assert.ok(
+        english.data.description.trim(),
+        `${directory} must have a nonempty English description`,
+      )
+      assert.doesNotMatch(
+        englishSource,
+        hanPattern,
+        `${directory}/index.en.mdx must not contain Han characters`,
+      )
+      assertOccurrencesPreserved(
+        localImageReferences(originalSource),
+        localImageReferences(englishSource),
+        `${directory}/index.en.mdx is missing image reference`,
       )
     })
   }

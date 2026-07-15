@@ -84,6 +84,7 @@ export interface MediaPurgeRepository {
 
 export type MediaPurgeErrorCode =
   | 'busy'
+  | 'claim_lost'
   | 'dependency_unavailable'
   | 'invalid_request'
   | 'invalid_state'
@@ -258,17 +259,18 @@ export function createMediaPurgeService({
         }
       }
 
+      let completed: boolean
       try {
-        const completed = await repository.complete({
+        completed = await repository.complete({
           ownerUserId: input.ownerUserId,
           mediaAssetId: input.mediaAssetId,
           claimToken,
           completedAt: clock.now(),
         })
-        if (!completed) throw new Error('Purge was incomplete')
       } catch {
         throw new MediaPurgeError('dependency_unavailable')
       }
+      if (!completed) throw new MediaPurgeError('claim_lost')
       return { status: 'purged' as const, mediaAssetId: input.mediaAssetId }
     },
   }

@@ -96,6 +96,7 @@ describe('Media Library Alt Text Suggestion repository', () => {
         mediaAssetId,
       }),
     ).resolves.toBeNull()
+
   })
 
   it('stores suggestions separately from owner-approved Alt Text', async () => {

@@ -17,6 +17,7 @@ function fixture() {
   let completed = false
   let busy = false
   let conflict = false
+  let completeSucceeds = true
   let failureCode: string | null = null
   const job: MediaPurgeJob = {
     mediaAssetId,
@@ -24,12 +25,12 @@ function fixture() {
     originalDeletedAt: null,
     renditions: [
       {
-        objectKey: 'renditions/photo-640.jpg',
+        objectKey: 'renditions/photo-1600.jpg',
         objectDeletedAt: null,
         cdnPurgedAt: null,
       },
       {
-        objectKey: 'renditions/photo-1600.jpg',
+        objectKey: 'renditions/photo-640.jpg',
         objectDeletedAt: null,
         cdnPurgedAt: null,
       },
@@ -82,6 +83,7 @@ function fixture() {
     },
     async complete() {
       completed =
+        completeSucceeds &&
         job.originalDeletedAt !== null &&
         job.renditions.every(
           (rendition) =>
@@ -126,6 +128,9 @@ function fixture() {
     setConflict: (value: boolean) => {
       conflict = value
     },
+    setCompleteSucceeds: (value: boolean) => {
+      completeSucceeds = value
+    },
   }
 }
 
@@ -146,10 +151,10 @@ describe('Media Asset Purge service', () => {
       mediaAssetId,
     })
     expect(calls).toEqual([
-      'delete-rendition:renditions/photo-640.jpg',
-      'purge-rendition:renditions/photo-640.jpg',
       'delete-rendition:renditions/photo-1600.jpg',
       'purge-rendition:renditions/photo-1600.jpg',
+      'delete-rendition:renditions/photo-640.jpg',
+      'purge-rendition:renditions/photo-640.jpg',
       'delete-original:originals/photo.jpg',
     ])
     await expect(service.purge(input)).resolves.toEqual({
@@ -179,9 +184,18 @@ describe('Media Asset Purge service', () => {
     })
     await expect(service.purge(input)).resolves.toMatchObject({ status: 'purged' })
     expect(calls.filter((call) => call.includes('delete-rendition'))).toEqual([
-      'delete-rendition:renditions/photo-640.jpg',
       'delete-rendition:renditions/photo-1600.jpg',
+      'delete-rendition:renditions/photo-640.jpg',
     ])
+  })
+
+  it('distinguishes a lost completion claim from a database failure', async () => {
+    const { input, service, setCompleteSucceeds } = fixture()
+    setCompleteSucceeds(false)
+
+    await expect(service.purge(input)).rejects.toEqual(
+      new MediaPurgeError('claim_lost'),
+    )
   })
 
   it('reports selection conflicts and active claims safely', async () => {

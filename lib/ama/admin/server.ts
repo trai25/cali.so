@@ -6,7 +6,10 @@ import { authenticateOwnerRequest } from '../auth/http'
 import { getOwnerAuth } from '../auth/server'
 import { createGoogleCalendarClient } from '../google/client'
 import { googleRepository } from '../google/repository'
-import { createGoogleCalendarService } from '../google/service'
+import {
+  createGoogleCalendarService,
+  type GoogleCalendarService,
+} from '../google/service'
 import { getServerEnv } from '../server-env'
 import { createSecretBox } from '../secrets'
 import { getAmaSecurity } from '../security/server'
@@ -22,31 +25,47 @@ function fetchWithTimeout(input: string | URL | Request, init: RequestInit = {})
   return fetch(input, { ...init, signal })
 }
 
+function disabledGoogleService(): GoogleCalendarService {
+  return {
+    async begin() {
+      throw new Error('Google Calendar is disabled')
+    },
+    async complete() {
+      return 'unavailable'
+    },
+    async getConnection() {
+      return null
+    },
+    async queryFreeBusy() {
+      return { status: 'disconnected', busy: [] }
+    },
+    async disconnect() {
+      throw new Error('Google Calendar is disabled')
+    },
+  }
+}
+
 function createServices() {
   const environment = getServerEnv()
   const clock = { now: () => new Date() }
-  const google = createGoogleCalendarService({
-    ownerEmail: environment.ADMIN_EMAIL,
-    baseUrl: environment.SITE_URL,
-    repository: googleRepository,
-    provider: createGoogleCalendarClient({
-      clientId: environment.GOOGLE_CLIENT_ID,
-      clientSecret: environment.GOOGLE_CLIENT_SECRET,
-      fetch: fetchWithTimeout,
-      clock,
-    }),
-    secretBox: createSecretBox(environment.AMA_ENCRYPTION_KEY),
-    clock,
-  })
+  const google = environment.features.google
+    ? createGoogleCalendarService({
+        ownerEmail: environment.ADMIN_EMAIL,
+        baseUrl: environment.SITE_URL,
+        repository: googleRepository,
+        provider: createGoogleCalendarClient({
+          clientId: environment.GOOGLE_CLIENT_ID!,
+          clientSecret: environment.GOOGLE_CLIENT_SECRET!,
+          fetch: fetchWithTimeout,
+          clock,
+        }),
+        secretBox: createSecretBox(environment.AMA_ENCRYPTION_KEY),
+        clock,
+      })
+    : disabledGoogleService()
   const availability = createAvailabilityService({
     repository: availabilityRepository,
-    calendar: environment.features.google
-      ? google
-      : {
-          async queryFreeBusy() {
-            return { status: 'disconnected' as const, busy: [] }
-          },
-        },
+    calendar: google,
     ownerTimeZone: AMA_OWNER_TIME_ZONE,
     clock,
   })

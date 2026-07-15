@@ -31,8 +31,9 @@ production feature flag is approved.
 
 ## Credentials and controls
 
-Deployed environments use Vercel OIDC. A static `AI_GATEWAY_API_KEY` is allowed
-only for local or CI configuration through the platform secret store. No
+Vercel deployments use OIDC. Non-Vercel production runtimes also reject a
+static `AI_GATEWAY_API_KEY`; static keys are allowed only for local or CI
+configuration through the platform secret store. No
 provider credential or Gateway credential may enter a client bundle, log,
 database row, or repository file.
 
