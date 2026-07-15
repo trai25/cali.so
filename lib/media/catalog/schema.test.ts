@@ -9,6 +9,11 @@ const migrations = [
   new URL('../../../db/migrations/0003_ama_google_calendar.sql', import.meta.url),
   new URL('../../../db/migrations/0004_ama_google_oauth.sql', import.meta.url),
   new URL('../../../db/migrations/0005_media_catalog.sql', import.meta.url),
+  new URL('../../../db/migrations/0006_photo_selection.sql', import.meta.url),
+  new URL(
+    '../../../db/migrations/0007_photo_publication_revision.sql',
+    import.meta.url,
+  ),
 ]
 
 const checksum = 'a'.repeat(64)
@@ -174,6 +179,12 @@ describe('Media Library catalog migration', () => {
         'media_assets',
         'media_renditions',
         'media_upload_intents',
+        'media_photo_selection_drafts',
+        'media_photo_selection_draft_entries',
+        'media_published_photo_selections',
+        'media_published_photo_selection_entries',
+        'media_published_photo_selection_renditions',
+        'media_active_photo_publication',
       ]),
     )
   })

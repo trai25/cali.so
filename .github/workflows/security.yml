@@ -81,6 +81,9 @@ jobs:
       - name: Test media Alt Text Suggestions
         run: pnpm test:media:alt-text
 
+      - name: Test Photo Selection publication
+        run: pnpm test:media:photo-selection
+
       - name: Test localization
         run: pnpm test:localization
 
