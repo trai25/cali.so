@@ -19,9 +19,9 @@ general-purpose blog template.
   snapshots
 - Drizzle and Neon groundwork for AMA operations, kept disabled for the v3
   production launch
-- Post-launch Media Library foundations for Bunny storage, a Neon catalog,
-  image processing, and resumable ingestion, with no public or admin surface
-  enabled for the v3 launch
+- A Bunny-backed Media Library with owner review and curation in admin; its
+  active Published Photo Selection powers `/photos` and the homepage preview
+  while private Originals remain server-only
 - CSP, same-origin mutation checks, rate limits, capability kill switches,
   security automation, and isolated Preview credentials
 
@@ -68,6 +68,13 @@ pnpm test:media:storage
 pnpm test:media:catalog
 pnpm test:media:processing
 pnpm test:media:ingestion
+pnpm test:media:geocoding
+pnpm test:media:alt-text
+pnpm test:media:admin
+pnpm test:media:asset-review
+pnpm test:media:photo-selection
+pnpm test:media:purge
+pnpm test:media:reconciliation
 pnpm build
 pnpm test:navigation
 pnpm verify:legacy-urls
@@ -89,9 +96,9 @@ pnpm audit:prod
 - AMA, admin, payment, booking-finalization, Google, and Tencent capabilities
   remain disabled in Production until their later product and security gates
   are complete.
-- Media Library foundations remain unreachable from public and admin routes at
-  launch. Static repository media stays authoritative until post-launch
-  provider, migration, privacy, and operations gates are approved.
+- The public photo surfaces depend on migrations `0005` through `0008`, the
+  private Originals and public Renditions boundary, and an active Published
+  Photo Selection. The retired static photo fallback is not part of v3.
 - Production database or sensitive cloud-data access requires two fresh
   confirmations immediately before access.
 

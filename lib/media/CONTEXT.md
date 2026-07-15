@@ -2,10 +2,12 @@
 
 ## Status
 
-Post-launch foundation implemented for storage, catalog persistence, image
-processing, privacy boundaries, and resumable ingestion. It has no public or
-admin route and does not describe shipped v3 behavior; static local media
-remains the launch implementation.
+Implemented end to end for Bunny storage, catalog persistence, image
+processing, privacy boundaries, resumable ingestion, owner review, and photo
+curation. The owner admin manages Media Assets and Draft Photo Selections;
+`/photos` and the homepage consume the active Published Photo Selection. The
+retired static photo fallback is not part of v3, and private Originals remain
+server-only.
 
 The Media Library owns reusable files, their safe descriptive metadata, and
 the selections that publish them across the personal site.

@@ -84,6 +84,13 @@ pnpm test:media:storage
 pnpm test:media:catalog
 pnpm test:media:processing
 pnpm test:media:ingestion
+pnpm test:media:geocoding
+pnpm test:media:alt-text
+pnpm test:media:admin
+pnpm test:media:asset-review
+pnpm test:media:photo-selection
+pnpm test:media:purge
+pnpm test:media:reconciliation
 pnpm db:validate
 pnpm build
 pnpm test:navigation

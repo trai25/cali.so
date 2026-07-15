@@ -1,6 +1,6 @@
 # v3 cutover readiness
 
-Last checked: 2026-07-15.
+Last checked: 2026-07-16.
 
 ## Verdict
 
@@ -20,7 +20,7 @@ running production migrations.
 | Item | Value |
 | --- | --- |
 | Production branch | `main` at `8c258834af538dd501486a5fd319b3e96a2ff5bc` |
-| Integration branch | `v2` at `3097a4926582e884d080aa24a2c5347b7b7cdbc3` |
+| Integration branch | `v2` at `1fbaef5c4a8b7874786033a0538487c2b73fffe7` |
 | Release issue | [#98](https://github.com/CaliCastle/cali.so/issues/98) |
 | Readiness issue | [#107](https://github.com/CaliCastle/cali.so/issues/107) |
 | Framework pin | `next@16.3.0-preview.6` |
@@ -28,8 +28,10 @@ running production migrations.
 | Production site observed | `https://cali.so`, HTTP 200 from Vercel, still serving `main` |
 
 Prerequisite issues #99 through #106 are closed and their changes are merged
-into `v2`. Media Library foundation changes merged afterward remain unreachable
-and are not part of the v3 launch surface.
+into `v2`. The complete issue #96 Media Library stack is also merged: the
+owner admin manages the catalog and curation workflow, and the public homepage
+and `/photos` now consume the active Published Photo Selection from Bunny
+Renditions. The retired static photo fallback has been removed.
 
 ## Gate summary
 
@@ -46,8 +48,9 @@ and are not part of the v3 launch surface.
 | Preview and Production secret isolation | UNKNOWN | The last verified state shared one Resend key across environments; current Vercel state is inaccessible. |
 | Production runtime database grants | AWAITING CONFIRMATION | Requires two fresh confirmations before inspecting the production role or sensitive cloud state. |
 | Production migration credential | AWAITING CONFIRMATION | Confirm `MIGRATION_DATABASE_URL` is absent from Vercel and available only to the controlled migration operation. |
-| Production migrations | AWAITING CONFIRMATION | Five additive migrations validate locally; execution and schema state require a separately authorized cutover step. |
-| External providers | UNKNOWN | Google, Tencent, payment, booking finalization, and public mutation capabilities must remain disabled. Confirm production credentials are absent or isolated. |
+| Production migrations | AWAITING CONFIRMATION | Eight additive migrations validate locally. Media migrations `0005` through `0008` are required for the v3 photo surface; execution and schema state require a separately authorized cutover step. |
+| Media provider and publication | AWAITING CONFIRMATION | Verify the production Bunny zones and CDN, private Original boundary, required Renditions, live storage contract evidence, and the active two-photo Published Photo Selection. |
+| Other external providers | UNKNOWN | Google, Tencent, payment, booking finalization, and public AMA mutation capabilities must remain disabled. Confirm production credentials are absent or isolated. |
 | Logs and drains | UNKNOWN | Verify access, retention, drains, and the privacy allowlist against the current Vercel project. |
 | Domain cutover | UNKNOWN | `cali.so` currently serves `main`; verify the current Vercel project, production-branch mapping, aliases, and certificate before merge. |
 | Rollback | AWAITING CONFIRMATION | Confirm an operator can promote the last known-good Vercel deployment or revert the cutover merge without reversing additive database migrations. |
@@ -57,25 +60,33 @@ and are not part of the v3 launch surface.
 The following passed from the frozen installation:
 
 - TypeScript typecheck.
-- 274 Vitest unit and integration tests across application, component, and
+- 385 Vitest unit and integration tests across application, component, and
   library code, excluding only explicitly live provider suites.
 - 125 AMA tests and 5 migration checks.
-- 3 security tests.
+- 4 security tests.
 - 148 localization checks.
 - 19 Media Library catalog tests.
 - 17 Media Library ingestion and privacy tests.
 - 9 Media Library processing tests.
-- 40 Media Library storage tests.
+- 41 Media Library storage tests.
+- 7 Media Library geocoding tests.
+- 18 Media Library Alt Text tests.
+- 26 Media Library admin tests.
+- 12 Media Asset review tests.
+- 27 Photo Selection publication tests.
+- 8 Media Asset Purge tests.
+- 11 Media reconciliation tests.
 - 4 port-post tests.
-- Production build with 78 generated pages.
+- Production build with 85 generated pages using the CI placeholder
+  environment and every AMA capability disabled.
 - 7 Instant Navigation, keyboard, motion, and typography browser tests.
 - 53 legacy URL probes against the production server.
 - 354 internal links and 147 live external links across all 28 sitemap pages.
 - Public discovery and failure-handling verification.
 - Disabled production security-boundary verification.
-- OSV audit of 613 production packages with no findings.
+- OSV audit of 621 production packages with no findings.
 - Full-SHA GitHub Action reference check.
-- Redacted Gitleaks 8.30.1 scan across 363 commits with no findings.
+- Redacted Gitleaks 8.30.1 scan across 376 commits with no findings.
 - `git diff --check origin/main`.
 
 The content check exposed five trailing spaces in two historical MDX files.
@@ -141,16 +152,18 @@ Final review artifacts after the accessibility corrections:
   motion, keep selected and unselected labels at one weight, and preserve
   selected-label contrast. Scroll reveals and public chrome typography use the
   documented timing and type tokens.
-- Media Library storage, catalog, processing, and ingestion foundations were
-  explicitly merged into `v2` by the maintainer after the original launch
-  scope was written. They remain unreachable, do not replace static public
-  media, and are not being presented as a shipped v3 feature. Migration `0005`
-  must not run solely for this public cutover.
+- The Media Library is now part of the v3 launch surface. Owner routes cover
+  ingestion, review, recovery, and Photo Selection curation; public routes read
+  an immutable Published Photo Selection from Bunny Renditions. The six static
+  photos and their code path were removed, so release evidence must verify the
+  production catalog, provider boundary, and publication rather than relying
+  on a repository fallback.
 - The merged Media schema's `lifecycle` column conflicts with the Media
   glossary. Rewriting merged migration `0005` would be unsafe, so the additive
   vocabulary correction is tracked as post-launch issue
-  [#134](https://github.com/CaliCastle/cali.so/issues/134). It does not affect
-  the unreachable launch surface.
+  [#134](https://github.com/CaliCastle/cali.so/issues/134). It remains
+  non-blocking vocabulary debt because the implemented state transitions and
+  publication behavior are unchanged.
 - Remaining type below 14 pixels is limited to the design language's explicit
   13-pixel code exception and text printed onto physical craft objects such as
   polaroids, record sleeves, book covers, and the illustrated envelope. It is
@@ -162,21 +175,25 @@ Final review artifacts after the accessibility corrections:
 
 ## Migration and provider boundary
 
-Migrations `0001` through `0004` are additive AMA foundations. Migration `0005`
-is the unreachable post-launch Media Library catalog. Their checked-in
-snapshots and migration tests pass, but the v3 public site requires none of
-these private capabilities or tables. Static repository content remains
-authoritative at launch, and no migration should run solely for the public
-cutover.
+Migrations `0001` through `0004` are additive AMA foundations. Migrations
+`0005` through `0008` define the Media catalog, Photo Selection publication,
+publication revisions, and durable Purge progress. Their checked-in snapshots
+and migration tests pass. Unlike the disabled AMA domain, the v3 public photo
+surfaces now require the Media migrations, production Bunny configuration,
+and an active Published Photo Selection. Git remains authoritative for writing
+and ordinary site content, but not for the curated photo wall.
 
 Before cutover, an authorized operator must:
 
 1. confirm the production runtime role has only the required CRUD grants;
 2. confirm Vercel has no migration credential;
-3. apply only separately approved pending migrations with the migration role;
-   do not apply `0005` merely to launch the public site;
-4. leave all six capability switches explicitly false; and
-5. smoke-test the public site without exercising disabled provider workflows.
+3. apply the separately approved pending Media migrations with the migration
+   role, preserving the additive migration history;
+4. verify private Originals, public Renditions, and the active Published Photo
+   Selection against the production Bunny and Neon boundary;
+5. leave all six AMA capability switches explicitly false; and
+6. smoke-test the public site without exercising disabled AMA provider
+   workflows.
 
 Production database or sensitive cloud-data inspection requires two fresh,
 explicit confirmations immediately before access.
@@ -189,7 +206,7 @@ No manual DNS move is expected, but current project ownership, production
 branch, aliases, certificate, and environment scopes must be verified first.
 
 Rollback must prefer promoting the last known-good Vercel production deployment
-or reverting the cutover merge. The five additive database migrations should
+or reverting the cutover merge. The eight additive database migrations should
 remain in place during application rollback; destructive down migrations are
 not part of the procedure. Record the known-good deployment identifier and an
 operator before cutover.
@@ -203,14 +220,16 @@ operator before cutover.
 3. Confirm the six Production capability switches are explicitly false.
 4. With two fresh confirmations, verify production runtime database grants,
    migration-credential isolation, and migration state.
-5. Verify Vercel logs, drains, access, retention, firewall rules, production
+5. Verify the production Bunny and Neon Media boundary, run the protected live
+   storage contract, and confirm the intended Published Photo Selection.
+6. Verify Vercel logs, drains, access, retention, firewall rules, production
    branch, domains, and rollback deployment.
-6. Add `Quality` and `CodeQL` as required checks to both `v2` and `main` after
+7. Add `Quality` and `CodeQL` as required checks to both `v2` and `main` after
    separate authorization.
-7. Review the #107 Vercel Preview across the remaining browser matrix and
+8. Review the #107 Vercel Preview across the remaining browser matrix and
    update this report with its URL and result.
-8. Obtain separate Standards and Spec reviews over `git diff origin/main...HEAD` and
+9. Obtain separate Standards and Spec reviews over `git diff origin/main...HEAD` and
    resolve every finding.
-9. Re-run the complete release suite on the final #107 commit.
-10. Only after every blocker above is passed, approve the separately operated
+10. Re-run the complete release suite on the final #107 commit.
+11. Only after every blocker above is passed, approve the separately operated
     merge to `main` and production cutover.
