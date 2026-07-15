@@ -4,10 +4,13 @@ vi.mock('server-only', () => ({}))
 
 import { createAmaSecurity, type SecurityAuditEvent } from '../../ama/security/service'
 import { MediaAssetReviewError } from '../asset-review/service'
+import { PhotoSelectionError } from '../photo-selection/service'
 import {
   createMediaAssetActionHandler,
   createMediaAssetListHandler,
   createMediaUploadIntentHandler,
+  createPhotoSelectionDraftHandler,
+  createPhotoSelectionPublishHandler,
 } from './http'
 
 const mediaAssetId = '11111111-1111-4111-8111-111111111111'
@@ -18,6 +21,7 @@ function request(
     authenticated?: boolean
     body?: string
     contentType?: string
+    method?: string
     origin?: string
   } = {},
 ) {
@@ -25,10 +29,11 @@ function request(
     authenticated = true,
     body,
     contentType = 'application/json',
+    method,
     origin = 'https://cali.so',
   } = options
   return new Request(`https://cali.so${path}`, {
-    method: body === undefined ? 'GET' : 'POST',
+    method: method ?? (body === undefined ? 'GET' : 'POST'),
     headers: {
       ...(authenticated ? { cookie: 'owner=valid' } : {}),
       ...(body === undefined ? {} : { 'content-type': contentType }),
@@ -323,5 +328,143 @@ describe('Media admin HTTP contract', () => {
 
     expect(response.status).toBe(404)
     await expect(response.json()).resolves.toEqual({ error: 'not_found' })
+  })
+
+  it('autosaves an owner-scoped Draft and records the revisioned action', async () => {
+    const f = fixture()
+    const handler = createPhotoSelectionDraftHandler({
+      authenticator: f.authenticator,
+      security: f.security,
+      selection: {
+        async saveDraft(input) {
+          f.calls.push(input)
+          return {
+            revision: 4,
+            mediaAssetIds: input.mediaAssetIds,
+            updatedAt: new Date('2026-07-15T12:00:00.000Z'),
+          }
+        },
+      },
+    })
+    const mediaAssetIds = ['11111111-1111-4111-8111-111111111111']
+
+    const response = await handler(
+      request('/api/admin/media/photo-selection', {
+        method: 'PUT',
+        body: JSON.stringify({ expectedRevision: 3, mediaAssetIds }),
+      }),
+    )
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('cache-control')).toBe('no-store')
+    expect(f.calls).toEqual([
+      { ownerUserId: 'owner_01', expectedRevision: 3, mediaAssetIds },
+    ])
+    expect(f.auditEvents.at(-1)?.event).toBe(
+      'media_photo_selection.draft_saved',
+    )
+  })
+
+  it('publishes through the owner boundary and preserves safe conflicts', async () => {
+    const f = fixture()
+    const handler = createPhotoSelectionPublishHandler({
+      authenticator: f.authenticator,
+      security: f.security,
+      selection: {
+        async publish(input) {
+          f.calls.push(input)
+          throw new PhotoSelectionError('ineligible_assets', {
+            ineligibleMediaAssetIds: [
+              '11111111-1111-4111-8111-111111111111',
+            ],
+          })
+        },
+      },
+    })
+
+    const response = await handler(
+      request('/api/admin/media/photo-selection/publish', {
+        body: JSON.stringify({
+          expectedDraftRevision: 4,
+          idempotencyKey: 'publish_01',
+        }),
+      }),
+    )
+
+    expect(response.status).toBe(409)
+    await expect(response.json()).resolves.toEqual({ error: 'ineligible_assets' })
+    expect(f.calls).toEqual([
+      {
+        ownerUserId: 'owner_01',
+        expectedDraftRevision: 4,
+        idempotencyKey: 'publish_01',
+      },
+    ])
+    expect(f.auditEvents).not.toContainEqual(
+      expect.objectContaining({ event: 'media_photo_selection.published' }),
+    )
+  })
+
+  it('audits a committed publication when only cache invalidation fails', async () => {
+    const f = fixture()
+    const handler = createPhotoSelectionPublishHandler({
+      authenticator: f.authenticator,
+      security: f.security,
+      selection: {
+        async publish() {
+          throw new PhotoSelectionError('cache_invalidation_failed', {
+            publishedSelectionId: '11111111-1111-4111-8111-111111111111',
+          })
+        },
+      },
+    })
+
+    const response = await handler(
+      request('/api/admin/media/photo-selection/publish', {
+        body: JSON.stringify({
+          expectedDraftRevision: 4,
+          idempotencyKey: 'publish_01',
+        }),
+      }),
+    )
+
+    expect(response.status).toBe(503)
+    expect(f.auditEvents.at(-1)?.event).toBe(
+      'media_photo_selection.published',
+    )
+  })
+
+  it('rejects unauthenticated and cross-site Photo Selection writes', async () => {
+    const f = fixture()
+    const handler = createPhotoSelectionDraftHandler({
+      authenticator: f.authenticator,
+      security: f.security,
+      selection: {
+        async saveDraft(input) {
+          f.calls.push(input)
+          return input
+        },
+      },
+    })
+    const body = JSON.stringify({ expectedRevision: 0, mediaAssetIds: [] })
+
+    const unauthenticated = await handler(
+      request('/api/admin/media/photo-selection', {
+        authenticated: false,
+        body,
+        method: 'PUT',
+      }),
+    )
+    const crossSite = await handler(
+      request('/api/admin/media/photo-selection', {
+        body,
+        method: 'PUT',
+        origin: 'https://attacker.example',
+      }),
+    )
+
+    expect(unauthenticated.status).toBe(401)
+    expect(crossSite.status).toBe(403)
+    expect(f.calls).toEqual([])
   })
 })

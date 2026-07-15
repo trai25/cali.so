@@ -9,6 +9,7 @@ import {
   type OriginalContentType,
 } from '../ingestion/service'
 import { MediaPurgeError } from '../purge/service'
+import { PhotoSelectionError } from '../photo-selection/service'
 import { storeOriginalFromSameOriginRequest } from '../storage/upload'
 
 type OwnerPrincipal = { id: string }
@@ -51,7 +52,8 @@ function errorResponse(error: unknown) {
     error instanceof MediaAssetReviewError ||
     error instanceof MediaIngestionError ||
     error instanceof MediaAltTextError ||
-    error instanceof MediaPurgeError
+    error instanceof MediaPurgeError ||
+    error instanceof PhotoSelectionError
       ? error.code
       : 'dependency_unavailable'
   const status =
@@ -61,10 +63,92 @@ function errorResponse(error: unknown) {
         ? 404
         : code === 'rate_limited'
           ? 429
-          : code === 'dependency_unavailable' || code === 'generation_failed'
+          : code === 'dependency_unavailable' ||
+              code === 'generation_failed' ||
+              code === 'cache_invalidation_failed'
             ? 503
             : 409
   return json(status, { error: code })
+}
+
+export function createPhotoSelectionDraftHandler(
+  dependencies: BaseDependencies & {
+    selection: {
+      saveDraft(input: {
+        ownerUserId: string
+        expectedRevision: number
+        mediaAssetIds: string[]
+      }): Promise<unknown>
+    }
+  },
+) {
+  return async function PUT(request: Request) {
+    const access = await authenticate(dependencies, request, true)
+    if ('response' in access) return access.response
+    try {
+      const body = await requestJson(request)
+      if (
+        !Array.isArray(body.mediaAssetIds) ||
+        body.mediaAssetIds.some(
+          (mediaAssetId) => typeof mediaAssetId !== 'string',
+        )
+      ) {
+        throw new PhotoSelectionError('invalid_request')
+      }
+      const draft = await dependencies.selection.saveDraft({
+        ownerUserId: access.principal.id,
+        expectedRevision:
+          typeof body.expectedRevision === 'number'
+            ? body.expectedRevision
+            : Number.NaN,
+        mediaAssetIds: body.mediaAssetIds as string[],
+      })
+      audit(dependencies, request, 'media_photo_selection.draft_saved')
+      return json(200, { draft })
+    } catch (error) {
+      return errorResponse(error)
+    }
+  }
+}
+
+export function createPhotoSelectionPublishHandler(
+  dependencies: BaseDependencies & {
+    selection: {
+      publish(input: {
+        ownerUserId: string
+        expectedDraftRevision: number
+        idempotencyKey: string
+      }): Promise<unknown>
+    }
+  },
+) {
+  return async function POST(request: Request) {
+    const access = await authenticate(dependencies, request, true)
+    if ('response' in access) return access.response
+    try {
+      const body = await requestJson(request)
+      const publication = await dependencies.selection.publish({
+        ownerUserId: access.principal.id,
+        expectedDraftRevision:
+          typeof body.expectedDraftRevision === 'number'
+            ? body.expectedDraftRevision
+            : Number.NaN,
+        idempotencyKey:
+          typeof body.idempotencyKey === 'string' ? body.idempotencyKey : '',
+      })
+      audit(dependencies, request, 'media_photo_selection.published')
+      return json(200, { publication })
+    } catch (error) {
+      if (
+        error instanceof PhotoSelectionError &&
+        error.code === 'cache_invalidation_failed'
+      ) {
+        // The immutable publication committed before cache invalidation ran.
+        audit(dependencies, request, 'media_photo_selection.published')
+      }
+      return errorResponse(error)
+    }
+  }
 }
 
 async function authenticate(
