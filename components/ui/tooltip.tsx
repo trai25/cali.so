@@ -129,7 +129,7 @@ function Tooltip({
         <TooltipPrimitive.Positioner
           side={side}
           sideOffset={sideOffset}
-          className="z-50"
+          className="z-[var(--z-card)]"
         >
           <TooltipPrimitive.Popup
             render={(props) => {

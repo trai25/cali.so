@@ -436,7 +436,7 @@ const DropdownContent = forwardRef<HTMLDivElement, DropdownContentProps>(
           // the fixed dock, and an absolute popup would lag it on scroll
           // since modal={false} keeps the page scrollable.
           positionMethod="fixed"
-          className="z-50 outline-none"
+          className="z-[var(--z-card)] outline-none"
         >
           <div>
             <DropdownContext.Provider value={contentCtx}>

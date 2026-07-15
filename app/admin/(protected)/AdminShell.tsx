@@ -19,7 +19,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       <header className="flex min-h-11 flex-wrap items-center justify-between gap-x-8 gap-y-3 border-b border-dashed border-border pb-5">
         <Link
           href="/admin"
-          className="text-sm font-medium tracking-[0.14em] text-muted-foreground outline-none focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
+          className="text-sm font-medium tracking-[-0.011em] text-muted-foreground outline-none focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
         >
           CALI / ADMIN
         </Link>

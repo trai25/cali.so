@@ -40,6 +40,8 @@ Renditions. The retired static photo fallback has been removed.
 | Frozen install | PASS | `pnpm install --frozen-lockfile` completed from the audited commit. |
 | Repository validation | PASS | Every command and count in the automated evidence section passed. |
 | Public browser behavior | PASS | Desktop, mobile, both locales, light and dark appearance, reduced motion, metadata, overflow, accessibility tree, and dock targets were reviewed locally. |
+| Complete diff Standards review | FAIL | Portal layering and admin typography findings were fixed. The Media `lifecycle` vocabulary breach remains tracked in #134 and needs resolution or an explicit maintainer exception. |
+| Complete diff Spec review | PASS | No scope creep, incorrect PASS treatment, or missing local evidence was found; the unresolved hosted and production requirements below correctly keep the verdict at NOT READY. |
 | Production-like PR Preview | AWAITING CONFIRMATION | Review the public Preview created by the #107 PR after Vercel finishes. |
 | GitHub security settings | PASS | Secret scanning, push protection, Dependabot security updates, read-only Actions defaults, and full-SHA action policy are enabled. |
 | Required GitHub checks | FAIL | Neither the `v2` ruleset nor `main` branch protection requires `Quality` and `CodeQL`. Changing protection requires separate maintainer authorization. |
@@ -161,9 +163,16 @@ Final review artifacts after the accessibility corrections:
 - The merged Media schema's `lifecycle` column conflicts with the Media
   glossary. Rewriting merged migration `0005` would be unsafe, so the additive
   vocabulary correction is tracked as post-launch issue
-  [#134](https://github.com/CaliCastle/cali.so/issues/134). It remains
-  non-blocking vocabulary debt because the implemented state transitions and
-  publication behavior are unchanged.
+  [#134](https://github.com/CaliCastle/cali.so/issues/134). The implemented
+  state transitions and publication behavior are unchanged, but this remains
+  a documented Standards breach. The cutover cannot receive a READY verdict
+  until the issue is resolved or the maintainer records an explicit exception.
+- The complete-diff Standards review also found arbitrary `z-50` portal layers
+  and widened letter spacing in admin chrome. Those findings are fixed with
+  the existing `--z-card` layer and the shared `-0.011em` chrome tracking.
+- The complete-diff Spec review found no scope creep or incorrect PASS
+  treatment. Its incomplete requirements are the same hosted and production
+  blockers recorded in the gate table and remaining actions.
 - Remaining type below 14 pixels is limited to the design language's explicit
   13-pixel code exception and text printed onto physical craft objects such as
   polaroids, record sleeves, book covers, and the illustrated envelope. It is
@@ -222,14 +231,15 @@ operator before cutover.
    migration-credential isolation, and migration state.
 5. Verify the production Bunny and Neon Media boundary, run the protected live
    storage contract, and confirm the intended Published Photo Selection.
-6. Verify Vercel logs, drains, access, retention, firewall rules, production
+6. Resolve #134 or record an explicit maintainer exception for the Media
+   vocabulary breach.
+7. Verify Vercel logs, drains, access, retention, firewall rules, production
    branch, domains, and rollback deployment.
-7. Add `Quality` and `CodeQL` as required checks to both `v2` and `main` after
+8. Add `Quality` and `CodeQL` as required checks to both `v2` and `main` after
    separate authorization.
-8. Review the #107 Vercel Preview across the remaining browser matrix and
+9. Review the #107 Vercel Preview across the remaining browser matrix and
    update this report with its URL and result.
-9. Obtain separate Standards and Spec reviews over `git diff origin/main...HEAD` and
-   resolve every finding.
-10. Re-run the complete release suite on the final #107 commit.
+10. Wait for the #107 PR's Quality, CodeQL, Vercel, and Greptile checks and
+    resolve any new finding or merge conflict.
 11. Only after every blocker above is passed, approve the separately operated
     merge to `main` and production cutover.

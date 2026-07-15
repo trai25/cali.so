@@ -320,7 +320,7 @@ const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
           align="start"
           sideOffset={6}
           alignItemWithTrigger={false}
-          className="z-50 outline-none"
+          className="z-[var(--z-card)] outline-none"
         >
           <div>
             <SelectContentContext.Provider value={contentCtx}>

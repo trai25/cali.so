@@ -614,7 +614,7 @@ function Inspector({
 
   return (
     <aside className="min-w-0 border-t border-dashed border-border pt-6 xl:border-l xl:border-t-0 xl:pl-7 xl:pt-0">
-      <p className="text-sm font-medium tracking-[0.12em] text-muted-foreground">
+      <p className="text-sm font-medium tracking-[-0.011em] text-muted-foreground">
         <T zh="审核" en="REVIEW" />
       </p>
       <h2 className="mt-2 break-words text-sm font-semibold">
