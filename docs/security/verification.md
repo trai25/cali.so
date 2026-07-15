@@ -53,7 +53,7 @@ Repository API checks on 2026-07-14 verified:
   the repository's current GitHub product mode. Recheck the setting before
   launch or after a plan change.
 - [ ] Confirm Dependabot can open an update without repository or production
-  credentials after this configuration reaches `v2`.
+  credentials after this configuration reaches the `v2` integration branch.
 
 Recheck these settings through the GitHub Security and Actions settings pages
 or with read-only `gh api` calls. Keep sensitive evidence in private
@@ -64,7 +64,7 @@ vulnerability reports rather than public issues or logs.
 Project API checks on 2026-07-14 verified:
 
 - [x] The production branch remains `main`, matching the documented plan to
-  keep v1 live until the one-time v2 cutover.
+  keep the legacy v2 site live until the one-time v3 cutover.
 - [x] Git fork protection is enabled.
 - [x] Production and Preview use distinct database credentials.
 - [x] Credentials identified as production-only were removed from Preview and
