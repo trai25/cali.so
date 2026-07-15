@@ -50,6 +50,9 @@ jobs:
       - name: Test security controls
         run: pnpm test:security
 
+      - name: Test media storage contract
+        run: pnpm test:media:storage
+
       - name: Test localization
         run: pnpm test:localization
 
