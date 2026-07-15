@@ -35,7 +35,7 @@ function Tree({
 
 async function CopyrightYear() {
   'use cache'
-  cacheLife({ stale: 86_400, revalidate: 86_400, expire: 604_800 })
+  cacheLife({ stale: 86_400, revalidate: 86_400, expire: 86_400 })
 
   return new Date().getFullYear()
 }

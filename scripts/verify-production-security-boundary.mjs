@@ -148,7 +148,7 @@ async function verifyDisabledApis(baseUrl) {
     assert.equal(response.headers.get('cache-control'), 'no-store')
     assert.equal(
       response.headers.get('referrer-policy'),
-      'strict-origin-when-cross-origin',
+      'no-referrer',
     )
     assert.equal(body, '')
     assert.equal(response.headers.get('set-cookie'), null)

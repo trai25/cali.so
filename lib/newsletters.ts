@@ -4,10 +4,7 @@ import path from 'node:path'
 import matter from 'gray-matter'
 import { z } from 'zod'
 
-import {
-  archivedNewsletterIds,
-  type ArchivedNewsletterId,
-} from './public-content-routes'
+import { type ArchivedNewsletterId } from './public-content-routes'
 
 export {
   archivedNewsletterIds,
@@ -34,7 +31,27 @@ export const archivedNewsletterImages = {
   '/content/newsletters/1/tutorial-animation.jpg': { width: 480, height: 360 },
 } as const
 
-export function getArchivedNewsletter(id: ArchivedNewsletterId) {
+export type ArchivedNewsletter = {
+  id: ArchivedNewsletterId
+  title: string
+  description: string
+  titleEn: string
+  descriptionEn: string
+  body: string
+  bodyEn: string
+}
+
+const archivedNewsletterCache = new Map<
+  ArchivedNewsletterId,
+  ArchivedNewsletter
+>()
+
+export function getArchivedNewsletter(
+  id: ArchivedNewsletterId,
+): ArchivedNewsletter {
+  const cached = archivedNewsletterCache.get(id)
+  if (cached) return cached
+
   const raw = readFileSync(path.join(NEWSLETTERS_DIR, id, 'index.mdx'), 'utf8')
   const { data, content } = matter(raw)
   const frontmatter = newsletterFrontmatterSchema.parse(data)
@@ -45,7 +62,7 @@ export function getArchivedNewsletter(id: ArchivedNewsletterId) {
   const { data: englishData, content: englishContent } = matter(englishRaw)
   const englishFrontmatter = newsletterFrontmatterSchema.parse(englishData)
 
-  return {
+  const newsletter = {
     id,
     ...frontmatter,
     titleEn: englishFrontmatter.title,
@@ -53,4 +70,7 @@ export function getArchivedNewsletter(id: ArchivedNewsletterId) {
     body: content,
     bodyEn: englishContent,
   }
+
+  archivedNewsletterCache.set(id, newsletter)
+  return newsletter
 }
