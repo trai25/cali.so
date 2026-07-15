@@ -179,6 +179,27 @@ describe('Media Asset review repository', () => {
     ).resolves.toEqual({ status: 'selection_conflict' })
   })
 
+  it('ignores Draft membership owned by a different owner', async () => {
+    await client.query(
+      `INSERT INTO media_photo_selection_drafts (id, owner_user_id)
+       VALUES ('33333333-3333-4333-8333-333333333333', 'owner_02')`,
+    )
+    await client.query(
+      `INSERT INTO media_photo_selection_draft_entries
+        (draft_id, media_asset_id, position)
+       VALUES ('33333333-3333-4333-8333-333333333333', $1, 0)`,
+      [assetId],
+    )
+
+    await expect(
+      repository.archive({
+        ownerUserId: 'owner_01',
+        mediaAssetId: assetId,
+        archivedAt: new Date('2026-07-15T12:00:00Z'),
+      }),
+    ).resolves.toMatchObject({ status: 'updated' })
+  })
+
   it('round-trips Archive and restore without clearing metadata', async () => {
     const archived = await repository.archive({
       ownerUserId: 'owner_01',

@@ -7,6 +7,7 @@ import {
   mediaActivePhotoPublication,
   mediaAssets,
   mediaPhotoSelectionDraftEntries,
+  mediaPhotoSelectionDrafts,
   mediaPublishedPhotoSelectionEntries,
   mediaUploadIntents,
 } from '~/db/schema'
@@ -18,7 +19,40 @@ import type {
 
 export type MediaAssetReviewDatabase = ReturnType<typeof getDatabase>
 
-function record(row: typeof mediaAssets.$inferSelect): MediaAssetReviewRecord {
+const reviewAssetColumns = {
+  id: mediaAssets.id,
+  lifecycle: mediaAssets.lifecycle,
+  processingState: mediaAssets.processingState,
+  width: mediaAssets.width,
+  height: mediaAssets.height,
+  capturedAt: mediaAssets.capturedAt,
+  cameraMake: mediaAssets.cameraMake,
+  cameraModel: mediaAssets.cameraModel,
+  lens: mediaAssets.lens,
+  focalLengthMillimeters: mediaAssets.focalLengthMillimeters,
+  aperture: mediaAssets.aperture,
+  shutterSpeedSeconds: mediaAssets.shutterSpeedSeconds,
+  iso: mediaAssets.iso,
+  locationLabelZhHans: mediaAssets.locationLabelZhHans,
+  locationLabelEn: mediaAssets.locationLabelEn,
+  focalPointX: mediaAssets.focalPointX,
+  focalPointY: mediaAssets.focalPointY,
+  altTextSuggestionZhHans: mediaAssets.altTextSuggestionZhHans,
+  altTextSuggestionEn: mediaAssets.altTextSuggestionEn,
+  altTextSuggestionModel: mediaAssets.altTextSuggestionModel,
+  altTextSuggestedAt: mediaAssets.altTextSuggestedAt,
+  altTextZhHans: mediaAssets.altTextZhHans,
+  altTextEn: mediaAssets.altTextEn,
+  altTextApprovedAt: mediaAssets.altTextApprovedAt,
+  archivedAt: mediaAssets.archivedAt,
+} as const
+
+type ReviewAssetRow = Pick<
+  typeof mediaAssets.$inferSelect,
+  keyof typeof reviewAssetColumns
+>
+
+function record(row: ReviewAssetRow): MediaAssetReviewRecord {
   const altTextSuggestion =
     row.altTextSuggestionZhHans !== null &&
     row.altTextSuggestionEn !== null &&
@@ -82,7 +116,7 @@ export function createMediaAssetReviewRepository(
     mediaAssetId: string
   }) {
     const [asset] = await database()
-      .select()
+      .select(reviewAssetColumns)
       .from(mediaAssets)
       .where(ownedAssetCondition(input.ownerUserId, input.mediaAssetId))
       .limit(1)
@@ -111,7 +145,7 @@ export function createMediaAssetReviewRepository(
             eq(mediaAssets.processingState, 'ready'),
           ),
         )
-        .returning()
+        .returning(reviewAssetColumns)
       return asset ? record(asset) : null
     },
 
@@ -131,14 +165,14 @@ export function createMediaAssetReviewRepository(
             eq(mediaAssets.processingState, 'ready'),
           ),
         )
-        .returning()
+        .returning(reviewAssetColumns)
       return asset ? record(asset) : null
     },
 
     async archive(input) {
       return database().transaction(async (transaction) => {
         const [current] = await transaction
-          .select()
+          .select({ id: mediaAssets.id, lifecycle: mediaAssets.lifecycle })
           .from(mediaAssets)
           .where(ownedAssetCondition(input.ownerUserId, input.mediaAssetId))
           .limit(1)
@@ -153,8 +187,14 @@ export function createMediaAssetReviewRepository(
             and(
               eq(mediaAssets.id, current.id),
               sql`EXISTS (
-                SELECT 1 FROM ${mediaPhotoSelectionDraftEntries}
+                SELECT 1
+                FROM ${mediaPhotoSelectionDraftEntries}
+                INNER JOIN ${mediaPhotoSelectionDrafts}
+                  ON ${mediaPhotoSelectionDrafts.id} =
+                     ${mediaPhotoSelectionDraftEntries.draftId}
                 WHERE ${mediaPhotoSelectionDraftEntries.mediaAssetId} = ${mediaAssets.id}
+                  AND ${mediaPhotoSelectionDrafts.ownerUserId} =
+                      ${input.ownerUserId}
               ) OR EXISTS (
                 SELECT 1
                 FROM ${mediaActivePhotoPublication}
@@ -183,7 +223,7 @@ export function createMediaAssetReviewRepository(
               eq(mediaAssets.lifecycle, 'active'),
             ),
           )
-          .returning()
+          .returning(reviewAssetColumns)
         return asset
           ? { status: 'updated', asset: record(asset) }
           : { status: 'invalid_state' }
@@ -204,7 +244,7 @@ export function createMediaAssetReviewRepository(
             eq(mediaAssets.lifecycle, 'archived'),
           ),
         )
-        .returning()
+        .returning(reviewAssetColumns)
       if (asset) return { status: 'updated', asset: record(asset) }
 
       const current = await findOwnedAsset(input)
