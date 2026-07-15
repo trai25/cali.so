@@ -22,8 +22,9 @@ export function PostRow({
   locale?: Locale
 }) {
   const Heading = headingLevel
+  const safeSlug = encodeURIComponent(post.slug)
   return (
-    <Link href={localePath(locale, `/blog/${post.slug}`)} className="group blog-row hairline-top">
+    <Link href={localePath(locale, `/blog/${safeSlug}`)} className="group blog-row hairline-top">
       <span className="print-pile" aria-hidden>
         <span className="print-pile-sheet" />
         <span className="print-pile-sheet" />

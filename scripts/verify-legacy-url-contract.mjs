@@ -43,7 +43,7 @@ async function validateBlogCoverage(probes) {
   }
 }
 
-async function openPort() {
+async function findCandidatePort() {
   const server = createServer()
   await new Promise((resolve, reject) => {
     server.once('error', reject)
@@ -55,6 +55,19 @@ async function openPort() {
     server.close((error) => (error ? reject(error) : resolve())),
   )
   return address.port
+}
+
+async function stopChild(child) {
+  if (child.exitCode !== null || child.signalCode !== null) return
+
+  child.kill('SIGTERM')
+  await new Promise((resolve) => {
+    const timer = setTimeout(resolve, 5_000)
+    child.once('exit', () => {
+      clearTimeout(timer)
+      resolve()
+    })
+  })
 }
 
 async function waitForServer(baseUrl, child) {
@@ -71,13 +84,7 @@ async function waitForServer(baseUrl, child) {
   throw new Error(`Timed out waiting for ${baseUrl}`)
 }
 
-async function startProductionServer() {
-  const buildId = path.join(root, '.next/BUILD_ID')
-  await readFile(buildId, 'utf8').catch(() => {
-    throw new Error('Run pnpm build before pnpm verify:legacy-urls')
-  })
-
-  const port = await openPort()
+async function startProductionServerAttempt(port) {
   const baseUrl = `http://127.0.0.1:${port}`
   const child = spawn(
     process.execPath,
@@ -102,23 +109,35 @@ async function startProductionServer() {
   try {
     await waitForServer(baseUrl, child)
   } catch (error) {
-    child.kill('SIGTERM')
-    throw new Error(`${error.message}\n${output}`)
+    await stopChild(child)
+    const startError = new Error(`${error.message}\n${output}`)
+    startError.code = output.includes('EADDRINUSE') ? 'EADDRINUSE' : undefined
+    throw startError
   }
 
   return {
     baseUrl,
-    stop: async () => {
-      child.kill('SIGTERM')
-      await new Promise((resolve) => {
-        const timer = setTimeout(resolve, 5_000)
-        child.once('exit', () => {
-          clearTimeout(timer)
-          resolve()
-        })
-      })
-    },
+    stop: () => stopChild(child),
   }
+}
+
+async function startProductionServer() {
+  const buildId = path.join(root, '.next/BUILD_ID')
+  await readFile(buildId, 'utf8').catch(() => {
+    throw new Error('Run pnpm build before pnpm verify:legacy-urls')
+  })
+
+  const maximumAttempts = 5
+  for (let attempt = 1; attempt <= maximumAttempts; attempt += 1) {
+    const port = await findCandidatePort()
+    try {
+      return await startProductionServerAttempt(port)
+    } catch (error) {
+      if (error.code !== 'EADDRINUSE' || attempt === maximumAttempts) throw error
+    }
+  }
+
+  throw new Error('Unable to bind a production server port')
 }
 
 function expectedLocation(baseUrl, destination) {
