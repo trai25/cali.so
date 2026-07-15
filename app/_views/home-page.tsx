@@ -13,6 +13,8 @@ import { localePath, type Locale } from '~/lib/locale-route'
 import { books, experience, records } from '~/lib/personal'
 import { projects } from '~/lib/projects'
 import { getGitHub, getSocial } from '~/lib/social-live'
+import { getHomepagePhotoPreview } from '~/lib/media/photo-selection/repository'
+import { getPublishedPhotoSelection } from '~/lib/media/photo-selection/server'
 
 function SectionTitle({ children, delay }: { children: React.ReactNode; delay: number }) {
   return (
@@ -26,7 +28,11 @@ function SectionTitle({ children, delay }: { children: React.ReactNode; delay: n
 }
 
 export async function HomePageView({ locale }: { locale: Locale }) {
-  const [social, github] = await Promise.all([getSocial(), getGitHub()])
+  const [social, github, photoSelection] = await Promise.all([
+    getSocial(),
+    getGitHub(),
+    getPublishedPhotoSelection(),
+  ])
   const posts = getAllPosts()
   const latest = posts.slice(0, 5)
   const center = (latest.length - 1) / 2
@@ -53,7 +59,12 @@ export async function HomePageView({ locale }: { locale: Locale }) {
         </div>
       </div>
 
-      <NavCards postCount={posts.length} projectCount={projects.length} locale={locale} />
+      <NavCards
+        postCount={posts.length}
+        projectCount={projects.length}
+        locale={locale}
+        photoPreview={getHomepagePhotoPreview(photoSelection)}
+      />
 
       <section className="mt-16">
         <SectionTitle delay={120}>

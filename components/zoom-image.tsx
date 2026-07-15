@@ -16,12 +16,26 @@ interface ZoomImageProps {
   sizes?: string
   className?: string
   style?: React.CSSProperties
+  native?: boolean
+  srcSet?: string
+  expandedContent?: React.ReactNode
 }
 
 // Click-to-zoom for post images: the photo is picked up off the page and
 // floats over a dimmed sheet (FLIP, transform-only, interruptible).
 // Esc / click / scroll put it back down. Reduced motion swaps instantly.
-export function ZoomImage({ src, alt, width, height, sizes, className, style }: ZoomImageProps) {
+export function ZoomImage({
+  src,
+  alt,
+  width,
+  height,
+  sizes,
+  className,
+  style,
+  native = false,
+  srcSet,
+  expandedContent,
+}: ZoomImageProps) {
   const locale = useLocale()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
@@ -44,7 +58,14 @@ export function ZoomImage({ src, alt, width, height, sizes, className, style }: 
     // Fit within the viewport but never beyond the intrinsic size —
     // zoom means "actual size", not "stretch".
     const maxW = Math.min(window.innerWidth - VIEWPORT_PAD * 2, width)
-    const maxH = Math.min(window.innerHeight - VIEWPORT_PAD * 2, height)
+    const detailSpace = expandedContent ? 152 : 0
+    const maxH = Math.max(
+      1,
+      Math.min(
+        window.innerHeight - VIEWPORT_PAD * 2 - detailSpace,
+        height,
+      ),
+    )
     const scale = Math.min(maxW / width, maxH / height)
     const w = Math.round(width * scale)
     const h = Math.round(height * scale)
@@ -65,7 +86,7 @@ export function ZoomImage({ src, alt, width, height, sizes, className, style }: 
       from: `translate(${tx}px, ${ty}px) scale(${s})`,
     })
     setState('opening')
-  }, [src, width, height])
+  }, [src, width, height, expandedContent])
 
   const unmount = useCallback(() => {
     setZoom(null)
@@ -138,7 +159,30 @@ export function ZoomImage({ src, alt, width, height, sizes, className, style }: 
         data-zoomed={zoom ? '' : undefined}
         onClick={open}
       >
-        <Image src={src} alt={alt} width={width} height={height} sizes={sizes} className={className} />
+        {native ? (
+          // Bunny is the public binary cache layer for Published Photo Selections.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={src}
+            srcSet={srcSet}
+            alt={alt}
+            width={width}
+            height={height}
+            sizes={sizes}
+            className={className}
+            loading="lazy"
+            decoding="async"
+          />
+        ) : (
+          <Image
+            src={src}
+            alt={alt}
+            width={width}
+            height={height}
+            sizes={sizes}
+            className={className}
+          />
+        )}
       </button>
       {zoom &&
         createPortal(
@@ -166,6 +210,9 @@ export function ZoomImage({ src, alt, width, height, sizes, className, style }: 
               }}
               onTransitionEnd={settle}
             />
+            {expandedContent && (
+              <div className="zoom-overlay-details">{expandedContent}</div>
+            )}
           </div>,
           document.body,
         )}

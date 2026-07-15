@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('server-only', () => ({}))
 
-import { parseBunnyStorageEnv } from './config'
+import { parseBunnyRenditionCdnEnv, parseBunnyStorageEnv } from './config'
 
 const validEnvironment = {
   BUNNY_MEDIA_REGION: 'sg',
@@ -50,5 +50,13 @@ describe('Bunny Media Storage configuration', () => {
     expect(message).toContain('BUNNY_RENDITIONS_CDN_URL')
     expect(message).not.toContain('do-not-print')
     expect(message).not.toContain('storage.bunnycdn.com')
+  })
+
+  it('loads the public Rendition origin without requiring private credentials', () => {
+    expect(
+      parseBunnyRenditionCdnEnv({
+        BUNNY_RENDITIONS_CDN_URL: 'https://media-preview.cali.so',
+      }),
+    ).toEqual(new URL('https://media-preview.cali.so/'))
   })
 })
