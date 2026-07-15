@@ -1,8 +1,8 @@
 import { formatDate, SITE_TIME_ZONE } from '~/lib/date'
 
-// Bilingual content without routes or hydration risk: both languages are
-// in the static DOM; CSS shows one based on html[data-locale], which a
-// pre-paint script restores from localStorage (default zh).
+// Shared chrome keeps both languages in the static DOM; explicit public
+// routes set html[data-locale] before paint (/ is Chinese, /en is English).
+// Only the isolated admin root restores its in-place preference from storage.
 export function T({ zh, en }: { zh: React.ReactNode; en: React.ReactNode }) {
   return (
     <>

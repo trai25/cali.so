@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 
+import { requireAmaAdminEnabled } from '~/lib/ama/admin/launch-boundary-server'
 import { T } from '~/lib/i18n'
 import { isOwnerAuthenticated } from '~/lib/ama/auth/server'
 
@@ -11,11 +12,15 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
+// Authentication state intentionally renders per request.
+export const instant = false
+
 export default async function AdminLoginPage({
   searchParams,
 }: {
   searchParams: Promise<{ sent?: string; error?: string }>
 }) {
+  requireAmaAdminEnabled()
   if (await isOwnerAuthenticated()) redirect('/admin')
   const state = await searchParams
   const sent = state.sent === '1'
