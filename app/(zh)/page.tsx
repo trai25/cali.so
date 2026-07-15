@@ -4,7 +4,9 @@ import { HomePageView } from '../_views/home-page'
 import { localeMetadata } from '~/lib/locale-metadata'
 import { seo } from '~/lib/seo'
 
-export const dynamic = 'force-dynamic'
+// The active photo publication is request-time data and must not block
+// navigation validation.
+export const instant = false
 
 export const metadata: Metadata = {
   ...localeMetadata({
