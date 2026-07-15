@@ -2,6 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 import { T } from '~/lib/i18n'
+import { localePath, type Locale } from '~/lib/locale-route'
 import { photos } from '~/lib/photos'
 
 // The three doorways, greeting visitors who never look at the dock:
@@ -10,13 +11,19 @@ import { photos } from '~/lib/photos'
 export function NavCards({
   postCount,
   projectCount,
+  locale = 'zh',
 }: {
   postCount: number
   projectCount: number
+  locale?: Locale
 }) {
   return (
     <div className="nav-cards">
-      <Link href="/blog" className="nav-card enter-swing" style={{ '--enter-delay': '140ms' } as React.CSSProperties}>
+      <Link
+        href={localePath(locale, '/blog')}
+        className="nav-card enter-swing"
+        style={{ '--enter-delay': '140ms' } as React.CSSProperties}
+      >
         <span className="nc-vignette nc-sheets" aria-hidden>
           <span />
           <span />
@@ -30,7 +37,11 @@ export function NavCards({
         </span>
       </Link>
 
-      <Link href="/photos" className="nav-card enter-swing" style={{ '--enter-delay': '190ms' } as React.CSSProperties}>
+      <Link
+        href={localePath(locale, '/photos')}
+        className="nav-card enter-swing"
+        style={{ '--enter-delay': '190ms' } as React.CSSProperties}
+      >
         <span className="nc-vignette nc-polaroids" aria-hidden>
           {photos.slice(0, 3).map((photo, i) => (
             <span key={photo.src} className="nc-polaroid" style={{ '--i': i } as React.CSSProperties}>
@@ -46,7 +57,11 @@ export function NavCards({
         </span>
       </Link>
 
-      <Link href="/projects" className="nav-card enter-swing" style={{ '--enter-delay': '240ms' } as React.CSSProperties}>
+      <Link
+        href={localePath(locale, '/projects')}
+        className="nav-card enter-swing"
+        style={{ '--enter-delay': '240ms' } as React.CSSProperties}
+      >
         <span className="nc-vignette" aria-hidden>
           <span className="nc-project-icon">
             <svg className="nc-construction-guides" viewBox="0 0 52 52" preserveAspectRatio="xMidYMid meet">

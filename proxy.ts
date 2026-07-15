@@ -3,9 +3,37 @@ import { randomUUID } from 'node:crypto'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
+import {
+  isArchivedNewsletterId,
+  isPublishedPostSlug,
+} from './lib/public-content-routes'
 import { adminContentSecurityPolicy } from './lib/security/headers'
 
+function missingPublicContent(pathname: string) {
+  const postMatch = pathname.match(/^\/(?:en\/)?blog\/([^/]+)\/?$/)
+  if (postMatch) return !isPublishedPostSlug(postMatch[1])
+
+  const newsletterMatch = pathname.match(
+    /^\/(?:en\/)?newsletters\/([^/]+)\/?$/,
+  )
+  return newsletterMatch
+    ? !isArchivedNewsletterId(newsletterMatch[1])
+    : false
+}
+
 export function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  if (missingPublicContent(pathname)) {
+    const notFoundUrl = request.nextUrl.clone()
+    notFoundUrl.pathname = '/_not-found'
+    return NextResponse.rewrite(notFoundUrl, { status: 404 })
+  }
+
+  if (pathname !== '/admin' && !pathname.startsWith('/admin/')) {
+    return NextResponse.next()
+  }
+
   const nonce = Buffer.from(randomUUID()).toString('base64')
   const policy = adminContentSecurityPolicy(nonce)
   const requestHeaders = new Headers(request.headers)
@@ -18,5 +46,11 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: '/admin/:path*',
+  matcher: [
+    '/admin/:path*',
+    '/blog/:slug',
+    '/en/blog/:slug',
+    '/newsletters/:id',
+    '/en/newsletters/:id',
+  ],
 }
