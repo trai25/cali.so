@@ -55,8 +55,8 @@ function PhotoDetails({ photo }: { photo: PublishedPhoto }) {
           <dt className="sr-only">
             <T zh="相机参数" en="Camera details" />
           </dt>
-          {camera.map((detail) => (
-            <dd key={detail}>{detail}</dd>
+          {camera.map((detail, index) => (
+            <dd key={`${index}:${detail}`}>{detail}</dd>
           ))}
         </dl>
       )}

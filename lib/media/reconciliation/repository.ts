@@ -43,11 +43,15 @@ export function createMediaReconciliationRepository(
               isNull(mediaAssets.id),
               lt(mediaUploadIntents.createdAt, input.createdBefore),
             ),
-            inArray(mediaAssets.processingState, [
-              'original_verified',
-              'retryable_failure',
-            ]),
             and(
+              eq(mediaAssets.lifecycle, 'active'),
+              inArray(mediaAssets.processingState, [
+                'original_verified',
+                'retryable_failure',
+              ]),
+            ),
+            and(
+              eq(mediaAssets.lifecycle, 'active'),
               eq(mediaAssets.processingState, 'processing'),
               lt(mediaAssets.updatedAt, input.processingStaleBefore),
             ),
@@ -139,6 +143,7 @@ export function createMediaReconciliationRepository(
         .where(
           and(
             eq(mediaAssets.id, input.mediaAssetId),
+            eq(mediaAssets.lifecycle, 'active'),
             inArray(mediaAssets.processingState, [
               'original_verified',
               'processing',
