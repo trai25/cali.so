@@ -1,0 +1,358 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "kind": "page",
+      "source": "/",
+      "probes": ["/"],
+      "status": 200,
+      "contains": "Cali Castle"
+    },
+    {
+      "kind": "page",
+      "source": "/en",
+      "probes": ["/en"],
+      "status": 200,
+      "contains": "Cali Castle"
+    },
+    {
+      "kind": "page",
+      "source": "/blog",
+      "probes": ["/blog"],
+      "status": 200,
+      "contains": "<main"
+    },
+    {
+      "kind": "page",
+      "source": "/en/blog",
+      "probes": ["/en/blog"],
+      "status": 200,
+      "contains": "<main"
+    },
+    {
+      "kind": "page",
+      "source": "/projects",
+      "probes": ["/projects"],
+      "status": 200,
+      "contains": "<main"
+    },
+    {
+      "kind": "page",
+      "source": "/en/projects",
+      "probes": ["/en/projects"],
+      "status": 200,
+      "contains": "<main"
+    },
+    {
+      "kind": "page",
+      "source": "/photos",
+      "probes": ["/photos"],
+      "status": 200,
+      "contains": "<main"
+    },
+    {
+      "kind": "page",
+      "source": "/en/photos",
+      "probes": ["/en/photos"],
+      "status": 200,
+      "contains": "<main"
+    },
+
+    {
+      "kind": "page",
+      "source": "/blog/2023-year-in-review",
+      "probes": ["/blog/2023-year-in-review"],
+      "status": 200,
+      "contains": "<article"
+    },
+    {
+      "kind": "page",
+      "source": "/en/blog/2023-year-in-review",
+      "probes": ["/en/blog/2023-year-in-review"],
+      "status": 200,
+      "contains": "<article"
+    },
+    {
+      "kind": "page",
+      "source": "/blog/8-laws-to-a-successful-engineer",
+      "probes": ["/blog/8-laws-to-a-successful-engineer"],
+      "status": 200,
+      "contains": "<article"
+    },
+    {
+      "kind": "page",
+      "source": "/en/blog/8-laws-to-a-successful-engineer",
+      "probes": ["/en/blog/8-laws-to-a-successful-engineer"],
+      "status": 200,
+      "contains": "<article"
+    },
+    {
+      "kind": "page",
+      "source": "/blog/an-ode-to-hao-chen",
+      "probes": ["/blog/an-ode-to-hao-chen"],
+      "status": 200,
+      "contains": "<article"
+    },
+    {
+      "kind": "page",
+      "source": "/en/blog/an-ode-to-hao-chen",
+      "probes": ["/en/blog/an-ode-to-hao-chen"],
+      "status": 200,
+      "contains": "<article"
+    },
+    {
+      "kind": "page",
+      "source": "/blog/do-buttons-need-pointer-cursors",
+      "probes": ["/blog/do-buttons-need-pointer-cursors"],
+      "status": 200,
+      "contains": "<article"
+    },
+    {
+      "kind": "page",
+      "source": "/en/blog/do-buttons-need-pointer-cursors",
+      "probes": ["/en/blog/do-buttons-need-pointer-cursors"],
+      "status": 200,
+      "contains": "<article"
+    },
+    {
+      "kind": "page",
+      "source": "/blog/guide-for-cloning-my-site",
+      "probes": ["/blog/guide-for-cloning-my-site"],
+      "status": 200,
+      "contains": "<article"
+    },
+    {
+      "kind": "page",
+      "source": "/en/blog/guide-for-cloning-my-site",
+      "probes": ["/en/blog/guide-for-cloning-my-site"],
+      "status": 200,
+      "contains": "<article"
+    },
+    {
+      "kind": "page",
+      "source": "/blog/how-to-add-rss-to-your-nextjs-app-router",
+      "probes": ["/blog/how-to-add-rss-to-your-nextjs-app-router"],
+      "status": 200,
+      "contains": "<article"
+    },
+    {
+      "kind": "page",
+      "source": "/en/blog/how-to-add-rss-to-your-nextjs-app-router",
+      "probes": ["/en/blog/how-to-add-rss-to-your-nextjs-app-router"],
+      "status": 200,
+      "contains": "<article"
+    },
+    {
+      "kind": "page",
+      "source": "/blog/how-to-protect-your-site-with-upstash",
+      "probes": ["/blog/how-to-protect-your-site-with-upstash"],
+      "status": 200,
+      "contains": "<article"
+    },
+    {
+      "kind": "page",
+      "source": "/en/blog/how-to-protect-your-site-with-upstash",
+      "probes": ["/en/blog/how-to-protect-your-site-with-upstash"],
+      "status": 200,
+      "contains": "<article"
+    },
+    {
+      "kind": "page",
+      "source": "/blog/im-gonna-be-a-father",
+      "probes": ["/blog/im-gonna-be-a-father"],
+      "status": 200,
+      "contains": "<article"
+    },
+    {
+      "kind": "page",
+      "source": "/en/blog/im-gonna-be-a-father",
+      "probes": ["/en/blog/im-gonna-be-a-father"],
+      "status": 200,
+      "contains": "<article"
+    },
+    {
+      "kind": "page",
+      "source": "/blog/react-or-vue-my-take-on-web-dev",
+      "probes": ["/blog/react-or-vue-my-take-on-web-dev"],
+      "status": 200,
+      "contains": "<article"
+    },
+    {
+      "kind": "page",
+      "source": "/en/blog/react-or-vue-my-take-on-web-dev",
+      "probes": ["/en/blog/react-or-vue-my-take-on-web-dev"],
+      "status": 200,
+      "contains": "<article"
+    },
+
+    {
+      "kind": "feed",
+      "source": "/feed.xml",
+      "probes": ["/feed.xml"],
+      "status": 200,
+      "contains": "<rss"
+    },
+    {
+      "kind": "feed",
+      "source": "/feed.en.xml",
+      "probes": ["/feed.en.xml"],
+      "status": 200,
+      "contains": "<rss"
+    },
+    {
+      "kind": "rewrite",
+      "source": "/feed",
+      "destination": "/feed.xml",
+      "probes": ["/feed"],
+      "status": 200,
+      "contains": "<rss"
+    },
+    {
+      "kind": "rewrite",
+      "source": "/rss",
+      "destination": "/feed.xml",
+      "probes": ["/rss"],
+      "status": 200,
+      "contains": "<rss"
+    },
+    {
+      "kind": "rewrite",
+      "source": "/rss.xml",
+      "destination": "/feed.xml",
+      "probes": ["/rss.xml"],
+      "status": 200,
+      "contains": "<rss"
+    },
+
+    {
+      "kind": "page",
+      "source": "/newsletters/1",
+      "probes": ["/newsletters/1"],
+      "status": 200,
+      "contains": "ARCHIVE / 001"
+    },
+    {
+      "kind": "page",
+      "source": "/en/newsletters/1",
+      "probes": ["/en/newsletters/1"],
+      "status": 200,
+      "contains": "ARCHIVE / 001"
+    },
+    {
+      "kind": "page",
+      "source": "/confirm/:token",
+      "probes": ["/confirm/manifest-secret-must-not-render"],
+      "status": 200,
+      "contains": "CONFIRMATION_RETIRED",
+      "forbids": ["manifest-secret-must-not-render"]
+    },
+    {
+      "kind": "page",
+      "source": "/en/confirm/:token",
+      "probes": ["/en/confirm/manifest-secret-must-not-render-en"],
+      "status": 200,
+      "contains": "CONFIRMATION_RETIRED",
+      "forbids": ["manifest-secret-must-not-render-en"]
+    },
+
+    {
+      "kind": "redirect",
+      "source": "/about",
+      "destination": "/",
+      "probes": ["/about"],
+      "status": 308
+    },
+    {
+      "kind": "redirect",
+      "source": "/ama",
+      "destination": "/",
+      "probes": ["/ama"],
+      "status": 308
+    },
+    {
+      "kind": "redirect",
+      "source": "/guestbook",
+      "destination": "/",
+      "probes": ["/guestbook"],
+      "status": 308
+    },
+    {
+      "kind": "redirect",
+      "source": "/blocked",
+      "destination": "/",
+      "probes": ["/blocked"],
+      "status": 308
+    },
+    {
+      "kind": "redirect",
+      "source": "/sign-in/:path*",
+      "destination": "/",
+      "probes": ["/sign-in", "/sign-in/legacy"],
+      "status": 308
+    },
+    {
+      "kind": "redirect",
+      "source": "/sign-up/:path*",
+      "destination": "/",
+      "probes": ["/sign-up", "/sign-up/legacy"],
+      "status": 308
+    },
+    {
+      "kind": "redirect",
+      "source": "/studio/:path*",
+      "destination": "/",
+      "probes": ["/studio", "/studio/legacy"],
+      "status": 308
+    },
+
+    {
+      "kind": "redirect",
+      "source": "/twitter",
+      "destination": "https://x.com/calicastle",
+      "probes": ["/twitter"],
+      "status": 308
+    },
+    {
+      "kind": "redirect",
+      "source": "/x",
+      "destination": "https://x.com/calicastle",
+      "probes": ["/x"],
+      "status": 308
+    },
+    {
+      "kind": "redirect",
+      "source": "/youtube",
+      "destination": "https://youtube.com/@calicastle",
+      "probes": ["/youtube"],
+      "status": 308
+    },
+    {
+      "kind": "redirect",
+      "source": "/tg",
+      "destination": "https://t.me/cali_so",
+      "probes": ["/tg"],
+      "status": 308
+    },
+    {
+      "kind": "redirect",
+      "source": "/linkedin",
+      "destination": "https://www.linkedin.com/in/calicastle/",
+      "probes": ["/linkedin"],
+      "status": 308
+    },
+    {
+      "kind": "redirect",
+      "source": "/github",
+      "destination": "https://github.com/CaliCastle",
+      "probes": ["/github"],
+      "status": 308
+    },
+    {
+      "kind": "redirect",
+      "source": "/bilibili",
+      "destination": "https://space.bilibili.com/8350251",
+      "probes": ["/bilibili"],
+      "status": 308
+    }
+  ]
+}

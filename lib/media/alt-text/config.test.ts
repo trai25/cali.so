@@ -77,10 +77,23 @@ describe('Media Library Alt Text environment', () => {
         AI_GATEWAY_API_KEY: 'static-key',
       }),
     ).toThrow('AI_GATEWAY_API_KEY')
+    expect(() =>
+      parseMediaAltTextEnv({
+        NODE_ENV: 'production',
+        AI_GATEWAY_API_KEY: 'static-key',
+      }),
+    ).toThrow('AI_GATEWAY_API_KEY')
     expect(
       parseMediaAltTextEnv({
+        NODE_ENV: 'development',
         VERCEL_ENV: 'development',
         AI_GATEWAY_API_KEY: 'local-key',
+      }).enabled,
+    ).toBe(false)
+    expect(
+      parseMediaAltTextEnv({
+        NODE_ENV: 'test',
+        AI_GATEWAY_API_KEY: 'ci-key',
       }).enabled,
     ).toBe(false)
   })

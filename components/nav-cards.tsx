@@ -2,6 +2,7 @@ import Link from 'next/link'
 
 import { T } from '~/lib/i18n'
 import type { getHomepagePhotoPreview } from '~/lib/media/photo-selection/repository'
+import { localePath, type Locale } from '~/lib/locale-route'
 
 // The three doorways, greeting visitors who never look at the dock:
 // analog vignettes on soft neumorphic cards — manuscript pages for
@@ -10,14 +11,20 @@ export function NavCards({
   postCount,
   projectCount,
   photoPreview,
+  locale = 'zh',
 }: {
   postCount: number
   projectCount: number
   photoPreview: ReturnType<typeof getHomepagePhotoPreview>
+  locale?: Locale
 }) {
   return (
     <div className="nav-cards">
-      <Link href="/blog" className="nav-card enter-swing" style={{ '--enter-delay': '140ms' } as React.CSSProperties}>
+      <Link
+        href={localePath(locale, '/blog')}
+        className="nav-card enter-swing"
+        style={{ '--enter-delay': '140ms' } as React.CSSProperties}
+      >
         <span className="nc-vignette nc-sheets" aria-hidden>
           <span />
           <span />
@@ -31,7 +38,11 @@ export function NavCards({
         </span>
       </Link>
 
-      <Link href="/photos" className="nav-card enter-swing" style={{ '--enter-delay': '190ms' } as React.CSSProperties}>
+      <Link
+        href={localePath(locale, '/photos')}
+        className="nav-card enter-swing"
+        style={{ '--enter-delay': '190ms' } as React.CSSProperties}
+      >
         <span className="nc-vignette nc-polaroids" aria-hidden>
           {photoPreview?.items.map((photo, i) => {
             const rendition = photo.renditions[0]!
@@ -68,7 +79,11 @@ export function NavCards({
         </span>
       </Link>
 
-      <Link href="/projects" className="nav-card enter-swing" style={{ '--enter-delay': '240ms' } as React.CSSProperties}>
+      <Link
+        href={localePath(locale, '/projects')}
+        className="nav-card enter-swing"
+        style={{ '--enter-delay': '240ms' } as React.CSSProperties}
+      >
         <span className="nc-vignette" aria-hidden>
           <span className="nc-project-icon">
             <svg className="nc-construction-guides" viewBox="0 0 52 52" preserveAspectRatio="xMidYMid meet">

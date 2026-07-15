@@ -366,6 +366,35 @@ describe('Media admin HTTP contract', () => {
     )
   })
 
+  it('audits a committed publication when only cache invalidation fails', async () => {
+    const f = fixture()
+    const handler = createPhotoSelectionPublishHandler({
+      authenticator: f.authenticator,
+      security: f.security,
+      selection: {
+        async publish() {
+          throw new PhotoSelectionError('cache_invalidation_failed', {
+            publishedSelectionId: '11111111-1111-4111-8111-111111111111',
+          })
+        },
+      },
+    })
+
+    const response = await handler(
+      request('/api/admin/media/photo-selection/publish', {
+        body: JSON.stringify({
+          expectedDraftRevision: 4,
+          idempotencyKey: 'publish_01',
+        }),
+      }),
+    )
+
+    expect(response.status).toBe(503)
+    expect(f.auditEvents.at(-1)?.event).toBe(
+      'media_photo_selection.published',
+    )
+  })
+
   it('rejects unauthenticated and cross-site Photo Selection writes', async () => {
     const f = fixture()
     const handler = createPhotoSelectionDraftHandler({
