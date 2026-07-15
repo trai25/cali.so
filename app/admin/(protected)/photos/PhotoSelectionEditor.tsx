@@ -433,7 +433,7 @@ export function PhotoSelectionEditor({
                 return (
                   <li key={mediaAssetId} className="relative aspect-square overflow-hidden rounded-md bg-surface-1">
                     {asset && <PreviewImage asset={asset} cropped />}
-                    <span className="absolute left-1.5 top-1.5 rounded-sm bg-background/85 px-1.5 py-0.5 text-[10px] tabular-nums">
+                    <span className="absolute left-1.5 top-1.5 rounded-sm bg-background/85 px-1.5 py-0.5 text-sm tabular-nums">
                       {index + 1}
                     </span>
                   </li>

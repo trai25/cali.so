@@ -26,7 +26,7 @@ type QueueStatus =
 type QueueItem = {
   id: string
   file: File
-  idempotencyKey: string
+  idempotencyKey?: string
   uploadIntentId?: string
   checksumSha256?: string
   originalUploaded?: boolean
@@ -57,6 +57,43 @@ async function checksum(file: File) {
   return Array.from(new Uint8Array(digest), (byte) =>
     byte.toString(16).padStart(2, '0'),
   ).join('')
+}
+
+function uploadReplayStorageKey(input: {
+  checksumSha256: string
+  byteSize: number
+  contentType: string
+}) {
+  return `cali:media-upload:v1:${input.checksumSha256}:${input.byteSize}:${input.contentType}`
+}
+
+function durableUploadIdempotencyKey(input: {
+  checksumSha256: string
+  byteSize: number
+  contentType: string
+}) {
+  const storageKey = uploadReplayStorageKey(input)
+  try {
+    const existing = localStorage.getItem(storageKey)
+    if (existing) return existing
+    const created = crypto.randomUUID()
+    localStorage.setItem(storageKey, created)
+    return created
+  } catch {
+    return crypto.randomUUID()
+  }
+}
+
+function clearDurableUploadIdempotencyKey(input: {
+  checksumSha256: string
+  byteSize: number
+  contentType: string
+}) {
+  try {
+    localStorage.removeItem(uploadReplayStorageKey(input))
+  } catch {
+    // Storage access is optional; server-side idempotency still protects a retry.
+  }
 }
 
 async function responseJson(response: Response) {
@@ -109,7 +146,7 @@ function UploadQueue({
         onDragOver={(event) => event.preventDefault()}
         onDragLeave={() => setDragging(false)}
         onDrop={drop}
-        className={`rounded-lg border border-dashed px-5 py-5 transition-colors ${
+        className={`rounded-lg border border-dashed px-5 py-5 ${
           dragging ? 'border-foreground bg-surface-1' : 'border-border'
         }`}
       >
@@ -845,14 +882,20 @@ export function MediaLibrary({
     try {
       let uploadIntentId = item.uploadIntentId
       let sha256 = item.checksumSha256
+      let idempotencyKey = item.idempotencyKey
       if (!uploadIntentId) {
         patchQueue(item.id, { status: 'hashing' })
         sha256 ??= await checksum(item.file)
+        idempotencyKey ??= durableUploadIdempotencyKey({
+          checksumSha256: sha256,
+          byteSize: item.file.size,
+          contentType,
+        })
         const intentResponse = await fetch('/api/admin/media/upload-intents', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
-            idempotencyKey: item.idempotencyKey,
+            idempotencyKey,
             contentType,
             byteSize: item.file.size,
             checksumSha256: sha256,
@@ -862,6 +905,7 @@ export function MediaLibrary({
         uploadIntentId = (intentBody.uploadIntent as { id: string }).id
         patchQueue(item.id, {
           checksumSha256: sha256,
+          idempotencyKey,
           uploadIntentId,
           status: 'uploading',
         })
@@ -902,6 +946,11 @@ export function MediaLibrary({
       }
       if (mediaAsset.processingState !== 'ready') throw new Error('processing_failed')
       patchQueue(item.id, { status: 'ready' })
+      clearDurableUploadIdempotencyKey({
+        checksumSha256: sha256,
+        byteSize: item.file.size,
+        contentType,
+      })
       await fetch(`/api/admin/media/assets/${mediaAsset.id}/alt-text`, {
         method: 'POST',
       }).catch(() => null)
@@ -921,7 +970,6 @@ export function MediaLibrary({
       (file): QueueItem => ({
         id: crypto.randomUUID(),
         file,
-        idempotencyKey: crypto.randomUUID(),
         status: 'hashing',
       }),
     )

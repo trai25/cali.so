@@ -287,6 +287,44 @@ describe('Photo Selection repository', () => {
     }
   })
 
+  it('publishes exactly two selected Media Assets without changing an unrelated asset', async () => {
+    const firstSelected = await createAsset('owner_01')
+    const secondSelected = await createAsset('owner_01')
+    const unrelated = await createAsset('owner_01')
+    await repository.saveDraft({
+      ownerUserId: 'owner_01',
+      expectedRevision: 0,
+      mediaAssetIds: [firstSelected, secondSelected],
+      updatedAt: new Date('2026-07-15T08:00:00.000Z'),
+    })
+
+    await expect(
+      repository.publishDraft({
+        ownerUserId: 'owner_01',
+        expectedDraftRevision: 1,
+        idempotencyKey: 'photo_cutover',
+        publishedAt: new Date('2026-07-15T09:00:00.000Z'),
+      }),
+    ).resolves.toMatchObject({ status: 'published', itemCount: 2 })
+
+    const selection = await publicRepository.getPublishedSelection()
+    expect(selection?.count).toBe(2)
+    expect(selection?.items[0]?.renditions[0]?.src).toContain(
+      `/renditions/${firstSelected}/`,
+    )
+    expect(selection?.items[1]?.renditions[0]?.src).toContain(
+      `/renditions/${secondSelected}/`,
+    )
+    await expect(
+      client.query(
+        `SELECT lifecycle, processing_state FROM media_assets WHERE id = $1`,
+        [unrelated],
+      ),
+    ).resolves.toMatchObject({
+      rows: [{ lifecycle: 'active', processing_state: 'ready' }],
+    })
+  })
+
   it('derives homepage previews from the first three items of the same revision', async () => {
     const assets = await Promise.all([
       createAsset('owner_01'),

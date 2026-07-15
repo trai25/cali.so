@@ -130,8 +130,8 @@ Working and verified (light/dark/mobile, production build green):
   light-mode halftone hero fixed to a positive print (midtone-inked —
   highlights stay open paper); socials expanded to **X/Twitter, Telegram,
   YouTube, GitHub**, all with hover cards (snapshots in
-  `content/social.json`); `/photos` masonry (2→3 cols, v1 hero collage
-  photos in `public/images/photos/`, lightbox + tilt) + nav; TOC gained
+  `content/social.json`); `/photos` masonry (2→3 cols, published Bunny
+  Renditions, localized metadata, lightbox + tilt) + nav; TOC gained
   the self-drawing squiggle marker, ghost title (±12px hysteresis,
   click-to-top), click-pinning until scroll settles, and page-extreme
   overrides. TOC hover-peek (temporary scroll + section bracket) noted as
