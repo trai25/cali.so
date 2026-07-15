@@ -16,8 +16,6 @@ import { getGitHub, getSocial } from '~/lib/social-live'
 import { getHomepagePhotoPreview } from '~/lib/media/photo-selection/repository'
 import { getPublishedPhotoSelection } from '~/lib/media/photo-selection/server'
 
-export const dynamic = 'force-dynamic'
-
 function SectionTitle({ children, delay }: { children: React.ReactNode; delay: number }) {
   return (
     <h2
