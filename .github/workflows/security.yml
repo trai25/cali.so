@@ -50,6 +50,9 @@ jobs:
       - name: Test media storage contract
         run: pnpm test:media:storage
 
+      - name: Test media catalog constraints
+        run: pnpm test:media:catalog
+
       - name: Test localization
         run: pnpm test:localization
 

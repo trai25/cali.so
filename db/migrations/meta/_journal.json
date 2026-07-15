@@ -29,6 +29,13 @@
       "when": 1784012013999,
       "tag": "0004_ama_google_oauth",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784086450712,
+      "tag": "0005_media_catalog",
+      "breakpoints": true
     }
   ]
 }
