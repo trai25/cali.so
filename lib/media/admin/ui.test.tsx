@@ -153,4 +153,57 @@ describe('Media Library UI contract', () => {
     expect(urls.filter((url) => url.endsWith('/original'))).toHaveLength(2)
     expect(urls.filter((url) => url.endsWith('/complete'))).toHaveLength(1)
   })
+
+  it('keeps a completed upload ready when the library refresh fails', async () => {
+    const digest = new Uint8Array(32).buffer
+    vi.stubGlobal('crypto', {
+      randomUUID: vi
+        .fn()
+        .mockReturnValueOnce('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+        .mockReturnValueOnce('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'),
+      subtle: { digest: vi.fn().mockResolvedValue(digest) },
+    })
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === '/api/admin/media/upload-intents') {
+        return Response.json({
+          uploadIntent: { id: '22222222-2222-4222-8222-222222222222' },
+        })
+      }
+      if (url.endsWith('/original')) return new Response(null, { status: 204 })
+      if (url.endsWith('/complete')) {
+        return Response.json({
+          mediaAsset: { id: activeAsset.id, processingState: 'ready' },
+        })
+      }
+      if (url.endsWith('/alt-text')) return Response.json({ suggestion: null })
+      if (url.includes('/api/admin/media/assets?view=')) {
+        return Response.json({ error: 'dependency_unavailable' }, { status: 503 })
+      }
+      throw new Error(`Unexpected request: ${url}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { container, getByText, queryByRole } = render(
+      <MediaLibrary initialActive={[]} initialArchived={[]} />,
+    )
+    const file = new File([new Uint8Array([1, 2, 3])], 'photo.jpg', {
+      type: 'image/jpeg',
+    })
+    if (!file.arrayBuffer) {
+      Object.defineProperty(file, 'arrayBuffer', {
+        value: async () => new Uint8Array([1, 2, 3]).buffer,
+      })
+    }
+    fireEvent.change(container.querySelector('input[type="file"]')!, {
+      target: { files: [file] },
+    })
+
+    await waitFor(() => expect(getByText('Ready for review')).toBeTruthy())
+    expect(queryByRole('button', { name: /Retry/ })).toBeNull()
+    expect(
+      fetchMock.mock.calls.filter(([input]) => String(input).endsWith('/complete')),
+    ).toHaveLength(1)
+  })
 })
