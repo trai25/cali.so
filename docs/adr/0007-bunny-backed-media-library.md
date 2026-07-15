@@ -2,12 +2,12 @@
 
 ## Status
 
-Proposed, post-launch
+Accepted
 
 ## Context
 
-After v3 launches, the site may need owner-managed photographs without storing
-large binaries in Neon or making a deployment the publication mechanism. Originals may contain
+The site needs owner-managed photographs without storing large binaries in
+Neon or making a deployment the publication mechanism. Originals may contain
 precise Capture Location and other embedded metadata, while public delivery
 needs immutable, optimized files. Bunny's S3-compatible API is still in public
 preview and lacks object versioning, lifecycle transitions, batch deletion,
@@ -15,8 +15,8 @@ standard object cache headers, and reliable ETags.
 
 ## Decision
 
-The proposed Media Library stores private Originals and public Renditions in
-separate existing Bunny Storage Zones. The Original zone has no public delivery surface.
+The Media Library stores private Originals and public Renditions in separate
+existing Bunny Storage Zones. The Original zone has no public delivery surface.
 The Rendition zone is delivered through Bunny CDN using immutable object keys.
 
 Neon is the catalog and publication source of truth. It owns stable Media Asset
@@ -41,10 +41,6 @@ the active snapshot.
 Owner-authenticated admin pages manage the catalog and its public selections.
 Git remains the source of truth for MDX and ordinary site content, so adopting
 the Media Library does not turn Bunny or Neon into a general-purpose CMS.
-
-This proposal is not a v3 launch dependency and does not describe shipped
-behavior. The launch continues to use static local media assets. Revisit the
-decision, provider capabilities, and security assumptions before implementation.
 
 ## Consequences
 

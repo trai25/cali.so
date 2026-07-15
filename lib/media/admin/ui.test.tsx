@@ -2,7 +2,7 @@
 
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { MediaLibrary } from '../../../app/admin/(protected)/media/MediaLibrary'
 import type { MediaAssetReviewRecord } from '../asset-review/service'
@@ -42,9 +42,31 @@ const activeAsset: MediaAssetReviewRecord = {
   },
 }
 
+beforeEach(() => {
+  const entries = new Map<string, string>()
+  vi.stubGlobal('localStorage', {
+    get length() {
+      return entries.size
+    },
+    clear() {
+      entries.clear()
+    },
+    getItem(key: string) {
+      return entries.get(key) ?? null
+    },
+    removeItem(key: string) {
+      entries.delete(key)
+    },
+    setItem(key: string, value: string) {
+      entries.set(key, value)
+    },
+  })
+})
+
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
+  localStorage.clear()
   vi.unstubAllGlobals()
   delete document.documentElement.dataset.locale
 })
@@ -96,34 +118,42 @@ describe('Media Library UI contract', () => {
     })
 
     let originalAttempts = 0
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
-      const url = String(input)
-      if (url === '/api/admin/media/upload-intents') {
-        return Response.json(
-          {
-            uploadIntent: {
-              id: '22222222-2222-4222-8222-222222222222',
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, _init?: RequestInit) => {
+        const url = String(input)
+        if (url === '/api/admin/media/upload-intents') {
+          return Response.json(
+            {
+              uploadIntent: {
+                id: '22222222-2222-4222-8222-222222222222',
+              },
             },
-          },
-          { status: 201 },
-        )
-      }
-      if (url.endsWith('/original')) {
-        originalAttempts += 1
-        return new Response(null, { status: originalAttempts === 1 ? 503 : 204 })
-      }
-      if (url.endsWith('/complete')) {
-        return Response.json({
-          mediaAsset: { id: activeAsset.id, processingState: 'ready' },
-        })
-      }
-      if (url.endsWith('/alt-text')) return Response.json({ suggestion: null })
-      if (url.endsWith('?view=active')) {
-        return Response.json({ assets: [activeAsset] })
-      }
-      if (url.endsWith('?view=archived')) return Response.json({ assets: [] })
-      throw new Error(`Unexpected request: ${url}`)
-    })
+            { status: 201 },
+          )
+        }
+        if (url.endsWith('/original')) {
+          originalAttempts += 1
+          return new Response(null, {
+            status: originalAttempts === 1 ? 503 : 204,
+          })
+        }
+        if (url.endsWith('/complete')) {
+          return Response.json({
+            mediaAsset: { id: activeAsset.id, processingState: 'ready' },
+          })
+        }
+        if (url.endsWith('/alt-text')) {
+          return Response.json({ suggestion: null })
+        }
+        if (url.endsWith('?view=active')) {
+          return Response.json({ assets: [activeAsset] })
+        }
+        if (url.endsWith('?view=archived')) {
+          return Response.json({ assets: [] })
+        }
+        throw new Error(`Unexpected request: ${url}`)
+      },
+    )
     vi.stubGlobal('fetch', fetchMock)
 
     const { container, getByRole } = render(
@@ -152,6 +182,64 @@ describe('Media Library UI contract', () => {
     expect(urls.filter((url) => url === '/api/admin/media/upload-intents')).toHaveLength(1)
     expect(urls.filter((url) => url.endsWith('/original'))).toHaveLength(2)
     expect(urls.filter((url) => url.endsWith('/complete'))).toHaveLength(1)
+    const intentBody = JSON.parse(
+      String(fetchMock.mock.calls.find(([input]) =>
+        String(input).endsWith('/upload-intents'),
+      )?.[1]?.body),
+    ) as { idempotencyKey: string }
+    expect(intentBody.idempotencyKey).toBe(
+      'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    )
+    expect(localStorage.length).toBe(0)
+  })
+
+  it('reuses an unfinished upload key after the admin remounts', async () => {
+    const digest = new Uint8Array(32).buffer
+    vi.stubGlobal('crypto', {
+      randomUUID: vi
+        .fn()
+        .mockReturnValueOnce('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+        .mockReturnValueOnce('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')
+        .mockReturnValueOnce('cccccccc-cccc-4ccc-8ccc-cccccccccccc'),
+      subtle: { digest: vi.fn().mockResolvedValue(digest) },
+    })
+    const intentBodies: Array<{ idempotencyKey: string }> = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        intentBodies.push(JSON.parse(String(init?.body)))
+        return Response.json({ error: 'dependency_unavailable' }, { status: 503 })
+      }),
+    )
+    const file = new File([new Uint8Array([1, 2, 3])], 'photo.jpg', {
+      type: 'image/jpeg',
+    })
+    if (!file.arrayBuffer) {
+      Object.defineProperty(file, 'arrayBuffer', {
+        value: async () => new Uint8Array([1, 2, 3]).buffer,
+      })
+    }
+
+    const first = render(
+      <MediaLibrary initialActive={[]} initialArchived={[]} />,
+    )
+    fireEvent.change(first.container.querySelector('input[type="file"]')!, {
+      target: { files: [file] },
+    })
+    await waitFor(() => expect(intentBodies).toHaveLength(1))
+    first.unmount()
+
+    const second = render(
+      <MediaLibrary initialActive={[]} initialArchived={[]} />,
+    )
+    fireEvent.change(second.container.querySelector('input[type="file"]')!, {
+      target: { files: [file] },
+    })
+    await waitFor(() => expect(intentBodies).toHaveLength(2))
+    expect(intentBodies.map(({ idempotencyKey }) => idempotencyKey)).toEqual([
+      'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    ])
   })
 
   it('keeps a completed upload ready when the library refresh fails', async () => {

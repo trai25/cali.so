@@ -28,6 +28,10 @@ type Dependencies = {
       processingStaleBefore: Date
       limit: number
     }): Promise<MediaRecoveryCandidate[]>
+    markRecoveryAttempted(input: {
+      uploadIntentId: string
+      attemptedAt: Date
+    }): Promise<void>
     deleteAbandonedUploadIntent(input: {
       uploadIntentId: string
       expiredBefore: Date
@@ -35,6 +39,10 @@ type Dependencies = {
     listReadyWithoutAltTextSuggestion(limit: number): Promise<
       Array<{ ownerUserId: string; mediaAssetId: string }>
     >
+    markAltTextSuggestionAttempted(input: {
+      mediaAssetId: string
+      attemptedAt: Date
+    }): Promise<void>
     findOwnedRecoverableAsset(input: {
       ownerUserId: string
       mediaAssetId: string
@@ -67,6 +75,10 @@ export function createMediaReconciliationService({
 }: Dependencies) {
   async function generateAltText(ownerUserId: string, mediaAssetId: string) {
     if (!altText) return false
+    await repository.markAltTextSuggestionAttempted({
+      mediaAssetId,
+      attemptedAt: clock.now(),
+    })
     await altText.generateSuggestion({ ownerUserId, mediaAssetId })
     return true
   }
@@ -94,6 +106,10 @@ export function createMediaReconciliationService({
 
       for (const candidate of candidates) {
         try {
+          await repository.markRecoveryAttempted({
+            uploadIntentId: candidate.uploadIntentId,
+            attemptedAt: now,
+          })
           if (!candidate.mediaAssetId && candidate.expiresAt < now) {
             // Bunny deletion treats a missing key as success. Delete storage
             // first so a provider failure leaves the durable intent available
@@ -182,7 +198,7 @@ export function createMediaReconciliationService({
           try {
             await generateAltText(input.ownerUserId, asset.id)
           } catch {
-            // A provider failure must not make successful image recovery fail.
+            // An attempt-marker or AI failure must not undo image recovery.
           }
         }
         return asset

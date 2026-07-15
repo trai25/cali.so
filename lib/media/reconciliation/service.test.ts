@@ -42,12 +42,14 @@ function fixture() {
     listRecoveryCandidates: vi.fn(
       async (): Promise<MediaRecoveryCandidate[]> => [],
     ),
+    markRecoveryAttempted: vi.fn(async () => {}),
     deleteAbandonedUploadIntent: vi.fn(async () => true),
     listReadyWithoutAltTextSuggestion: vi.fn(
       async (): Promise<
         Array<{ ownerUserId: string; mediaAssetId: string }>
       > => [],
     ),
+    markAltTextSuggestionAttempted: vi.fn(async () => {}),
     findOwnedRecoverableAsset: vi.fn(
       async (): Promise<{ uploadIntentId: string } | null> => ({
         uploadIntentId,
@@ -100,6 +102,14 @@ describe('Media reconciliation service', () => {
       ownerUserId: 'owner_01',
       uploadIntentId,
     })
+    expect(f.repository.markRecoveryAttempted).toHaveBeenCalledWith({
+      uploadIntentId,
+      attemptedAt: now,
+    })
+    expect(f.repository.markAltTextSuggestionAttempted).toHaveBeenCalledWith({
+      mediaAssetId,
+      attemptedAt: now,
+    })
     expect(f.altText.generateSuggestion).toHaveBeenCalledTimes(1)
   })
 
@@ -122,6 +132,10 @@ describe('Media reconciliation service', () => {
     expect(f.repository.deleteAbandonedUploadIntent).toHaveBeenCalledWith({
       uploadIntentId,
       expiredBefore: now,
+    })
+    expect(f.repository.markRecoveryAttempted).toHaveBeenCalledWith({
+      uploadIntentId,
+      attemptedAt: now,
     })
     expect(f.ingestion.completeUploadIntent).not.toHaveBeenCalled()
   })

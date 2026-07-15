@@ -42,8 +42,9 @@ Current as of July 2026.
 - Security baseline controls from PR #97 remain mandatory: CSP and security
   headers, same-origin mutation policy, rate limits, kill switches,
   privacy-safe audit events, isolated credentials, and security automation.
-- The Bunny-backed Media Library in ADR-0007 is proposed post-launch work.
-  Static local media remains the v3 launch implementation.
+- The Bunny-backed Media Library in ADR-0007 owns the curated photo workflow.
+  Private Originals stay server-only, while `/photos` and homepage previews
+  consume the active Published Photo Selection from Bunny Renditions.
 
 ## Launch gates
 
@@ -120,7 +121,7 @@ The Vercel runtime receives only the CRUD-only `DATABASE_URL`. Never put
 - Complete the Clerk-based admin authentication and recovery boundary in #93,
   then resume the AMA product slices (#82 through #87) behind their security
   and privacy gates.
-- Revisit the Bunny-backed Media Library proposal in ADR-0007. It is not a v3
-  launch dependency.
+- Revisit Bunny S3 preview constraints and provider capabilities before
+  expanding the Media Library beyond the curated photo workflow.
 - Re-enable private capabilities only after their provider, retention,
   incident-response, and hosted-control checks are complete.

@@ -57,8 +57,21 @@ export function createMediaReconciliationRepository(
             ),
           ),
         )
-        .orderBy(asc(mediaUploadIntents.createdAt))
+        .orderBy(
+          asc(mediaUploadIntents.updatedAt),
+          asc(mediaUploadIntents.createdAt),
+        )
         .limit(input.limit)
+    },
+
+    async markRecoveryAttempted(input: {
+      uploadIntentId: string
+      attemptedAt: Date
+    }) {
+      await database()
+        .update(mediaUploadIntents)
+        .set({ updatedAt: input.attemptedAt })
+        .where(eq(mediaUploadIntents.id, input.uploadIntentId))
     },
 
     async deleteAbandonedUploadIntent(input: {
@@ -99,8 +112,18 @@ export function createMediaReconciliationRepository(
             isNull(mediaAssets.altTextSuggestedAt),
           ),
         )
-        .orderBy(asc(mediaAssets.createdAt))
+        .orderBy(asc(mediaAssets.updatedAt), asc(mediaAssets.createdAt))
         .limit(limit)
+    },
+
+    async markAltTextSuggestionAttempted(input: {
+      mediaAssetId: string
+      attemptedAt: Date
+    }) {
+      await database()
+        .update(mediaAssets)
+        .set({ updatedAt: input.attemptedAt })
+        .where(eq(mediaAssets.id, input.mediaAssetId))
     },
 
     async findOwnedRecoverableAsset(input: {
