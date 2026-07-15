@@ -62,6 +62,9 @@ jobs:
       - name: Test media ingestion workflow
         run: pnpm test:media:ingestion
 
+      - name: Test media Alt Text Suggestions
+        run: pnpm test:media:alt-text
+
       - name: Test localization
         run: pnpm test:localization
 
