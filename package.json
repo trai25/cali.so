@@ -14,6 +14,7 @@
     "test:security": "vitest run lib/security",
     "test:localization": "node --test scripts/localization.test.mjs",
     "test:media:catalog": "vitest run lib/media/catalog",
+    "test:media:geocoding": "vitest run lib/media/geocoding",
     "test:media:alt-text": "vitest run lib/media/alt-text",
     "test:media:admin": "vitest run lib/media/admin",
     "test:media:asset-review": "vitest run lib/media/asset-review",

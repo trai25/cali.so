@@ -8,6 +8,7 @@ import {
   MediaIngestionError,
   type OriginalContentType,
 } from '../ingestion/service'
+import { MediaGeocodingError } from '../geocoding/service'
 import { MediaPurgeError } from '../purge/service'
 import { PhotoSelectionError } from '../photo-selection/service'
 import { storeOriginalFromSameOriginRequest } from '../storage/upload'
@@ -51,6 +52,7 @@ function errorResponse(error: unknown) {
   const code =
     error instanceof MediaAssetReviewError ||
     error instanceof MediaIngestionError ||
+    error instanceof MediaGeocodingError ||
     error instanceof MediaAltTextError ||
     error instanceof MediaPurgeError ||
     error instanceof PhotoSelectionError
@@ -301,6 +303,35 @@ export function createMediaAltTextHandler(
         mediaAssetId,
       })
       audit(dependencies, request, 'media_alt_text.requested')
+      return json(200, { suggestion })
+    } catch (error) {
+      return errorResponse(error)
+    }
+  }
+}
+
+export function createMediaLocationLabelHandler(
+  dependencies: BaseDependencies & {
+    geocoding: {
+      suggestLocationLabel(input: {
+        ownerUserId: string
+        mediaAssetId: string
+      }): Promise<unknown>
+    } | null
+  },
+) {
+  return async function POST(request: Request, mediaAssetId: string) {
+    const access = await authenticate(dependencies, request, true)
+    if ('response' in access) return access.response
+    if (!dependencies.geocoding) {
+      return json(503, { error: 'feature_disabled' })
+    }
+    try {
+      const suggestion = await dependencies.geocoding.suggestLocationLabel({
+        ownerUserId: access.principal.id,
+        mediaAssetId,
+      })
+      audit(dependencies, request, 'media_location_label.requested')
       return json(200, { suggestion })
     } catch (error) {
       return errorResponse(error)
