@@ -1,5 +1,5 @@
 // The personal registry — the one file to edit when life moves on.
-// Sources: v1 site resume data + posts; see docs/handoff.md.
+// Sources: legacy site resume data + posts; see docs/handoff.md.
 
 export interface Experience {
   company: string

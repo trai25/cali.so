@@ -5,6 +5,8 @@ import { DitherVeil } from '~/components/dither-veil'
 import type { Post } from '~/lib/content'
 import { formatMonthDay, formatShortDate } from '~/lib/date'
 import { LocalDate, T } from '~/lib/i18n'
+import { localePath, type Locale } from '~/lib/locale-route'
+import { postViewTransitionName } from '~/lib/view-transition-name'
 
 // The compact post row: dithered print thumb · title · dotted leader · date.
 // Mobile titles may use two lines; thumb and title stay shared morph elements.
@@ -12,21 +14,24 @@ export function PostRow({
   post,
   headingLevel = 'h2',
   dateStyle = 'full',
+  locale = 'zh',
 }: {
   post: Post
   headingLevel?: 'h2' | 'h3'
   dateStyle?: 'full' | 'month-day' | 'short'
+  locale?: Locale
 }) {
   const Heading = headingLevel
+  const safeSlug = encodeURIComponent(post.slug)
   return (
-    <Link href={`/blog/${post.slug}`} className="group blog-row hairline-top">
+    <Link href={localePath(locale, `/blog/${safeSlug}`)} className="group blog-row hairline-top">
       <span className="print-pile" aria-hidden>
         <span className="print-pile-sheet" />
         <span className="print-pile-sheet" />
         {post.cover ? (
           <span
             className="print-thumb"
-            style={{ viewTransitionName: `cover-${post.slug}` } as React.CSSProperties}
+            style={{ viewTransitionName: postViewTransitionName('cover', post.slug) } as React.CSSProperties}
           >
             <Image src={post.cover.src} alt="" width={64} height={44} sizes="64px" className="print-thumb-img" />
             <DitherVeil src={post.cover.src} />
@@ -37,7 +42,7 @@ export function PostRow({
       </span>
       <Heading
         className="blog-row-title"
-        style={{ viewTransitionName: `title-${post.slug}` } as React.CSSProperties}
+        style={{ viewTransitionName: postViewTransitionName('title', post.slug) } as React.CSSProperties}
       >
         <T zh={post.title} en={post.titleEn} />
       </Heading>

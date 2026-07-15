@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { parseServerEnv } from './server-env-schema'
+import { parseAmaFeatures, parseServerEnv } from './server-env-schema'
 
 const validEnvironment = {
   DATABASE_URL: 'postgresql://user:password@example.neon.tech/site',
@@ -18,6 +18,23 @@ const validEnvironment = {
 }
 
 describe('AMA server environment', () => {
+  it('reads disabled launch switches without private configuration', () => {
+    expect(parseAmaFeatures({})).toEqual({
+      publicMutations: false,
+      payments: false,
+      bookingFinalization: false,
+      admin: false,
+      google: false,
+      tencent: false,
+    })
+  })
+
+  it('rejects ambiguous launch switches before private services initialize', () => {
+    expect(() => parseAmaFeatures({ AMA_ADMIN_ENABLED: 'yes' })).toThrowError(
+      /AMA_ADMIN_ENABLED/,
+    )
+  })
+
   it('accepts the complete server-only configuration', () => {
     const environment = parseServerEnv(validEnvironment)
 
@@ -32,6 +49,16 @@ describe('AMA server environment', () => {
       google: false,
       tencent: false,
     })
+  })
+
+  it('does not require Google credentials while Google is disabled', () => {
+    const {
+      GOOGLE_CLIENT_ID: _clientId,
+      GOOGLE_CLIENT_SECRET: _clientSecret,
+      ...withoutGoogle
+    } = validEnvironment
+
+    expect(parseServerEnv(withoutGoogle).features.google).toBe(false)
   })
 
   it('accepts Vercel Marketplace Redis aliases', () => {
@@ -227,10 +254,19 @@ describe('AMA server environment', () => {
 
   it('requires Google OAuth credentials without exposing their values', () => {
     const { GOOGLE_CLIENT_SECRET: _missing, ...missingSecret } = validEnvironment
-    expect(() => parseServerEnv(missingSecret)).toThrowError(/GOOGLE_CLIENT_SECRET/)
+    expect(() =>
+      parseServerEnv({
+        ...missingSecret,
+        AMA_GOOGLE_INTEGRATION_ENABLED: 'true',
+      }),
+    ).toThrowError(/GOOGLE_CLIENT_SECRET/)
 
     try {
-      parseServerEnv({ ...validEnvironment, GOOGLE_CLIENT_SECRET: '' })
+      parseServerEnv({
+        ...validEnvironment,
+        GOOGLE_CLIENT_SECRET: '',
+        AMA_GOOGLE_INTEGRATION_ENABLED: 'true',
+      })
     } catch (error) {
       expect(String(error)).not.toContain('google-client-secret')
     }

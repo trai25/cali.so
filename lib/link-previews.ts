@@ -1,12 +1,10 @@
 import previews from '~/content/link-previews.json'
+import {
+  ogZolplayUrl,
+  type LinkPreviewSnapshot,
+} from '~/lib/og-zolplay.mjs'
 
-export interface LinkPreview {
-  domain: string
-  title?: string
-  titleEn?: string
-  description?: string
-  descriptionEn?: string
-}
+export interface LinkPreview extends LinkPreviewSnapshot {}
 
 const data = previews as Record<string, LinkPreview>
 
@@ -17,12 +15,12 @@ export function getLinkPreview(url: string): LinkPreview | undefined {
   return data[url]
 }
 
-// null for malformed hrefs (`https://`, embedded spaces…) — a bad link in
-// a post must degrade to a plain anchor, never crash the build.
-export function faviconUrl(href: string, size: 32 | 64 = 32): string | null {
-  try {
-    return `https://www.google.com/s2/favicons?domain=${new URL(href).hostname}&sz=${size}`
-  } catch {
-    return null
-  }
+// Bad links in a post degrade to plain anchors instead of reaching the
+// first-party preview service or crashing the build.
+export function faviconUrl(href: string): string | null {
+  return ogZolplayUrl('favicon', href)
+}
+
+export function ogImageUrl(href: string): string | null {
+  return ogZolplayUrl('image', href)
 }

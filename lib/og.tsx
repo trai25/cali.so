@@ -1,10 +1,11 @@
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
+import { cacheLife } from 'next/cache'
 
 // Loaded outside the build graph: Turbopack chokes on harfbuzz's wasm when
 // subset-font gets bundled or traced (NftJsonAsset error), and
-// serverExternalPackages doesn't take here. OG routes are force-static,
-// so this only ever runs at build, where node_modules is present.
+// serverExternalPackages doesn't take here. The cached OG helpers prerender
+// once per deployment, where node_modules is present.
 async function loadSubsetFont() {
   const mod = await import(/* turbopackIgnore: true */ 'subset-font')
   return mod.default
@@ -27,13 +28,18 @@ const FONTS_DIR = path.join(process.cwd(), 'app/_fonts')
 // ships as a ~1.6MB woff2 satori can't read — subset to the exact text
 // (plus digits/punctuation) and convert to sfnt per image.
 export async function ogFonts(text: string) {
+  'use cache'
+  cacheLife('max')
+
   const subsetFont = await loadSubsetFont()
   const chars = text + '0123456789 ·，。…（）「」?？!！'
   const [regular, semibold] = await Promise.all(
     ['FrexSansGB-Regular.woff2', 'FrexSansGB-SemiBold.woff2'].map(async (file) =>
-      subsetFont(await readFile(path.join(FONTS_DIR, file)), chars, {
-        targetFormat: 'sfnt',
-      }),
+      new Uint8Array(
+        await subsetFont(await readFile(path.join(FONTS_DIR, file)), chars, {
+          targetFormat: 'sfnt',
+        }),
+      ).buffer,
     ),
   )
   return [
@@ -51,8 +57,19 @@ const MIME: Record<string, string> = {
 }
 
 export async function coverDataUri(publicSrc: string): Promise<string> {
+  'use cache'
+  cacheLife('max')
+
   // cover.src is the public /content/... URL; the file lives in content/
-  const file = path.join(process.cwd(), publicSrc.replace(/^\//, ''))
+  const relativePath = publicSrc.startsWith('/content/')
+    ? publicSrc.slice('/content/'.length)
+    : null
+
+  if (!relativePath || relativePath.split('/').includes('..')) {
+    throw new Error('Invalid OG cover path')
+  }
+
+  const file = path.join(process.cwd(), 'content', relativePath)
   const ext = (file.split('.').pop() ?? 'png').toLowerCase()
   const data = await readFile(file)
   return `data:${MIME[ext] ?? 'image/png'};base64,${data.toString('base64')}`
@@ -102,22 +119,20 @@ export function OgSheet({ children }: { children: React.ReactNode }) {
   )
 }
 
-// The instant-print cover as satori JSX — same proportions as .polaroid
-// (4% frame, 14% bottom band, hairline ring, rest shadow, slug tilt).
+// The instant-print cover as satori JSX — same proportions as .polaroid:
+// 2% frame, empty 28px bottom band, hairline ring, rest shadow, slug tilt.
 export function OgPolaroid({
   src,
-  caption,
   tilt,
-  width = 440,
+  width = 432,
 }: {
   src: string
-  caption: string
   tilt: number
   width?: number
 }) {
-  const pad = Math.round(width * 0.04)
+  const pad = width * 0.02
   const photoWidth = width - pad * 2
-  const photoHeight = Math.round(photoWidth * 0.62)
+  const photoHeight = (photoWidth * 9) / 16
   return (
     <div
       style={{
@@ -154,16 +169,9 @@ export function OgPolaroid({
       <div
         style={{
           display: 'flex',
-          alignItems: 'center',
-          minHeight: Math.round(width * 0.14),
-          padding: '6px 2px',
-          fontSize: 22,
-          color: ogColors.paperInk,
-          transform: 'skewX(-8deg)',
+          height: 28,
         }}
-      >
-        {caption}
-      </div>
+      />
     </div>
   )
 }
