@@ -83,6 +83,7 @@ liveDescribe('Bunny Media Storage live contract', () => {
           key: renditionKey,
           bytes,
           checksumSha256,
+          contentType: 'image/jpeg',
         })
         await expect(storage.inspectRendition(renditionKey)).resolves.toMatchObject({
           byteSize: bytes.byteLength,

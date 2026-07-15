@@ -188,7 +188,9 @@ export async function verifyBunnyAccountContract(
     (zone) =>
       zone.StorageZoneId === renditionsZone.Id &&
       zone.Hostnames?.some(
-        (hostname) => hostname.Value?.toLowerCase() === cdnHostname,
+        (hostname) =>
+          hostname.Value?.toLowerCase() === cdnHostname &&
+          hostname.ForceSSL === true,
       ),
   )
   if (

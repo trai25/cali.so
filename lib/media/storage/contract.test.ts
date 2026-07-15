@@ -35,7 +35,11 @@ const contractExpectations = {
   browserTtlSeconds: 31_536_000,
 }
 
-function accountFetch(options?: { originalsPullZone?: boolean; ttl?: number }) {
+function accountFetch(options?: {
+  forceSsl?: boolean
+  originalsPullZone?: boolean
+  ttl?: number
+}) {
   const ttl = options?.ttl ?? contractExpectations.edgeTtlSeconds
   return vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
     expect(init?.headers).toEqual({ AccessKey: 'preview-account-api-key' })
@@ -73,7 +77,12 @@ function accountFetch(options?: { originalsPullZone?: boolean; ttl?: number }) {
             Enabled: true,
             Suspended: false,
             StorageZoneId: 202,
-            Hostnames: [{ Value: 'media-preview.cali.so', ForceSSL: true }],
+            Hostnames: [
+              {
+                Value: 'media-preview.cali.so',
+                ForceSSL: options?.forceSsl ?? true,
+              },
+            ],
             CacheControlMaxAgeOverride: ttl,
             CacheControlPublicMaxAgeOverride: ttl,
           },
@@ -167,6 +176,16 @@ describe('Bunny Media Storage account contract', () => {
         config,
         contractExpectations,
         accountFetch({ ttl: contractExpectations.edgeTtlSeconds - 1 }),
+      ),
+    ).rejects.toThrow('cache contract')
+  })
+
+  it('requires HTTPS enforcement on the public Rendition hostname', async () => {
+    await expect(
+      verifyBunnyAccountContract(
+        config,
+        contractExpectations,
+        accountFetch({ forceSsl: false }),
       ),
     ).rejects.toThrow('cache contract')
   })

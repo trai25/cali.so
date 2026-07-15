@@ -98,6 +98,22 @@ describe('same-origin Original upload transfer', () => {
     expect(f.storage.storeOriginal).not.toHaveBeenCalled()
   })
 
+  it('keeps authorization infrastructure failures retryable', async () => {
+    const f = fixture()
+    f.authorize.mockRejectedValue(new Error('database unavailable'))
+
+    const response = await storeOriginalFromSameOriginRequest({
+      request: uploadRequest(),
+      canonicalBaseUrl,
+      expectation,
+      ...f,
+    })
+
+    expect(response.status).toBe(503)
+    expect(response.headers.get('retry-after')).toBe('5')
+    expect(f.storage.storeOriginal).not.toHaveBeenCalled()
+  })
+
   it.each<
     [
       string,

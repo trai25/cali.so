@@ -97,6 +97,9 @@ function assertContentAddressedRenditionKey(
 ) {
   assertObjectKey(key)
   checksumBase64(checksumSha256)
+  if (!key.toLowerCase().endsWith('.jpg')) {
+    throw new TypeError('Renditions must use a JPEG object key')
+  }
   if (!key.includes(checksumSha256)) {
     throw new TypeError('Rendition key must contain its SHA-256 checksum')
   }
@@ -223,8 +226,12 @@ export function createBunnyStorage(
       key: string
       bytes: Uint8Array
       checksumSha256: string
+      contentType: 'image/jpeg'
     }) {
       assertContentAddressedRenditionKey(input.key, input.checksumSha256)
+      if (input.contentType !== 'image/jpeg') {
+        throw new TypeError('Renditions must use the image/jpeg content type')
+      }
       const checksum = checksumBase64(input.checksumSha256)
       try {
         await renditions.send(
@@ -233,7 +240,7 @@ export function createBunnyStorage(
             Key: input.key,
             Body: input.bytes,
             ContentLength: input.bytes.byteLength,
-            ContentType: 'image/jpeg',
+            ContentType: input.contentType,
             ChecksumSHA256: checksum,
           }),
         )

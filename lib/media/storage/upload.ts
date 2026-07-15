@@ -107,7 +107,7 @@ export async function storeOriginalFromSameOriginRequest({
   try {
     authorized = await authorize(request)
   } catch {
-    return uploadResponse(401)
+    return uploadResponse(503, { 'retry-after': '5' })
   }
   if (!authorized) return uploadResponse(401)
 

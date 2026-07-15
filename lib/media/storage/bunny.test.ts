@@ -91,6 +91,7 @@ describe('Bunny Media Storage', () => {
       key: renditionKey,
       bytes,
       checksumSha256: checksum,
+      contentType: 'image/jpeg',
     })
 
     const command = send.mock.calls[0]?.[0]
@@ -122,8 +123,28 @@ describe('Bunny Media Storage', () => {
         key: 'renditions/asset_01/photo-1600-v1.jpg',
         bytes,
         checksumSha256: checksum,
+        contentType: 'image/jpeg',
       }),
     ).rejects.toThrow('Rendition key must contain its SHA-256 checksum')
+    expect(send).not.toHaveBeenCalled()
+  })
+
+  it('rejects a non-JPEG Rendition contract before contacting Bunny', async () => {
+    const send = vi.fn(async (_command: unknown) => ({}))
+    const storage = createBunnyStorage(config, {
+      renditionsClient: { send } as never,
+    })
+    const bytes = new TextEncoder().encode('public image bytes')
+    const checksum = createHash('sha256').update(bytes).digest('hex')
+
+    await expect(
+      storage.storeRendition({
+        key: `renditions/asset_01/photo-1600-${checksum}.webp`,
+        bytes,
+        checksumSha256: checksum,
+        contentType: 'image/webp',
+      } as never),
+    ).rejects.toThrow('JPEG object key')
     expect(send).not.toHaveBeenCalled()
   })
 
