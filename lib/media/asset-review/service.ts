@@ -2,6 +2,7 @@ import 'server-only'
 
 export type MediaAssetReviewRecord = {
   id: string
+  createdAt: Date
   lifecycle: 'active' | 'archived' | 'purging'
   processingState:
     | 'upload_initiated'
@@ -33,6 +34,11 @@ export type MediaAssetReviewRecord = {
   altTextEn: string | null
   altTextApprovedAt: Date | null
   archivedAt: Date | null
+  previewRendition: {
+    src: string
+    width: number
+    height: number
+  } | null
 }
 
 type LifecycleResult =
@@ -42,6 +48,10 @@ type LifecycleResult =
   | { status: 'selection_conflict' }
 
 export interface MediaAssetReviewRepository {
+  listOwnedAssets(input: {
+    ownerUserId: string
+    view: 'active' | 'archived'
+  }): Promise<MediaAssetReviewRecord[]>
   findOwnedAsset(input: {
     ownerUserId: string
     mediaAssetId: string
@@ -137,6 +147,30 @@ export function createMediaAssetReviewService({
   clock?: { now(): Date }
 }) {
   return {
+    async listAssets(input: {
+      ownerUserId: string
+      view: 'active' | 'archived'
+    }) {
+      if (
+        input.view !== 'active' &&
+        input.view !== 'archived'
+      ) {
+        throw new MediaAssetReviewError('invalid_request')
+      }
+      if (
+        input.ownerUserId !== input.ownerUserId.trim() ||
+        input.ownerUserId.length === 0 ||
+        input.ownerUserId.length > 255
+      ) {
+        throw new MediaAssetReviewError('invalid_request')
+      }
+      try {
+        return await repository.listOwnedAssets(input)
+      } catch {
+        throw new MediaAssetReviewError('dependency_unavailable')
+      }
+    },
+
     async getAsset(input: { ownerUserId: string; mediaAssetId: string }) {
       if (!validIdentity(input.ownerUserId, input.mediaAssetId)) {
         throw new MediaAssetReviewError('invalid_request')

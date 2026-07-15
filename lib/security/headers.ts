@@ -8,6 +8,19 @@ const prepaintScriptHash = `'sha256-${createHash('sha256')
   .update(PREPAINT_SCRIPT)
   .digest('base64')}'`
 
+function optionalMediaImageSource() {
+  const value = process.env.BUNNY_RENDITIONS_CDN_URL
+  if (!value) return ''
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:' && !url.username && !url.password
+      ? ` ${url.origin}`
+      : ''
+  } catch {
+    return ''
+  }
+}
+
 function contentSecurityPolicy(scriptSources: string, styleSources: string) {
   return [
     "default-src 'self'",
@@ -18,7 +31,7 @@ function contentSecurityPolicy(scriptSources: string, styleSources: string) {
     `script-src ${scriptSources}`,
     "script-src-attr 'none'",
     `style-src ${styleSources}`,
-    "img-src 'self' data: blob: https://www.google.com https://zolplay.com",
+    `img-src 'self' data: blob: https://www.google.com https://zolplay.com${optionalMediaImageSource()}`,
     "font-src 'self' data:",
     "connect-src 'self'",
     "media-src 'self' blob:",

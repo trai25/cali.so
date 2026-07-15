@@ -10,6 +10,7 @@ import { Dock } from '~/components/dock'
 import { LocaleRestorer } from '~/components/locale-restorer'
 import { getGitHub, getSocial } from '~/lib/social-live'
 import { SiteFooter } from '~/components/site-footer'
+import { SiteFrame } from '~/components/site-frame'
 import { ThemeProvider } from '~/components/theme-provider'
 import { PREPAINT_SCRIPT } from '~/lib/security/inline-scripts'
 import { seo } from '~/lib/seo'
@@ -45,13 +46,12 @@ export default async function RootLayout({
         <ThemeProvider>
           <LocaleRestorer />
           <AmbientBackground />
-          <div className="flex min-h-screen flex-col pb-20">
-            <main className="flex-1 pt-14">
-              <ViewTransition>{children}</ViewTransition>
-            </main>
-            <SiteFooter social={social} github={github} />
-          </div>
-          <Dock />
+          <SiteFrame
+            dock={<Dock />}
+            footer={<SiteFooter social={social} github={github} />}
+          >
+            <ViewTransition>{children}</ViewTransition>
+          </SiteFrame>
         </ThemeProvider>
       </body>
     </html>

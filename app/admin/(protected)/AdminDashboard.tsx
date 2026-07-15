@@ -359,23 +359,10 @@ export function AdminDashboard({
   notices,
 }: AdminDashboardProps) {
   return (
-    <div className="mx-auto w-full max-w-[37.5rem] px-6">
-      <header className="flex min-h-11 items-center justify-between gap-6">
-        <div>
-          <p className="text-sm text-muted-foreground">AMA / ADMIN</p>
-          <h1 className="mt-1 text-sm font-semibold">
-            <T zh="管理" en="Admin" />
-          </h1>
-        </div>
-        <form action="/api/admin/auth/logout" method="post">
-          <button
-            type="submit"
-            className="min-h-11 touch-manipulation px-2 text-sm text-muted-foreground outline-none transition-transform duration-100 ease-[ease] active:scale-[0.97] focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground motion-reduce:transform-none motion-reduce:transition-none"
-          >
-            <T zh="退出" en="Sign out" />
-          </button>
-        </form>
-      </header>
+    <div className="w-full max-w-[37.5rem]">
+      <h1 className="text-xl font-semibold tracking-[-0.02em]">
+        <T zh="控制台" en="Dashboard" />
+      </h1>
 
       <section
         className="mt-10 border-t border-dashed border-border pt-6"

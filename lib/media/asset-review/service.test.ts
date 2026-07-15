@@ -14,6 +14,7 @@ const mediaAssetId = '11111111-1111-4111-8111-111111111111'
 function fixture() {
   let record: MediaAssetReviewRecord = {
     id: mediaAssetId,
+    createdAt: new Date('2025-05-08T00:31:34.000Z'),
     lifecycle: 'active',
     processingState: 'ready',
     width: 4032,
@@ -34,9 +35,17 @@ function fixture() {
     altTextEn: null,
     altTextApprovedAt: null,
     archivedAt: null,
+    previewRendition: {
+      src: 'https://media.example.com/renditions/photo-640.jpg',
+      width: 640,
+      height: 480,
+    },
   }
   let selectionConflict = false
   const repository: MediaAssetReviewRepository = {
+    async listOwnedAssets() {
+      return [record]
+    },
     async findOwnedAsset({ mediaAssetId: id }) {
       return id === record.id ? record : null
     },
@@ -89,6 +98,24 @@ function fixture() {
 }
 
 describe('Media Asset review service', () => {
+  it('lists only a valid owner view and keeps the public preview projection', async () => {
+    const { service } = fixture()
+
+    await expect(
+      service.listAssets({ ownerUserId: 'owner_01', view: 'active' }),
+    ).resolves.toMatchObject([
+      {
+        id: mediaAssetId,
+        previewRendition: {
+          src: 'https://media.example.com/renditions/photo-640.jpg',
+        },
+      },
+    ])
+    await expect(
+      service.listAssets({ ownerUserId: ' owner_01', view: 'active' }),
+    ).rejects.toEqual(new MediaAssetReviewError('invalid_request'))
+  })
+
   it('updates editable Display Metadata without exposing Capture Location', async () => {
     const { service } = fixture()
 

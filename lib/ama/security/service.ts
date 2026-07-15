@@ -16,6 +16,13 @@ export type PrivilegedAuditEvent =
   | 'google_callback.completed'
   | 'google_disconnect.succeeded'
   | 'admin_logout.succeeded'
+  | 'media_alt_text.requested'
+  | 'media_asset.archived'
+  | 'media_asset.purge_requested'
+  | 'media_asset.restored'
+  | 'media_asset.reviewed'
+  | 'media_upload.completed'
+  | 'media_upload.intent_created'
 
 export type AmaFeatureFlags = {
   publicMutations: boolean

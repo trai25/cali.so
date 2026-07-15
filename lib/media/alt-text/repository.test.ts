@@ -36,9 +36,10 @@ describe('Media Library Alt Text Suggestion repository', () => {
     await client.query(
       `INSERT INTO media_upload_intents
         (id, owner_user_id, idempotency_key, original_key, content_type,
-         byte_size, checksum_sha256, expires_at, completed_at)
+         byte_size, checksum_sha256, expires_at, completed_at, created_at)
        VALUES ($1, 'user_owner', 'upload_01', $2, 'image/jpeg', 1000, $3,
-               '2026-07-16T00:00:00.000Z', '2026-07-15T09:00:00.000Z')`,
+               '2026-07-16T00:00:00.000Z', '2026-07-15T09:00:00.000Z',
+               '2026-07-15T08:00:00.000Z')`,
       [uploadIntentId, `originals/${uploadIntentId}.jpg`, checksum],
     )
     await client.query(
