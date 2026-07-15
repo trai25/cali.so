@@ -2,6 +2,10 @@
 
 _Internal first-party contract supplied by Cali and live-verified on 2026-07-14._
 
+The cali.so external-link preview integration tracked in issue #112 uses this
+service for build-time metadata snapshots and non-critical favicon and Open
+Graph image delivery. Site-generated sharing images remain independent.
+
 `og.zolplay.com` is an HTTP service for fetching metadata and media derived
 from a target webpage. The target URL is passed as a URL-encoded path segment.
 The service automatically adds `https` when the target omits a scheme and
@@ -110,6 +114,12 @@ The following behavior was observed against `https://og.zolplay.com` on
 | Favicon proxy for `zolplay.com` | `200 image/x-icon` |
 | Favicon redirect for `zolplay.com` | `302` to the source favicon |
 
-Authentication, caching guarantees, rate limits, response-size limits, and
-formal error schemas are not yet documented. Verify those before making the
-service a runtime-critical dependency.
+A second live check on 2026-07-15 observed `Cache-Control: public,
+max-age=3600, s-maxage=86400` on metadata and Open Graph images, and `public,
+max-age=86400, s-maxage=604800` on favicons. These are observations, not a
+formal service guarantee.
+
+Authentication, formal caching guarantees, rate limits, response-size limits,
+and formal error schemas are not yet documented. The integration therefore
+keeps metadata in a checked-in snapshot and treats missing media as a normal,
+layout-stable failure rather than making the service runtime-critical.

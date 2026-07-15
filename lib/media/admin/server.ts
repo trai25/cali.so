@@ -65,6 +65,8 @@ function createServices() {
   const selection = createPhotoSelectionService({
     repository: createPhotoSelectionRepository(database),
     invalidatePublicSelection: async () => {
+      // Next 16.3 requires a cache-life profile or expire object here;
+      // updateTag is restricted to Server Actions and this runs in a Route Handler.
       revalidateTag(PUBLIC_PHOTO_SELECTION_CACHE_TAG, { expire: 0 })
     },
   })

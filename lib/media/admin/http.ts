@@ -143,6 +143,13 @@ export function createPhotoSelectionPublishHandler(
       audit(dependencies, request, 'media_photo_selection.published')
       return json(200, { publication })
     } catch (error) {
+      if (
+        error instanceof PhotoSelectionError &&
+        error.code === 'cache_invalidation_failed'
+      ) {
+        // The immutable publication committed before cache invalidation ran.
+        audit(dependencies, request, 'media_photo_selection.published')
+      }
       return errorResponse(error)
     }
   }

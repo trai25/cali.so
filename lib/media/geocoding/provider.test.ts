@@ -59,6 +59,21 @@ describe('Google Maps Location Label provider', () => {
       partial.suggest({ latitude: 25.033, longitude: 121.5654 }),
     ).resolves.toEqual({ en: 'Taipei' })
 
+    const partiallyFailed = createGoogleMapsLocationLabelSuggester({
+      apiKey: 'server-key',
+      fetcher: vi.fn(async (input: URL | RequestInfo) => {
+        const language = new URL(String(input)).searchParams.get('language')
+        return Response.json(
+          language === 'zh-CN'
+            ? { status: 'OVER_DAILY_LIMIT' }
+            : { status: 'OK', results: [{ formatted_address: 'Taipei' }] },
+        )
+      }) as typeof fetch,
+    })
+    await expect(
+      partiallyFailed.suggest({ latitude: 25.033, longitude: 121.5654 }),
+    ).resolves.toEqual({ en: 'Taipei' })
+
     const malformed = createGoogleMapsLocationLabelSuggester({
       apiKey: 'server-key',
       fetcher: vi.fn(async () => Response.json({ status: 'OK', results: [{}] })) as typeof fetch,

@@ -115,6 +115,28 @@ describe('Photo Selection admin UI contract', () => {
     })
   })
 
+  it('ignores text dragged from outside the Photo Selection', () => {
+    document.documentElement.dataset.locale = 'en'
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+    const { container } = render(
+      <PhotoSelectionEditor
+        initialDraft={{
+          revision: 2,
+          mediaAssetIds: [first.id, second.id],
+          updatedAt: null,
+        }}
+        initialAssets={[first, second]}
+      />,
+    )
+
+    fireEvent.drop(container.querySelector('[draggable="true"]')!, {
+      dataTransfer: { getData: () => 'https://example.com' },
+    })
+
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
   it('explains failed publication without claiming the Draft was published', async () => {
     document.documentElement.dataset.locale = 'en'
     vi.stubGlobal('confirm', vi.fn(() => true))

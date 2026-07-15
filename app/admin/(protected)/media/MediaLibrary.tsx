@@ -590,6 +590,8 @@ function Inspector({
         />
       </p>
 
+      {/* Ingestion claims processing with a compare-and-set. An active worker
+          wins; Resume only takes over a processing claim after it is stale. */}
       {['original_verified', 'processing', 'retryable_failure'].includes(
         asset.processingState,
       ) && (
