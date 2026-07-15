@@ -1,7 +1,9 @@
 import { PhotosPageView } from '../../_views/photos-page'
 import { localeMetadata } from '~/lib/locale-metadata'
 
-export const dynamic = 'force-dynamic'
+// The active photo publication is request-time data and must not block
+// navigation validation.
+export const instant = false
 
 export const metadata = localeMetadata({
   locale: 'zh',
