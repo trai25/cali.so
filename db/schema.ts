@@ -358,3 +358,203 @@ export const mediaRenditions = pgTable(
     ),
   ],
 )
+
+export const mediaPhotoSelectionDrafts = pgTable(
+  'media_photo_selection_drafts',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    ownerUserId: varchar('owner_user_id', { length: 255 }).notNull(),
+    revision: integer('revision').default(0).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('media_photo_selection_drafts_owner_uidx').on(table.ownerUserId),
+    check(
+      'media_photo_selection_drafts_owner_check',
+      sql`length(btrim(${table.ownerUserId})) > 0`,
+    ),
+    check(
+      'media_photo_selection_drafts_revision_check',
+      sql`${table.revision} >= 0`,
+    ),
+  ],
+)
+
+export const mediaPhotoSelectionDraftEntries = pgTable(
+  'media_photo_selection_draft_entries',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    draftId: uuid('draft_id')
+      .notNull()
+      .references(() => mediaPhotoSelectionDrafts.id, { onDelete: 'cascade' }),
+    mediaAssetId: uuid('media_asset_id')
+      .notNull()
+      .references(() => mediaAssets.id, { onDelete: 'restrict' }),
+    position: integer('position').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('media_photo_selection_draft_entries_asset_uidx').on(
+      table.draftId,
+      table.mediaAssetId,
+    ),
+    uniqueIndex('media_photo_selection_draft_entries_position_uidx').on(
+      table.draftId,
+      table.position,
+    ),
+    check(
+      'media_photo_selection_draft_entries_position_check',
+      sql`${table.position} >= 0`,
+    ),
+  ],
+)
+
+export const mediaPublishedPhotoSelections = pgTable(
+  'media_published_photo_selections',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    ownerUserId: varchar('owner_user_id', { length: 255 }).notNull(),
+    idempotencyKey: varchar('idempotency_key', { length: 128 }).notNull(),
+    draftRevision: integer('draft_revision').notNull(),
+    itemCount: integer('item_count').notNull(),
+    publishedAt: timestamp('published_at', { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    uniqueIndex('media_published_photo_selections_idempotency_uidx').on(
+      table.ownerUserId,
+      table.idempotencyKey,
+    ),
+    check(
+      'media_published_photo_selections_identity_check',
+      sql`length(btrim(${table.ownerUserId})) > 0 AND length(btrim(${table.idempotencyKey})) > 0`,
+    ),
+    check(
+      'media_published_photo_selections_revision_check',
+      sql`${table.draftRevision} >= 0`,
+    ),
+    check(
+      'media_published_photo_selections_item_count_check',
+      sql`${table.itemCount} >= 0`,
+    ),
+  ],
+)
+
+export const mediaPublishedPhotoSelectionEntries = pgTable(
+  'media_published_photo_selection_entries',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    publishedSelectionId: uuid('published_selection_id')
+      .notNull()
+      .references(() => mediaPublishedPhotoSelections.id, { onDelete: 'cascade' }),
+    // Snapshot identity intentionally has no catalog foreign key. Historical
+    // publications stay immutable even after a no-longer-active asset is Purged.
+    sourceMediaAssetId: uuid('source_media_asset_id').notNull(),
+    position: integer('position').notNull(),
+    width: integer('width').notNull(),
+    height: integer('height').notNull(),
+    focalPointX: numeric('focal_point_x', { precision: 5, scale: 4 }),
+    focalPointY: numeric('focal_point_y', { precision: 5, scale: 4 }),
+    altTextZhHans: text('alt_text_zh_hans').notNull(),
+    altTextEn: text('alt_text_en').notNull(),
+    locationLabelZhHans: text('location_label_zh_hans'),
+    locationLabelEn: text('location_label_en'),
+    capturedAt: timestamp('captured_at', { withTimezone: true }),
+    cameraMake: text('camera_make'),
+    cameraModel: text('camera_model'),
+    lens: text('lens'),
+    focalLengthMillimeters: numeric('focal_length_millimeters', {
+      precision: 8,
+      scale: 3,
+    }),
+    aperture: numeric('aperture', { precision: 6, scale: 3 }),
+    shutterSpeedSeconds: numeric('shutter_speed_seconds', {
+      precision: 12,
+      scale: 8,
+    }),
+    iso: integer('iso'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('media_published_photo_selection_entries_asset_uidx').on(
+      table.publishedSelectionId,
+      table.sourceMediaAssetId,
+    ),
+    uniqueIndex('media_published_photo_selection_entries_position_uidx').on(
+      table.publishedSelectionId,
+      table.position,
+    ),
+    check(
+      'media_published_photo_selection_entries_position_check',
+      sql`${table.position} >= 0`,
+    ),
+    check(
+      'media_published_photo_selection_entries_dimensions_check',
+      sql`${table.width} > 0 AND ${table.height} > 0 AND (${table.width}::bigint * ${table.height}::bigint) <= 100000000`,
+    ),
+    check(
+      'media_published_photo_selection_entries_focal_point_check',
+      sql`num_nonnulls(${table.focalPointX}, ${table.focalPointY}) IN (0, 2) AND (${table.focalPointX} IS NULL OR (${table.focalPointX} BETWEEN 0 AND 1 AND ${table.focalPointY} BETWEEN 0 AND 1))`,
+    ),
+    check(
+      'media_published_photo_selection_entries_alt_text_check',
+      sql`length(btrim(${table.altTextZhHans})) > 0 AND length(btrim(${table.altTextEn})) > 0`,
+    ),
+    check(
+      'media_published_photo_selection_entries_camera_values_check',
+      sql`(${table.focalLengthMillimeters} IS NULL OR ${table.focalLengthMillimeters} > 0) AND (${table.aperture} IS NULL OR ${table.aperture} > 0) AND (${table.shutterSpeedSeconds} IS NULL OR ${table.shutterSpeedSeconds} > 0) AND (${table.iso} IS NULL OR ${table.iso} > 0)`,
+    ),
+  ],
+)
+
+export const mediaPublishedPhotoSelectionRenditions = pgTable(
+  'media_published_photo_selection_renditions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    publishedEntryId: uuid('published_entry_id')
+      .notNull()
+      .references(() => mediaPublishedPhotoSelectionEntries.id, {
+        onDelete: 'cascade',
+      }),
+    profileWidth: integer('profile_width').notNull(),
+    objectKey: text('object_key').notNull(),
+    width: integer('width').notNull(),
+    height: integer('height').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('media_published_photo_selection_renditions_profile_uidx').on(
+      table.publishedEntryId,
+      table.profileWidth,
+    ),
+    check(
+      'media_published_photo_selection_renditions_profile_check',
+      sql`${table.profileWidth} IN (640, 1024, 1600)`,
+    ),
+    check(
+      'media_published_photo_selection_renditions_object_key_check',
+      sql`length(btrim(${table.objectKey})) > 0`,
+    ),
+    check(
+      'media_published_photo_selection_renditions_dimensions_check',
+      sql`${table.width} BETWEEN 1 AND ${table.profileWidth} AND ${table.height} > 0 AND (${table.width}::bigint * ${table.height}::bigint) <= 100000000`,
+    ),
+  ],
+)
+
+export const mediaActivePhotoPublication = pgTable(
+  'media_active_photo_publication',
+  {
+    id: integer('id').primaryKey().default(1),
+    publishedSelectionId: uuid('published_selection_id')
+      .notNull()
+      .references(() => mediaPublishedPhotoSelections.id, { onDelete: 'restrict' }),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('media_active_photo_publication_selection_uidx').on(
+      table.publishedSelectionId,
+    ),
+    check('media_active_photo_publication_singleton_check', sql`${table.id} = 1`),
+  ],
+)
