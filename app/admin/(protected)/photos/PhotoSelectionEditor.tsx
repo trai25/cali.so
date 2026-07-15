@@ -364,6 +364,7 @@ export function PhotoSelectionEditor({
                           event.dataTransfer.setData('text/plain', mediaAssetId)
                           event.dataTransfer.effectAllowed = 'move'
                         }}
+                        onDragEnd={() => setDraggedId(null)}
                         disabled={disabled}
                         className="min-h-11 cursor-grab px-3 text-xs text-muted-foreground outline-none disabled:cursor-default disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
                       >
