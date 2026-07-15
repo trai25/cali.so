@@ -31,22 +31,30 @@ const schema = z
     MEDIA_ALT_TEXT_TIMEOUT_MS: z.coerce
       .number()
       .int()
-      .refine((value) => value === 12_000)
+      .refine((value) => value === 12_000, {
+        message: 'Must be 12000 (AI Gateway policy)',
+      })
       .default(12_000),
     MEDIA_ALT_TEXT_MAX_RETRIES: z.coerce
       .number()
       .int()
-      .refine((value) => value === 1)
+      .refine((value) => value === 1, {
+        message: 'Must be 1 (AI Gateway policy)',
+      })
       .default(1),
     MEDIA_ALT_TEXT_RATE_LIMIT_MAX_REQUESTS: z.coerce
       .number()
       .int()
-      .refine((value) => value === 10)
+      .refine((value) => value === 10, {
+        message: 'Must be 10 (owner rate-limit policy)',
+      })
       .default(10),
     MEDIA_ALT_TEXT_RATE_LIMIT_WINDOW_SECONDS: z.coerce
       .number()
       .int()
-      .refine((value) => value === 3_600)
+      .refine((value) => value === 3_600, {
+        message: 'Must be 3600 (owner rate-limit policy)',
+      })
       .default(3_600),
     MEDIA_ALT_TEXT_PROVIDER_POLICY_APPROVED: featureSwitch,
     AI_GATEWAY_API_KEY: z.string().trim().min(1).optional(),
@@ -116,10 +124,13 @@ export function parseMediaAltTextEnv(
   const result = schema.safeParse(source)
   if (result.success) return result.data
 
-  const fields = [
+  const details = [
     ...new Set(
-      result.error.issues.map((issue) => issue.path.join('.')).filter(Boolean),
+      result.error.issues.map((issue) => {
+        const field = issue.path.join('.')
+        return field ? `${field}: ${issue.message}` : issue.message
+      }),
     ),
   ]
-  throw new Error(`Invalid Media Alt Text environment: ${fields.join(', ')}`)
+  throw new Error(`Invalid Media Alt Text environment: ${details.join(', ')}`)
 }
