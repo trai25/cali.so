@@ -116,7 +116,7 @@ async function verifyExternalLink(href) {
     } catch (error) {
       if (error?.definitive) {
         lastError = error
-        continue
+        break
       }
       lastError = new Error(
         `${href} failed: ${error instanceof Error ? error.message : String(error)}`,
