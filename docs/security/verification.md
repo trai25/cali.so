@@ -1,6 +1,6 @@
 # Security verification
 
-Last checked: 2026-07-14. This note separates repository evidence from hosted
+Last checked: 2026-07-15. This note separates repository evidence from hosted
 settings. Do not paste credentials, scan findings, or exploit details into this
 file; use GitHub private vulnerability reporting.
 
@@ -10,7 +10,8 @@ file; use GitHub private vulnerability reporting.
   vulnerability reporting.
 - [x] `.github/dependabot.yml` covers pnpm/npm dependencies and GitHub Actions.
 - [x] `.github/workflows/security.yml` runs the build, typecheck, AMA,
-  migration, localization, and CodeQL checks on pull requests and pushes;
+  migration, localization, disabled-boundary, and CodeQL checks on pull
+  requests targeting any branch and on pushes to integration or production;
   CodeQL also runs on a schedule and manually.
 - [x] Workflow actions are pinned to full, verified commit SHAs with release
   tag comments.
@@ -26,6 +27,7 @@ Local recheck:
 pnpm typecheck
 pnpm test:ama
 pnpm test:security
+pnpm verify:security-boundary
 git grep -nE 'uses: [^#[:space:]]+@(v|main|master|[0-9a-f]{1,39})([[:space:]]|$)' -- '.github/workflows/*.yml'
 ```
 
@@ -34,7 +36,7 @@ scan output must remain private.
 
 ## GitHub
 
-Repository API checks on 2026-07-14 verified:
+Repository API checks on 2026-07-15 verified:
 
 - [x] Private vulnerability reporting, secret scanning, push protection, and
   Dependabot security updates are enabled.
@@ -48,7 +50,8 @@ Repository API checks on 2026-07-14 verified:
 - [x] CodeQL default setup remains disabled so the committed advanced workflow
   is the single analysis source.
 - [ ] Add `Quality` and `CodeQL` as required `v2` checks after both check names
-  have completed successfully at least once.
+  have completed successfully at least once. The active ruleset currently has
+  no required-status-check rule.
 - [ ] Non-provider secret patterns and validity checks remain unavailable in
   the repository's current GitHub product mode. Recheck the setting before
   launch or after a plan change.
@@ -61,23 +64,24 @@ vulnerability reports rather than public issues or logs.
 
 ## Vercel
 
-Project API checks on 2026-07-14 verified:
+Project checks completed on 2026-07-14 and 2026-07-15 verified:
 
 - [x] The production branch remains `main`, matching the documented plan to
   keep v1 live until the one-time v2 cutover.
 - [x] Git fork protection is enabled.
 - [x] Production and Preview use distinct database credentials.
-- [x] Credentials identified as production-only were removed from Preview and
-  Development. Those deployments now fail closed until isolated test
-  credentials and disposable data are provisioned.
-- [ ] Provision isolated Preview and Development credentials before expecting
-  those deployments to exercise authenticated AMA or provider integrations.
+- [x] Preview uses an isolated Neon branch and a pooled runtime credential. Its
+  runtime role was exercised with CRUD-only access and no schema, database,
+  role-management, RLS-bypass, replication, or Neon-admin privileges.
+- [x] The Preview environment explicitly sets all six AMA capability switches
+  to `false`.
+- [x] The active `Admin Security` firewall rule challenges exactly
+  `POST /api/admin/auth/request`.
+- [ ] Provision isolated Development credentials before expecting that
+  environment to exercise authenticated AMA or provider integrations.
 - [ ] Verify the production runtime database role cannot perform DDL or role
   management, and keep `MIGRATION_DATABASE_URL` absent from Vercel.
-- [ ] Add a custom Vercel Challenge rule for the abuse-prone public
-  authentication mutation. The current plan rejected a rate-limit rule, and
-  managed WAF rules were not activated by the API response.
 - [ ] Verify logs and drains follow the allowlist in `baseline.md`, with
   deliberate access and retention.
-- [ ] Configure the six kill switches explicitly in each environment; keep
-  them false until the corresponding capability is approved for release.
+- [ ] Configure the six kill switches explicitly in Development and Production;
+  keep them false until the corresponding capability is approved for release.

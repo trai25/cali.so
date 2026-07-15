@@ -7,6 +7,7 @@ import { readRequestCookie } from '../cookies'
 import {
   browserMutationDeniedResponse,
   checkBrowserMutationRequest,
+  featureUnavailableResponse,
   securityDenialHeaders,
 } from './request-policy'
 
@@ -62,12 +63,6 @@ type AmaSecurityDependencies = {
   retryAfterSeconds?: number
 }
 
-function unavailableResponse(retryAfterSeconds?: number) {
-  const headers = securityDenialHeaders()
-  if (retryAfterSeconds) headers.set('retry-after', String(retryAfterSeconds))
-  return new Response(null, { status: 503, headers })
-}
-
 function rateLimitedResponse(retryAfterSeconds: number) {
   const headers = securityDenialHeaders()
   headers.set('retry-after', String(retryAfterSeconds))
@@ -117,7 +112,7 @@ export function createAmaSecurity({
   function disabledFeature(request: Request, required: readonly AmaFeature[]) {
     if (required.every((feature) => features[feature])) return null
     recordAuditEvent(request, { event: 'feature.disabled', outcome: 'denied' })
-    return unavailableResponse()
+    return featureUnavailableResponse()
   }
 
   function actorId(request: Request) {
@@ -184,7 +179,7 @@ export function createAmaSecurity({
           outcome: 'error',
           actorId: privateActorId,
         })
-        return unavailableResponse(retryAfterSeconds)
+        return featureUnavailableResponse(retryAfterSeconds)
       }
     },
   }

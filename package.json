@@ -16,6 +16,7 @@
     "test:port-post": "node --test scripts/port-post.test.mjs",
     "verify:legacy-urls": "node scripts/verify-legacy-url-contract.mjs",
     "verify:public-discovery": "node scripts/verify-public-discovery.mjs",
+    "verify:security-boundary": "node scripts/verify-production-security-boundary.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

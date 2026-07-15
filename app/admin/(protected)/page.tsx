@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 
+import { requireAmaAdminEnabled } from '~/lib/ama/admin/launch-boundary-server'
 import { getAmaAdminServices } from '~/lib/ama/admin/server'
 
 import {
@@ -62,6 +63,7 @@ export default async function AdminPage({
     calendar?: string | string[]
   }>
 }) {
+  requireAmaAdminEnabled()
   const { availability, google } = getAmaAdminServices()
   const windowsPromise = availability.list()
   const connectionPromise = google.getConnection()
