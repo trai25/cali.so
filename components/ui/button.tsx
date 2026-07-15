@@ -15,8 +15,8 @@ import { cn } from "~/lib/utils";
 
 const buttonVariants = cva(
   [
-    "group relative isolate inline-flex items-center justify-center rounded-md outline-none cursor-pointer",
-    "transition-colors duration-80",
+    "group relative isolate inline-flex min-h-11 items-center justify-center rounded-md text-[14px] outline-none cursor-pointer",
+    "transition-colors duration-150",
     "disabled:opacity-50 disabled:pointer-events-none",
     "focus-visible:ring-1 focus-visible:ring-[color:var(--focus-ring,#6B97FF)]",
   ],
@@ -29,12 +29,12 @@ const buttonVariants = cva(
         ghost: "text-muted-foreground hover:text-foreground",
       },
       size: {
-        sm: "h-7 px-3 text-[12px] gap-1",
-        md: "h-8 px-4 text-[13px] gap-1.5",
-        lg: "h-9 px-5 text-[14px] gap-1.5",
-        "icon-sm": "h-8 w-8 p-0 [&_svg]:h-3.5 [&_svg]:w-3.5",
-        icon: "h-9 w-9 p-0 [&_svg]:h-4 [&_svg]:w-4",
-        "icon-lg": "h-10 w-10 p-0 [&_svg]:h-5 [&_svg]:w-5",
+        sm: "px-3 gap-1",
+        md: "px-4 gap-1.5",
+        lg: "px-5 gap-1.5",
+        "icon-sm": "min-w-11 p-0 [&_svg]:h-3.5 [&_svg]:w-3.5",
+        icon: "min-w-11 p-0 [&_svg]:h-4 [&_svg]:w-4",
+        "icon-lg": "min-w-11 p-0 [&_svg]:h-5 [&_svg]:w-5",
       },
       iconLeft: { true: "" },
       iconRight: { true: "" },
@@ -137,7 +137,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         <span
           aria-hidden
           className={cn(
-            "absolute inset-0 rounded-[inherit] transition-[background-color,transform] duration-80 group-active:scale-[0.98]",
+            "absolute inset-0 rounded-[inherit] transition-[background-color,transform] duration-150 group-active:scale-[0.98]",
             bgClass
           )}
         />
@@ -174,7 +174,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
               </span>
             </>
           ) : isIconOnly ? (
-            <span className="[&_svg]:stroke-[1.5] [&_svg]:transition-[stroke-width] [&_svg]:duration-80 group-hover:[&_svg]:stroke-[2]">
+            <span className="[&_svg]:stroke-[1.5] [&_svg]:transition-[stroke-width] [&_svg]:duration-150 group-hover:[&_svg]:stroke-[2]">
               {label}
             </span>
           ) : (
@@ -183,7 +183,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                 <LeadingIcon
                   size={iconSize}
                   strokeWidth={1.5}
-                  className="transition-[stroke-width] duration-80 group-hover:stroke-[2]"
+                  className="transition-[stroke-width] duration-150 group-hover:stroke-[2]"
                 />
               )}
               {/* text-box only applies to block containers, so the trim lives
@@ -195,7 +195,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                 <TrailingIcon
                   size={iconSize}
                   strokeWidth={1.5}
-                  className="transition-[stroke-width] duration-80 group-hover:stroke-[2]"
+                  className="transition-[stroke-width] duration-150 group-hover:stroke-[2]"
                 />
               )}
             </>

@@ -185,7 +185,7 @@ const InputCopy = forwardRef<HTMLDivElement, InputCopyProps>(
     const actionElement = variant === "button" ? (
       <span
         className={cn(
-          "shrink-0 flex items-center gap-1.5 px-1.5 py-2 text-[13px] transition-colors duration-150",
+          "shrink-0 flex items-center gap-1.5 px-1.5 py-2 text-[14px] transition-colors duration-150",
           "text-muted-foreground group-hover:text-foreground",
         )}
         style={{ fontVariationSettings: fontWeights.normal }}
@@ -295,7 +295,7 @@ const InputCopy = forwardRef<HTMLDivElement, InputCopyProps>(
     const valueElement = (
       <span
         className={cn(
-          "flex-1 min-w-0 text-left text-[13px] text-foreground font-mono py-2 select-none truncate",
+          "flex-1 min-w-0 text-left text-[14px] text-foreground font-mono py-2 select-none truncate",
           align === "left" ? "pl-1" : "pl-0"
         )}
         style={{ fontVariationSettings: fontWeights.normal }}
@@ -330,7 +330,7 @@ const InputCopy = forwardRef<HTMLDivElement, InputCopyProps>(
         }
         aria-labelledby={label ? `${buttonId} ${labelId}` : undefined}
         className={cn(
-          "group flex items-center w-full cursor-pointer outline-none transition-all duration-150",
+          "group flex min-h-11 w-full items-center cursor-pointer outline-none transition-[background-color,color,border-color,box-shadow] duration-150",
           "focus-visible:ring-1 focus-visible:ring-[color:var(--focus-ring)]",
           shape.input
         )}
@@ -354,7 +354,7 @@ const InputCopy = forwardRef<HTMLDivElement, InputCopyProps>(
         {label && (
           <span
             id={labelId}
-            className={cn("text-[13px] text-muted-foreground", align === "left" ? "pl-1" : "pl-0")}
+            className={cn("text-[14px] text-muted-foreground", align === "left" ? "pl-1" : "pl-0")}
             style={{ fontVariationSettings: fontWeights.normal }}
           >
             {label}

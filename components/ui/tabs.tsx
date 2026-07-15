@@ -428,7 +428,7 @@ const TabItem = forwardRef<HTMLButtonElement, TabItemProps>(
         className={cn(
           // Fixed height (not py) so the text-box trim below doesn't shrink
           // the tab — browsers without text-box support render identically.
-          "relative z-10 flex h-6 items-center gap-1.5 px-2 cursor-pointer bg-transparent border-none outline-none",
+          "relative z-10 flex h-11 min-w-11 items-center justify-center gap-1.5 px-2 cursor-pointer bg-transparent border-none outline-none",
           className
         )}
         {...props}
@@ -447,7 +447,7 @@ const TabItem = forwardRef<HTMLButtonElement, TabItemProps>(
             sizer and the visible label keep identical boxes. Icon-only tabs
             skip the span so flex gap doesn't leave a phantom trailing gap. */}
         {label !== "" && (
-        <span className="inline-grid text-[13px] whitespace-nowrap">
+        <span className="inline-grid text-[14px] whitespace-nowrap">
           <span
             className="col-start-1 row-start-1 invisible [text-box:trim-both_cap_alphabetic]"
             style={{ fontVariationSettings: fontWeights.semibold }}

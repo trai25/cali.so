@@ -141,7 +141,7 @@ const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(
     const itemClassName = cn(
       // Fixed height (was py-2 around a 19.5px line box ≈ 35.5px) so the
       // text-box trim on the label doesn't shrink the row.
-      `relative z-10 flex h-9 items-center gap-2 ${shape.item} px-2 cursor-pointer outline-none`,
+      `relative z-10 flex h-11 items-center gap-2 ${shape.item} px-2 cursor-pointer outline-none`,
       disabled && "opacity-50 pointer-events-none",
       className
     );
@@ -157,7 +157,7 @@ const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(
               size={16}
               strokeWidth={isActive || checked ? 2 : 1.5}
               className={cn(
-                "col-start-1 row-start-1 transition-[color,stroke-width] duration-80",
+                "col-start-1 row-start-1 transition-[color,stroke-width] duration-150",
                 isActive || checked
                   ? "text-foreground"
                   : "text-muted-foreground"
@@ -167,7 +167,7 @@ const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(
         )}
         {/* Both stacked spans carry the text-box trim so the invisible bold
             sizer and the visible label keep identical boxes. */}
-        <span className="inline-grid flex-1 text-[13px]">
+        <span className="inline-grid flex-1 text-[14px]">
           <span
             className="col-start-1 row-start-1 invisible [text-box:trim-both_cap_alphabetic]"
             style={{ fontVariationSettings: fontWeights.semibold }}
@@ -177,7 +177,7 @@ const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(
           </span>
           <span
             className={cn(
-              "col-start-1 row-start-1 transition-[color,font-variation-settings] duration-80 [text-box:trim-both_cap_alphabetic]",
+              "col-start-1 row-start-1 transition-[color,font-variation-settings] duration-150 [text-box:trim-both_cap_alphabetic]",
               isActive || checked
                 ? "text-foreground"
                 : "text-muted-foreground"

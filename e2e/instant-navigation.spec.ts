@@ -76,6 +76,58 @@ test('preferences preserve theme, locale, and reduced motion', async ({ page }) 
   await expect
     .poll(() => page.locator('.enter').first().evaluate((element) => getComputedStyle(element).animationName))
     .toBe('none')
+  await expect
+    .poll(() =>
+      page
+        .getByRole('button', { name: 'Preferences' })
+        .evaluate((element) => getComputedStyle(element).transitionProperty),
+    )
+    .toBe('none')
+})
+
+test('keyboard controls restore focus across public overlays', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/en')
+
+  const preferences = page.getByRole('button', { name: 'Preferences' })
+  await preferences.focus()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('tab', { name: 'English' })).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(page.getByRole('tab', { name: 'System' })).toBeFocused()
+  const darkTab = page.getByRole('tab', { name: 'Dark' })
+  await page.keyboard.press('ArrowRight')
+  await expect(darkTab).toBeFocused()
+  await expect(page.locator('html')).toHaveClass(/dark/)
+  await page.keyboard.press('Escape')
+  await expect(preferences).toBeFocused()
+
+  const postLink = page
+    .getByRole('link', { name: /2023 Year in Review: My Unusual 28th Year/ })
+    .first()
+  await postLink.focus()
+  await page.keyboard.press('Enter')
+  await expect(page).toHaveURL(`/en/blog/${postSlug}`)
+
+  const zoom = page.getByRole('button', { name: /^Zoom image/ }).first()
+  await zoom.focus()
+  await page.keyboard.press('Enter')
+  const dialog = page.getByRole('dialog')
+  await expect(dialog).toBeVisible()
+  await expect(dialog).toBeFocused()
+  await page.keyboard.press('Escape')
+  await expect(dialog).toBeHidden()
+  await expect(zoom).toBeFocused()
+
+  await page.evaluate(() => window.scrollTo(0, 700))
+  await expect(page.getByRole('button', { name: 'Open article map' })).toBeVisible()
+  const articleMap = page.locator('.post-minimap-toggle')
+  await articleMap.focus()
+  await page.keyboard.press('Enter')
+  await expect(articleMap).toHaveAttribute('aria-expanded', 'true')
+  await page.keyboard.press('Escape')
+  await expect(articleMap).toHaveAttribute('aria-expanded', 'false')
+  await expect(articleMap).toBeFocused()
 })
 
 test('disabled administration stays outside public prefetching', async ({ page }) => {

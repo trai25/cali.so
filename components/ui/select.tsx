@@ -162,8 +162,8 @@ Select.displayName = "Select";
 const triggerVariants = cva(
   [
     "group inline-flex items-center justify-between gap-2 outline-none cursor-pointer",
-    "text-[13px] h-7 px-2 min-w-24",
-    "transition-all duration-150",
+    "min-h-11 min-w-24 px-2 text-[14px]",
+    "transition-[background-color,color,border-color,box-shadow] duration-150",
     "disabled:opacity-50 disabled:pointer-events-none",
     "focus-visible:ring-1 focus-visible:ring-[color:var(--focus-ring)]",
   ],
@@ -243,7 +243,7 @@ const SelectTrigger = forwardRef<HTMLButtonElement, SelectTriggerProps>(
           </svg>
         </SelectPrimitive.Trigger>
         {error && (
-          <span className="text-[12px] text-destructive pl-3">{error}</span>
+          <span className="pl-3 text-[14px] text-destructive">{error}</span>
         )}
       </div>
     );
@@ -558,7 +558,7 @@ const SelectItem = forwardRef<HTMLDivElement, SelectItemProps>(
             className={cn(
               // Fixed height (was py-2 around a 19.5px line box ≈ 35.5px) so
               // the text-box trim on the item text doesn't shrink the row.
-              `relative z-10 flex h-8 items-center gap-2 ${shape.item} px-2 text-[13px] cursor-pointer outline-none select-none`,
+              `relative z-10 flex h-11 items-center gap-2 ${shape.item} px-2 text-[14px] cursor-pointer outline-none select-none`,
               "transition-[color] duration-150",
               isActive || isChecked
                 ? "text-foreground"
@@ -648,7 +648,7 @@ const SelectLabel = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
     <div
       ref={ref}
       className={cn(
-        "px-2 py-1.5 text-[11px] text-muted-foreground",
+        "px-2 py-1.5 text-[14px] text-muted-foreground",
         className
       )}
       {...props}

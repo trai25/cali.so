@@ -644,7 +644,7 @@ const DropdownLabel = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>
     <div
       ref={ref}
       className={cn(
-        "px-2 py-1.5 text-[11px] text-muted-foreground",
+        "px-2 py-1.5 text-[14px] text-muted-foreground",
         className
       )}
       {...props}
