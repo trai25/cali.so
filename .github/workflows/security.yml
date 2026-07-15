@@ -78,6 +78,9 @@ jobs:
       - name: Verify legacy URL contract
         run: pnpm verify:legacy-urls
 
+      - name: Verify public discovery and failure handling
+        run: pnpm verify:public-discovery
+
   codeql:
     name: CodeQL
     runs-on: ubuntu-latest

@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
-import { spawn } from 'node:child_process'
 import { readFile, readdir } from 'node:fs/promises'
-import { createServer } from 'node:net'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+import { openProductionServer } from './production-server.mjs'
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const manifest = JSON.parse(
@@ -40,84 +40,6 @@ async function validateBlogCoverage(probes) {
       const route = `${prefix}/blog/${directory.name}`
       assert.ok(probes.has(route), `manifest is missing ${route}`)
     }
-  }
-}
-
-async function openPort() {
-  const server = createServer()
-  await new Promise((resolve, reject) => {
-    server.once('error', reject)
-    server.listen(0, '127.0.0.1', resolve)
-  })
-  const address = server.address()
-  assert.ok(address && typeof address !== 'string')
-  await new Promise((resolve, reject) =>
-    server.close((error) => (error ? reject(error) : resolve())),
-  )
-  return address.port
-}
-
-async function waitForServer(baseUrl, child) {
-  const deadline = Date.now() + 30_000
-  while (Date.now() < deadline) {
-    if (child?.exitCode !== null)
-      throw new Error(`Next.js exited with code ${child.exitCode}`)
-    try {
-      const response = await fetch(baseUrl, { redirect: 'manual' })
-      if (response.status > 0) return
-    } catch {}
-    await new Promise((resolve) => setTimeout(resolve, 200))
-  }
-  throw new Error(`Timed out waiting for ${baseUrl}`)
-}
-
-async function startProductionServer() {
-  const buildId = path.join(root, '.next/BUILD_ID')
-  await readFile(buildId, 'utf8').catch(() => {
-    throw new Error('Run pnpm build before pnpm verify:legacy-urls')
-  })
-
-  const port = await openPort()
-  const baseUrl = `http://127.0.0.1:${port}`
-  const child = spawn(
-    process.execPath,
-    [
-      path.join(root, 'node_modules/next/dist/bin/next'),
-      'start',
-      '--hostname',
-      '127.0.0.1',
-      '--port',
-      String(port),
-    ],
-    {
-      cwd: root,
-      env: { ...process.env, NODE_ENV: 'production' },
-      stdio: ['ignore', 'pipe', 'pipe'],
-    },
-  )
-  let output = ''
-  child.stdout.on('data', (chunk) => (output += chunk))
-  child.stderr.on('data', (chunk) => (output += chunk))
-
-  try {
-    await waitForServer(baseUrl, child)
-  } catch (error) {
-    child.kill('SIGTERM')
-    throw new Error(`${error.message}\n${output}`)
-  }
-
-  return {
-    baseUrl,
-    stop: async () => {
-      child.kill('SIGTERM')
-      await new Promise((resolve) => {
-        const timer = setTimeout(resolve, 5_000)
-        child.once('exit', () => {
-          clearTimeout(timer)
-          resolve()
-        })
-      })
-    },
   }
 }
 
@@ -167,8 +89,8 @@ const probes = validateManifest()
 await validateBlogCoverage(probes)
 
 const externalBaseUrl = process.env.LEGACY_URL_BASE_URL
-const server = externalBaseUrl ? null : await startProductionServer()
-const baseUrl = externalBaseUrl ?? server.baseUrl
+const server = await openProductionServer(externalBaseUrl)
+const { baseUrl } = server
 
 try {
   for (const entry of manifest.entries) {
@@ -176,5 +98,5 @@ try {
   }
   console.log(`Verified ${probes.size} legacy URL probes against ${baseUrl}`)
 } finally {
-  await server?.stop()
+  await server.stop()
 }
