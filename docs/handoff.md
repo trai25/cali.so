@@ -30,6 +30,10 @@ Current as of July 2026.
   images must follow the route, not browser-local state.
 - Public pages are static where possible. GitHub and YouTube social values use
   ISR-backed fetches with committed JSON snapshots as outage fallbacks.
+- External-link cards keep metadata in a committed snapshot refreshed through
+  `og.zolplay.com`; the same first-party service proxies fixed-slot favicons and
+  Open Graph images, and missing media remains a non-blocking presentation
+  failure.
 - The fixed bottom dock is the primary navigation. The visual contract lives
   in `docs/design-language.md`.
 - The AMA domain has owner-auth, availability, database, and security
