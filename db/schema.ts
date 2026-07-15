@@ -17,7 +17,7 @@ import {
 
 import type { EncryptedSecretEnvelope } from '~/lib/ama/secrets'
 
-// These two tables predate v2 and stay mapped exactly as production stores
+// These two tables predate v3 and stay mapped exactly as production stores
 // them. AMA migrations must never recreate, rename, or drop either table.
 export const subscribers = pgTable('subscribers', {
   id: serial('id').primaryKey(),

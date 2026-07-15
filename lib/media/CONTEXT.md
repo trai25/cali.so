@@ -1,5 +1,10 @@
 # Media Library
 
+## Status
+
+Proposed post-launch context. It does not describe shipped v3 behavior; static
+local media remains the launch implementation.
+
 The Media Library owns reusable files, their safe descriptive metadata, and
 the selections that publish them across the personal site.
 

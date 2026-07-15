@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 
+import { requireAmaAdminEnabled } from '~/lib/ama/admin/launch-boundary-server'
 import { getAmaAdminServices } from '~/lib/ama/admin/server'
 
 import {
@@ -12,6 +13,9 @@ export const metadata: Metadata = {
   title: 'AMA Admin',
   robots: { index: false, follow: false },
 }
+
+// Admin account data intentionally renders per request.
+export const instant = false
 
 const availabilityNotices = new Set(['saved', 'invalid', 'failed'] as const)
 const calendarNotices = new Set([
@@ -62,6 +66,7 @@ export default async function AdminPage({
     calendar?: string | string[]
   }>
 }) {
+  requireAmaAdminEnabled()
   const { availability, google } = getAmaAdminServices()
   const windowsPromise = availability.list()
   const connectionPromise = google.getConnection()

@@ -3,7 +3,7 @@
 import { PreviewCard } from '@base-ui/react/preview-card'
 
 import { ExternalLabel } from '~/components/external-mark'
-import type { LinkPreview } from '~/lib/link-previews'
+import { ogImageUrl, type LinkPreview } from '~/lib/link-previews'
 import { useLocale } from '~/lib/locale-client'
 
 const HAN = /\p{Script=Han}/u
@@ -11,6 +11,10 @@ const HAN = /\p{Script=Han}/u
 function englishOrSource(english: string | undefined, source: string | undefined) {
   if (english) return english
   return source && !HAN.test(source) ? source : undefined
+}
+
+function hideFailedImage(event: React.SyntheticEvent<HTMLImageElement>) {
+  event.currentTarget.dataset.failed = 'true'
 }
 
 // External prose links: inline favicon prefix, and — with build-time
@@ -34,9 +38,18 @@ export function ExternalLink({
       ? englishOrSource(preview?.descriptionEn, preview?.description)
       : preview?.description
   const domain = preview?.domain
+  const image = preview?.hasImage ? ogImageUrl(href) : null
   const icon = (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={favicon} alt="" width={14} height={14} loading="lazy" aria-hidden />
+    <img
+      src={favicon}
+      alt=""
+      width={14}
+      height={14}
+      loading="lazy"
+      aria-hidden
+      onError={hideFailedImage}
+    />
   )
 
   if (!title || !domain) {
@@ -65,10 +78,32 @@ export function ExternalLink({
       </PreviewCard.Trigger>
       <PreviewCard.Portal>
         <PreviewCard.Positioner sideOffset={8} collisionPadding={16} className="pointer-events-none z-[var(--z-card)]">
-          <PreviewCard.Popup className="link-card">
+          <PreviewCard.Popup className={`link-card${image ? ' link-card-with-image' : ''}`}>
+            {image && (
+              <span className="link-card-image-frame" aria-hidden>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  className="link-card-image"
+                  src={image}
+                  alt=""
+                  width={232}
+                  height={131}
+                  loading="eager"
+                  onError={hideFailedImage}
+                />
+              </span>
+            )}
             <span className="link-card-site">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={favicon} alt="" width={16} height={16} loading="lazy" aria-hidden />
+              <img
+                src={favicon}
+                alt=""
+                width={16}
+                height={16}
+                loading="lazy"
+                aria-hidden
+                onError={hideFailedImage}
+              />
               {domain}
             </span>
             <span className="link-card-title">{title}</span>
