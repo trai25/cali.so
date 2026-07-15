@@ -68,6 +68,9 @@ jobs:
       - name: Test Photo Selection publication
         run: pnpm test:media:photo-selection
 
+      - name: Test Media Asset review
+        run: pnpm test:media:asset-review
+
       - name: Test localization
         run: pnpm test:localization
 
