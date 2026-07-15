@@ -125,6 +125,27 @@ function ownedAssetCondition(ownerUserId: string, mediaAssetId: string) {
   )
 }
 
+async function previewRendition(
+  database: Pick<MediaAssetReviewDatabase, 'select'>,
+  mediaAssetId: string,
+) {
+  const [preview] = await database
+    .select({
+      objectKey: mediaRenditions.objectKey,
+      width: mediaRenditions.width,
+      height: mediaRenditions.height,
+    })
+    .from(mediaRenditions)
+    .where(
+      and(
+        eq(mediaRenditions.mediaAssetId, mediaAssetId),
+        eq(mediaRenditions.profileWidth, 640),
+      ),
+    )
+    .limit(1)
+  return preview ?? null
+}
+
 export function createMediaAssetReviewRepository(
   database: () => MediaAssetReviewDatabase,
   publicRenditionUrl: (key: string) => string,
@@ -139,21 +160,8 @@ export function createMediaAssetReviewRepository(
       .where(ownedAssetCondition(input.ownerUserId, input.mediaAssetId))
       .limit(1)
     if (!asset) return null
-    const [preview] = await database()
-      .select({
-        objectKey: mediaRenditions.objectKey,
-        width: mediaRenditions.width,
-        height: mediaRenditions.height,
-      })
-      .from(mediaRenditions)
-      .where(
-        and(
-          eq(mediaRenditions.mediaAssetId, asset.id),
-          eq(mediaRenditions.profileWidth, 640),
-        ),
-      )
-      .limit(1)
-    return record(asset, preview ?? null, publicRenditionUrl)
+    const preview = await previewRendition(database(), asset.id)
+    return record(asset, preview, publicRenditionUrl)
   }
 
   return {
@@ -205,7 +213,8 @@ export function createMediaAssetReviewRepository(
     findOwnedAsset,
 
     async updateDisplayMetadata(input) {
-      const [asset] = await database()
+      const client = database()
+      const [asset] = await client
         .update(mediaAssets)
         .set({
           locationLabelZhHans: input.locationLabelZhHans,
@@ -224,11 +233,14 @@ export function createMediaAssetReviewRepository(
           ),
         )
         .returning(reviewAssetColumns)
-      return asset ? record(asset) : null
+      if (!asset) return null
+      const preview = await previewRendition(client, asset.id)
+      return record(asset, preview, publicRenditionUrl)
     },
 
     async approveAltText(input) {
-      const [asset] = await database()
+      const client = database()
+      const [asset] = await client
         .update(mediaAssets)
         .set({
           altTextZhHans: input.zhHans,
@@ -244,7 +256,9 @@ export function createMediaAssetReviewRepository(
           ),
         )
         .returning(reviewAssetColumns)
-      return asset ? record(asset) : null
+      if (!asset) return null
+      const preview = await previewRendition(client, asset.id)
+      return record(asset, preview, publicRenditionUrl)
     },
 
     async archive(input) {
@@ -302,14 +316,21 @@ export function createMediaAssetReviewRepository(
             ),
           )
           .returning(reviewAssetColumns)
+        const preview = asset
+          ? await previewRendition(transaction, asset.id)
+          : null
         return asset
-          ? { status: 'updated', asset: record(asset) }
+          ? {
+              status: 'updated',
+              asset: record(asset, preview, publicRenditionUrl),
+            }
           : { status: 'invalid_state' }
       })
     },
 
     async restore(input) {
-      const [asset] = await database()
+      const client = database()
+      const [asset] = await client
         .update(mediaAssets)
         .set({
           lifecycle: 'active',
@@ -323,7 +344,13 @@ export function createMediaAssetReviewRepository(
           ),
         )
         .returning(reviewAssetColumns)
-      if (asset) return { status: 'updated', asset: record(asset) }
+      if (asset) {
+        const preview = await previewRendition(client, asset.id)
+        return {
+          status: 'updated',
+          asset: record(asset, preview, publicRenditionUrl),
+        }
+      }
 
       const current = await findOwnedAsset(input)
       return { status: current ? 'invalid_state' : 'not_found' }
