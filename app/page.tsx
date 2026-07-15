@@ -12,6 +12,10 @@ import { books, experience, records } from '~/lib/personal'
 import { projects } from '~/lib/projects'
 import { T } from '~/lib/i18n'
 import { getGitHub, getSocial } from '~/lib/social-live'
+import { getHomepagePhotoPreview } from '~/lib/media/photo-selection/repository'
+import { getPublishedPhotoSelection } from '~/lib/media/photo-selection/server'
+
+export const dynamic = 'force-dynamic'
 
 function SectionTitle({ children, delay }: { children: React.ReactNode; delay: number }) {
   return (
@@ -25,7 +29,11 @@ function SectionTitle({ children, delay }: { children: React.ReactNode; delay: n
 }
 
 export default async function HomePage() {
-  const [social, github] = await Promise.all([getSocial(), getGitHub()])
+  const [social, github, photoSelection] = await Promise.all([
+    getSocial(),
+    getGitHub(),
+    getPublishedPhotoSelection(),
+  ])
   const posts = getAllPosts()
   const latest = posts.slice(0, 5)
   const center = (latest.length - 1) / 2
@@ -52,7 +60,11 @@ export default async function HomePage() {
         </div>
       </div>
 
-      <NavCards postCount={posts.length} projectCount={projects.length} />
+      <NavCards
+        postCount={posts.length}
+        projectCount={projects.length}
+        photoPreview={getHomepagePhotoPreview(photoSelection)}
+      />
 
       <section className="mt-16">
         <SectionTitle delay={120}><T zh="经历" en="Experience" /></SectionTitle>

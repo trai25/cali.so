@@ -1,8 +1,7 @@
-import Image from 'next/image'
 import Link from 'next/link'
 
 import { T } from '~/lib/i18n'
-import { photos } from '~/lib/photos'
+import type { getHomepagePhotoPreview } from '~/lib/media/photo-selection/repository'
 
 // The three doorways, greeting visitors who never look at the dock:
 // analog vignettes on soft neumorphic cards — manuscript pages for
@@ -10,9 +9,11 @@ import { photos } from '~/lib/photos'
 export function NavCards({
   postCount,
   projectCount,
+  photoPreview,
 }: {
   postCount: number
   projectCount: number
+  photoPreview: ReturnType<typeof getHomepagePhotoPreview>
 }) {
   return (
     <div className="nav-cards">
@@ -32,17 +33,38 @@ export function NavCards({
 
       <Link href="/photos" className="nav-card enter-swing" style={{ '--enter-delay': '190ms' } as React.CSSProperties}>
         <span className="nc-vignette nc-polaroids" aria-hidden>
-          {photos.slice(0, 3).map((photo, i) => (
-            <span key={photo.src} className="nc-polaroid" style={{ '--i': i } as React.CSSProperties}>
-              <Image src={photo.src} alt="" width={64} height={56} sizes="64px" />
-            </span>
-          ))}
+          {photoPreview?.items.map((photo, i) => {
+            const rendition = photo.renditions[0]!
+            const focalPoint = photo.focalPoint ?? { x: 0.5, y: 0.5 }
+            return (
+              <span
+                key={photo.id}
+                className="nc-polaroid"
+                style={{ '--i': i } as React.CSSProperties}
+              >
+                {/* Bunny is the public binary cache layer for Renditions. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={rendition.src}
+                  alt=""
+                  width={64}
+                  height={56}
+                  style={{
+                    objectPosition: `${focalPoint.x * 100}% ${focalPoint.y * 100}%`,
+                  }}
+                />
+              </span>
+            )
+          })}
         </span>
         <span className="nc-label">
           <T zh="照片" en="Photos" />
         </span>
         <span className="nc-sub">
-          <T zh={`${photos.length} 张照片`} en={`${photos.length} photos`} />
+          <T
+            zh={`${photoPreview?.count ?? 0} 张照片`}
+            en={`${photoPreview?.count ?? 0} photos`}
+          />
         </span>
       </Link>
 

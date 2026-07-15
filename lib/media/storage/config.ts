@@ -74,3 +74,13 @@ export function parseBunnyStorageEnv(source: Record<string, string | undefined>)
   ]
   throw new Error(`Invalid Bunny Media Storage environment: ${fields.join(', ')}`)
 }
+
+export function parseBunnyRenditionCdnEnv(
+  source: Record<string, string | undefined>,
+) {
+  const result = cdnBaseUrl.safeParse(source.BUNNY_RENDITIONS_CDN_URL)
+  if (result.success) return result.data
+  throw new Error(
+    'Invalid Bunny Media Storage environment: BUNNY_RENDITIONS_CDN_URL',
+  )
+}

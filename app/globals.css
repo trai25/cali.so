@@ -3516,6 +3516,20 @@ html[data-locale='en'] [data-en-block] {
   box-shadow: 0 0 0 1px var(--border);
 }
 
+.zoom-overlay-details {
+  position: fixed;
+  z-index: 2;
+  inset-inline: 0;
+  bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  pointer-events: none;
+}
+
+@media (max-width: 39.999rem) {
+  .zoom-overlay-details {
+    bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* ── Footer: Swiss editorial grid ─────────────────────────────────── */
 
 .footer-tree ul {
