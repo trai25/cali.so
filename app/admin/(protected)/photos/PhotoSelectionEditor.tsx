@@ -53,7 +53,7 @@ function PreviewImage({
 }) {
   if (!asset.previewRendition) {
     return (
-      <span className="flex h-full items-center justify-center text-xs text-muted-foreground">
+      <span className="flex h-full items-center justify-center text-sm text-muted-foreground">
         <T zh="成品不可用" en="Rendition unavailable" />
       </span>
     )
@@ -244,10 +244,10 @@ export function PhotoSelectionEditor({
     <main>
       <div className="flex flex-wrap items-end justify-between gap-5 border-b border-dashed border-border pb-7">
         <div className="max-w-2xl">
-          <p className="text-xs font-medium tracking-[0.12em] text-muted-foreground">
+          <p className="text-sm font-medium tracking-[0.12em] text-muted-foreground">
             <T zh="照片选择" en="PHOTO SELECTION" />
           </p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-[-0.02em]">
+          <h1 className="mt-2 text-sm font-semibold">
             <T zh="编排下一次发布" en="Curate the next publication" />
           </h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
@@ -258,7 +258,7 @@ export function PhotoSelectionEditor({
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <span aria-live="polite" className="text-xs text-muted-foreground">
+          <span aria-live="polite" className="text-sm text-muted-foreground">
             {saveState === 'saving' && <T zh="正在保存…" en="Saving…" />}
             {saveState === 'saved' && <T zh="草稿已保存" en="Draft saved" />}
             {saveState === 'error' && <T zh="保存失败" en="Save failed" />}
@@ -304,10 +304,10 @@ export function PhotoSelectionEditor({
       <div className="mt-8 grid gap-12 xl:grid-cols-[minmax(0,1.25fr)_minmax(20rem,0.75fr)]">
         <section aria-labelledby="draft-heading">
           <div className="flex items-baseline justify-between gap-4">
-            <h2 id="draft-heading" className="text-lg font-semibold">
+            <h2 id="draft-heading" className="text-sm font-semibold">
               <T zh="草稿" en="Draft" />
             </h2>
-            <span className="text-xs tabular-nums text-muted-foreground">
+            <span className="text-sm tabular-nums text-muted-foreground">
               {mediaAssetIds.length} <T zh="张照片" en="photos" />
             </span>
           </div>
@@ -341,7 +341,7 @@ export function PhotoSelectionEditor({
                       <p className="truncate text-sm font-medium">
                         {asset ? assetName(asset) : mediaAssetId.slice(0, 8)}
                       </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
+                      <p className="mt-1 text-sm text-muted-foreground">
                         {index < 3 ? (
                           <T zh="首页预览" en="Homepage preview" />
                         ) : (
@@ -366,7 +366,7 @@ export function PhotoSelectionEditor({
                         }}
                         onDragEnd={() => setDraggedId(null)}
                         disabled={disabled}
-                        className="min-h-11 cursor-grab px-3 text-xs text-muted-foreground outline-none disabled:cursor-default disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
+                        className="min-h-11 cursor-grab px-3 text-sm text-muted-foreground outline-none disabled:cursor-default disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
                       >
                         <T zh="拖动" en="Drag" />
                       </button>
@@ -414,7 +414,7 @@ export function PhotoSelectionEditor({
                         type="button"
                         onClick={() => void save(mediaAssetIds.filter((id) => id !== mediaAssetId))}
                         disabled={disabled}
-                        className="min-h-11 px-3 text-xs text-muted-foreground outline-none disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
+                        className="min-h-11 px-3 text-sm text-muted-foreground outline-none disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
                       >
                         <T zh="移除" en="Remove" />
                       </button>
@@ -431,7 +431,7 @@ export function PhotoSelectionEditor({
             <h2 id="homepage-preview-heading" className="text-sm font-medium">
               <T zh="首页预览顺序" en="Homepage preview order" />
             </h2>
-            <p className="mt-2 text-xs leading-5 text-muted-foreground">
+            <p className="mt-2 text-sm leading-5 text-muted-foreground">
               <T zh="草稿中的前三张照片。" en="The first three photos in the Draft." />
             </p>
             <ol className="mt-4 grid grid-cols-3 gap-2">
@@ -453,7 +453,7 @@ export function PhotoSelectionEditor({
             <h2 id="eligible-heading" className="text-sm font-medium">
               <T zh="可用媒体素材" en="Eligible Media Assets" />
             </h2>
-            <p className="mt-2 text-xs leading-5 text-muted-foreground">
+            <p className="mt-2 text-sm leading-5 text-muted-foreground">
               <T
                 zh="仅显示已处理完成且中英文替代文本都已审核的素材。"
                 en="Only ready Media Assets with approved Chinese and English Alt Text appear here."
@@ -470,12 +470,12 @@ export function PhotoSelectionEditor({
                     <span className="block aspect-[4/3] overflow-hidden rounded-md bg-surface-1">
                       <PreviewImage asset={asset} />
                     </span>
-                    <p className="mt-2 truncate text-xs font-medium">{assetName(asset)}</p>
+                    <p className="mt-2 truncate text-sm font-medium">{assetName(asset)}</p>
                     <button
                       type="button"
                       onClick={() => void save([...mediaAssetIds, asset.id])}
                       disabled={disabled}
-                      className="mt-1 min-h-11 px-1 text-xs text-muted-foreground outline-none disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
+                      className="mt-1 min-h-11 px-1 text-sm text-muted-foreground outline-none disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
                     >
                       <T zh="添加到草稿" en="Add to Draft" />
                     </button>

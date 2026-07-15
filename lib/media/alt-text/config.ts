@@ -31,28 +31,34 @@ const schema = z
     MEDIA_ALT_TEXT_TIMEOUT_MS: z.coerce
       .number()
       .int()
-      .min(1_000)
-      .max(30_000)
+      .refine((value) => value === 12_000, {
+        message: 'Must be 12000 (AI Gateway policy)',
+      })
       .default(12_000),
     MEDIA_ALT_TEXT_MAX_RETRIES: z.coerce
       .number()
       .int()
-      .min(0)
-      .max(2)
+      .refine((value) => value === 1, {
+        message: 'Must be 1 (AI Gateway policy)',
+      })
       .default(1),
     MEDIA_ALT_TEXT_RATE_LIMIT_MAX_REQUESTS: z.coerce
       .number()
       .int()
-      .min(1)
-      .max(100)
+      .refine((value) => value === 10, {
+        message: 'Must be 10 (owner rate-limit policy)',
+      })
       .default(10),
     MEDIA_ALT_TEXT_RATE_LIMIT_WINDOW_SECONDS: z.coerce
       .number()
       .int()
-      .min(60)
-      .max(86_400)
+      .refine((value) => value === 3_600, {
+        message: 'Must be 3600 (owner rate-limit policy)',
+      })
       .default(3_600),
     MEDIA_ALT_TEXT_PROVIDER_POLICY_APPROVED: featureSwitch,
+    AI_GATEWAY_API_KEY: z.string().trim().min(1).optional(),
+    NODE_ENV: z.enum(['development', 'test', 'production']).optional(),
     VERCEL_ENV: z.enum(['development', 'preview', 'production']).optional(),
   })
   .superRefine((environment, context) => {
@@ -75,6 +81,18 @@ const schema = z
         code: 'custom',
         path: ['MEDIA_ALT_TEXT_PROVIDER_POLICY_APPROVED'],
         message: 'AI provider policy approval is required before enablement',
+      })
+    }
+    if (
+      (environment.NODE_ENV === 'production' ||
+        (environment.VERCEL_ENV !== undefined &&
+          environment.VERCEL_ENV !== 'development')) &&
+      environment.AI_GATEWAY_API_KEY
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['AI_GATEWAY_API_KEY'],
+        message: 'Deployed Media Alt Text must use Vercel OIDC',
       })
     }
   })
@@ -106,10 +124,13 @@ export function parseMediaAltTextEnv(
   const result = schema.safeParse(source)
   if (result.success) return result.data
 
-  const fields = [
+  const details = [
     ...new Set(
-      result.error.issues.map((issue) => issue.path.join('.')).filter(Boolean),
+      result.error.issues.map((issue) => {
+        const field = issue.path.join('.')
+        return field ? `${field}: ${issue.message}` : issue.message
+      }),
     ),
   ]
-  throw new Error(`Invalid Media Alt Text environment: ${fields.join(', ')}`)
+  throw new Error(`Invalid Media Alt Text environment: ${details.join(', ')}`)
 }

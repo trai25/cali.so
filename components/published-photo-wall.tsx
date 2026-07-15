@@ -51,7 +51,7 @@ function PhotoDetails({ photo }: { photo: PublishedPhoto }) {
         </p>
       )}
       {camera.length > 0 && (
-        <dl className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <dl className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
           <dt className="sr-only">
             <T zh="相机参数" en="Camera details" />
           </dt>
@@ -105,7 +105,7 @@ function PublishedPhotoItem({
           expandedContent={<PhotoDetails photo={photo} />}
         />
         {(location || captured) && (
-          <p className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-1 bg-background/90 px-3 py-2 text-xs leading-5 opacity-0 backdrop-blur-sm transition-[opacity,transform] duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 motion-reduce:transform-none motion-reduce:transition-none">
+          <p className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-1 bg-background/90 px-3 py-2 text-sm leading-5 opacity-0 backdrop-blur-sm transition-[opacity,transform] duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 motion-reduce:transform-none motion-reduce:transition-none">
             {[location, captured].filter(Boolean).join(' · ')}
           </p>
         )}

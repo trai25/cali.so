@@ -121,7 +121,7 @@ function UploadQueue({
                 en="Drop JPEG, PNG, or HEIC files here"
               />
             </h2>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            <p className="mt-1 text-sm leading-5 text-muted-foreground">
               <T
                 zh="每个文件最大 50 MiB。每个文件会独立上传、处理和重试。"
                 en="Up to 50 MiB each. Every file uploads, processes, and retries independently."
@@ -160,7 +160,7 @@ function UploadQueue({
               >
                 <div className="min-w-0">
                   <p className="truncate font-medium">{item.file.name}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
+                  <p className="mt-0.5 text-sm text-muted-foreground">
                     {item.status === 'hashing' && <T zh="正在校验" en="Checking" />}
                     {item.status === 'uploading' && <T zh="正在上传" en="Uploading" />}
                     {item.status === 'processing' && <T zh="正在处理" en="Processing" />}
@@ -179,7 +179,7 @@ function UploadQueue({
                     <T zh="重试" en="Retry" />
                   </button>
                 ) : (
-                  <span className="text-xs tabular-nums text-muted-foreground">
+                  <span className="text-sm tabular-nums text-muted-foreground">
                     {(item.file.size / 1024 / 1024).toFixed(1)} MiB
                   </span>
                 )}
@@ -225,7 +225,7 @@ function AssetGrid({
               className="group w-full text-left outline-none"
             >
               <span
-                className={`relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-md bg-surface-1 ring-offset-2 ring-offset-background transition-shadow ${
+                className={`relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-md bg-surface-1 ring-offset-2 ring-offset-background ${
                   selectedId === asset.id
                     ? 'ring-1 ring-foreground'
                     : 'group-focus-visible:ring-1 group-focus-visible:ring-foreground'
@@ -242,7 +242,7 @@ function AssetGrid({
                     className="h-full w-full object-contain"
                   />
                 ) : (
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-sm text-muted-foreground">
                     <T zh="尚无成品" en="No Rendition yet" />
                   </span>
                 )}
@@ -250,7 +250,7 @@ function AssetGrid({
               <span className="mt-2 block truncate text-sm font-medium">
                 {asset.locationLabelEn || asset.locationLabelZhHans || asset.id.slice(0, 8)}
               </span>
-              <span className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+              <span className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-sm text-muted-foreground">
                 <T zh={status.zh} en={status.en} />
                 <span aria-hidden="true">·</span>
                 <span>
@@ -279,12 +279,12 @@ function Field({
   onChange(value: string): void
 }) {
   return (
-    <label className="grid gap-1.5 text-xs text-muted-foreground">
+    <label className="grid gap-1.5 text-sm text-muted-foreground">
       {label}
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="min-h-11 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-foreground"
+        className="min-h-11 rounded-md border border-border bg-background px-3 text-base text-foreground outline-none focus:border-foreground"
       />
     </label>
   )
@@ -429,8 +429,8 @@ function Inspector({
     const confirmation = globalThis.prompt(
       localize(
         locale,
-        '永久清除不可撤销。输入 PURGE 以删除原片、成品和目录记录。',
-        'Purge cannot be undone. Type PURGE to delete the Original, Renditions, and catalog record.',
+        '永久清除不可撤销。输入 PURGE 以清除原片、成品和目录记录。',
+        'Purge cannot be undone. Type PURGE to purge the Original, Renditions, and catalog record.',
       ),
     )
     if (confirmation !== 'PURGE') return
@@ -512,13 +512,13 @@ function Inspector({
 
   return (
     <aside className="min-w-0 border-t border-dashed border-border pt-6 xl:border-l xl:border-t-0 xl:pl-7 xl:pt-0">
-      <p className="text-xs font-medium tracking-[0.12em] text-muted-foreground">
+      <p className="text-sm font-medium tracking-[0.12em] text-muted-foreground">
         <T zh="审核" en="REVIEW" />
       </p>
-      <h2 className="mt-2 break-words text-lg font-semibold">
+      <h2 className="mt-2 break-words text-sm font-semibold">
         {asset.locationLabelEn || asset.locationLabelZhHans || asset.id.slice(0, 8)}
       </h2>
-      <p className="mt-1 text-xs text-muted-foreground">
+      <p className="mt-1 text-sm text-muted-foreground">
         <T
           zh={processingLabel(asset).zh}
           en={processingLabel(asset).en}
@@ -550,7 +550,7 @@ function Inspector({
           )}
         </button>
       )}
-      <p className="mt-2 text-xs leading-5 text-muted-foreground">
+      <p className="mt-2 text-sm leading-5 text-muted-foreground">
         <T
           zh="点击图像设置裁切焦点；键盘可使用方向键微调。"
           en="Click the image to set its Focal Point, or use the arrow keys to adjust it."
@@ -558,7 +558,7 @@ function Inspector({
       </p>
 
       {camera.length > 0 && (
-        <p className="mt-4 text-xs leading-5 text-muted-foreground">
+        <p className="mt-4 text-sm leading-5 text-muted-foreground">
           {camera.join(' · ')}
         </p>
       )}
@@ -593,13 +593,13 @@ function Inspector({
             type="button"
             disabled={pending !== null || asset.lifecycle !== 'active'}
             onClick={regenerate}
-            className="min-h-11 px-2 text-xs font-medium text-muted-foreground outline-none disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
+            className="min-h-11 px-2 text-sm font-medium text-muted-foreground outline-none disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
           >
             {pending === 'suggestion' ? <T zh="生成中…" en="Generating…" /> : <T zh="重新生成" en="Regenerate" />}
           </button>
         </div>
         {suggestion && (
-          <div className="mt-3 rounded-md bg-surface-1 px-3 py-3 text-xs leading-5 text-muted-foreground">
+          <div className="mt-3 rounded-md bg-surface-1 px-3 py-3 text-sm leading-5 text-muted-foreground">
             <p>{suggestion.en}</p>
             <p className="mt-2">{suggestion.zhHans}</p>
           </div>
@@ -631,7 +631,7 @@ function Inspector({
           ref={noticeRef}
           role="status"
           tabIndex={-1}
-          className="mt-4 text-xs leading-5 text-muted-foreground outline-none"
+          className="mt-4 text-sm leading-5 text-muted-foreground outline-none"
         >
           {notice}
         </p>
@@ -678,7 +678,7 @@ function Inspector({
         )}
       </div>
       {asset.lifecycle !== 'active' && (
-        <p className="mt-3 text-xs leading-5 text-muted-foreground">
+        <p className="mt-3 text-sm leading-5 text-muted-foreground">
           <T
             zh="归档不会撤销已经知道的成品 URL；只有永久清除完成后才会删除文件和 CDN 缓存。"
             en="Archive does not revoke a known Rendition URL. Files and CDN cache are removed only after Purge completes."
@@ -862,7 +862,7 @@ export function MediaLibrary({
     <div>
       <div className="flex flex-wrap items-start justify-between gap-5">
         <div>
-          <h1 className="text-2xl font-semibold tracking-[-0.03em]">
+          <h1 className="text-sm font-semibold">
             <T zh="媒体库" en="Media Library" />
           </h1>
           <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
@@ -912,7 +912,7 @@ export function MediaLibrary({
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder={localize(locale, '搜索媒体素材', 'Search Media Assets')}
-            className="min-h-11 w-full rounded-md border border-border bg-background px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-foreground"
+            className="min-h-11 w-full rounded-md border border-border bg-background px-3 text-base outline-none placeholder:text-muted-foreground focus:border-foreground"
           />
         </label>
       </div>

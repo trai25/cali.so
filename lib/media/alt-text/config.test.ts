@@ -45,17 +45,62 @@ describe('Media Library Alt Text environment', () => {
     ).toBe(true)
   })
 
-  it('rejects excessive timeouts and retries', () => {
+  it('rejects any deviation from the AI Gateway policy constants', () => {
     expect(() =>
-      parseMediaAltTextEnv({ MEDIA_ALT_TEXT_TIMEOUT_MS: '30001' }),
-    ).toThrow('MEDIA_ALT_TEXT_TIMEOUT_MS')
+      parseMediaAltTextEnv({ MEDIA_ALT_TEXT_TIMEOUT_MS: '11999' }),
+    ).toThrow(
+      'MEDIA_ALT_TEXT_TIMEOUT_MS: Must be 12000 (AI Gateway policy)',
+    )
     expect(() =>
-      parseMediaAltTextEnv({ MEDIA_ALT_TEXT_MAX_RETRIES: '3' }),
-    ).toThrow('MEDIA_ALT_TEXT_MAX_RETRIES')
+      parseMediaAltTextEnv({ MEDIA_ALT_TEXT_MAX_RETRIES: '2' }),
+    ).toThrow('MEDIA_ALT_TEXT_MAX_RETRIES: Must be 1 (AI Gateway policy)')
     expect(() =>
       parseMediaAltTextEnv({
-        MEDIA_ALT_TEXT_RATE_LIMIT_WINDOW_SECONDS: '30',
+        MEDIA_ALT_TEXT_RATE_LIMIT_MAX_REQUESTS: '11',
       }),
-    ).toThrow('MEDIA_ALT_TEXT_RATE_LIMIT_WINDOW_SECONDS')
+    ).toThrow(
+      'MEDIA_ALT_TEXT_RATE_LIMIT_MAX_REQUESTS: Must be 10 (owner rate-limit policy)',
+    )
+    expect(() =>
+      parseMediaAltTextEnv({
+        MEDIA_ALT_TEXT_RATE_LIMIT_WINDOW_SECONDS: '3599',
+      }),
+    ).toThrow(
+      'MEDIA_ALT_TEXT_RATE_LIMIT_WINDOW_SECONDS: Must be 3600 (owner rate-limit policy)',
+    )
+  })
+
+  it('requires Vercel OIDC in deployed environments', () => {
+    expect(() =>
+      parseMediaAltTextEnv({
+        VERCEL_ENV: 'preview',
+        AI_GATEWAY_API_KEY: 'static-key',
+      }),
+    ).toThrow('AI_GATEWAY_API_KEY')
+    expect(() =>
+      parseMediaAltTextEnv({
+        VERCEL_ENV: 'production',
+        AI_GATEWAY_API_KEY: 'static-key',
+      }),
+    ).toThrow('AI_GATEWAY_API_KEY')
+    expect(() =>
+      parseMediaAltTextEnv({
+        NODE_ENV: 'production',
+        AI_GATEWAY_API_KEY: 'static-key',
+      }),
+    ).toThrow('AI_GATEWAY_API_KEY')
+    expect(
+      parseMediaAltTextEnv({
+        NODE_ENV: 'development',
+        VERCEL_ENV: 'development',
+        AI_GATEWAY_API_KEY: 'local-key',
+      }).enabled,
+    ).toBe(false)
+    expect(
+      parseMediaAltTextEnv({
+        NODE_ENV: 'test',
+        AI_GATEWAY_API_KEY: 'ci-key',
+      }).enabled,
+    ).toBe(false)
   })
 })

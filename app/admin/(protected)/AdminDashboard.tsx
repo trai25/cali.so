@@ -360,7 +360,7 @@ export function AdminDashboard({
 }: AdminDashboardProps) {
   return (
     <div className="w-full max-w-[37.5rem]">
-      <h1 className="text-xl font-semibold tracking-[-0.02em]">
+      <h1 className="text-sm font-semibold">
         <T zh="控制台" en="Dashboard" />
       </h1>
 
