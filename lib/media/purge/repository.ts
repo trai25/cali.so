@@ -113,6 +113,9 @@ export function createMediaPurgeRepository(
           .where(ownedAssetCondition(input.ownerUserId, input.mediaAssetId))
           .limit(1)
           .for('update')
+        // Photo Selection takes a FOR SHARE lock on these same asset rows
+        // before inserting Draft or Published membership. This lock therefore
+        // closes the race between the conflict check and the purging update.
         if (!asset) {
           const [completedJob] = await transaction
             .select({ completedAt: mediaAssetPurgeJobs.completedAt })

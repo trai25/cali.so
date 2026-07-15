@@ -6,6 +6,7 @@ import { ExternalLink } from '~/components/external-link'
 import { ZoomImage } from '~/components/zoom-image'
 import { faviconUrl, getLinkPreview } from '~/lib/link-previews'
 import { tiltFromSlug } from '~/lib/polaroid'
+import { localePath, type Locale } from '~/lib/locale-route'
 
 // Post images arrive as ./file.png#WxH (dimensions encoded by the content
 // pipeline); rewrite to the content route and unpack the dimensions.
@@ -37,7 +38,7 @@ function PostImage({ slug, src, alt, title }: { slug: string; src: string; alt?:
   )
 }
 
-export function mdxComponents(slug: string): MDXComponents {
+export function mdxComponents(slug: string, locale: Locale = 'zh'): MDXComponents {
   return {
     pre: (props) => <CodeBlockPre {...props} />,
     Tweet: ({ id }: { id: string }) => <Tweet slug={slug} id={id} />,
@@ -47,7 +48,14 @@ export function mdxComponents(slug: string): MDXComponents {
     a: (props) => {
       const href = typeof props.href === 'string' ? props.href : ''
       const favicon = /^https?:/.test(href) ? faviconUrl(href) : null
-      if (!favicon) return <a {...props}>{props.children}</a>
+      if (!favicon) {
+        const localizedHref = href.startsWith('/') ? localePath(locale, href) : href
+        return (
+          <a {...props} href={localizedHref}>
+            {props.children}
+          </a>
+        )
+      }
       return (
         <ExternalLink href={href} favicon={favicon} preview={getLinkPreview(href)}>
           {props.children}

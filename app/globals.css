@@ -420,7 +420,7 @@
   }
 }
 
-/* ── 404 proof sheet ─────────────────────────────────────────────── */
+/* ── Error proof sheet ───────────────────────────────────────────── */
 
 .error-sheet {
   min-height: calc(100svh - 3.5rem);
@@ -471,7 +471,7 @@
   gap: 1rem;
   color: var(--foreground);
   font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 0.6875rem;
+  font-size: 0.875rem;
   letter-spacing: 0.06em;
 }
 
@@ -631,7 +631,7 @@
 .error-kicker {
   margin-bottom: 0.5rem;
   color: var(--muted-foreground);
-  font-size: 0.6875rem;
+  font-size: 0.875rem;
   letter-spacing: 0.06em;
 }
 
@@ -927,6 +927,15 @@
   border-radius: 0.25rem;
   padding: 0.125rem 0.375rem;
   font-size: 0.875em;
+}
+
+.newsletter-archive-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-block: 1.5rem;
+  border-radius: 0.25rem;
+  box-shadow: 0 0 0 1px var(--border);
 }
 
 /* ── Code blocks (rehype-pretty-code + shiki dual themes) ─────────── */
@@ -1749,6 +1758,33 @@ a:focus-visible .external-label .external-mark {
   transform-origin: var(--transform-origin);
   backface-visibility: hidden;
   z-index: var(--z-card);
+}
+
+.link-card-with-image {
+  height: 17rem;
+}
+
+.link-card-image-frame {
+  display: block;
+  flex: none;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: calc(var(--radius) - 0.125rem);
+  background: color-mix(in oklch, var(--muted) 72%, var(--paper));
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.link-card-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.external-link img[data-failed],
+.link-card img[data-failed] {
+  visibility: hidden;
 }
 
 .link-card[data-open] {
@@ -3726,7 +3762,7 @@ html[data-locale='en'] [data-en-block] {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  height: 3rem;
+  height: 3.5rem;
   padding: 0.375rem;
   border-radius: 999px;
   background: color-mix(in oklab, var(--background) 55%, transparent);
@@ -3750,8 +3786,8 @@ html[data-locale='en'] [data-en-block] {
   position: relative;
   display: grid;
   place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2.75rem;
+  height: 2.75rem;
   border-radius: 999px;
   color: var(--muted-foreground);
   transition: color 150ms ease, background-color 150ms ease;

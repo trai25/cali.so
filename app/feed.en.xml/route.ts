@@ -1,15 +1,16 @@
 import RSS from 'rss'
+import { cacheLife } from 'next/cache'
 
 import { getAllPosts } from '~/lib/content'
 import { seoEn } from '~/lib/seo'
 
-export const dynamic = 'force-static'
+export function buildEnglishFeedXml() {
+  const siteUrl = new URL('/en', seoEn.url).href
 
-export function GET() {
   const feed = new RSS({
     title: seoEn.title,
     description: seoEn.description,
-    site_url: seoEn.url.href,
+    site_url: siteUrl,
     feed_url: `${seoEn.url.href}feed.en.xml`,
     language: 'en-US',
     image_url: `${seoEn.url.href}images/avatar.png`,
@@ -17,7 +18,7 @@ export function GET() {
   })
 
   for (const post of getAllPosts()) {
-    const url = `${seoEn.url.href}blog/${post.slug}`
+    const url = new URL(`/en/blog/${post.slug}`, seoEn.url).href
     feed.item({
       title: post.titleEn,
       guid: url,
@@ -28,7 +29,18 @@ export function GET() {
     })
   }
 
-  return new Response(feed.xml(), {
+  return feed.xml()
+}
+
+async function getEnglishFeedXml() {
+  'use cache'
+  cacheLife('max')
+
+  return buildEnglishFeedXml()
+}
+
+export async function GET() {
+  return new Response(await getEnglishFeedXml(), {
     headers: { 'content-type': 'application/xml' },
   })
 }

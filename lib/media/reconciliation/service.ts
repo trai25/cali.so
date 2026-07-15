@@ -111,6 +111,9 @@ export function createMediaReconciliationService({
             attemptedAt: now,
           })
           if (!candidate.mediaAssetId && candidate.expiresAt < now) {
+            // Bunny deletion treats a missing key as success. Delete storage
+            // first so a provider failure leaves the durable intent available
+            // for another cleanup attempt instead of orphaning the object.
             await storage.deleteOriginal(candidate.originalKey)
             if (
               await repository.deleteAbandonedUploadIntent({
@@ -149,7 +152,8 @@ export function createMediaReconciliationService({
             BATCH_SIZE,
           )
         } catch {
-          throw new MediaReconciliationError('dependency_unavailable')
+          failed += 1
+          return { resumed, cleaned, suggested, failed }
         }
         for (const asset of missing) {
           if (attemptedAltText.has(asset.mediaAssetId)) continue
@@ -194,7 +198,7 @@ export function createMediaReconciliationService({
           try {
             await generateAltText(input.ownerUserId, asset.id)
           } catch {
-            // A provider failure must not make successful image recovery fail.
+            // An attempt-marker or AI failure must not undo image recovery.
           }
         }
         return asset

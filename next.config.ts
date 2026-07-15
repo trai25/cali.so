@@ -1,8 +1,33 @@
 import type { NextConfig } from 'next'
 
+import legacyUrlManifest from './content/legacy-url-manifest.json'
 import { securityHeaders } from './lib/security/headers'
 
+const legacyRedirects = legacyUrlManifest.entries.flatMap((entry) =>
+  entry.kind === 'redirect' && typeof entry.destination === 'string'
+    ? [
+        {
+          source: entry.source,
+          destination: entry.destination,
+          permanent: true,
+        },
+      ]
+    : [],
+)
+
+const legacyRewrites = legacyUrlManifest.entries.flatMap((entry) =>
+  entry.kind === 'rewrite' && typeof entry.destination === 'string'
+    ? [{ source: entry.source, destination: entry.destination }]
+    : [],
+)
+
+const exposeNavigationTestingApi =
+  process.env.NEXT_INSTANT_NAVIGATION_TEST === '1'
+
 const nextConfig: NextConfig = {
+  cacheComponents: true,
+  partialPrefetching: true,
+
   // Pin the project root: when developing from a git worktree nested inside
   // another checkout, Next's lockfile-based root inference walks too far up.
   turbopack: { root: import.meta.dirname },
@@ -14,7 +39,9 @@ const nextConfig: NextConfig = {
   // Shared-element morphs (cover/title) on route navigation; browsers
   // without the View Transitions API just navigate instantly.
   experimental: {
+    exposeTestingApiInProductionBuild: exposeNavigationTestingApi,
     viewTransition: true,
+    globalNotFound: true,
     sri: { algorithm: 'sha256' },
   },
 
@@ -33,38 +60,19 @@ const nextConfig: NextConfig = {
       source: '/:path*',
       headers: [...securityHeaders],
     },
+    {
+      // The global policy is intentionally useful for public navigation, but
+      // admin API responses must never disclose their origin to another site.
+      source: '/api/admin/:path*',
+      headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }],
+    },
   ],
 
-  // v1 URL back-compat (issue #75): every URL Google or anyone else has
-  // indexed must keep working. Routes that survive in v2 (blog, feeds,
-  // newsletters, ama, about, projects) are served natively; everything
-  // below covers what moved or was retired.
-  redirects: async () => [
-    // Social shortlinks (in bios and shared posts since v1)
-    { source: '/twitter', destination: 'https://x.com/thecalicastle', permanent: true },
-    { source: '/x', destination: 'https://x.com/thecalicastle', permanent: true },
-    { source: '/youtube', destination: 'https://youtube.com/@calicastle', permanent: true },
-    { source: '/tg', destination: 'https://t.me/cali_so', permanent: true },
-    { source: '/linkedin', destination: 'https://www.linkedin.com/in/calicastle/', permanent: true },
-    { source: '/github', destination: 'https://github.com/CaliCastle', permanent: true },
-    { source: '/bilibili', destination: 'https://space.bilibili.com/8350251', permanent: true },
+  // The checked-in manifest is the v3 cutover contract for every preserved,
+  // replaced or retired public URL from the legacy site.
+  redirects: async () => legacyRedirects,
 
-    // Retired in v2 (ADR-0003, ADR-0004)
-    { source: '/guestbook', destination: '/', permanent: true },
-    { source: '/sign-in', destination: '/', permanent: true },
-    { source: '/sign-in/:path*', destination: '/', permanent: true },
-    { source: '/sign-up', destination: '/', permanent: true },
-    { source: '/sign-up/:path*', destination: '/', permanent: true },
-    { source: '/studio', destination: '/', permanent: true },
-    { source: '/studio/:path*', destination: '/', permanent: true },
-  ],
-
-  rewrites: async () => [
-    // Feed aliases subscribed in RSS readers since v1
-    { source: '/feed', destination: '/feed.xml' },
-    { source: '/rss', destination: '/feed.xml' },
-    { source: '/rss.xml', destination: '/feed.xml' },
-  ],
+  rewrites: async () => legacyRewrites,
 }
 
 export default nextConfig

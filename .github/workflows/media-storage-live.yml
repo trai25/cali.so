@@ -21,7 +21,7 @@ jobs:
   contract:
     name: Bunny non-production contract
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     environment: bunny-media-contract
     env:
       BUNNY_STORAGE_LIVE_TEST: ${{ inputs.confirmation }}
@@ -37,6 +37,13 @@ jobs:
       BUNNY_RENDITIONS_CDN_URL: ${{ vars.BUNNY_RENDITIONS_CDN_URL }}
       BUNNY_CDN_API_KEY: ${{ secrets.BUNNY_CDN_API_KEY }}
     steps:
+      - name: Confirm non-production storage
+        run: |
+          if [[ "$BUNNY_STORAGE_LIVE_TEST" != "confirmed-non-production" ]]; then
+            echo "Non-production Bunny storage confirmation is required."
+            exit 1
+          fi
+
       - name: Check out repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 

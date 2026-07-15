@@ -45,8 +45,8 @@ describe('Issue #96 photo release cutover', () => {
     )
 
     const consumers = await Promise.all(
-      ['app/page.tsx', 'app/photos/page.tsx'].map((path) =>
-        readFile(new URL(path, repositoryRoot), 'utf8'),
+      ['app/_views/home-page.tsx', 'app/_views/photos-page.tsx'].map(
+        (path) => readFile(new URL(path, repositoryRoot), 'utf8'),
       ),
     )
     for (const consumer of consumers) {

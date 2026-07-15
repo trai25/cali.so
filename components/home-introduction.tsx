@@ -9,10 +9,10 @@ import {
   XiaohongshuCard,
 } from '~/components/social-cards'
 import { T } from '~/lib/i18n'
-import { getLinkPreview } from '~/lib/link-previews'
+import { faviconUrl, getLinkPreview } from '~/lib/link-previews'
 
-const ZOLPLAY_FAVICON_SRC = 'https://zolplay.com/favicon.ico'
 const ZOLPLAY_URL = 'https://zolplay.com'
+const ZOLPLAY_FAVICON_SRC = faviconUrl(ZOLPLAY_URL)!
 
 function DesignEngineerMark() {
   return (

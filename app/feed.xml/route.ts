@@ -1,13 +1,10 @@
 import RSS from 'rss'
+import { cacheLife } from 'next/cache'
 
 import { getAllPosts } from '~/lib/content'
 import { seo } from '~/lib/seo'
 
-// Content is filesystem-based, so the feed is fully static — it only
-// changes with a deploy. /feed, /rss and /rss.xml rewrite here.
-export const dynamic = 'force-static'
-
-export function GET() {
+export function buildChineseFeedXml() {
   const feed = new RSS({
     title: seo.title,
     description: seo.description,
@@ -31,7 +28,20 @@ export function GET() {
     })
   }
 
-  return new Response(feed.xml(), {
+  return feed.xml()
+}
+
+async function getChineseFeedXml() {
+  'use cache'
+  cacheLife('max')
+
+  return buildChineseFeedXml()
+}
+
+// Content is filesystem-based, so the cached feed only changes with a
+// deployment. /feed, /rss and /rss.xml rewrite here.
+export async function GET() {
+  return new Response(await getChineseFeedXml(), {
     headers: { 'content-type': 'application/xml' },
   })
 }

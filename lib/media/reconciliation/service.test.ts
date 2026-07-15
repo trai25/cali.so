@@ -133,6 +133,10 @@ describe('Media reconciliation service', () => {
       uploadIntentId,
       expiredBefore: now,
     })
+    expect(f.repository.markRecoveryAttempted).toHaveBeenCalledWith({
+      uploadIntentId,
+      attemptedAt: now,
+    })
     expect(f.ingestion.completeUploadIntent).not.toHaveBeenCalled()
   })
 
@@ -152,5 +156,28 @@ describe('Media reconciliation service', () => {
     await expect(
       f.service.resumeMediaAsset({ ownerUserId: 'owner_01', mediaAssetId }),
     ).rejects.toEqual(new MediaReconciliationError('not_found'))
+  })
+
+  it('preserves completed recovery counters when the Alt Text query fails', async () => {
+    const f = fixture()
+    f.repository.listRecoveryCandidates.mockResolvedValueOnce([
+      {
+        ownerUserId: 'owner_01',
+        uploadIntentId,
+        mediaAssetId,
+        originalKey: `originals/${uploadIntentId}.jpg`,
+        expiresAt: new Date('2026-07-16T00:00:00.000Z'),
+      },
+    ])
+    f.repository.listReadyWithoutAltTextSuggestion.mockRejectedValueOnce(
+      new Error('Database unavailable'),
+    )
+
+    await expect(f.service.run()).resolves.toEqual({
+      resumed: 1,
+      cleaned: 0,
+      suggested: 1,
+      failed: 1,
+    })
   })
 })
