@@ -30,10 +30,10 @@ describe('localeMetadata', () => {
     })
   })
 
-  it('builds English self-canonical metadata without doubling the locale prefix', () => {
+  it('builds English self-canonical metadata from an unlocalized path', () => {
     const metadata = localeMetadata({
       locale: 'en',
-      path: '/en/blog/a-post',
+      path: '/blog/a-post',
       title: 'A post',
       description: 'An English summary',
     })
@@ -51,5 +51,17 @@ describe('localeMetadata', () => {
       title: 'A post',
       description: 'An English summary',
     })
+  })
+
+  it('does not double an existing English locale prefix', () => {
+    const metadata = localeMetadata({
+      locale: 'en',
+      path: '/en/blog/a-post',
+      title: 'A post',
+      description: 'An English summary',
+    })
+
+    expect(metadata.alternates?.canonical).toEqual(new URL('/en/blog/a-post', seo.url))
+    expect(metadata.openGraph?.url).toEqual(new URL('/en/blog/a-post', seo.url))
   })
 })
