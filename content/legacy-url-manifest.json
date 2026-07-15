@@ -278,6 +278,13 @@
     },
     {
       "kind": "redirect",
+      "source": "/en/guestbook",
+      "destination": "/en",
+      "probes": ["/en/guestbook"],
+      "status": 308
+    },
+    {
+      "kind": "redirect",
       "source": "/blocked",
       "destination": "/",
       "probes": ["/blocked"],

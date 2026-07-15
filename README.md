@@ -71,6 +71,7 @@ pnpm test:media:ingestion
 pnpm build
 pnpm test:navigation
 pnpm verify:legacy-urls
+pnpm verify:links
 pnpm verify:public-discovery
 pnpm verify:security-boundary
 pnpm audit:prod
