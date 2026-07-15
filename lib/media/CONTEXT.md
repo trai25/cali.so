@@ -1,0 +1,93 @@
+# Media Library
+
+## Status
+
+Proposed post-launch context. It does not describe shipped v3 behavior; static
+local media remains the launch implementation.
+
+The Media Library owns reusable files, their safe descriptive metadata, and
+the selections that publish them across the personal site.
+
+## Language
+
+**Media Asset**:
+A reusable file registered in the Media Library, together with its owned
+metadata and storage references.
+_Avoid_: Upload, file record
+
+**Original**:
+The private, full-quality source object from which public versions are made.
+_Avoid_: Source file, master
+
+**Upload Intent**:
+A short-lived, owner-authorized reservation for registering one Original under
+one opaque object key. It records transfer expectations before bytes move and
+can expire without creating a ready Media Asset.
+_Avoid_: Pending file, temporary upload
+
+**Rendition**:
+A public, delivery-ready version derived from an Original.
+_Avoid_: Copy, thumbnail
+
+**Display Metadata**:
+The allowlisted location, capture, and camera details that may be shown to a
+visitor. Raw embedded metadata is not Display Metadata.
+_Avoid_: EXIF blob, raw metadata
+
+**Capture Location**:
+The private coordinates extracted from an Original. Capture Location is never
+published directly.
+_Avoid_: Public location, photo address
+
+**Location Label**:
+The owner-editable place name that may be included in Display Metadata.
+_Avoid_: GPS, coordinates
+
+**Focal Point**:
+The owner-selected point of interest used when a Rendition must be cropped for
+a presentation surface. It does not alter the Original.
+_Avoid_: Crop, hotspot
+
+**Alt Text Suggestion**:
+An AI-generated Chinese or English candidate description that the owner may
+accept, edit, or regenerate. It is never published directly.
+_Avoid_: Generated alt text, automatic alt text
+
+**Alt Text**:
+The owner-approved Chinese and English visual descriptions required before a
+Media Asset may join a Published Photo Selection.
+_Avoid_: Caption, Alt Text Suggestion
+
+**Processing State**:
+The durable progress of registering and deriving a Media Asset, including
+Original verification, Rendition processing, readiness, retryable failure, and
+repair required. It is separate from whether the Media Asset is active,
+Archived, or being purged.
+_Avoid_: Lifecycle, upload status
+
+**Archived Media Asset**:
+A Media Asset hidden from normal library views and unavailable to new Photo
+Selections while its files and metadata remain recoverable.
+_Avoid_: Deleted asset, trashed file
+
+**Purge**:
+The irreversible removal of a Media Asset, including its Original, Renditions,
+and catalog record.
+_Avoid_: Delete, remove
+
+**Photo Selection**:
+An ordered set of Media Assets chosen for the public photos page. Membership
+and order do not change the underlying Media Assets.
+_Avoid_: Gallery, photo uploads
+
+**Draft Photo Selection**:
+The owner's editable Photo Selection. Its membership and order are not visible
+to visitors until publication.
+_Avoid_: Working gallery, unpublished photos
+
+**Published Photo Selection**:
+The immutable snapshot shown on the photos page and in homepage previews. It
+captures membership, order, public Rendition references, Focal Points, Alt
+Text, and Display Metadata, and changes only when the owner publishes a Draft
+Photo Selection.
+_Avoid_: Live gallery, active photos
