@@ -255,7 +255,12 @@ export function createMediaIngestionRepository(
       return renditionRecord(existing)
     },
 
-    async markReady({ mediaAssetId, metadata, completedAt }) {
+    async markReady({
+      mediaAssetId,
+      metadata,
+      completedAt,
+      requiredRenditionCount,
+    }) {
       const [ready] = await database()
         .update(mediaAssets)
         .set({
@@ -284,7 +289,7 @@ export function createMediaIngestionRepository(
               SELECT count(*)
               FROM ${mediaRenditions}
               WHERE ${mediaRenditions.mediaAssetId} = ${mediaAssetId}
-            ) = 3`,
+            ) = ${requiredRenditionCount}`,
           ),
         )
         .returning()
