@@ -8,7 +8,7 @@ import { T } from '~/lib/i18n'
 const navigation = [
   { href: '/admin', zh: '控制台', en: 'Dashboard' },
   { href: '/admin/media', zh: '媒体', en: 'Media' },
-  { href: '/admin/photos', zh: '照片', en: 'Photos', disabled: true },
+  { href: '/admin/photos', zh: '照片', en: 'Photos' },
 ] as const
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
@@ -32,15 +32,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               item.href === '/admin'
                 ? pathname === item.href
                 : pathname.startsWith(item.href)
-            return 'disabled' in item && item.disabled ? (
-              <span
-                key={item.href}
-                aria-disabled="true"
-                className="flex min-h-11 cursor-not-allowed items-center rounded-md px-3 text-sm text-muted-foreground opacity-50"
-              >
-                <T zh={item.zh} en={item.en} />
-              </span>
-            ) : (
+            return (
               <Link
                 key={item.href}
                 href={item.href}
