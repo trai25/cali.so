@@ -95,6 +95,9 @@ export function createMediaReconciliationService({
       for (const candidate of candidates) {
         try {
           if (!candidate.mediaAssetId && candidate.expiresAt < now) {
+            // Bunny deletion treats a missing key as success. Delete storage
+            // first so a provider failure leaves the durable intent available
+            // for another cleanup attempt instead of orphaning the object.
             await storage.deleteOriginal(candidate.originalKey)
             if (
               await repository.deleteAbandonedUploadIntent({
@@ -133,7 +136,8 @@ export function createMediaReconciliationService({
             BATCH_SIZE,
           )
         } catch {
-          throw new MediaReconciliationError('dependency_unavailable')
+          failed += 1
+          return { resumed, cleaned, suggested, failed }
         }
         for (const asset of missing) {
           if (attemptedAltText.has(asset.mediaAssetId)) continue

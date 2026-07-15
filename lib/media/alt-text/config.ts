@@ -50,6 +50,7 @@ const schema = z
       .default(3_600),
     MEDIA_ALT_TEXT_PROVIDER_POLICY_APPROVED: featureSwitch,
     AI_GATEWAY_API_KEY: z.string().trim().min(1).optional(),
+    NODE_ENV: z.enum(['development', 'test', 'production']).optional(),
     VERCEL_ENV: z.enum(['development', 'preview', 'production']).optional(),
   })
   .superRefine((environment, context) => {
@@ -75,8 +76,9 @@ const schema = z
       })
     }
     if (
-      environment.VERCEL_ENV !== undefined &&
-      environment.VERCEL_ENV !== 'development' &&
+      (environment.NODE_ENV === 'production' ||
+        (environment.VERCEL_ENV !== undefined &&
+          environment.VERCEL_ENV !== 'development')) &&
       environment.AI_GATEWAY_API_KEY
     ) {
       context.addIssue({

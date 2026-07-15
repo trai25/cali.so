@@ -41,6 +41,7 @@ export function createMediaAltTextRepository(
           and(
             eq(mediaRenditions.mediaAssetId, mediaAssets.id),
             eq(mediaRenditions.profileWidth, ALT_TEXT_RENDITION_PROFILE_WIDTH),
+            eq(mediaRenditions.metadataStripped, true),
           ),
         )
         .where(

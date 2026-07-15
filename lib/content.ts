@@ -1,9 +1,14 @@
-import { readFileSync, readdirSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import GithubSlugger from 'github-slugger'
 import matter from 'gray-matter'
 import { z } from 'zod'
+
+import {
+  isPublishedPostSlug,
+  publishedPostSlugs,
+} from './public-content-routes'
 
 const POSTS_DIR = path.join(process.cwd(), 'content/blog')
 
@@ -168,9 +173,12 @@ export function getPost(slug: string): Post {
   }
 }
 
+export function isPostSlug(slug: string) {
+  return isPublishedPostSlug(slug)
+}
+
 export function getAllPosts(): Post[] {
-  return readdirSync(POSTS_DIR, { withFileTypes: true })
-    .filter((e) => e.isDirectory())
-    .map((e) => getPost(e.name))
+  return publishedPostSlugs
+    .map((slug) => getPost(slug))
     .sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime())
 }

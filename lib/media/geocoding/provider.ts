@@ -62,7 +62,7 @@ export function createGoogleMapsLocationLabelSuggester({
 }) {
   return {
     async suggest(location: CaptureLocation): Promise<LocationLabelSuggestion> {
-      const [zhHans, en] = await Promise.all([
+      const [zhHansResult, enResult] = await Promise.allSettled([
         labelForLanguage({
           apiKey,
           fetcher,
@@ -78,6 +78,16 @@ export function createGoogleMapsLocationLabelSuggester({
           timeoutMs,
         }),
       ])
+      const zhHans =
+        zhHansResult.status === 'fulfilled' ? zhHansResult.value : null
+      const en = enResult.status === 'fulfilled' ? enResult.value : null
+      if (
+        !zhHans &&
+        !en &&
+        (zhHansResult.status === 'rejected' || enResult.status === 'rejected')
+      ) {
+        throw new Error('Location Label provider unavailable')
+      }
       return {
         ...(zhHans ? { zhHans } : {}),
         ...(en ? { en } : {}),

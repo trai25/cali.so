@@ -1,3 +1,4 @@
+import { cacheLife } from 'next/cache'
 import Link from 'next/link'
 
 import { FooterClock } from '~/components/footer-clock'
@@ -11,6 +12,7 @@ import {
   YouTubeCard,
 } from '~/components/social-cards'
 import { T } from '~/lib/i18n'
+import { localePath, type Locale } from '~/lib/locale-route'
 
 function Tree({
   zh,
@@ -31,15 +33,24 @@ function Tree({
   )
 }
 
+async function CopyrightYear() {
+  'use cache'
+  cacheLife({ stale: 86_400, revalidate: 86_400, expire: 86_400 })
+
+  return new Date().getFullYear()
+}
+
 // Swiss editorial footer, set as folder trees: each column is a directory
 // listing with box-drawing connectors; the controls in 偏好 fill the
 // column width (auto on mobile).
 export function SiteFooter({
   social,
   github,
+  locale = 'zh',
 }: {
   social: { x: SocialSnapshot; telegram: SocialSnapshot; youtube: SocialSnapshot }
   github: GitHubSnapshot
+  locale?: Locale
 }) {
   return (
     <footer className="mx-auto mt-24 w-full max-w-[37.5rem] px-6 pb-24 text-sm text-muted-foreground sm:pb-12">
@@ -63,22 +74,22 @@ export function SiteFooter({
         </Tree>
         <Tree zh="索引" en="index">
           <li>
-            <Link href="/" className="footer-tree-link">
+            <Link href={localePath(locale, '/')} className="footer-tree-link">
               <T zh="首页" en="Home" />
             </Link>
           </li>
           <li>
-            <Link href="/projects" className="footer-tree-link">
+            <Link href={localePath(locale, '/projects')} className="footer-tree-link">
               <T zh="项目" en="Projects" />
             </Link>
           </li>
           <li>
-            <Link href="/photos" className="footer-tree-link">
+            <Link href={localePath(locale, '/photos')} className="footer-tree-link">
               <T zh="照片" en="Photos" />
             </Link>
           </li>
           <li>
-            <Link href="/blog" className="footer-tree-link">
+            <Link href={localePath(locale, '/blog')} className="footer-tree-link">
               <T zh="写作" en="Writing" />
             </Link>
           </li>
@@ -92,7 +103,9 @@ export function SiteFooter({
           </li>
         </Tree>
         <div className="footer-colophon col-span-2 sm:order-first sm:col-span-1">
-          <p>© {new Date().getFullYear()} Cali Castle</p>
+          <p>
+            © <CopyrightYear /> Cali Castle
+          </p>
           <FooterClock />
         </div>
       </div>

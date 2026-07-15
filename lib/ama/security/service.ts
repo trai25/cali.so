@@ -1,14 +1,16 @@
 import 'server-only'
 
-import { createHmac, randomUUID } from 'node:crypto'
+import { createHmac } from 'node:crypto'
 
 import { AUTH_SESSION_COOKIE } from '../auth/service'
 import { readRequestCookie } from '../cookies'
 import {
   browserMutationDeniedResponse,
   checkBrowserMutationRequest,
+  featureUnavailableResponse,
   securityDenialHeaders,
 } from './request-policy'
+import { createSecurityAuditRecorder } from './audit'
 
 export type PrivilegedAuditEvent =
   | 'availability_mutation.succeeded'
@@ -73,12 +75,6 @@ type AmaSecurityDependencies = {
   retryAfterSeconds?: number
 }
 
-function unavailableResponse(retryAfterSeconds?: number) {
-  const headers = securityDenialHeaders()
-  if (retryAfterSeconds) headers.set('retry-after', String(retryAfterSeconds))
-  return new Response(null, { status: 503, headers })
-}
-
 function rateLimitedResponse(retryAfterSeconds: number) {
   const headers = securityDenialHeaders()
   headers.set('retry-after', String(retryAfterSeconds))
@@ -95,40 +91,19 @@ export function createAmaSecurity({
   rateLimiter,
   audit,
   clock = { now: () => new Date() },
-  requestId = randomUUID,
+  requestId,
   retryAfterSeconds = 60,
 }: AmaSecurityDependencies) {
-  const requestIds = new WeakMap<Request, string>()
-
-  function record(event: SecurityAuditEvent) {
-    try {
-      const result = audit.write(event)
-      if (result instanceof Promise) void result.catch(() => {})
-    } catch {
-      // Security logging must never turn a denial into an availability incident.
-    }
-  }
-
-  function recordAuditEvent(
-    request: Request,
-    input: Omit<SecurityAuditEvent, 'timestamp' | 'requestId'>,
-  ) {
-    let currentRequestId = requestIds.get(request)
-    if (!currentRequestId) {
-      currentRequestId = requestId()
-      requestIds.set(request, currentRequestId)
-    }
-    record({
-      ...input,
-      timestamp: clock.now().toISOString(),
-      requestId: currentRequestId,
-    })
-  }
+  const recordAuditEvent = createSecurityAuditRecorder({
+    audit,
+    clock,
+    requestId,
+  })
 
   function disabledFeature(request: Request, required: readonly AmaFeature[]) {
     if (required.every((feature) => features[feature])) return null
     recordAuditEvent(request, { event: 'feature.disabled', outcome: 'denied' })
-    return unavailableResponse()
+    return featureUnavailableResponse()
   }
 
   function actorId(request: Request) {
@@ -195,7 +170,7 @@ export function createAmaSecurity({
           outcome: 'error',
           actorId: privateActorId,
         })
-        return unavailableResponse(retryAfterSeconds)
+        return featureUnavailableResponse(retryAfterSeconds)
       }
     },
   }
