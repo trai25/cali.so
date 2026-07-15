@@ -52,6 +52,13 @@ describe('Media Asset review repository', () => {
                'Pixel', 6.9, 1.7, 0.01, 80)`,
       [assetId, intentId, 'a'.repeat(64)],
     )
+    await client.query(
+      `INSERT INTO media_renditions
+        (media_asset_id, profile_width, object_key, checksum_sha256,
+         byte_size, width, height)
+       VALUES ($1, 640, 'renditions/photo-640.jpg', $2, 800, 640, 480)`,
+      [assetId, 'b'.repeat(64)],
+    )
     const database = drizzle(client) as unknown as MediaAssetReviewDatabase
     repository = createMediaAssetReviewRepository(
       () => database,
@@ -62,14 +69,6 @@ describe('Media Asset review repository', () => {
   afterEach(async () => client.close())
 
   it('lists only owned lifecycle views with public 640-pixel previews', async () => {
-    await client.query(
-      `INSERT INTO media_renditions
-        (media_asset_id, profile_width, object_key, checksum_sha256,
-         byte_size, width, height)
-       VALUES ($1, 640, 'renditions/photo-640.jpg', $2, 800, 640, 480)`,
-      [assetId, 'b'.repeat(64)],
-    )
-
     await expect(
       repository.listOwnedAssets({ ownerUserId: 'owner_02', view: 'active' }),
     ).resolves.toEqual([])
@@ -124,6 +123,11 @@ describe('Media Asset review repository', () => {
       aperture: 1.7,
       shutterSpeedSeconds: 0.01,
       iso: 80,
+      previewRendition: {
+        src: 'https://media.example.com/renditions/photo-640.jpg',
+        width: 640,
+        height: 480,
+      },
     })
     const stored = await repository.findOwnedAsset({
       ownerUserId: 'owner_01',
@@ -163,6 +167,11 @@ describe('Media Asset review repository', () => {
         model: 'model',
       },
       altTextEn: 'A reviewed description',
+      previewRendition: {
+        src: 'https://media.example.com/renditions/photo-640.jpg',
+        width: 640,
+        height: 480,
+      },
     })
     expect(stored.rows[0]).toEqual({
       alt_text_suggestion_en: 'Suggestion',
@@ -256,11 +265,22 @@ describe('Media Asset review repository', () => {
 
     expect(archived).toMatchObject({
       status: 'updated',
-      asset: { lifecycle: 'archived' },
+      asset: {
+        lifecycle: 'archived',
+        previewRendition: {
+          src: 'https://media.example.com/renditions/photo-640.jpg',
+        },
+      },
     })
     expect(restored).toMatchObject({
       status: 'updated',
-      asset: { lifecycle: 'active', archivedAt: null },
+      asset: {
+        lifecycle: 'active',
+        archivedAt: null,
+        previewRendition: {
+          src: 'https://media.example.com/renditions/photo-640.jpg',
+        },
+      },
     })
   })
 })
