@@ -137,6 +137,34 @@ describe('Photo Selection admin UI contract', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
+  it('clears the dragged item when a drag is cancelled', () => {
+    document.documentElement.dataset.locale = 'en'
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+    const { getAllByRole } = render(
+      <PhotoSelectionEditor
+        initialDraft={{
+          revision: 2,
+          mediaAssetIds: [first.id, second.id],
+          updatedAt: null,
+        }}
+        initialAssets={[first, second]}
+      />,
+    )
+    const dragButtons = getAllByRole('button', { name: /Drag/ })
+    const dataTransfer = {
+      effectAllowed: 'none',
+      getData: () => first.id,
+      setData: vi.fn(),
+    }
+
+    fireEvent.dragStart(dragButtons[0]!, { dataTransfer })
+    fireEvent.dragEnd(dragButtons[0]!, { dataTransfer })
+    fireEvent.drop(dragButtons[1]!.closest('li')!, { dataTransfer })
+
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
   it('explains failed publication without claiming the Draft was published', async () => {
     document.documentElement.dataset.locale = 'en'
     vi.stubGlobal('confirm', vi.fn(() => true))
