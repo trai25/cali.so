@@ -15,6 +15,13 @@ export type CaptureLocationEnvelope = {
   tag: string
 }
 
+export class CaptureLocationError extends Error {
+  constructor(readonly code: 'invalid_location') {
+    super('Invalid Capture Location')
+    this.name = 'CaptureLocationError'
+  }
+}
+
 const additionalData = Buffer.from('cali.so:media:capture-location:v1', 'utf8')
 const openError = 'Unable to open Capture Location'
 
@@ -41,7 +48,7 @@ function assertCaptureLocation(value: unknown): asserts value is CaptureLocation
     Reflect.get(value, 'longitude') < -180 ||
     Reflect.get(value, 'longitude') > 180
   ) {
-    throw new Error('Invalid Capture Location')
+    throw new CaptureLocationError('invalid_location')
   }
 }
 

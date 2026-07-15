@@ -7,6 +7,7 @@ import {
   processOriginalImage,
   RENDITION_PROFILE_WIDTHS,
 } from '../processing/image'
+import { CaptureLocationError } from '../privacy/capture-location'
 import { BunnyStorageError } from '../storage/bunny'
 import { MAX_ORIGINAL_UPLOAD_BYTES } from '../storage/upload'
 
@@ -303,6 +304,12 @@ function safeFailure(error: unknown) {
     return {
       processingState: 'repair_required' as const,
       processingErrorCode: `ingestion_${error.code}`,
+    }
+  }
+  if (error instanceof CaptureLocationError) {
+    return {
+      processingState: 'repair_required' as const,
+      processingErrorCode: 'capture_location_invalid',
     }
   }
   if (error instanceof BunnyStorageError) {
