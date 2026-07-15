@@ -7,9 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
-import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "~/lib/utils";
-import { spring } from "~/lib/springs";
 import { fontWeights } from "~/lib/font-weight";
 import { useShape } from "~/lib/shape-context";
 
@@ -97,23 +95,6 @@ interface TooltipProps {
 }
 
 // ---------------------------------------------------------------------------
-// Animation helpers
-// ---------------------------------------------------------------------------
-
-function getSlideOffset(side: TooltipSide) {
-  switch (side) {
-    case "top":
-      return { y: 4 };
-    case "bottom":
-      return { y: -4 };
-    case "left":
-      return { x: 4 };
-    case "right":
-      return { x: -4 };
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Tooltip
 // ---------------------------------------------------------------------------
 
@@ -130,11 +111,8 @@ function Tooltip({
   const [internalOpen, setInternalOpen] = useState(false);
   const open = forceOpen !== undefined ? forceOpen : internalOpen;
   const shape = useShape();
-  const shouldReduceMotion = useReducedMotion();
   const portalContainer = useContext(TooltipPortalContainerContext);
   const hasAmbientProvider = useContext(TooltipGroupContext);
-
-  const slideOffset = getSlideOffset(side);
 
   const tooltip = (
     <TooltipPrimitive.Root
@@ -154,22 +132,11 @@ function Tooltip({
           className="z-50"
         >
           <TooltipPrimitive.Popup
-            render={(props, state) => {
-              const exiting = state.transitionStatus === "ending";
-              const {
-                style: baseStyle,
-                // motion.div has incompatible drag/animation event signatures —
-                // strip the React-DOM versions so they don't fight motion's own.
-                onDrag: _onDrag,
-                onDragStart: _onDragStart,
-                onDragEnd: _onDragEnd,
-                onAnimationStart: _onAnimationStart,
-                onAnimationEnd: _onAnimationEnd,
-                onAnimationIteration: _onAnimationIteration,
-                ...rest
-              } = props as React.HTMLAttributes<HTMLDivElement>;
+            render={(props) => {
+              const { style: baseStyle, ...rest } =
+                props as React.HTMLAttributes<HTMLDivElement>;
               return (
-                <motion.div
+                <div
                   {...rest}
                   className={cn(
                     // Trim recenters the label; the padding bump only applies
@@ -184,25 +151,6 @@ function Tooltip({
                     ...(baseStyle as React.CSSProperties | undefined),
                     fontVariationSettings: fontWeights.medium,
                   }}
-                  initial={
-                    shouldReduceMotion
-                      ? false
-                      : { opacity: 0, ...slideOffset }
-                  }
-                  animate={
-                    exiting
-                      ? shouldReduceMotion
-                        ? { opacity: 0, x: 0, y: 0 }
-                        : { opacity: 0, ...slideOffset }
-                      : { opacity: 1, x: 0, y: 0 }
-                  }
-                  transition={
-                    shouldReduceMotion
-                      ? { duration: 0 }
-                      : exiting
-                        ? spring.fast.exit
-                        : spring.fast
-                  }
                 />
               );
             }}

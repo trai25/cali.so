@@ -3934,7 +3934,7 @@ html[data-locale='en'] [data-en-block] {
 }
 
 .prefs-panel [role='tab'][aria-selected='true'] svg,
-.prefs-panel [role='tab'][aria-selected='true'] > span > span:last-child {
+.prefs-panel [role='tab'][aria-selected='true'] [data-tab-label] {
   color: var(--background) !important;
 }
 

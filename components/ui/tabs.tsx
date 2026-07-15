@@ -15,10 +15,8 @@ import {
   type ComponentPropsWithoutRef,
 } from "react";
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import type { IconComponent } from "~/lib/icon-context";
 import { cn } from "~/lib/utils";
-import { spring } from "~/lib/springs";
 import { useShape } from "~/lib/shape-context";
 import { useSurface } from "~/lib/surface-context";
 import { surfaceClasses } from "~/lib/surface-classes";
@@ -157,7 +155,6 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
     const isMouseInside = useRef(false);
     const shape = useShape();
     const substrate = useSurface();
-    const shouldReduceMotion = useReducedMotion();
     // Active pill lifts 3 levels above substrate (1 above the muted track + 2 for pop).
     // On the page (substrate 1) this lands on surface 4 — matches the original design.
     // Inside a dialog (substrate 5) it lifts to surface 8 instead of staying at 4.
@@ -286,92 +283,55 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
         >
           {/* Active segment indicator */}
           {selectedRect && (
-            <motion.div
+            <div
               data-tabs-indicator="selected"
               className={cn(
                 "absolute pointer-events-none",
                 surfaceClasses(indicatorLevel),
                 shape.bg
               )}
-              initial={false}
-              animate={{ opacity: isHovering ? 0.85 : 1 }}
               style={{
                 left: selectedRect.left,
                 width: selectedRect.width,
                 top: selectedRect.top,
                 height: selectedRect.height,
+                opacity: isHovering ? 0.85 : 1,
               }}
-              transition={
-                shouldReduceMotion
-                  ? { duration: 0 }
-                  : { ...spring.moderate, opacity: { duration: 0.08 } }
-              }
             />
           )}
 
           {/* Hover indicator */}
-          <AnimatePresence>
-            {hoverRect && !isHoveringSelected && selectedRect && (
-              <motion.div
-                className={cn(
-                  "absolute pointer-events-none bg-hover",
-                  shape.bg
-                )}
-                initial={shouldReduceMotion ? false : { opacity: 0 }}
-                animate={{ opacity: 0.4 }}
-                style={{
-                  left: hoverRect.left,
-                  width: hoverRect.width,
-                  top: hoverRect.top,
-                  height: hoverRect.height,
-                }}
-                exit={{
-                  opacity: 0,
-                  transition: shouldReduceMotion
-                    ? { duration: 0 }
-                    : !isMouseInside.current
-                      ? { duration: 0.06 }
-                      : spring.fast.exit,
-                }}
-                transition={
-                  shouldReduceMotion
-                    ? { duration: 0 }
-                    : { ...spring.fast, opacity: { duration: 0.08 } }
-                }
-              />
-            )}
-          </AnimatePresence>
+          {hoverRect && !isHoveringSelected && selectedRect && (
+            <div
+              className={cn(
+                "absolute pointer-events-none bg-hover",
+                shape.bg
+              )}
+              style={{
+                left: hoverRect.left,
+                width: hoverRect.width,
+                top: hoverRect.top,
+                height: hoverRect.height,
+                opacity: 0.4,
+              }}
+            />
+          )}
 
           {/* Focus ring */}
-          <AnimatePresence>
-            {focusRect && (
-              <motion.div
-                className={cn(
-                  "absolute pointer-events-none z-20 border border-[color:var(--focus-ring)]",
-                  shape.focusRing
-                )}
-                initial={false}
-                animate={{ opacity: 1 }}
-                style={{
-                  left: focusRect.left - 2,
-                  top: focusRect.top - 2,
-                  width: focusRect.width + 4,
-                  height: focusRect.height + 4,
-                }}
-                exit={{
-                  opacity: 0,
-                  transition: shouldReduceMotion
-                    ? { duration: 0 }
-                    : spring.fast.exit,
-                }}
-                transition={
-                  shouldReduceMotion
-                    ? { duration: 0 }
-                    : { ...spring.fast, opacity: { duration: 0.08 } }
-                }
-              />
-            )}
-          </AnimatePresence>
+          {focusRect && (
+            <div
+              className={cn(
+                "absolute pointer-events-none z-20 border border-[color:var(--focus-ring)]",
+                shape.focusRing
+              )}
+              style={{
+                left: focusRect.left - 2,
+                top: focusRect.top - 2,
+                width: focusRect.width + 4,
+                height: focusRect.height + 4,
+              }}
+            />
+          )}
 
           {indexedChildren}
         </TabsPrimitive.List>
@@ -432,9 +392,8 @@ const TabItem = forwardRef<HTMLButtonElement, TabItemProps>(
         {Icon && (
           <Icon
             size={16}
-            strokeWidth={isActive ? 2 : 1.5}
+            strokeWidth={1.5}
             className={cn(
-              "transition-[color,stroke-width] duration-150",
               isActive ? "text-foreground" : "text-muted-foreground"
             )}
           />
@@ -443,8 +402,9 @@ const TabItem = forwardRef<HTMLButtonElement, TabItemProps>(
             trailing gap. Selection is communicated by color, never weight. */}
         {label !== "" && (
           <span
+            data-tab-label
             className={cn(
-              "text-[14px] whitespace-nowrap transition-colors duration-150 [text-box:trim-both_cap_alphabetic]",
+              "text-[14px] whitespace-nowrap [text-box:trim-both_cap_alphabetic]",
               isActive ? "text-foreground" : "text-muted-foreground"
             )}
           >

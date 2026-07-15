@@ -98,6 +98,16 @@ test('public motion and typography follow the design contract', async ({ page })
     englishLabel.evaluate((element) => getComputedStyle(element).fontVariationSettings),
   ])
   expect(chineseWeight).toBe(englishWeight)
+  const selectedContrast = await page
+    .getByRole('tab', { name: 'English' })
+    .evaluate((element) => {
+      const label = element.querySelector('[data-tab-label]')
+      return {
+        background: getComputedStyle(element).backgroundColor,
+        foreground: label ? getComputedStyle(label).color : '',
+      }
+    })
+  expect(selectedContrast.foreground).not.toBe(selectedContrast.background)
 
   await page.keyboard.press('Escape')
   await expect(preferences).toBeFocused()

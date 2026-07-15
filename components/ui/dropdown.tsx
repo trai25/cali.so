@@ -13,7 +13,6 @@ import {
   type HTMLAttributes,
   type ComponentProps,
 } from "react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Menu } from "@base-ui/react/menu";
 import type { MenuTriggerProps } from "@base-ui/react/menu";
 import {
@@ -24,8 +23,10 @@ import {
   type MenuItemRenderOptions,
 } from "~/components/ui/menu-item";
 import { cn } from "~/lib/utils";
-import { spring, exitFallbackMs } from "~/lib/springs";
-import { useProximityHover } from "~/hooks/use-proximity-hover";
+import {
+  useProximityHover,
+  type ItemRect,
+} from "~/hooks/use-proximity-hover";
 import { shapeMap } from "~/lib/shape-context";
 import { Elevated } from "~/lib/elevated";
 
@@ -34,6 +35,57 @@ import { Elevated } from "~/lib/elevated";
 // the UI is shaped (the heavy pill bubbling distorts perceived padding at this
 // scale and produces the corner-shadow asymmetry).
 const shape = shapeMap.rounded;
+
+function DropdownIndicators({
+  activeRect,
+  checkedRect,
+  focusRect,
+  isHoveringOther,
+}: {
+  activeRect: ItemRect | null;
+  checkedRect: ItemRect | null;
+  focusRect: ItemRect | null;
+  isHoveringOther: boolean;
+}) {
+  return (
+    <>
+      {checkedRect && (
+        <div
+          className={`absolute ${shape.bg} bg-active pointer-events-none`}
+          style={{
+            top: checkedRect.top,
+            left: checkedRect.left,
+            width: checkedRect.width,
+            height: checkedRect.height,
+            opacity: isHoveringOther ? 0.8 : 1,
+          }}
+        />
+      )}
+      {activeRect && (
+        <div
+          className={`absolute ${shape.bg} bg-hover pointer-events-none`}
+          style={{
+            top: activeRect.top,
+            left: activeRect.left,
+            width: activeRect.width,
+            height: activeRect.height,
+          }}
+        />
+      )}
+      {focusRect && (
+        <div
+          className={`absolute ${shape.focusRing} pointer-events-none z-20 border border-[color:var(--focus-ring)]`}
+          style={{
+            left: focusRect.left - 2,
+            top: focusRect.top - 2,
+            width: focusRect.width + 4,
+            height: focusRect.height + 4,
+          }}
+        />
+      )}
+    </>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Panel context — shared by the inline Dropdown and the popup DropdownContent.
@@ -66,12 +118,10 @@ interface DropdownProps extends HTMLAttributes<HTMLDivElement> {
 const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
   ({ children, checkedIndex, className, ...props }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const shouldReduceMotion = useReducedMotion();
     const {
       activeIndex,
       setActiveIndex,
       itemRects,
-      sessionRef,
       handlers,
       registerItem,
       measureItems,
@@ -150,90 +200,12 @@ const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
           )}
           {...props}
         >
-          {/* Selected background */}
-          <AnimatePresence>
-            {checkedRect && (
-              <motion.div
-                className={`absolute ${shape.bg} bg-active pointer-events-none`}
-                initial={false}
-                animate={{ opacity: isHoveringOther ? 0.8 : 1 }}
-                style={{
-                  top: checkedRect.top,
-                  left: checkedRect.left,
-                  width: checkedRect.width,
-                  height: checkedRect.height,
-                }}
-                exit={{
-                  opacity: 0,
-                  transition: shouldReduceMotion
-                    ? { duration: 0 }
-                    : spring.moderate.exit,
-                }}
-                transition={
-                  shouldReduceMotion
-                    ? { duration: 0 }
-                    : { ...spring.moderate, opacity: { duration: 0.08 } }
-                }
-              />
-            )}
-          </AnimatePresence>
-
-          {/* Hover background */}
-          <AnimatePresence>
-            {activeRect && (
-              <motion.div
-                key={sessionRef.current}
-                className={`absolute ${shape.bg} bg-hover pointer-events-none`}
-                initial={shouldReduceMotion ? false : { opacity: 0 }}
-                animate={{ opacity: 1 }}
-                style={{
-                  top: activeRect.top,
-                  left: activeRect.left,
-                  width: activeRect.width,
-                  height: activeRect.height,
-                }}
-                exit={{
-                  opacity: 0,
-                  transition: shouldReduceMotion
-                    ? { duration: 0 }
-                    : spring.fast.exit,
-                }}
-                transition={
-                  shouldReduceMotion
-                    ? { duration: 0 }
-                    : { ...spring.fast, opacity: { duration: 0.08 } }
-                }
-              />
-            )}
-          </AnimatePresence>
-
-          {/* Focus ring */}
-          <AnimatePresence>
-            {focusRect && (
-              <motion.div
-                className={`absolute ${shape.focusRing} pointer-events-none z-20 border border-[color:var(--focus-ring,#6B97FF)]`}
-                initial={false}
-                animate={{ opacity: 1 }}
-                style={{
-                  left: focusRect.left - 2,
-                  top: focusRect.top - 2,
-                  width: focusRect.width + 4,
-                  height: focusRect.height + 4,
-                }}
-                exit={{
-                  opacity: 0,
-                  transition: shouldReduceMotion
-                    ? { duration: 0 }
-                    : spring.fast.exit,
-                }}
-                transition={
-                  shouldReduceMotion
-                    ? { duration: 0 }
-                    : { ...spring.fast, opacity: { duration: 0.08 } }
-                }
-              />
-            )}
-          </AnimatePresence>
+          <DropdownIndicators
+            activeRect={activeRect}
+            checkedRect={checkedRect}
+            focusRect={focusRect}
+            isHoveringOther={isHoveringOther}
+          />
 
           {children}
         </Elevated>
@@ -250,19 +222,12 @@ Dropdown.displayName = "Dropdown";
 // Built on Base UI's Menu primitive, which owns the trigger wiring,
 // positioning (collision flipping, anchor tracking), dismissal (outside
 // press, focus-out, Escape), roving highlight, typeahead, and close-on-select.
-// The Fluid Functionalism layer keeps the proximity-hover overlays and the
-// spring open/close animation (via actionsRef deferred unmount) — the same
-// verified pattern as select.tsx.
+// The Fluid Functionalism layer keeps proximity-hover overlays while product
+// chrome opens and changes state without decorative motion.
 // ---------------------------------------------------------------------------
-
-interface DropdownMenuActions {
-  unmount: () => void;
-  close: () => void;
-}
 
 interface DropdownMenuContextValue {
   open: boolean;
-  actionsRef: React.RefObject<DropdownMenuActions | null>;
 }
 
 const DropdownMenuContext = createContext<DropdownMenuContextValue | null>(null);
@@ -298,7 +263,6 @@ function DropdownMenu({
 }: DropdownMenuProps) {
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
   const open = openProp !== undefined ? openProp : internalOpen;
-  const actionsRef = useRef<DropdownMenuActions | null>(null);
 
   const handleOpenChange = useCallback(
     (next: boolean) => {
@@ -308,14 +272,13 @@ function DropdownMenu({
     [openProp, onOpenChange]
   );
 
-  const ctx = useMemo(() => ({ open, actionsRef }), [open]);
+  const ctx = useMemo(() => ({ open }), [open]);
 
   return (
     <DropdownMenuContext.Provider value={ctx}>
       <Menu.Root
         open={open}
         onOpenChange={handleOpenChange}
-        actionsRef={actionsRef}
         disabled={disabled}
         orientation={orientation}
         // Non-modal: the page keeps scrolling and the Positioner tracks the
@@ -378,35 +341,19 @@ const DropdownContent = forwardRef<HTMLDivElement, DropdownContentProps>(
     },
     ref
   ) => {
-    const { open, actionsRef } = useDropdownMenuContext();
+    const { open } = useDropdownMenuContext();
     const containerRef = useRef<HTMLDivElement>(null);
-    const shouldReduceMotion = useReducedMotion();
 
     const {
       activeIndex,
       setActiveIndex,
       itemRects,
-      sessionRef,
       handlers,
       registerItem,
       measureItems,
     } = useProximityHover(containerRef);
 
     const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
-
-    // Release Base UI's deferred unmount once the exit tween has played.
-    // onAnimationComplete on the motion.div is the primary signal; this
-    // timeout is a fallback for throttled/background tabs where rAF-driven
-    // animation callbacks can stall. The popup exits with spring.fast, so the
-    // fallback tracks that tier's exit duration plus a safety buffer.
-    useEffect(() => {
-      if (open) return;
-      const id = setTimeout(
-        () => actionsRef.current?.unmount(),
-        exitFallbackMs(spring.fast)
-      );
-      return () => clearTimeout(id);
-    }, [open, actionsRef]);
 
     // Measure items once the popup has mounted.
     useEffect(() => {
@@ -491,33 +438,7 @@ const DropdownContent = forwardRef<HTMLDivElement, DropdownContentProps>(
           positionMethod="fixed"
           className="z-50 outline-none"
         >
-          <motion.div
-            initial={
-              shouldReduceMotion
-                ? false
-                : { opacity: 0, y: -4, scaleY: 0.96 }
-            }
-            animate={
-              open
-                ? { opacity: 1, y: 0, scaleY: 1 }
-                : shouldReduceMotion
-                  ? { opacity: 0, y: 0, scaleY: 1 }
-                  : { opacity: 0, y: -4, scaleY: 0.96 }
-            }
-            transition={
-              shouldReduceMotion
-                ? { duration: 0 }
-                : open
-                  ? spring.fast
-                  : spring.fast.exit
-            }
-            style={{ transformOrigin: "top center" }}
-            // Base UI defers unmount while actionsRef is set; release it once
-            // the exit spring has finished so the close animation fully plays.
-            onAnimationComplete={() => {
-              if (!open) actionsRef.current?.unmount();
-            }}
-          >
+          <div>
             <DropdownContext.Provider value={contentCtx}>
               <Menu.Popup
                 render={
@@ -570,90 +491,12 @@ const DropdownContent = forwardRef<HTMLDivElement, DropdownContentProps>(
                   className
                 )}
               >
-                {/* Selected background */}
-                <AnimatePresence>
-                  {checkedRect && (
-                    <motion.div
-                      className={`absolute ${shape.bg} bg-active pointer-events-none`}
-                      initial={false}
-                      animate={{ opacity: isHoveringOther ? 0.8 : 1 }}
-                      style={{
-                        top: checkedRect.top,
-                        left: checkedRect.left,
-                        width: checkedRect.width,
-                        height: checkedRect.height,
-                      }}
-                      exit={{
-                        opacity: 0,
-                        transition: shouldReduceMotion
-                          ? { duration: 0 }
-                          : spring.moderate.exit,
-                      }}
-                      transition={
-                        shouldReduceMotion
-                          ? { duration: 0 }
-                          : { ...spring.moderate, opacity: { duration: 0.08 } }
-                      }
-                    />
-                  )}
-                </AnimatePresence>
-
-                {/* Hover background */}
-                <AnimatePresence>
-                  {activeRect && (
-                    <motion.div
-                      key={sessionRef.current}
-                      className={`absolute ${shape.bg} bg-hover pointer-events-none`}
-                      initial={shouldReduceMotion ? false : { opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      style={{
-                        top: activeRect.top,
-                        left: activeRect.left,
-                        width: activeRect.width,
-                        height: activeRect.height,
-                      }}
-                      exit={{
-                        opacity: 0,
-                        transition: shouldReduceMotion
-                          ? { duration: 0 }
-                          : spring.fast.exit,
-                      }}
-                      transition={
-                        shouldReduceMotion
-                          ? { duration: 0 }
-                          : { ...spring.fast, opacity: { duration: 0.08 } }
-                      }
-                    />
-                  )}
-                </AnimatePresence>
-
-                {/* Focus ring */}
-                <AnimatePresence>
-                  {focusRect && (
-                    <motion.div
-                      className={`absolute ${shape.focusRing} pointer-events-none z-20 border border-[color:var(--focus-ring,#6B97FF)]`}
-                      initial={false}
-                      animate={{ opacity: 1 }}
-                      style={{
-                        left: focusRect.left - 2,
-                        top: focusRect.top - 2,
-                        width: focusRect.width + 4,
-                        height: focusRect.height + 4,
-                      }}
-                      exit={{
-                        opacity: 0,
-                        transition: shouldReduceMotion
-                          ? { duration: 0 }
-                          : spring.fast.exit,
-                      }}
-                      transition={
-                        shouldReduceMotion
-                          ? { duration: 0 }
-                          : { ...spring.fast, opacity: { duration: 0.08 } }
-                      }
-                    />
-                  )}
-                </AnimatePresence>
+                <DropdownIndicators
+                  activeRect={activeRect}
+                  checkedRect={checkedRect}
+                  focusRect={focusRect}
+                  isHoveringOther={isHoveringOther}
+                />
 
                 {/* display: contents keeps items direct flex children of the
                     popup so proximity measurement and gap layout still work,
@@ -666,7 +509,7 @@ const DropdownContent = forwardRef<HTMLDivElement, DropdownContentProps>(
                 </Menu.RadioGroup>
               </Menu.Popup>
             </DropdownContext.Provider>
-          </motion.div>
+          </div>
         </Menu.Positioner>
       </Menu.Portal>
     );

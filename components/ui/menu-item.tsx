@@ -11,7 +11,6 @@ import {
   type ReactNode,
 } from "react";
 import type { IconComponent } from "~/lib/icon-context";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { shapeMap } from "~/lib/shape-context";
 
@@ -108,8 +107,6 @@ const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(
     ref
   ) => {
     const internalRef = useRef<HTMLDivElement>(null);
-    const hasMounted = useRef(false);
-    const shouldReduceMotion = useReducedMotion();
     const { registerItem, activeIndex, checkedIndex, renderMenuItem } =
       useDropdown();
 
@@ -118,12 +115,7 @@ const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(
       return () => registerItem(index, null);
     }, [index, registerItem]);
 
-    useEffect(() => {
-      hasMounted.current = true;
-    }, []);
-
     const isActive = activeIndex === index;
-    const skipAnimation = shouldReduceMotion || !hasMounted.current;
 
     const mergeRef = (node: HTMLDivElement | null) => {
       (internalRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
@@ -149,27 +141,21 @@ const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(
     const content = (
       <>
         {Icon && (
-          <span className="inline-grid">
-            <span className="col-start-1 row-start-1 invisible">
-              <Icon size={16} strokeWidth={2} />
-            </span>
-            <Icon
-              size={16}
-              strokeWidth={isActive || checked ? 2 : 1.5}
-              className={cn(
-                "col-start-1 row-start-1 transition-[color,stroke-width] duration-150",
-                isActive || checked
-                  ? "text-foreground"
-                  : "text-muted-foreground"
-              )}
-            />
-          </span>
+          <Icon
+            size={16}
+            strokeWidth={1.5}
+            className={cn(
+              isActive || checked
+                ? "text-foreground"
+                : "text-muted-foreground"
+            )}
+          />
         )}
         {/* Selection is communicated by color, never a weight change. */}
         <span className="flex-1 text-[14px]">
           <span
             className={cn(
-              "transition-colors duration-150 [text-box:trim-both_cap_alphabetic]",
+              "[text-box:trim-both_cap_alphabetic]",
               isActive || checked
                 ? "text-foreground"
                 : "text-muted-foreground"
@@ -178,10 +164,8 @@ const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(
             {label}
           </span>
         </span>
-        <AnimatePresence>
-          {checked && (
-            <motion.svg
-              key="check"
+        {checked && (
+            <svg
               width={16}
               height={16}
               viewBox="0 0 24 24"
@@ -191,31 +175,10 @@ const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(
               strokeLinecap="round"
               strokeLinejoin="round"
               className="text-foreground shrink-0"
-              initial={{ opacity: 1 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 1 }}
             >
-              <motion.path
-                d="M4 12L9 17L20 6"
-                initial={{ pathLength: skipAnimation ? 1 : 0 }}
-                animate={{
-                  pathLength: 1,
-                  transition: shouldReduceMotion
-                    ? { duration: 0 }
-                    : { duration: 0.08, ease: "easeOut" },
-                }}
-                exit={
-                  shouldReduceMotion
-                    ? { pathLength: 1, transition: { duration: 0 } }
-                    : {
-                        pathLength: 0,
-                        transition: { duration: 0.04, ease: "easeIn" },
-                      }
-                }
-              />
-            </motion.svg>
-          )}
-        </AnimatePresence>
+              <path d="M4 12L9 17L20 6" />
+            </svg>
+        )}
       </>
     );
 

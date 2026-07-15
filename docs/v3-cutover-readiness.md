@@ -5,10 +5,11 @@ Last checked: 2026-07-15.
 ## Verdict
 
 **NOT READY.** The merged `v2` integration branch is green under the complete
-local release suite, and the browser review found and fixed one reduced-motion
-regression. The production cutover must still wait for current Vercel evidence,
-production credential and database-role confirmation, required GitHub checks,
-and a final review of this branch's Vercel Preview.
+local release suite, and the browser and standards reviews found and fixed the
+remaining motion and typography regressions. The production cutover must still
+wait for current Vercel evidence, production credential and database-role
+confirmation, required GitHub checks, and a final review of this branch's
+Vercel Preview.
 
 Unknown hosted state is not counted as passed. This report does not authorize
 merging to `main`, changing production settings, accessing production data, or
@@ -67,7 +68,7 @@ The following passed from the frozen installation:
 - 40 Media Library storage tests.
 - 4 port-post tests.
 - Production build with 78 generated pages.
-- 6 Instant Navigation and keyboard browser tests.
+- 7 Instant Navigation, keyboard, motion, and typography browser tests.
 - 53 legacy URL probes against the production server.
 - 354 internal links and 147 live external links across all 28 sitemap pages.
 - Public discovery and failure-handling verification.
@@ -110,13 +111,17 @@ navigation, lightbox activation and focus restoration, and article-map
 activation and dismissal. They also confirmed Chinese and English Projects and
 Photos pages without horizontal overflow; valid nine-item Chinese and English
 feeds; localized Chinese and English Open Graph images; and zero running
-animations under reduced motion. The PR Preview must repeat the release matrix
-against Vercel rather than assuming the local result proves hosted behavior.
+animations under reduced motion. A final design-contract pass also confirmed
+stable selection weights and contrast, instant indicator geometry, 14-pixel
+Tweet copy, the shared chrome tracking value, and the 300ms swift image reveal.
+The PR Preview must repeat the release matrix against Vercel rather than
+assuming the local result proves hosted behavior.
 
 Final review artifacts after the accessibility corrections:
 
 - `final-home-en-desktop.png`
 - `final-preferences-en-desktop.png`
+- `final-preferences-en-motion-fix.png`
 - `final-home-en-mobile-reduced.png`
 
 ## Review disposition
@@ -131,6 +136,11 @@ Final review artifacts after the accessibility corrections:
   replacing the Preferences menu with the correct popover semantics. Shared
   controls now follow the 44-pixel target, 14-pixel chrome, reduced-motion,
   and motion-token contracts.
+- The seventh Playwright test closes the remaining design-contract findings.
+  Shared product controls now change selection and focus without decorative
+  motion, keep selected and unselected labels at one weight, and preserve
+  selected-label contrast. Scroll reveals and public chrome typography use the
+  documented timing and type tokens.
 - Media Library storage, catalog, processing, and ingestion foundations were
   explicitly merged into `v2` by the maintainer after the original launch
   scope was written. They remain unreachable, do not replace static public
