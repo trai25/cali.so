@@ -59,6 +59,9 @@ jobs:
       - name: Test media image processing
         run: pnpm test:media:processing
 
+      - name: Test media ingestion workflow
+        run: pnpm test:media:ingestion
+
       - name: Test localization
         run: pnpm test:localization
 

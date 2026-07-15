@@ -170,6 +170,24 @@ export function createBunnyStorage(
     }
   }
 
+  async function readObject(client: S3Client, bucket: string, key: string) {
+    assertObjectKey(key)
+    let output
+    try {
+      output = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }))
+    } catch (error) {
+      throw new BunnyStorageError(
+        providerStatus(error) === 404 ? 'not_found' : 'provider_unavailable',
+      )
+    }
+    if (!output.Body) throw new BunnyStorageError('invalid_response')
+    try {
+      return await output.Body.transformToByteArray()
+    } catch {
+      throw new BunnyStorageError('provider_unavailable')
+    }
+  }
+
   return {
     async storeOriginal(input: {
       key: string
@@ -200,26 +218,7 @@ export function createBunnyStorage(
     },
 
     async readOriginal(key: string) {
-      assertObjectKey(key)
-      let output
-      try {
-        output = await originals.send(
-          new GetObjectCommand({
-            Bucket: config.originals.zone,
-            Key: key,
-          }),
-        )
-      } catch (error) {
-        throw new BunnyStorageError(
-          providerStatus(error) === 404 ? 'not_found' : 'provider_unavailable',
-        )
-      }
-      if (!output.Body) throw new BunnyStorageError('invalid_response')
-      try {
-        return await output.Body.transformToByteArray()
-      } catch {
-        throw new BunnyStorageError('provider_unavailable')
-      }
+      return readObject(originals, config.originals.zone, key)
     },
 
     async storeRendition(input: {
@@ -252,6 +251,10 @@ export function createBunnyStorage(
 
     async inspectRendition(key: string) {
       return inspectObject(renditions, config.renditions.zone, key)
+    },
+
+    async readRendition(key: string) {
+      return readObject(renditions, config.renditions.zone, key)
     },
 
     deleteOriginal(key: string) {
