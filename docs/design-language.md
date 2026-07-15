@@ -194,10 +194,13 @@ open rich hover cards. The contract:
   popup is informational and noninteractive, and touch follows that link
   without opening a separate surface.
 - **The implemented base: external-link previews.** Every external link in
-  prose carries a 14px inline favicon (fixed slot, no layout shift) and — when
-  build-time metadata exists in `content/link-previews.json` — a preview card
-  (favicon + domain, title, two-line description) on the shared hover-card
-  primitive (`components/external-link.tsx`). Refresh the metadata with
+  prose carries a 14px inline favicon (fixed slot, no layout shift) served by
+  `og.zolplay.com` and — when build-time metadata exists in
+  `content/link-previews.json` — a preview card on the shared hover-card
+  primitive (`components/external-link.tsx`). Image-enabled cards reserve one
+  fixed 16:9 slot for the proxied Open Graph image above the favicon, domain,
+  title, and two-line description; media failure keeps the slot and link stable.
+  Refresh the metadata from the same first-party service with
   `node scripts/refresh-link-previews.mjs`.
 - **External-link mark.** Text links that leave the site carry the shared
   northeast arrow inline; internal links, RSS, and Email do not. Shelf covers

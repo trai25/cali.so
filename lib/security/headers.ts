@@ -18,7 +18,7 @@ function contentSecurityPolicy(scriptSources: string, styleSources: string) {
     `script-src ${scriptSources}`,
     "script-src-attr 'none'",
     `style-src ${styleSources}`,
-    "img-src 'self' data: blob: https://www.google.com https://zolplay.com",
+    "img-src 'self' data: blob: https://og.zolplay.com",
     "font-src 'self' data:",
     "connect-src 'self'",
     "media-src 'self' blob:",
