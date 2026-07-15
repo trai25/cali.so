@@ -29,18 +29,18 @@ describe('Media Library Alt Text environment', () => {
     ).toThrow('MEDIA_ALT_TEXT_FALLBACK_MODEL')
   })
 
-  it('keeps production disabled until provider policy approval', () => {
+  it('keeps every environment disabled until provider policy approval', () => {
     expect(() =>
       parseMediaAltTextEnv({
         MEDIA_ALT_TEXT_ENABLED: 'true',
-        VERCEL_ENV: 'production',
+        VERCEL_ENV: 'preview',
       }),
     ).toThrow('MEDIA_ALT_TEXT_PROVIDER_POLICY_APPROVED')
     expect(
       parseMediaAltTextEnv({
         MEDIA_ALT_TEXT_ENABLED: 'true',
         MEDIA_ALT_TEXT_PROVIDER_POLICY_APPROVED: 'true',
-        VERCEL_ENV: 'production',
+        VERCEL_ENV: 'preview',
       }).enabled,
     ).toBe(true)
   })

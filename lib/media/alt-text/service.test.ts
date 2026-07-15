@@ -98,9 +98,10 @@ describe('Media Library Alt Text Suggestion service', () => {
       ownerUserId: 'user_owner',
       imageBytes,
     })
-    expect(harness.repository.saveSuggestion).toHaveBeenCalledWith(
-      harness.saved,
-    )
+    expect(harness.repository.saveSuggestion).toHaveBeenCalledWith({
+      ...harness.saved,
+      ownerUserId: 'user_owner',
+    })
     expect(JSON.stringify(harness.generator.generate.mock.calls)).not.toMatch(
       /original|filename|capture|location|metadata/i,
     )

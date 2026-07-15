@@ -69,13 +69,12 @@ const schema = z
     }
     if (
       environment.MEDIA_ALT_TEXT_ENABLED &&
-      environment.VERCEL_ENV === 'production' &&
       !environment.MEDIA_ALT_TEXT_PROVIDER_POLICY_APPROVED
     ) {
       context.addIssue({
         code: 'custom',
         path: ['MEDIA_ALT_TEXT_PROVIDER_POLICY_APPROVED'],
-        message: 'Production AI provider policy approval is required',
+        message: 'AI provider policy approval is required before enablement',
       })
     }
   })

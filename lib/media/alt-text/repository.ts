@@ -3,7 +3,7 @@ import 'server-only'
 import { and, eq, sql } from 'drizzle-orm'
 
 import type { getDatabase } from '~/db'
-import { mediaAssets, mediaRenditions } from '~/db/schema'
+import { mediaAssets, mediaRenditions, mediaUploadIntents } from '~/db/schema'
 
 import type {
   AltTextGenerationTarget,
@@ -18,7 +18,7 @@ export function createMediaAltTextRepository(
   database: () => MediaAltTextDatabase,
 ): MediaAltTextRepository {
   return {
-    async findGenerationTarget(mediaAssetId) {
+    async findGenerationTarget({ ownerUserId, mediaAssetId }) {
       const [row] = await database()
         .select({
           mediaAssetId: mediaAssets.id,
@@ -32,6 +32,10 @@ export function createMediaAltTextRepository(
           renditionMetadataStripped: mediaRenditions.metadataStripped,
         })
         .from(mediaAssets)
+        .innerJoin(
+          mediaUploadIntents,
+          eq(mediaUploadIntents.id, mediaAssets.uploadIntentId),
+        )
         .leftJoin(
           mediaRenditions,
           and(
@@ -39,7 +43,12 @@ export function createMediaAltTextRepository(
             eq(mediaRenditions.profileWidth, ALT_TEXT_RENDITION_PROFILE_WIDTH),
           ),
         )
-        .where(eq(mediaAssets.id, mediaAssetId))
+        .where(
+          and(
+            eq(mediaAssets.id, mediaAssetId),
+            eq(mediaUploadIntents.ownerUserId, ownerUserId),
+          ),
+        )
         .limit(1)
       if (!row) return null
 
@@ -76,6 +85,12 @@ export function createMediaAltTextRepository(
             eq(mediaAssets.id, input.mediaAssetId),
             eq(mediaAssets.lifecycle, 'active'),
             eq(mediaAssets.processingState, 'ready'),
+            sql`EXISTS (
+              SELECT 1
+              FROM ${mediaUploadIntents}
+              WHERE ${mediaUploadIntents.id} = ${mediaAssets.uploadIntentId}
+                AND ${mediaUploadIntents.ownerUserId} = ${input.ownerUserId}
+            )`,
             sql`EXISTS (
               SELECT 1
               FROM ${mediaRenditions}

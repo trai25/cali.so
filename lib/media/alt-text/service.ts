@@ -37,11 +37,12 @@ export type AltTextSuggestionRecord = {
 }
 
 export interface MediaAltTextRepository {
-  findGenerationTarget(
-    mediaAssetId: string,
-  ): Promise<AltTextGenerationTarget | null>
+  findGenerationTarget(input: {
+    ownerUserId: string
+    mediaAssetId: string
+  }): Promise<AltTextGenerationTarget | null>
   saveSuggestion(
-    input: AltTextSuggestionRecord,
+    input: AltTextSuggestionRecord & { ownerUserId: string },
   ): Promise<AltTextSuggestionRecord | null>
 }
 
@@ -148,7 +149,7 @@ export function createMediaAltTextService({
 
       let target: AltTextGenerationTarget | null
       try {
-        target = await repository.findGenerationTarget(input.mediaAssetId)
+        target = await repository.findGenerationTarget(input)
       } catch {
         throw new MediaAltTextError('dependency_unavailable')
       }
@@ -192,6 +193,7 @@ export function createMediaAltTextService({
       let saved: AltTextSuggestionRecord | null
       try {
         saved = await repository.saveSuggestion({
+          ownerUserId: input.ownerUserId,
           mediaAssetId: target.mediaAssetId,
           ...suggestion,
           suggestedAt: clock.now(),

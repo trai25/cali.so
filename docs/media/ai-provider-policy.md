@@ -42,9 +42,9 @@ fallback, an owner-scoped limit of 10 requests per hour, and Gateway cost
 attribution. Provider failure never clears an existing Alt Text Suggestion or
 owner-approved Alt Text, and manual Alt Text remains available without AI.
 
-## Production approval
+## Provider approval
 
-Production generation stays disabled until this policy is reviewed and
-`MEDIA_ALT_TEXT_PROVIDER_POLICY_APPROVED=true` is set together with
-`MEDIA_ALT_TEXT_ENABLED=true`. Approval should record the review date and any
-required regional or contractual restrictions in this document.
+AI generation in every environment stays disabled until this policy is
+reviewed and `MEDIA_ALT_TEXT_PROVIDER_POLICY_APPROVED=true` is set together
+with `MEDIA_ALT_TEXT_ENABLED=true`. Approval should record the review date and
+any required regional or contractual restrictions in this document.

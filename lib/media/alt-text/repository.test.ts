@@ -72,7 +72,10 @@ describe('Media Library Alt Text Suggestion repository', () => {
 
   it('reads only the bounded sanitized Rendition projection', async () => {
     await expect(
-      repository.findGenerationTarget(mediaAssetId),
+      repository.findGenerationTarget({
+        ownerUserId: 'user_owner',
+        mediaAssetId,
+      }),
     ).resolves.toEqual({
       mediaAssetId,
       lifecycle: 'active',
@@ -86,10 +89,17 @@ describe('Media Library Alt Text Suggestion repository', () => {
         metadataStripped: true,
       },
     })
+    await expect(
+      repository.findGenerationTarget({
+        ownerUserId: 'user_other',
+        mediaAssetId,
+      }),
+    ).resolves.toBeNull()
   })
 
   it('stores suggestions separately from owner-approved Alt Text', async () => {
     const suggestion = {
+      ownerUserId: 'user_owner',
       mediaAssetId,
       zhHans: '一辆缆车沿城市街道行驶。',
       en: 'A cable car travels along a city street.',
@@ -97,9 +107,13 @@ describe('Media Library Alt Text Suggestion repository', () => {
       suggestedAt: now,
     }
 
-    await expect(repository.saveSuggestion(suggestion)).resolves.toEqual(
-      suggestion,
-    )
+    await expect(repository.saveSuggestion(suggestion)).resolves.toEqual({
+      mediaAssetId,
+      zhHans: suggestion.zhHans,
+      en: suggestion.en,
+      model: suggestion.model,
+      suggestedAt: suggestion.suggestedAt,
+    })
     const result = await client.query<{
       alt_text_suggestion_en: string
       alt_text_en: string | null
@@ -118,6 +132,7 @@ describe('Media Library Alt Text Suggestion repository', () => {
 
   it('preserves an existing suggestion if the Media Asset is Archived', async () => {
     const first = {
+      ownerUserId: 'user_owner',
       mediaAssetId,
       zhHans: '原有建议',
       en: 'Existing suggestion',
@@ -144,5 +159,25 @@ describe('Media Library Alt Text Suggestion repository', () => {
       [mediaAssetId],
     )
     expect(result.rows[0]!.alt_text_suggestion_en).toBe(first.en)
+  })
+
+  it('refuses to persist a suggestion for another owner', async () => {
+    await expect(
+      repository.saveSuggestion({
+        ownerUserId: 'user_other',
+        mediaAssetId,
+        zhHans: '不应保存',
+        en: 'Must not be saved',
+        model: 'google/gemini-3.1-flash-lite',
+        suggestedAt: now,
+      }),
+    ).resolves.toBeNull()
+
+    const result = await client.query<{
+      alt_text_suggestion_en: string | null
+    }>('SELECT alt_text_suggestion_en FROM media_assets WHERE id = $1', [
+      mediaAssetId,
+    ])
+    expect(result.rows[0]!.alt_text_suggestion_en).toBeNull()
   })
 })
