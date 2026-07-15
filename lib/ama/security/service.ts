@@ -19,6 +19,7 @@ export type PrivilegedAuditEvent =
   | 'media_alt_text.requested'
   | 'media_asset.archived'
   | 'media_asset.purge_requested'
+  | 'media_asset.processing_resumed'
   | 'media_asset.restored'
   | 'media_asset.reviewed'
   | 'media_location_label.requested'

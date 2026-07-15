@@ -9,6 +9,7 @@ import {
   createMediaAssetActionHandler,
   createMediaAssetListHandler,
   createMediaLocationLabelHandler,
+  createMediaResumeHandler,
   createMediaUploadIntentHandler,
   createPhotoSelectionDraftHandler,
   createPhotoSelectionPublishHandler,
@@ -428,6 +429,42 @@ describe('Media admin HTTP contract', () => {
     expect(f.calls).toEqual([{ ownerUserId: 'owner_01', mediaAssetId }])
     expect(f.auditEvents.at(-1)?.event).toBe(
       'media_location_label.requested',
+    )
+  })
+
+  it('resumes durable processing through the owner mutation boundary', async () => {
+    const f = fixture()
+    const handler = createMediaResumeHandler({
+      authenticator: f.authenticator,
+      security: f.security,
+      reconciliation: {
+        async resumeMediaAsset(input) {
+          f.calls.push(['resume', input])
+          return { processingState: 'ready' }
+        },
+      },
+      review: {
+        async getAsset(input) {
+          f.calls.push(['read', input])
+          return { id: mediaAssetId, processingState: 'ready' }
+        },
+      },
+    })
+
+    const response = await handler(
+      request(`/api/admin/media/assets/${mediaAssetId}/resume`, {
+        method: 'POST',
+      }),
+      mediaAssetId,
+    )
+
+    expect(response.status).toBe(200)
+    expect(f.calls).toEqual([
+      ['resume', { ownerUserId: 'owner_01', mediaAssetId }],
+      ['read', { ownerUserId: 'owner_01', mediaAssetId }],
+    ])
+    expect(f.auditEvents.at(-1)?.event).toBe(
+      'media_asset.processing_resumed',
     )
   })
 })
