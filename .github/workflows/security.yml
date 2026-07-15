@@ -87,6 +87,9 @@ jobs:
       - name: Test Media Asset review
         run: pnpm test:media:asset-review
 
+      - name: Test Media Asset Purge
+        run: pnpm test:media:purge
+
       - name: Test localization
         run: pnpm test:localization
 

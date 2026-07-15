@@ -359,6 +359,77 @@ export const mediaRenditions = pgTable(
   ],
 )
 
+export const mediaAssetPurgeJobs = pgTable(
+  'media_asset_purge_jobs',
+  {
+    // This intentionally remains after the Media Asset row is removed so a
+    // retried request can distinguish a completed Purge from an unknown ID.
+    mediaAssetId: uuid('media_asset_id').primaryKey(),
+    ownerUserId: varchar('owner_user_id', { length: 255 }).notNull(),
+    originalKey: text('original_key'),
+    startedAt: timestamp('started_at', { withTimezone: true }).notNull(),
+    originalDeletedAt: timestamp('original_deleted_at', { withTimezone: true }),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    claimToken: uuid('claim_token'),
+    claimExpiresAt: timestamp('claim_expires_at', { withTimezone: true }),
+    lastErrorCode: varchar('last_error_code', { length: 64 }),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    index('media_asset_purge_jobs_owner_idx').on(
+      table.ownerUserId,
+      table.completedAt,
+      table.updatedAt,
+    ),
+    check(
+      'media_asset_purge_jobs_owner_check',
+      sql`length(btrim(${table.ownerUserId})) > 0`,
+    ),
+    check(
+      'media_asset_purge_jobs_claim_check',
+      sql`num_nonnulls(${table.claimToken}, ${table.claimExpiresAt}) IN (0, 2)`,
+    ),
+    check(
+      'media_asset_purge_jobs_error_check',
+      sql`${table.lastErrorCode} IS NULL OR length(btrim(${table.lastErrorCode})) > 0`,
+    ),
+    check(
+      'media_asset_purge_jobs_completion_check',
+      sql`(${table.completedAt} IS NULL AND ${table.originalKey} IS NOT NULL) OR (${table.completedAt} IS NOT NULL AND ${table.originalKey} IS NULL AND ${table.originalDeletedAt} IS NOT NULL AND ${table.claimToken} IS NULL AND ${table.claimExpiresAt} IS NULL AND ${table.lastErrorCode} IS NULL)`,
+    ),
+  ],
+)
+
+export const mediaAssetPurgeRenditions = pgTable(
+  'media_asset_purge_renditions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    mediaAssetId: uuid('media_asset_id')
+      .notNull()
+      .references(() => mediaAssetPurgeJobs.mediaAssetId, {
+        onDelete: 'cascade',
+      }),
+    objectKey: text('object_key').notNull(),
+    objectDeletedAt: timestamp('object_deleted_at', { withTimezone: true }),
+    cdnPurgedAt: timestamp('cdn_purged_at', { withTimezone: true }),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    uniqueIndex('media_asset_purge_renditions_object_uidx').on(
+      table.mediaAssetId,
+      table.objectKey,
+    ),
+    check(
+      'media_asset_purge_renditions_object_key_check',
+      sql`length(btrim(${table.objectKey})) > 0`,
+    ),
+    check(
+      'media_asset_purge_renditions_progress_check',
+      sql`${table.cdnPurgedAt} IS NULL OR ${table.objectDeletedAt} IS NOT NULL`,
+    ),
+  ],
+)
+
 export const mediaPhotoSelectionDrafts = pgTable(
   'media_photo_selection_drafts',
   {
