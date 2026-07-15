@@ -191,11 +191,13 @@ async function loadCandidates(
 
 function publicRenditionUrl(baseUrl: URL, objectKey: string) {
   const url = new URL(baseUrl)
-  url.pathname = objectKey
+  const encodedObjectKey = objectKey
     .split('/')
     .filter(Boolean)
     .map((segment) => encodeURIComponent(segment))
     .join('/')
+  const basePath = url.pathname.replace(/\/+$/, '')
+  url.pathname = `${basePath}/${encodedObjectKey}`
   return url.toString()
 }
 
@@ -382,6 +384,23 @@ export function createPhotoSelectionRepository(
             }
           }
 
+          const [existingRevision] = await transaction
+            .select({ id: mediaPublishedPhotoSelections.id })
+            .from(mediaPublishedPhotoSelections)
+            .where(
+              and(
+                eq(mediaPublishedPhotoSelections.ownerUserId, input.ownerUserId),
+                eq(
+                  mediaPublishedPhotoSelections.draftRevision,
+                  input.expectedDraftRevision,
+                ),
+              ),
+            )
+            .limit(1)
+          if (existingRevision) {
+            return { status: 'idempotency_conflict' }
+          }
+
           const [draft] = await transaction
             .select()
             .from(mediaPhotoSelectionDrafts)
@@ -421,41 +440,58 @@ export function createPhotoSelectionRepository(
             })
             .returning({ id: mediaPublishedPhotoSelections.id })
 
-          for (const [position, mediaAssetId] of mediaAssetIds.entries()) {
-            const candidate = candidates.get(mediaAssetId)!
-            const [entry] = await transaction
+          if (mediaAssetIds.length > 0) {
+            const publishedEntries = await transaction
               .insert(mediaPublishedPhotoSelectionEntries)
-              .values({
-                publishedSelectionId: publication!.id,
-                sourceMediaAssetId: candidate.id,
-                position,
-                width: candidate.width!,
-                height: candidate.height!,
-                focalPointX: candidate.focalPointX,
-                focalPointY: candidate.focalPointY,
-                altTextZhHans: candidate.altTextZhHans!,
-                altTextEn: candidate.altTextEn!,
-                locationLabelZhHans: candidate.locationLabelZhHans,
-                locationLabelEn: candidate.locationLabelEn,
-                capturedAt: candidate.capturedAt,
-                cameraMake: candidate.cameraMake,
-                cameraModel: candidate.cameraModel,
-                lens: candidate.lens,
-                focalLengthMillimeters: candidate.focalLengthMillimeters,
-                aperture: candidate.aperture,
-                shutterSpeedSeconds: candidate.shutterSpeedSeconds,
-                iso: candidate.iso,
-                createdAt: input.publishedAt,
+              .values(
+                mediaAssetIds.map((mediaAssetId, position) => {
+                  const candidate = candidates.get(mediaAssetId)!
+                  return {
+                    publishedSelectionId: publication!.id,
+                    sourceMediaAssetId: candidate.id,
+                    position,
+                    width: candidate.width!,
+                    height: candidate.height!,
+                    focalPointX: candidate.focalPointX,
+                    focalPointY: candidate.focalPointY,
+                    altTextZhHans: candidate.altTextZhHans!,
+                    altTextEn: candidate.altTextEn!,
+                    locationLabelZhHans: candidate.locationLabelZhHans,
+                    locationLabelEn: candidate.locationLabelEn,
+                    capturedAt: candidate.capturedAt,
+                    cameraMake: candidate.cameraMake,
+                    cameraModel: candidate.cameraModel,
+                    lens: candidate.lens,
+                    focalLengthMillimeters: candidate.focalLengthMillimeters,
+                    aperture: candidate.aperture,
+                    shutterSpeedSeconds: candidate.shutterSpeedSeconds,
+                    iso: candidate.iso,
+                    createdAt: input.publishedAt,
+                  }
+                }),
+              )
+              .returning({
+                id: mediaPublishedPhotoSelectionEntries.id,
+                sourceMediaAssetId:
+                  mediaPublishedPhotoSelectionEntries.sourceMediaAssetId,
               })
-              .returning({ id: mediaPublishedPhotoSelectionEntries.id })
+            const entryIdByMediaAssetId = new Map(
+              publishedEntries.map(({ id, sourceMediaAssetId }) => [
+                sourceMediaAssetId,
+                id,
+              ]),
+            )
             await transaction.insert(mediaPublishedPhotoSelectionRenditions).values(
-              candidate.renditions
-                .sort((a, b) => a.profileWidth - b.profileWidth)
-                .map((rendition) => ({
-                  publishedEntryId: entry!.id,
-                  ...rendition,
-                  createdAt: input.publishedAt,
-                })),
+              mediaAssetIds.flatMap((mediaAssetId) => {
+                const candidate = candidates.get(mediaAssetId)!
+                return candidate.renditions
+                  .toSorted((a, b) => a.profileWidth - b.profileWidth)
+                  .map((rendition) => ({
+                    publishedEntryId: entryIdByMediaAssetId.get(mediaAssetId)!,
+                    ...rendition,
+                    createdAt: input.publishedAt,
+                  }))
+              }),
             )
           }
 
@@ -505,6 +541,22 @@ export function createPhotoSelectionRepository(
             itemCount: existing.itemCount,
             publishedAt: existing.publishedAt,
           }
+        }
+        const [existingRevision] = await database()
+          .select({ id: mediaPublishedPhotoSelections.id })
+          .from(mediaPublishedPhotoSelections)
+          .where(
+            and(
+              eq(mediaPublishedPhotoSelections.ownerUserId, input.ownerUserId),
+              eq(
+                mediaPublishedPhotoSelections.draftRevision,
+                input.expectedDraftRevision,
+              ),
+            ),
+          )
+          .limit(1)
+        if (existingRevision) {
+          return { status: 'idempotency_conflict' }
         }
         throw error
       }

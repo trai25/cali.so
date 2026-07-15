@@ -43,6 +43,7 @@ export interface PhotoSelectionRepository {
 }
 
 export type PhotoSelectionErrorCode =
+  | 'cache_invalidation_failed'
   | 'dependency_unavailable'
   | 'idempotency_conflict'
   | 'ineligible_assets'
@@ -55,6 +56,7 @@ export class PhotoSelectionError extends Error {
     readonly details?: {
       currentRevision?: number
       ineligibleMediaAssetIds?: string[]
+      publishedSelectionId?: string
     },
   ) {
     super(`Photo Selection operation failed: ${code}`)
@@ -178,7 +180,9 @@ export function createPhotoSelectionService({
       try {
         await invalidatePublicSelection()
       } catch {
-        throw new PhotoSelectionError('dependency_unavailable')
+        throw new PhotoSelectionError('cache_invalidation_failed', {
+          publishedSelectionId: result.publishedSelectionId,
+        })
       }
       return result
     },

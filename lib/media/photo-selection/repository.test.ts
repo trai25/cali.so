@@ -16,6 +16,10 @@ import {
 const migrationUrls = [
   new URL('../../../db/migrations/0005_media_catalog.sql', import.meta.url),
   new URL('../../../db/migrations/0006_photo_selection.sql', import.meta.url),
+  new URL(
+    '../../../db/migrations/0007_photo_publication_revision.sql',
+    import.meta.url,
+  ),
 ]
 const checksum = 'a'.repeat(64)
 
@@ -34,7 +38,7 @@ describe('Photo Selection repository', () => {
     repository = createPhotoSelectionRepository(() => database)
     publicRepository = createPublicPhotoSelectionRepository(
       () => database,
-      new URL('https://media.example.com'),
+      new URL('https://media.example.com/photos/'),
     )
   })
 
@@ -257,7 +261,7 @@ describe('Photo Selection repository', () => {
           renditions: [
             {
               profileWidth: 640,
-              src: `https://media.example.com/renditions/${second}/640.jpg`,
+              src: `https://media.example.com/photos/renditions/${second}/640.jpg`,
               width: 640,
               height: 480,
             },
@@ -456,6 +460,16 @@ describe('Photo Selection repository', () => {
     await expect(
       repository.publishDraft({ ...request, expectedDraftRevision: 0 }),
     ).resolves.toEqual({ status: 'idempotency_conflict' })
+    await expect(
+      repository.publishDraft({ ...request, idempotencyKey: 'publish_02' }),
+    ).resolves.toEqual({ status: 'idempotency_conflict' })
+    await expect(
+      client.query(
+        `INSERT INTO media_published_photo_selections
+          (owner_user_id, idempotency_key, draft_revision, item_count, published_at)
+         VALUES ('owner_01', 'publish_03', 1, 0, '2026-07-15T10:00:00.000Z')`,
+      ),
+    ).rejects.toThrow()
   })
 
   it('enforces snapshot immutability in the database', async () => {

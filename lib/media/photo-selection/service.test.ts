@@ -192,6 +192,28 @@ describe('Photo Selection service', () => {
     expect(invalidatePublicSelection).toHaveBeenCalledTimes(2)
   })
 
+  it('reports a committed publication separately when cache invalidation fails', async () => {
+    const { invalidatePublicSelection, service } = fixture()
+    await service.saveDraft({
+      ownerUserId: 'owner_01',
+      expectedRevision: 0,
+      mediaAssetIds: [firstAssetId],
+    })
+    invalidatePublicSelection.mockRejectedValueOnce(new Error('cache unavailable'))
+
+    await expect(
+      service.publish({
+        ownerUserId: 'owner_01',
+        expectedDraftRevision: 1,
+        idempotencyKey: 'publish_01',
+      }),
+    ).rejects.toEqual(
+      new PhotoSelectionError('cache_invalidation_failed', {
+        publishedSelectionId: '33333333-3333-4333-8333-333333333333',
+      }),
+    )
+  })
+
   it('revalidates the complete Draft immediately before publication', async () => {
     const { ineligible, invalidatePublicSelection, service } = fixture()
     await service.saveDraft({

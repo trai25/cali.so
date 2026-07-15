@@ -425,6 +425,10 @@ export const mediaPublishedPhotoSelections = pgTable(
       table.ownerUserId,
       table.idempotencyKey,
     ),
+    uniqueIndex('media_published_photo_selections_draft_revision_uidx').on(
+      table.ownerUserId,
+      table.draftRevision,
+    ),
     check(
       'media_published_photo_selections_identity_check',
       sql`length(btrim(${table.ownerUserId})) > 0 AND length(btrim(${table.idempotencyKey})) > 0`,
