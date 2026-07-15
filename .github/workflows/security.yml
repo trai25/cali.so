@@ -29,12 +29,20 @@ jobs:
       ADMIN_EMAIL: owner@example.com
       SESSION_SECRET: ci-session-secret-ci-session-secret-ci-session-secret
       AMA_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      MEDIA_ENCRYPTION_KEY: BQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQU=
       RATE_LIMIT_HASH_KEY: AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI=
       GOOGLE_CLIENT_ID: ci.apps.googleusercontent.com
       GOOGLE_CLIENT_SECRET: ci-google-secret
       UPSTASH_REDIS_REST_URL: https://example.upstash.io
       UPSTASH_REDIS_REST_TOKEN: ci-redis-token
       SITE_URL: https://cali.so
+      BUNNY_MEDIA_REGION: ny
+      BUNNY_ORIGINALS_ZONE: ci-media-originals
+      BUNNY_ORIGINALS_PASSWORD: ci-originals-password
+      BUNNY_RENDITIONS_ZONE: ci-media-renditions
+      BUNNY_RENDITIONS_PASSWORD: ci-renditions-password
+      BUNNY_RENDITIONS_CDN_URL: https://media-ci.example.com
+      BUNNY_CDN_API_KEY: ci-cdn-api-key
       AMA_PUBLIC_MUTATIONS_ENABLED: "false"
       AMA_PAYMENTS_ENABLED: "false"
       AMA_BOOKING_FINALIZATION_ENABLED: "false"
@@ -101,33 +109,6 @@ jobs:
 
       - name: Build
         run: pnpm build
-        env:
-          DATABASE_URL: postgresql://runtime:runtime@127.0.0.1:5432/cali
-          RESEND_API_KEY: re_ci
-          RESEND_FROM_EMAIL: Cali <test@example.com>
-          ADMIN_EMAIL: owner@example.com
-          SESSION_SECRET: ci-session-secret-ci-session-secret-ci-session-secret
-          AMA_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
-          MEDIA_ENCRYPTION_KEY: BQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQU=
-          RATE_LIMIT_HASH_KEY: AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI=
-          GOOGLE_CLIENT_ID: ci.apps.googleusercontent.com
-          GOOGLE_CLIENT_SECRET: ci-google-secret
-          UPSTASH_REDIS_REST_URL: https://example.upstash.io
-          UPSTASH_REDIS_REST_TOKEN: ci-redis-token
-          SITE_URL: https://cali.so
-          BUNNY_MEDIA_REGION: ny
-          BUNNY_ORIGINALS_ZONE: ci-media-originals
-          BUNNY_ORIGINALS_PASSWORD: ci-originals-password
-          BUNNY_RENDITIONS_ZONE: ci-media-renditions
-          BUNNY_RENDITIONS_PASSWORD: ci-renditions-password
-          BUNNY_RENDITIONS_CDN_URL: https://media-ci.example.com
-          BUNNY_CDN_API_KEY: ci-cdn-api-key
-          AMA_PUBLIC_MUTATIONS_ENABLED: "false"
-          AMA_PAYMENTS_ENABLED: "false"
-          AMA_BOOKING_FINALIZATION_ENABLED: "false"
-          AMA_ADMIN_ENABLED: "false"
-          AMA_GOOGLE_INTEGRATION_ENABLED: "false"
-          AMA_TENCENT_INTEGRATION_ENABLED: "false"
 
       - name: Test instant navigations
         run: pnpm test:navigation
