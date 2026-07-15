@@ -48,9 +48,15 @@ const findings = report.results.flatMap((result, index) =>
 )
 
 if (findings.length > 0) {
-  console.error('Known production dependency vulnerabilities:')
-  for (const finding of findings) {
-    console.error(`- ${finding.dependency}: ${finding.id}`)
+  console.error(
+    `OSV found ${findings.length} known production dependency vulnerabilities`,
+  )
+  if (process.env.AUDIT_DETAILS === 'true') {
+    for (const finding of findings) {
+      console.error(`- ${finding.dependency}: ${finding.id}`)
+    }
+  } else {
+    console.error('Re-run privately with AUDIT_DETAILS=true for triage details')
   }
   process.exitCode = 1
 } else {

@@ -33,9 +33,10 @@ git grep -nE 'uses: [^#[:space:]]+@(v|main|master|[0-9a-f]{1,39})([[:space:]]|$)
 ```
 
 The production dependency audit queries OSV from the installed pnpm graph
-because npm retired the endpoint used by `pnpm audit`. The `git grep` command
-should return no unpinned action references. Security scan output must remain
-private.
+because npm retired the endpoint used by `pnpm audit`. Public CI reports only
+the finding count; re-run privately with `AUDIT_DETAILS=true` for package and
+advisory identifiers. The `git grep` command should return no unpinned action
+references. Security scan output must remain private.
 
 ## GitHub
 
@@ -86,7 +87,9 @@ Project checks completed on 2026-07-14 and 2026-07-15 verified:
   capability; the integration remains disabled meanwhile.
 - [ ] The current Resend API key is assigned to both Preview and Production.
   Replace it with separate environment-scoped keys before cutover; keep the
-  Preview key limited to test mail.
+  Preview key limited to test mail. This remains a cutover blocker for issue
+  #107; issue #103 keeps the affected capabilities disabled and records the
+  hosted gap without accessing the credential.
 - [x] The active `Admin Security` firewall rule challenges exactly
   `POST /api/admin/auth/request`.
 - [ ] Provision isolated Development credentials before expecting that
