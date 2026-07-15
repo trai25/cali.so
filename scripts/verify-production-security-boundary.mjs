@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 
+import { JSDOM } from 'jsdom'
+
 import { openProductionServer } from './production-server.mjs'
 
 const privateMarkers = [
@@ -36,8 +38,14 @@ function assertPrivateDetailsAbsent(body, path) {
   )
 }
 
-function withoutHydrationScripts(body) {
-  return body.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+function visibleText(body) {
+  const document = new JSDOM(body).window.document
+  for (const element of document.querySelectorAll(
+    'script, style, template, noscript',
+  )) {
+    element.remove()
+  }
+  return document.body?.textContent ?? ''
 }
 
 async function fetchBoundary(baseUrl, path, init, options = {}) {
@@ -48,7 +56,7 @@ async function fetchBoundary(baseUrl, path, init, options = {}) {
   assertSecurityHeaders(response, path)
   const body = await response.text()
   const inspectedBody = options.visibleContentOnly
-    ? withoutHydrationScripts(body)
+    ? visibleText(body)
     : body
   assertPrivateDetailsAbsent(inspectedBody, path)
   return { response, body, inspectedBody }
