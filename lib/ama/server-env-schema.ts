@@ -36,6 +36,40 @@ const featureSwitch = z
   .default('false')
   .transform((value) => value === 'true')
 
+const amaFeatureEnvironmentSchema = z.object({
+  AMA_PUBLIC_MUTATIONS_ENABLED: featureSwitch,
+  AMA_PAYMENTS_ENABLED: featureSwitch,
+  AMA_BOOKING_FINALIZATION_ENABLED: featureSwitch,
+  AMA_ADMIN_ENABLED: featureSwitch,
+  AMA_GOOGLE_INTEGRATION_ENABLED: featureSwitch,
+  AMA_TENCENT_INTEGRATION_ENABLED: featureSwitch,
+})
+
+function featureFlags({
+  AMA_PUBLIC_MUTATIONS_ENABLED,
+  AMA_PAYMENTS_ENABLED,
+  AMA_BOOKING_FINALIZATION_ENABLED,
+  AMA_ADMIN_ENABLED,
+  AMA_GOOGLE_INTEGRATION_ENABLED,
+  AMA_TENCENT_INTEGRATION_ENABLED,
+}: z.output<typeof amaFeatureEnvironmentSchema>) {
+  return {
+    publicMutations: AMA_PUBLIC_MUTATIONS_ENABLED,
+    payments: AMA_PAYMENTS_ENABLED,
+    bookingFinalization: AMA_BOOKING_FINALIZATION_ENABLED,
+    admin: AMA_ADMIN_ENABLED,
+    google: AMA_GOOGLE_INTEGRATION_ENABLED,
+    tencent: AMA_TENCENT_INTEGRATION_ENABLED,
+  }
+}
+
+function invalidEnvironmentError(error: z.ZodError) {
+  const fields = [
+    ...new Set(error.issues.map((issue) => issue.path.join('.')).filter(Boolean)),
+  ]
+  return new Error(`Invalid server environment: ${fields.join(', ')}`)
+}
+
 const redisRestUrl = z.url().refine(isHttpsUrl)
 
 const serverEnvironmentSchema = z
@@ -48,8 +82,8 @@ const serverEnvironmentSchema = z
     SESSION_SECRET: z.string().min(32),
     AMA_ENCRYPTION_KEY: z.string().refine(isBase64Key),
     RATE_LIMIT_HASH_KEY: z.string().refine(isBase64Key),
-    GOOGLE_CLIENT_ID: z.string().trim().min(1),
-    GOOGLE_CLIENT_SECRET: z.string().trim().min(1),
+    GOOGLE_CLIENT_ID: z.string().trim().min(1).optional(),
+    GOOGLE_CLIENT_SECRET: z.string().trim().min(1).optional(),
     UPSTASH_REDIS_REST_URL: redisRestUrl.optional(),
     UPSTASH_REDIS_REST_TOKEN: z.string().trim().min(1).optional(),
     KV_REST_API_URL: redisRestUrl.optional(),
@@ -73,12 +107,7 @@ const serverEnvironmentSchema = z
       .int()
       .positive()
       .default(60),
-    AMA_PUBLIC_MUTATIONS_ENABLED: featureSwitch,
-    AMA_PAYMENTS_ENABLED: featureSwitch,
-    AMA_BOOKING_FINALIZATION_ENABLED: featureSwitch,
-    AMA_ADMIN_ENABLED: featureSwitch,
-    AMA_GOOGLE_INTEGRATION_ENABLED: featureSwitch,
-    AMA_TENCENT_INTEGRATION_ENABLED: featureSwitch,
+    ...amaFeatureEnvironmentSchema.shape,
   })
   .superRefine(
     (
@@ -87,6 +116,9 @@ const serverEnvironmentSchema = z
         UPSTASH_REDIS_REST_TOKEN,
         KV_REST_API_URL,
         KV_REST_API_TOKEN,
+        GOOGLE_CLIENT_ID,
+        GOOGLE_CLIENT_SECRET,
+        AMA_GOOGLE_INTEGRATION_ENABLED,
       },
       context,
     ) => {
@@ -137,6 +169,22 @@ const serverEnvironmentSchema = z
           })
         }
       }
+
+      if (AMA_GOOGLE_INTEGRATION_ENABLED && !GOOGLE_CLIENT_ID) {
+        context.addIssue({
+          code: 'custom',
+          path: ['GOOGLE_CLIENT_ID'],
+          message: 'Google OAuth client ID is required when Google is enabled',
+        })
+      }
+      if (AMA_GOOGLE_INTEGRATION_ENABLED && !GOOGLE_CLIENT_SECRET) {
+        context.addIssue({
+          code: 'custom',
+          path: ['GOOGLE_CLIENT_SECRET'],
+          message:
+            'Google OAuth client secret is required when Google is enabled',
+        })
+      }
     },
   )
   .transform(
@@ -156,25 +204,27 @@ const serverEnvironmentSchema = z
       ...environment,
       UPSTASH_REDIS_REST_URL: UPSTASH_REDIS_REST_URL ?? KV_REST_API_URL!,
       UPSTASH_REDIS_REST_TOKEN: UPSTASH_REDIS_REST_TOKEN ?? KV_REST_API_TOKEN!,
-      features: {
-        publicMutations: AMA_PUBLIC_MUTATIONS_ENABLED,
-        payments: AMA_PAYMENTS_ENABLED,
-        bookingFinalization: AMA_BOOKING_FINALIZATION_ENABLED,
-        admin: AMA_ADMIN_ENABLED,
-        google: AMA_GOOGLE_INTEGRATION_ENABLED,
-        tencent: AMA_TENCENT_INTEGRATION_ENABLED,
-      },
+      features: featureFlags({
+        AMA_PUBLIC_MUTATIONS_ENABLED,
+        AMA_PAYMENTS_ENABLED,
+        AMA_BOOKING_FINALIZATION_ENABLED,
+        AMA_ADMIN_ENABLED,
+        AMA_GOOGLE_INTEGRATION_ENABLED,
+        AMA_TENCENT_INTEGRATION_ENABLED,
+      }),
     }),
   )
 
 export type ServerEnvironment = z.output<typeof serverEnvironmentSchema>
 
+export function parseAmaFeatures(source: Record<string, string | undefined>) {
+  const result = amaFeatureEnvironmentSchema.safeParse(source)
+  if (result.success) return featureFlags(result.data)
+  throw invalidEnvironmentError(result.error)
+}
+
 export function parseServerEnv(source: Record<string, string | undefined>) {
   const result = serverEnvironmentSchema.safeParse(source)
   if (result.success) return result.data
-
-  const fields = [
-    ...new Set(result.error.issues.map((issue) => issue.path.join('.')).filter(Boolean)),
-  ]
-  throw new Error(`Invalid server environment: ${fields.join(', ')}`)
+  throw invalidEnvironmentError(result.error)
 }

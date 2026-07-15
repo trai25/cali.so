@@ -161,9 +161,15 @@ export function PhotoSelectionEditor({
 
   function dropBefore(event: DragEvent<HTMLLIElement>, destinationId: string) {
     event.preventDefault()
-    const sourceId = draggedId || event.dataTransfer.getData('text/plain')
+    const sourceId = draggedId
     setDraggedId(null)
-    if (!sourceId || sourceId === destinationId) return
+    if (
+      !sourceId ||
+      sourceId === destinationId ||
+      !mediaAssetIds.includes(sourceId)
+    ) {
+      return
+    }
     const nextIds = mediaAssetIds.filter((id) => id !== sourceId)
     const destination = nextIds.indexOf(destinationId)
     if (destination < 0) return

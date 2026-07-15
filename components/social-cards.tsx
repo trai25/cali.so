@@ -132,11 +132,11 @@ function Identity({
   )
 }
 
-// Per-service hover cards for the chrome's social links. Data is baked at
-// build (content/social.json, content/github.json — refresh scripts in
-// scripts/); an open card never touches the network. Touch devices just
-// follow the link. Bodies are exported separately so other triggers (the
-// dock's say-hi menu) can serve the same cards.
+// Per-service hover cards for the chrome's social links. Server rendering
+// supplies ISR-backed values with content/social.json and content/github.json
+// as fallbacks; an open card never touches the network. Touch devices just
+// follow the link. Bodies are exported separately so other triggers can serve
+// the same cards.
 export function XCardBody({ data }: { data: SocialSnapshot }) {
   return (
     <>
