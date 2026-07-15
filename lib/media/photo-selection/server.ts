@@ -25,6 +25,10 @@ const readPublishedPhotoSelection = unstable_cache(
   },
 )
 
-export function getPublishedPhotoSelection() {
-  return readPublishedPhotoSelection()
+export async function getPublishedPhotoSelection() {
+  try {
+    return await readPublishedPhotoSelection()
+  } catch {
+    return null
+  }
 }
