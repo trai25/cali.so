@@ -3,7 +3,7 @@
 ## Supported versions
 
 Security fixes are applied to the version deployed at
-[cali.so](https://cali.so). Pre-release v2 work is supported only while it is
+[cali.so](https://cali.so). Pre-release v3 work is supported only while it is
 on an active repository branch.
 
 ## Report a vulnerability privately
