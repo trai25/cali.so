@@ -17,6 +17,7 @@
     "test:security": "vitest run lib/security",
     "test:localization": "node --test scripts/localization.test.mjs",
     "test:media:catalog": "vitest run lib/media/catalog",
+    "test:media:alt-text": "vitest run lib/media/alt-text",
     "test:media:ingestion": "vitest run lib/media/ingestion lib/media/privacy",
     "test:media:processing": "vitest run lib/media/processing --exclude='**/*.live.test.ts'",
     "test:media:storage": "vitest run lib/media/storage --exclude='**/*.live.test.ts'",
@@ -30,6 +31,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/gateway": "^3.0.150",
     "@aws-sdk/client-s3": "^3.1086.0",
     "@base-ui/react": "^1.6.0",
     "@hugeicons/core-free-icons": "^4.2.2",
@@ -41,6 +43,7 @@
     "@untitledui/icons": "^0.0.22",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
+    "ai": "^6.0.226",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cuelume": "0.1.0",
