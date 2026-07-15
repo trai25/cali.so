@@ -2211,7 +2211,7 @@ a:focus-visible .external-label .external-mark {
 
 /* ── Viewport edge fades: subtle progressive blur top & bottom ────── */
 
-.scroll-fade {
+.viewport-edge-fade {
   position: fixed;
   left: 0;
   right: 0;
@@ -2221,7 +2221,7 @@ a:focus-visible .external-label .external-mark {
   user-select: none;
 }
 
-.scroll-fade-top {
+.viewport-edge-fade-top {
   top: 0;
   mask-image: linear-gradient(to bottom, black 15%, transparent);
   -webkit-mask-image: linear-gradient(to bottom, black 15%, transparent);
@@ -2232,7 +2232,7 @@ a:focus-visible .external-label .external-mark {
   );
 }
 
-.scroll-fade-bottom {
+.viewport-edge-fade-bottom {
   bottom: 0;
   mask-image: linear-gradient(to top, black 15%, transparent);
   -webkit-mask-image: linear-gradient(to top, black 15%, transparent);
@@ -2243,7 +2243,7 @@ a:focus-visible .external-label .external-mark {
   );
 }
 
-.scroll-fade-bottom::before {
+.viewport-edge-fade-bottom::before {
   mask-image: linear-gradient(to top, black, transparent 45%);
   -webkit-mask-image: linear-gradient(to top, black, transparent 45%);
 }
