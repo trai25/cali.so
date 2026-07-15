@@ -47,15 +47,41 @@ describe('Media Library Alt Text environment', () => {
 
   it('rejects excessive timeouts and retries', () => {
     expect(() =>
-      parseMediaAltTextEnv({ MEDIA_ALT_TEXT_TIMEOUT_MS: '30001' }),
+      parseMediaAltTextEnv({ MEDIA_ALT_TEXT_TIMEOUT_MS: '11999' }),
     ).toThrow('MEDIA_ALT_TEXT_TIMEOUT_MS')
     expect(() =>
-      parseMediaAltTextEnv({ MEDIA_ALT_TEXT_MAX_RETRIES: '3' }),
+      parseMediaAltTextEnv({ MEDIA_ALT_TEXT_MAX_RETRIES: '2' }),
     ).toThrow('MEDIA_ALT_TEXT_MAX_RETRIES')
     expect(() =>
       parseMediaAltTextEnv({
-        MEDIA_ALT_TEXT_RATE_LIMIT_WINDOW_SECONDS: '30',
+        MEDIA_ALT_TEXT_RATE_LIMIT_MAX_REQUESTS: '11',
+      }),
+    ).toThrow('MEDIA_ALT_TEXT_RATE_LIMIT_MAX_REQUESTS')
+    expect(() =>
+      parseMediaAltTextEnv({
+        MEDIA_ALT_TEXT_RATE_LIMIT_WINDOW_SECONDS: '3599',
       }),
     ).toThrow('MEDIA_ALT_TEXT_RATE_LIMIT_WINDOW_SECONDS')
+  })
+
+  it('requires Vercel OIDC in deployed environments', () => {
+    expect(() =>
+      parseMediaAltTextEnv({
+        VERCEL_ENV: 'preview',
+        AI_GATEWAY_API_KEY: 'static-key',
+      }),
+    ).toThrow('AI_GATEWAY_API_KEY')
+    expect(() =>
+      parseMediaAltTextEnv({
+        VERCEL_ENV: 'production',
+        AI_GATEWAY_API_KEY: 'static-key',
+      }),
+    ).toThrow('AI_GATEWAY_API_KEY')
+    expect(
+      parseMediaAltTextEnv({
+        VERCEL_ENV: 'development',
+        AI_GATEWAY_API_KEY: 'local-key',
+      }).enabled,
+    ).toBe(false)
   })
 })

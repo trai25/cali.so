@@ -3518,7 +3518,6 @@ html[data-locale='en'] [data-en-block] {
 
 .zoom-overlay-details {
   position: fixed;
-  z-index: 2;
   inset-inline: 0;
   bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
   pointer-events: none;
