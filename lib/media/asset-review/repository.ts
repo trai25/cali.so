@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { and, eq, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 
 import type { getDatabase } from '~/db'
 import {
@@ -9,6 +9,7 @@ import {
   mediaPhotoSelectionDraftEntries,
   mediaPhotoSelectionDrafts,
   mediaPublishedPhotoSelectionEntries,
+  mediaRenditions,
   mediaUploadIntents,
 } from '~/db/schema'
 
@@ -21,6 +22,7 @@ export type MediaAssetReviewDatabase = ReturnType<typeof getDatabase>
 
 const reviewAssetColumns = {
   id: mediaAssets.id,
+  createdAt: mediaAssets.createdAt,
   lifecycle: mediaAssets.lifecycle,
   processingState: mediaAssets.processingState,
   width: mediaAssets.width,
@@ -52,7 +54,13 @@ type ReviewAssetRow = Pick<
   keyof typeof reviewAssetColumns
 >
 
-function record(row: ReviewAssetRow): MediaAssetReviewRecord {
+function record(
+  row: ReviewAssetRow,
+  preview:
+    | { objectKey: string; width: number; height: number }
+    | null = null,
+  publicRenditionUrl?: (key: string) => string,
+): MediaAssetReviewRecord {
   const altTextSuggestion =
     row.altTextSuggestionZhHans !== null &&
     row.altTextSuggestionEn !== null &&
@@ -67,6 +75,7 @@ function record(row: ReviewAssetRow): MediaAssetReviewRecord {
       : null
   return {
     id: row.id,
+    createdAt: row.createdAt,
     lifecycle: row.lifecycle,
     processingState: row.processingState,
     width: row.width,
@@ -94,6 +103,14 @@ function record(row: ReviewAssetRow): MediaAssetReviewRecord {
     altTextEn: row.altTextEn,
     altTextApprovedAt: row.altTextApprovedAt,
     archivedAt: row.archivedAt,
+    previewRendition:
+      preview && publicRenditionUrl
+        ? {
+            src: publicRenditionUrl(preview.objectKey),
+            width: preview.width,
+            height: preview.height,
+          }
+        : null,
   }
 }
 
@@ -108,8 +125,30 @@ function ownedAssetCondition(ownerUserId: string, mediaAssetId: string) {
   )
 }
 
+async function previewRendition(
+  database: Pick<MediaAssetReviewDatabase, 'select'>,
+  mediaAssetId: string,
+) {
+  const [preview] = await database
+    .select({
+      objectKey: mediaRenditions.objectKey,
+      width: mediaRenditions.width,
+      height: mediaRenditions.height,
+    })
+    .from(mediaRenditions)
+    .where(
+      and(
+        eq(mediaRenditions.mediaAssetId, mediaAssetId),
+        eq(mediaRenditions.profileWidth, 640),
+      ),
+    )
+    .limit(1)
+  return preview ?? null
+}
+
 export function createMediaAssetReviewRepository(
   database: () => MediaAssetReviewDatabase,
+  publicRenditionUrl: (key: string) => string,
 ): MediaAssetReviewRepository {
   async function findOwnedAsset(input: {
     ownerUserId: string
@@ -120,14 +159,62 @@ export function createMediaAssetReviewRepository(
       .from(mediaAssets)
       .where(ownedAssetCondition(input.ownerUserId, input.mediaAssetId))
       .limit(1)
-    return asset ? record(asset) : null
+    if (!asset) return null
+    const preview = await previewRendition(database(), asset.id)
+    return record(asset, preview, publicRenditionUrl)
   }
 
   return {
+    async listOwnedAssets(input) {
+      const rows = await database()
+        .select({
+          ...reviewAssetColumns,
+          previewObjectKey: mediaRenditions.objectKey,
+          previewWidth: mediaRenditions.width,
+          previewHeight: mediaRenditions.height,
+        })
+        .from(mediaAssets)
+        .innerJoin(
+          mediaUploadIntents,
+          and(
+            eq(mediaUploadIntents.id, mediaAssets.uploadIntentId),
+            eq(mediaUploadIntents.ownerUserId, input.ownerUserId),
+          ),
+        )
+        .leftJoin(
+          mediaRenditions,
+          and(
+            eq(mediaRenditions.mediaAssetId, mediaAssets.id),
+            eq(mediaRenditions.profileWidth, 640),
+          ),
+        )
+        .where(
+          input.view === 'active'
+            ? eq(mediaAssets.lifecycle, 'active')
+            : inArray(mediaAssets.lifecycle, ['archived', 'purging']),
+        )
+        .orderBy(desc(mediaAssets.createdAt))
+      return rows.map(
+        ({ previewObjectKey, previewWidth, previewHeight, ...asset }) =>
+          record(
+            asset,
+            previewObjectKey && previewWidth && previewHeight
+              ? {
+                  objectKey: previewObjectKey,
+                  width: previewWidth,
+                  height: previewHeight,
+                }
+              : null,
+            publicRenditionUrl,
+          ),
+      )
+    },
+
     findOwnedAsset,
 
     async updateDisplayMetadata(input) {
-      const [asset] = await database()
+      const client = database()
+      const [asset] = await client
         .update(mediaAssets)
         .set({
           locationLabelZhHans: input.locationLabelZhHans,
@@ -146,11 +233,14 @@ export function createMediaAssetReviewRepository(
           ),
         )
         .returning(reviewAssetColumns)
-      return asset ? record(asset) : null
+      if (!asset) return null
+      const preview = await previewRendition(client, asset.id)
+      return record(asset, preview, publicRenditionUrl)
     },
 
     async approveAltText(input) {
-      const [asset] = await database()
+      const client = database()
+      const [asset] = await client
         .update(mediaAssets)
         .set({
           altTextZhHans: input.zhHans,
@@ -166,7 +256,9 @@ export function createMediaAssetReviewRepository(
           ),
         )
         .returning(reviewAssetColumns)
-      return asset ? record(asset) : null
+      if (!asset) return null
+      const preview = await previewRendition(client, asset.id)
+      return record(asset, preview, publicRenditionUrl)
     },
 
     async archive(input) {
@@ -224,14 +316,21 @@ export function createMediaAssetReviewRepository(
             ),
           )
           .returning(reviewAssetColumns)
+        const preview = asset
+          ? await previewRendition(transaction, asset.id)
+          : null
         return asset
-          ? { status: 'updated', asset: record(asset) }
+          ? {
+              status: 'updated',
+              asset: record(asset, preview, publicRenditionUrl),
+            }
           : { status: 'invalid_state' }
       })
     },
 
     async restore(input) {
-      const [asset] = await database()
+      const client = database()
+      const [asset] = await client
         .update(mediaAssets)
         .set({
           lifecycle: 'active',
@@ -245,7 +344,13 @@ export function createMediaAssetReviewRepository(
           ),
         )
         .returning(reviewAssetColumns)
-      if (asset) return { status: 'updated', asset: record(asset) }
+      if (asset) {
+        const preview = await previewRendition(client, asset.id)
+        return {
+          status: 'updated',
+          asset: record(asset, preview, publicRenditionUrl),
+        }
+      }
 
       const current = await findOwnedAsset(input)
       return { status: current ? 'invalid_state' : 'not_found' }

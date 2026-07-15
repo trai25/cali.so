@@ -1,0 +1,423 @@
+import 'server-only'
+
+import type { AmaSecurity, PrivilegedAuditEvent } from '~/lib/ama/security/service'
+
+import { MediaAltTextError } from '../alt-text/service'
+import { MediaAssetReviewError } from '../asset-review/service'
+import {
+  MediaIngestionError,
+  type OriginalContentType,
+} from '../ingestion/service'
+import { MediaPurgeError } from '../purge/service'
+import { storeOriginalFromSameOriginRequest } from '../storage/upload'
+
+type OwnerPrincipal = { id: string }
+
+type Authenticator = {
+  authenticate(request: Request): Promise<OwnerPrincipal | null>
+}
+
+type Security = Pick<
+  AmaSecurity,
+  | 'limitAdminMutation'
+  | 'protectBrowserMutation'
+  | 'protectFeatures'
+  | 'recordAuthenticationDenial'
+  | 'recordPrivilegedAction'
+>
+
+type BaseDependencies = {
+  authenticator: Authenticator
+  security: Security
+}
+
+type AccessResult =
+  | { response: Response }
+  | { principal: OwnerPrincipal }
+
+const responseHeaders = {
+  'cache-control': 'no-store',
+  'content-type': 'application/json; charset=utf-8',
+  'referrer-policy': 'no-referrer',
+  'x-content-type-options': 'nosniff',
+}
+
+function json(status: number, body: unknown) {
+  return new Response(JSON.stringify(body), { status, headers: responseHeaders })
+}
+
+function errorResponse(error: unknown) {
+  const code =
+    error instanceof MediaAssetReviewError ||
+    error instanceof MediaIngestionError ||
+    error instanceof MediaAltTextError ||
+    error instanceof MediaPurgeError
+      ? error.code
+      : 'dependency_unavailable'
+  const status =
+    code === 'invalid_request'
+      ? 400
+      : code === 'not_found'
+        ? 404
+        : code === 'rate_limited'
+          ? 429
+          : code === 'dependency_unavailable' || code === 'generation_failed'
+            ? 503
+            : 409
+  return json(status, { error: code })
+}
+
+async function authenticate(
+  dependencies: BaseDependencies,
+  request: Request,
+  mutation: boolean,
+): Promise<AccessResult> {
+  const blocked = mutation
+    ? await dependencies.security.protectBrowserMutation(request, ['admin'])
+    : dependencies.security.protectFeatures(request, ['admin'])
+  if (blocked) return { response: blocked }
+
+  let principal: OwnerPrincipal | null
+  try {
+    principal = await dependencies.authenticator.authenticate(request)
+  } catch {
+    return { response: json(503, { error: 'dependency_unavailable' }) }
+  }
+  if (!principal) {
+    dependencies.security.recordAuthenticationDenial(request)
+    return { response: json(401, { error: 'unauthorized' }) }
+  }
+  if (mutation) {
+    const limited = await dependencies.security.limitAdminMutation(request)
+    if (limited) return { response: limited }
+  }
+  return { principal }
+}
+
+async function requestJson(request: Request) {
+  if (request.headers.get('content-type')?.split(';', 1)[0] !== 'application/json') {
+    throw new MediaAssetReviewError('invalid_request')
+  }
+  const contentLength = request.headers.get('content-length')
+  if (
+    contentLength &&
+    (!/^\d+$/.test(contentLength) || Number(contentLength) > 32_768)
+  ) {
+    throw new MediaAssetReviewError('invalid_request')
+  }
+  try {
+    const reader = request.body?.getReader()
+    if (!reader) throw new MediaAssetReviewError('invalid_request')
+    const chunks: Uint8Array[] = []
+    let byteLength = 0
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      byteLength += value.byteLength
+      if (byteLength > 32_768) {
+        await reader.cancel().catch(() => undefined)
+        throw new MediaAssetReviewError('invalid_request')
+      }
+      chunks.push(value)
+    }
+    const bytes = new Uint8Array(byteLength)
+    let offset = 0
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset)
+      offset += chunk.byteLength
+    }
+    const body: unknown = JSON.parse(new TextDecoder().decode(bytes))
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      throw new MediaAssetReviewError('invalid_request')
+    }
+    return body as Record<string, unknown>
+  } catch (error) {
+    if (error instanceof MediaAssetReviewError) throw error
+    throw new MediaAssetReviewError('invalid_request')
+  }
+}
+
+function audit(
+  dependencies: BaseDependencies,
+  request: Request,
+  event: PrivilegedAuditEvent,
+) {
+  dependencies.security.recordPrivilegedAction(request, event)
+}
+
+export function createMediaAssetListHandler(
+  dependencies: BaseDependencies & {
+    review: {
+      listAssets(input: {
+        ownerUserId: string
+        view: 'active' | 'archived'
+      }): Promise<unknown>
+    }
+  },
+) {
+  return async function GET(request: Request) {
+    const access = await authenticate(dependencies, request, false)
+    if ('response' in access) return access.response
+    const view = new URL(request.url).searchParams.get('view')
+    if (view !== 'active' && view !== 'archived') {
+      return json(400, { error: 'invalid_request' })
+    }
+    try {
+      const assets = await dependencies.review.listAssets({
+        ownerUserId: access.principal.id,
+        view,
+      })
+      return json(200, { assets })
+    } catch (error) {
+      return errorResponse(error)
+    }
+  }
+}
+
+export function createMediaAssetActionHandler(
+  dependencies: BaseDependencies & {
+    review: {
+      updateDisplayMetadata(input: Record<string, unknown>): Promise<unknown>
+      approveAltText(input: Record<string, unknown>): Promise<unknown>
+      archive(input: { ownerUserId: string; mediaAssetId: string }): Promise<unknown>
+      restore(input: { ownerUserId: string; mediaAssetId: string }): Promise<unknown>
+    }
+  },
+) {
+  return async function POST(request: Request, mediaAssetId: string) {
+    const access = await authenticate(dependencies, request, true)
+    if ('response' in access) return access.response
+    try {
+      const body = await requestJson(request)
+      const common = { ownerUserId: access.principal.id, mediaAssetId }
+      let asset: unknown
+      let event: PrivilegedAuditEvent
+      if (body.intent === 'update_display_metadata') {
+        asset = await dependencies.review.updateDisplayMetadata({
+          ...common,
+          locationLabelZhHans: body.locationLabelZhHans,
+          locationLabelEn: body.locationLabelEn,
+          focalPoint: body.focalPoint,
+        })
+        event = 'media_asset.reviewed'
+      } else if (body.intent === 'approve_alt_text') {
+        asset = await dependencies.review.approveAltText({
+          ...common,
+          zhHans: body.zhHans,
+          en: body.en,
+        })
+        event = 'media_asset.reviewed'
+      } else if (body.intent === 'archive') {
+        asset = await dependencies.review.archive(common)
+        event = 'media_asset.archived'
+      } else if (body.intent === 'restore') {
+        asset = await dependencies.review.restore(common)
+        event = 'media_asset.restored'
+      } else {
+        return json(400, { error: 'invalid_request' })
+      }
+      audit(dependencies, request, event)
+      return json(200, { asset })
+    } catch (error) {
+      return errorResponse(error)
+    }
+  }
+}
+
+export function createMediaAltTextHandler(
+  dependencies: BaseDependencies & {
+    altText: {
+      generateSuggestion(input: {
+        ownerUserId: string
+        mediaAssetId: string
+      }): Promise<unknown>
+    } | null
+  },
+) {
+  return async function POST(request: Request, mediaAssetId: string) {
+    const access = await authenticate(dependencies, request, true)
+    if ('response' in access) return access.response
+    if (!dependencies.altText) return json(503, { error: 'feature_disabled' })
+    try {
+      const suggestion = await dependencies.altText.generateSuggestion({
+        ownerUserId: access.principal.id,
+        mediaAssetId,
+      })
+      audit(dependencies, request, 'media_alt_text.requested')
+      return json(200, { suggestion })
+    } catch (error) {
+      return errorResponse(error)
+    }
+  }
+}
+
+export function createMediaPurgeHandler(
+  dependencies: BaseDependencies & {
+    purge: {
+      getStatus(input: {
+        ownerUserId: string
+        mediaAssetId: string
+      }): Promise<unknown>
+      purge(input: {
+        ownerUserId: string
+        mediaAssetId: string
+        confirmation: string
+      }): Promise<unknown>
+    }
+  },
+) {
+  return {
+    async GET(request: Request, mediaAssetId: string) {
+      const access = await authenticate(dependencies, request, false)
+      if ('response' in access) return access.response
+      try {
+        const status = await dependencies.purge.getStatus({
+          ownerUserId: access.principal.id,
+          mediaAssetId,
+        })
+        return json(200, { status })
+      } catch (error) {
+        return errorResponse(error)
+      }
+    },
+    async POST(request: Request, mediaAssetId: string) {
+      const access = await authenticate(dependencies, request, true)
+      if ('response' in access) return access.response
+      try {
+        const body = await requestJson(request)
+        const result = await dependencies.purge.purge({
+          ownerUserId: access.principal.id,
+          mediaAssetId,
+          confirmation:
+            typeof body.confirmation === 'string' ? body.confirmation : '',
+        })
+        audit(dependencies, request, 'media_asset.purge_requested')
+        return json(200, { result })
+      } catch (error) {
+        return errorResponse(error)
+      }
+    },
+  }
+}
+
+export function createMediaUploadIntentHandler(
+  dependencies: BaseDependencies & {
+    ingestion: {
+      createUploadIntent(input: {
+        ownerUserId: string
+        idempotencyKey: string
+        contentType: OriginalContentType
+        byteSize: number
+        checksumSha256: string
+      }): Promise<{ id: string; expiresAt: Date }>
+    }
+  },
+) {
+  return async function POST(request: Request) {
+    const access = await authenticate(dependencies, request, true)
+    if ('response' in access) return access.response
+    try {
+      const body = await requestJson(request)
+      const intent = await dependencies.ingestion.createUploadIntent({
+        ownerUserId: access.principal.id,
+        idempotencyKey:
+          typeof body.idempotencyKey === 'string' ? body.idempotencyKey : '',
+        contentType: body.contentType as OriginalContentType,
+        byteSize: typeof body.byteSize === 'number' ? body.byteSize : 0,
+        checksumSha256:
+          typeof body.checksumSha256 === 'string' ? body.checksumSha256 : '',
+      })
+      audit(dependencies, request, 'media_upload.intent_created')
+      return json(201, {
+        uploadIntent: {
+          id: intent.id,
+          expiresAt: intent.expiresAt,
+          uploadUrl: `/api/admin/media/upload-intents/${intent.id}/original`,
+        },
+      })
+    } catch (error) {
+      return errorResponse(error)
+    }
+  }
+}
+
+export function createMediaOriginalUploadHandler(
+  dependencies: BaseDependencies & {
+    baseUrl: URL
+    ingestionRepository: {
+      findUploadIntent(
+        ownerUserId: string,
+        id: string,
+      ): Promise<{
+        originalKey: string
+        contentType: string
+        byteSize: number
+        checksumSha256: string
+      } | null>
+    }
+    storage: Parameters<typeof storeOriginalFromSameOriginRequest>[0]['storage']
+  },
+) {
+  return async function PUT(request: Request, uploadIntentId: string) {
+    const access = await authenticate(dependencies, request, true)
+    if ('response' in access) return access.response
+    let intent: Awaited<
+      ReturnType<
+        typeof dependencies.ingestionRepository.findUploadIntent
+      >
+    >
+    try {
+      intent = await dependencies.ingestionRepository.findUploadIntent(
+        access.principal.id,
+        uploadIntentId,
+      )
+    } catch {
+      return json(503, { error: 'dependency_unavailable' })
+    }
+    if (!intent) return json(404, { error: 'not_found' })
+    return storeOriginalFromSameOriginRequest({
+      request,
+      canonicalBaseUrl: dependencies.baseUrl,
+      expectation: {
+        key: intent.originalKey,
+        contentType: intent.contentType,
+        byteSize: intent.byteSize,
+        checksumSha256: intent.checksumSha256,
+      },
+      authorize: () => true,
+      storage: dependencies.storage,
+    })
+  }
+}
+
+export function createMediaUploadCompletionHandler(
+  dependencies: BaseDependencies & {
+    ingestion: {
+      completeUploadIntent(input: {
+        ownerUserId: string
+        uploadIntentId: string
+      }): Promise<{ id: string; processingState: string; processingErrorCode: string | null }>
+    }
+  },
+) {
+  return async function POST(request: Request, uploadIntentId: string) {
+    const access = await authenticate(dependencies, request, true)
+    if ('response' in access) return access.response
+    try {
+      const asset = await dependencies.ingestion.completeUploadIntent({
+        ownerUserId: access.principal.id,
+        uploadIntentId,
+      })
+      audit(dependencies, request, 'media_upload.completed')
+      return json(200, {
+        mediaAsset: {
+          id: asset.id,
+          processingState: asset.processingState,
+          processingErrorCode: asset.processingErrorCode,
+        },
+      })
+    } catch (error) {
+      return errorResponse(error)
+    }
+  }
+}

@@ -1,6 +1,11 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { securityHeaders } from './headers'
+
+afterEach(() => {
+  vi.unstubAllEnvs()
+  vi.resetModules()
+})
 
 describe('site security headers', () => {
   it('sets a restrictive browser security baseline for every route', () => {
@@ -26,5 +31,20 @@ describe('site security headers', () => {
     expect(headers['permissions-policy']).toContain('camera=()')
     expect(headers['permissions-policy']).toContain('microphone=()')
     expect(headers['permissions-policy']).toContain('payment=()')
+  })
+
+  it('allows only the configured Bunny Rendition origin for images', async () => {
+    vi.stubEnv(
+      'BUNNY_RENDITIONS_CDN_URL',
+      'https://media.example.com/private/path?ignored=true',
+    )
+    const { securityHeaders: configuredHeaders } = await import('./headers')
+    const policy = configuredHeaders.find(
+      ({ key }) => key === 'Content-Security-Policy',
+    )?.value
+
+    expect(policy).toContain(' https://media.example.com')
+    expect(policy).not.toContain('/private/path')
+    expect(policy).not.toContain('ignored=true')
   })
 })
