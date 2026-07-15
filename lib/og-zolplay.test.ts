@@ -119,4 +119,21 @@ describe('og.zolplay.com link previews', () => {
       hasImage: true,
     })
   })
+
+  it('keeps Han-only metadata when no English fallback exists', () => {
+    expect(
+      normalizeOgMetadata('https://example.com', {
+        ogTitle: '纯中文标题',
+        ogDescription: '只有中文的页面描述。',
+        ogImage: [],
+      }),
+    ).toEqual({
+      domain: 'example.com',
+      title: '纯中文标题',
+      titleEn: undefined,
+      description: '只有中文的页面描述。',
+      descriptionEn: undefined,
+      hasImage: false,
+    })
+  })
 })

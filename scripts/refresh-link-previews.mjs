@@ -2,7 +2,7 @@
 // links found in both localized post sources. Run manually when posts change:
 //   node scripts/refresh-link-previews.mjs
 // Requires network access; existing entries are kept when a fetch fails.
-import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { normalizeOgMetadata, ogZolplayUrl } from '../lib/og-zolplay.mjs'
@@ -19,7 +19,10 @@ for (const dir of readdirSync(POSTS_DIR, { withFileTypes: true })) {
   if (!dir.isDirectory()) continue
 
   for (const file of POST_FILES) {
-    const mdx = readFileSync(path.join(POSTS_DIR, dir.name, file), 'utf8')
+    const source = path.join(POSTS_DIR, dir.name, file)
+    if (!existsSync(source)) continue
+
+    const mdx = readFileSync(source, 'utf8')
     for (const [, href] of mdx.matchAll(MARKDOWN_LINK)) urls.add(href)
     for (const [, href] of mdx.matchAll(MDX_LINK)) urls.add(href)
   }
