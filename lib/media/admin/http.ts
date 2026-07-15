@@ -10,6 +10,7 @@ import {
 } from '../ingestion/service'
 import { MediaGeocodingError } from '../geocoding/service'
 import { MediaPurgeError } from '../purge/service'
+import { MediaReconciliationError } from '../reconciliation/service'
 import { PhotoSelectionError } from '../photo-selection/service'
 import { storeOriginalFromSameOriginRequest } from '../storage/upload'
 
@@ -55,6 +56,7 @@ function errorResponse(error: unknown) {
     error instanceof MediaGeocodingError ||
     error instanceof MediaAltTextError ||
     error instanceof MediaPurgeError ||
+    error instanceof MediaReconciliationError ||
     error instanceof PhotoSelectionError
       ? error.code
       : 'dependency_unavailable'
@@ -360,6 +362,40 @@ export function createMediaLocationLabelHandler(
         mediaAssetId,
       })
       return json(200, { suggestion })
+    } catch (error) {
+      return errorResponse(error)
+    }
+  }
+}
+
+export function createMediaResumeHandler(
+  dependencies: BaseDependencies & {
+    reconciliation: {
+      resumeMediaAsset(input: {
+        ownerUserId: string
+        mediaAssetId: string
+      }): Promise<unknown>
+    }
+    review: {
+      getAsset(input: {
+        ownerUserId: string
+        mediaAssetId: string
+      }): Promise<unknown>
+    }
+  },
+) {
+  return async function POST(request: Request, mediaAssetId: string) {
+    const access = await authenticate(dependencies, request, true)
+    if ('response' in access) return access.response
+    try {
+      const identity = {
+        ownerUserId: access.principal.id,
+        mediaAssetId,
+      }
+      await dependencies.reconciliation.resumeMediaAsset(identity)
+      const asset = await dependencies.review.getAsset(identity)
+      audit(dependencies, request, 'media_asset.processing_resumed')
+      return json(200, { asset })
     } catch (error) {
       return errorResponse(error)
     }

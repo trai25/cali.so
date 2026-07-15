@@ -429,6 +429,36 @@ function Inspector({
     }
   }
 
+  async function resumeProcessing() {
+    setPending('resume')
+    setNotice(null)
+    try {
+      const response = await fetch(
+        `/api/admin/media/assets/${asset.id}/resume`,
+        { method: 'POST' },
+      )
+      const body = await responseJson(response)
+      onUpdated(body.asset as MediaAssetReviewRecord)
+      setNotice(
+        localize(
+          locale,
+          '处理已恢复；已确认的步骤不会重复执行。',
+          'Processing resumed without repeating confirmed steps.',
+        ),
+      )
+    } catch {
+      setNotice(
+        localize(
+          locale,
+          '暂时无法恢复处理，请稍后重试。',
+          'Processing could not resume yet. Try again later.',
+        ),
+      )
+    } finally {
+      setPending(null)
+    }
+  }
+
   async function changeLifecycle(intent: 'archive' | 'restore') {
     if (
       intent === 'archive' &&
@@ -559,6 +589,25 @@ function Inspector({
           en={processingLabel(asset).en}
         />
       </p>
+
+      {/* Ingestion claims processing with a compare-and-set. An active worker
+          wins; Resume only takes over a processing claim after it is stale. */}
+      {['original_verified', 'processing', 'retryable_failure'].includes(
+        asset.processingState,
+      ) && (
+        <button
+          type="button"
+          disabled={pending !== null || asset.lifecycle !== 'active'}
+          onClick={resumeProcessing}
+          className="mt-4 min-h-11 rounded-md border border-border px-4 text-sm font-medium outline-none disabled:opacity-50 focus-visible:border-foreground"
+        >
+          {pending === 'resume' ? (
+            <T zh="正在恢复…" en="Resuming…" />
+          ) : (
+            <T zh="恢复处理" en="Resume processing" />
+          )}
+        </button>
+      )}
 
       {asset.previewRendition && (
         <button

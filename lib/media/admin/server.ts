@@ -31,6 +31,8 @@ import {
 import { createPhotoSelectionService } from '../photo-selection/service'
 import { createMediaPurgeRepository } from '../purge/repository'
 import { createMediaPurgeService } from '../purge/service'
+import { createMediaReconciliationRepository } from '../reconciliation/repository'
+import { createMediaReconciliationService } from '../reconciliation/service'
 import { getMediaStorage } from '../storage/server'
 
 let services: ReturnType<typeof createServices> | undefined
@@ -102,6 +104,12 @@ function createServices() {
           }),
         })
       : null
+  const reconciliation = createMediaReconciliationService({
+    repository: createMediaReconciliationRepository(database),
+    ingestion,
+    storage,
+    altText,
+  })
 
   return {
     altText,
@@ -110,6 +118,7 @@ function createServices() {
     ingestion,
     ingestionRepository,
     purge,
+    reconciliation,
     review,
     selection,
     security: getOwnerAdminSecurity(),
