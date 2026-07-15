@@ -18,6 +18,7 @@
     "test:localization": "node --test scripts/localization.test.mjs",
     "test:media:catalog": "vitest run lib/media/catalog",
     "test:media:alt-text": "vitest run lib/media/alt-text",
+    "test:media:asset-review": "vitest run lib/media/asset-review",
     "test:media:ingestion": "vitest run lib/media/ingestion lib/media/privacy",
     "test:media:photo-selection": "vitest run lib/media/photo-selection",
     "test:media:processing": "vitest run lib/media/processing --exclude='**/*.live.test.ts'",
