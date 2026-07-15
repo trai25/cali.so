@@ -216,6 +216,7 @@ test('administration stays outside public prefetching and requires login', async
     false,
   )
 
+  cspErrors.length = 0
   const response = await page.goto('/admin/photos')
   expect(response?.status()).toBe(200)
   await expect(page).toHaveURL('/admin/login')
