@@ -11,6 +11,7 @@ import {
   YouTubeCard,
 } from '~/components/social-cards'
 import { T } from '~/lib/i18n'
+import { localePath, type Locale } from '~/lib/locale-route'
 
 function Tree({
   zh,
@@ -37,9 +38,11 @@ function Tree({
 export function SiteFooter({
   social,
   github,
+  locale = 'zh',
 }: {
   social: { x: SocialSnapshot; telegram: SocialSnapshot; youtube: SocialSnapshot }
   github: GitHubSnapshot
+  locale?: Locale
 }) {
   return (
     <footer className="mx-auto mt-24 w-full max-w-[37.5rem] px-6 pb-24 text-sm text-muted-foreground sm:pb-12">
@@ -63,22 +66,22 @@ export function SiteFooter({
         </Tree>
         <Tree zh="索引" en="index">
           <li>
-            <Link href="/" className="footer-tree-link">
+            <Link href={localePath(locale, '/')} className="footer-tree-link">
               <T zh="首页" en="Home" />
             </Link>
           </li>
           <li>
-            <Link href="/projects" className="footer-tree-link">
+            <Link href={localePath(locale, '/projects')} className="footer-tree-link">
               <T zh="项目" en="Projects" />
             </Link>
           </li>
           <li>
-            <Link href="/photos" className="footer-tree-link">
+            <Link href={localePath(locale, '/photos')} className="footer-tree-link">
               <T zh="照片" en="Photos" />
             </Link>
           </li>
           <li>
-            <Link href="/blog" className="footer-tree-link">
+            <Link href={localePath(locale, '/blog')} className="footer-tree-link">
               <T zh="写作" en="Writing" />
             </Link>
           </li>

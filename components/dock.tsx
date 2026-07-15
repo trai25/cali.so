@@ -10,6 +10,7 @@ import { LiquidGlass } from '~/components/liquid-glass'
 import { Preferences } from '~/components/preferences'
 import { T } from '~/lib/i18n'
 import { localize, useLocale } from '~/lib/locale-client'
+import { localePath, unlocalizedPathname } from '~/lib/locale-route'
 import { playDockSound } from '~/lib/sound'
 
 const ITEMS = [
@@ -65,7 +66,8 @@ function DockItem({
 export function Dock() {
   const locale = useLocale()
   const pathname = usePathname()
-  const activeHref = pathname === '/' ? '/' : ITEMS.find(({ href }) => pathname.startsWith(href))?.href
+  const routePathname = unlocalizedPathname(pathname)
+  const activeHref = routePathname === '/' ? '/' : ITEMS.find(({ href }) => routePathname.startsWith(href))?.href
   const dockRef = useRef<HTMLElement | null>(null)
   const indicatorRef = useRef<HTMLSpanElement | null>(null)
   const itemRefs = useRef(new Map<string, HTMLAnchorElement>())
@@ -145,10 +147,10 @@ export function Dock() {
       <LiquidGlass />
       <span ref={indicatorRef} className="dock-active-indicator" aria-hidden />
       <DockItem
-        href="/"
+        href={localePath(locale, '/')}
         zh="首页"
         en="Home"
-        active={pathname === '/'}
+        active={routePathname === '/'}
         itemRef={(element) => registerItem('/', element)}
         onNavigate={handleNavigate}
       >
@@ -160,10 +162,10 @@ export function Dock() {
       {ITEMS.map(({ href, zh, en, icon: Icon }) => (
         <DockItem
           key={href}
-          href={href}
+          href={localePath(locale, href)}
           zh={zh}
           en={en}
-          active={pathname.startsWith(href)}
+          active={routePathname.startsWith(href)}
           itemRef={(element) => registerItem(href, element)}
           onNavigate={handleNavigate}
         >

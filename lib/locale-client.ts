@@ -1,8 +1,11 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
 import { useSyncExternalStore } from 'react'
 
-export type Locale = 'zh' | 'en'
+import { localeFromPathname, type Locale } from '~/lib/locale-route'
+
+export type { Locale } from '~/lib/locale-route'
 
 export const LOCALE_CHANGE_EVENT = 'cali:locale-change'
 
@@ -20,7 +23,11 @@ function subscribe(onStoreChange: () => void) {
 }
 
 export function useLocale(): Locale {
-  return useSyncExternalStore(subscribe, getSnapshot, () => 'zh')
+  const pathname = usePathname()
+  const preference = useSyncExternalStore(subscribe, getSnapshot, (): Locale => 'zh')
+
+  if (!pathname || pathname === '/admin' || pathname.startsWith('/admin/')) return preference
+  return localeFromPathname(pathname)
 }
 
 export function localize(locale: Locale, zh: string, en: string) {

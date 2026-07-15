@@ -3,7 +3,7 @@ import { GeistPixelCircle, GeistPixelSquare } from 'geist/font/pixel'
 import { ErrorHomeAction } from '~/components/error-home-action'
 import { T } from '~/lib/i18n'
 
-export default function NotFound() {
+export function NotFoundPageView() {
   return (
     <div className="error-sheet mx-auto w-full max-w-[37.5rem] px-6">
       <section className="error-proof" aria-labelledby="not-found-title">

@@ -1,55 +1,60 @@
-import type { Metadata } from 'next'
 import { MDXRemote } from 'next-mdx-remote/rsc'
 import rehypePrettyCode from 'rehype-pretty-code'
 import rehypeSlug from 'rehype-slug'
 import remarkGfm from 'remark-gfm'
 
 import { BrailleDate } from '~/components/braille-date'
-import { LocalizedMetadata } from '~/components/localized-metadata'
 import { mdxComponents } from '~/components/mdx/mdx-components'
 import { PolaroidCover } from '~/components/polaroid-cover'
-import { RevealScope } from '~/components/reveal-scope'
 import { PostToc } from '~/components/post-toc'
+import { RevealScope } from '~/components/reveal-scope'
 import { buildPostRail, getAllPosts, getPost, POST_ARTICLE_START_ID } from '~/lib/content'
 import { LocalDate, T } from '~/lib/i18n'
+import { localeMetadata } from '~/lib/locale-metadata'
+import type { Locale } from '~/lib/locale-route'
 import rehypePrefixIds from '~/lib/rehype-prefix-ids'
+import { postViewTransitionName } from '~/lib/view-transition-name'
 
-export function generateStaticParams() {
+export function generatePostStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }))
 }
 
-export const dynamicParams = false
+export function blogPostMetadata(locale: Locale, slug: string) {
+  const post = getPost(slug)
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>
-}): Promise<Metadata> {
-  const post = getPost((await params).slug)
-  return {
-    title: post.titleEn,
-    description: post.descriptionEn,
-    openGraph: { title: post.titleEn, description: post.descriptionEn, type: 'article' },
-  }
+  return localeMetadata({
+    locale,
+    path: `/blog/${post.slug}`,
+    title: locale === 'en' ? post.titleEn : post.title,
+    description:
+      locale === 'en' ? post.descriptionEn : (post.description ?? post.title),
+    type: 'article',
+  })
 }
 
-export default async function BlogPostPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>
-}) {
-  const post = getPost((await params).slug)
+export async function BlogPostPageView({ slug, locale }: { slug: string; locale: Locale }) {
+  const post = getPost(slug)
   const rail = buildPostRail(post.title, post.body)
   const railEn = buildPostRail(post.titleEn, post.bodyEn, 'en-')
+  const english = locale === 'en'
+  const source = english ? post.bodyEn : post.body
+  const prefixIdsPlugin: [typeof rehypePrefixIds, { prefix: string }] = [
+    rehypePrefixIds,
+    { prefix: 'en-' },
+  ]
+  const prettyCodePlugin: [
+    typeof rehypePrettyCode,
+    { theme: { light: string; dark: string } },
+  ] = [
+    rehypePrettyCode,
+    { theme: { light: 'github-light-default', dark: 'github-dark-default' } },
+  ]
+  const rehypePlugins = english
+    ? [rehypeSlug, prefixIdsPlugin, prettyCodePlugin]
+    : [rehypeSlug, prettyCodePlugin]
 
   return (
     <>
-      <LocalizedMetadata
-        titleZh={post.title}
-        titleEn={post.titleEn}
-        descriptionZh={post.description ?? post.title}
-        descriptionEn={post.descriptionEn}
-      />
       <PostToc nodes={rail} nodesEn={railEn} />
       <article className="post-article mx-auto w-full max-w-[37.5rem] px-6">
         <header>
@@ -69,7 +74,7 @@ export default async function BlogPostPage({
             <h1
               id={POST_ARTICLE_START_ID}
               className="mt-10 text-2xl font-semibold tracking-tight text-balance"
-              style={{ viewTransitionName: `title-${post.slug}` } as React.CSSProperties}
+              style={{ viewTransitionName: postViewTransitionName('title', post.slug) } as React.CSSProperties}
             >
               <T zh={post.title} en={post.titleEn} />
             </h1>
@@ -85,39 +90,14 @@ export default async function BlogPostPage({
             </p>
           </div>
         </header>
-        <RevealScope lang="zh-CN" data-zh-block className="post-body-stage prose enter mt-10">
+        <RevealScope lang={english ? 'en' : 'zh-CN'} className="post-body-stage prose enter mt-10">
           <MDXRemote
-            source={post.body}
-            components={mdxComponents(post.slug)}
+            source={source}
+            components={mdxComponents(post.slug, locale)}
             options={{
               mdxOptions: {
                 remarkPlugins: [remarkGfm],
-                rehypePlugins: [
-                  rehypeSlug,
-                  [
-                    rehypePrettyCode,
-                    { theme: { light: 'github-light-default', dark: 'github-dark-default' } },
-                  ],
-                ],
-              },
-            }}
-          />
-        </RevealScope>
-        <RevealScope lang="en" data-en-block className="post-body-stage prose enter mt-10">
-          <MDXRemote
-            source={post.bodyEn}
-            components={mdxComponents(post.slug)}
-            options={{
-              mdxOptions: {
-                remarkPlugins: [remarkGfm],
-                rehypePlugins: [
-                  rehypeSlug,
-                  [rehypePrefixIds, { prefix: 'en-' }],
-                  [
-                    rehypePrettyCode,
-                    { theme: { light: 'github-light-default', dark: 'github-dark-default' } },
-                  ],
-                ],
+                rehypePlugins,
               },
             }}
           />

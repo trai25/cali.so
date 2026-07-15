@@ -394,13 +394,19 @@ item transitions.
 
 Interface strings render in both languages in the static DOM
 (`lib/i18n.tsx`'s `<T zh en>` + `<LocalDate>`), and CSS shows one based on
-`html[data-locale]` — restored pre-paint from localStorage, flipped by the
-preferences dock. Locale-sensitive attributes use the same client-side locale
-store so accessible names never mix languages. No locale routes, no hydration
-risk. Each post keeps its Chinese source in `index.mdx` and a complete English
-translation in `index.en.mdx`; both are rendered statically, while block-level
-locale gates expose only the selected body and its matching document minimap.
-English heading IDs are prefixed to keep the dual DOM valid.
+the explicit route's `html[data-locale]`. Unprefixed public routes are Chinese;
+English uses the matching `/en` route. The preferences dock crosses that root
+layout boundary with a full navigation while preserving the current path,
+query, and fragment. Public localStorage remembers the selection but never
+overrides an explicit URL; only the isolated admin root retains in-place locale
+restoration. Locale-sensitive attributes derive from the route so accessible
+names never mix languages, and server metadata, canonical links, feeds, and OG
+images share the same route identity.
+
+Each post keeps its Chinese source in `index.mdx` and a complete English
+translation in `index.en.mdx`. The matching route renders only that source and
+its document minimap; English heading IDs retain their `en-` prefix for stable
+links carried forward from the earlier dual-DOM implementation.
 
 ## Footer colophon
 
@@ -485,10 +491,10 @@ Post covers render as instant-print photographs. Governing principle: the
 photo is a physical object you pick up — and **paper doesn't squish** (scale
 and fade it, never deform it).
 
-- White frame: 4% of width on three sides, 14% at the bottom; bottom edge
-  carries an optional caption/date in a small handwriting-feel face. An inner
-  hairline ring where photo meets frame (inset shadow ≈ `rgb(0 0 0 / 0.14)`)
-  sells the print edge.
+- Paper frame: 2% of width on the top and sides, with a fixed 28px bottom
+  band. The OG treatment uses a 16:9 photo crop at 432px wide and leaves that
+  band empty, with no readable caption or date. An inner hairline ring where photo
+  meets frame (inset shadow ≈ `rgb(0 0 0 / 0.14)`) sells the print edge.
 - Deterministic base tilt of −2° to 2° derived from the slug (stable across
   builds).
 - **Hover = pick-up, not flatten**: rotate a further +1.2° from the base tilt

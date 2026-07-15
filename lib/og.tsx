@@ -52,7 +52,15 @@ const MIME: Record<string, string> = {
 
 export async function coverDataUri(publicSrc: string): Promise<string> {
   // cover.src is the public /content/... URL; the file lives in content/
-  const file = path.join(process.cwd(), publicSrc.replace(/^\//, ''))
+  const relativePath = publicSrc.startsWith('/content/')
+    ? publicSrc.slice('/content/'.length)
+    : null
+
+  if (!relativePath || relativePath.split('/').includes('..')) {
+    throw new Error('Invalid OG cover path')
+  }
+
+  const file = path.join(process.cwd(), 'content', relativePath)
   const ext = (file.split('.').pop() ?? 'png').toLowerCase()
   const data = await readFile(file)
   return `data:${MIME[ext] ?? 'image/png'};base64,${data.toString('base64')}`
@@ -102,22 +110,20 @@ export function OgSheet({ children }: { children: React.ReactNode }) {
   )
 }
 
-// The instant-print cover as satori JSX — same proportions as .polaroid
-// (4% frame, 14% bottom band, hairline ring, rest shadow, slug tilt).
+// The instant-print cover as satori JSX — same proportions as .polaroid:
+// 2% frame, empty 28px bottom band, hairline ring, rest shadow, slug tilt.
 export function OgPolaroid({
   src,
-  caption,
   tilt,
-  width = 440,
+  width = 432,
 }: {
   src: string
-  caption: string
   tilt: number
   width?: number
 }) {
-  const pad = Math.round(width * 0.04)
+  const pad = width * 0.02
   const photoWidth = width - pad * 2
-  const photoHeight = Math.round(photoWidth * 0.62)
+  const photoHeight = (photoWidth * 9) / 16
   return (
     <div
       style={{
@@ -154,16 +160,9 @@ export function OgPolaroid({
       <div
         style={{
           display: 'flex',
-          alignItems: 'center',
-          minHeight: Math.round(width * 0.14),
-          padding: '6px 2px',
-          fontSize: 22,
-          color: ogColors.paperInk,
-          transform: 'skewX(-8deg)',
+          height: 28,
         }}
-      >
-        {caption}
-      </div>
+      />
     </div>
   )
 }

@@ -8,9 +8,10 @@ import { NavCards } from '~/components/nav-cards'
 import { PostRow } from '~/components/post-row'
 import { VinylShelf } from '~/components/vinyl-shelf'
 import { getAllPosts } from '~/lib/content'
+import { T } from '~/lib/i18n'
+import { localePath, type Locale } from '~/lib/locale-route'
 import { books, experience, records } from '~/lib/personal'
 import { projects } from '~/lib/projects'
-import { T } from '~/lib/i18n'
 import { getGitHub, getSocial } from '~/lib/social-live'
 
 function SectionTitle({ children, delay }: { children: React.ReactNode; delay: number }) {
@@ -24,7 +25,7 @@ function SectionTitle({ children, delay }: { children: React.ReactNode; delay: n
   )
 }
 
-export default async function HomePage() {
+export async function HomePageView({ locale }: { locale: Locale }) {
   const [social, github] = await Promise.all([getSocial(), getGitHub()])
   const posts = getAllPosts()
   const latest = posts.slice(0, 5)
@@ -52,10 +53,12 @@ export default async function HomePage() {
         </div>
       </div>
 
-      <NavCards postCount={posts.length} projectCount={projects.length} />
+      <NavCards postCount={posts.length} projectCount={projects.length} locale={locale} />
 
       <section className="mt-16">
-        <SectionTitle delay={120}><T zh="经历" en="Experience" /></SectionTitle>
+        <SectionTitle delay={120}>
+          <T zh="经历" en="Experience" />
+        </SectionTitle>
         <ul className="mt-4 flex flex-col">
           {experience.map((job, i) => (
             <li
@@ -72,10 +75,14 @@ export default async function HomePage() {
                       rel="noreferrer"
                       className="experience-company font-medium transition-colors duration-150 ease-[ease] hover:text-foreground"
                     >
-                      <ExternalLabel><T zh={job.company} en={job.companyEn} /></ExternalLabel>
+                      <ExternalLabel>
+                        <T zh={job.company} en={job.companyEn} />
+                      </ExternalLabel>
                     </a>
                   ) : (
-                    <span className="experience-company font-medium"><T zh={job.company} en={job.companyEn} /></span>
+                    <span className="experience-company font-medium">
+                      <T zh={job.company} en={job.companyEn} />
+                    </span>
                   )}
                   <span className="experience-role text-muted-foreground">
                     <T zh={job.role} en={job.roleEn ?? job.role} />
@@ -92,9 +99,11 @@ export default async function HomePage() {
 
       <section className="mt-16">
         <div className="flex items-center justify-between gap-4">
-          <SectionTitle delay={200}><T zh="写作" en="Writing" /></SectionTitle>
+          <SectionTitle delay={200}>
+            <T zh="写作" en="Writing" />
+          </SectionTitle>
           <Link
-            href="/blog"
+            href={localePath(locale, '/blog')}
             className="enter relative shrink-0 text-sm text-muted-foreground transition-colors duration-150 ease-[ease] after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] hover:text-foreground focus-visible:rounded-sm focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-4"
             style={{ '--enter-delay': '200ms' } as React.CSSProperties}
           >
@@ -106,12 +115,11 @@ export default async function HomePage() {
             <li
               key={post.slug}
               className="enter-swing"
-              // stagger from the center out, with a tiny swing
               style={
                 { '--enter-delay': `${240 + Math.abs(index - center) * 50}ms` } as React.CSSProperties
               }
             >
-              <PostRow post={post} headingLevel="h3" dateStyle="short" />
+              <PostRow post={post} headingLevel="h3" dateStyle="short" locale={locale} />
             </li>
           ))}
         </ul>

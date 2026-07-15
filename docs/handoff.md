@@ -26,8 +26,8 @@ Current as of July 2026.
   through the owned content route. Projects and personal registries are typed
   source files.
 - Chinese keeps every established unprefixed URL. English uses the matching
-  `/en` route family after #100 lands. Locale-specific feeds, metadata, and OG
-  images must follow the route, not browser-local state.
+  `/en` route family. Locale-specific feeds, metadata, and OG images follow the
+  route, not browser-local state.
 - Public pages are static where possible. GitHub and YouTube social values use
   ISR-backed fetches with committed JSON snapshots as outage fallbacks.
 - External-link cards keep metadata in a committed snapshot refreshed through
