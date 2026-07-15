@@ -13,6 +13,7 @@ import {
   type UploadIntentRecord,
 } from './service'
 import { MediaImageError } from '../processing/image'
+import { CaptureLocationError } from '../privacy/capture-location'
 import { BunnyStorageError } from '../storage/bunny'
 
 const originalBytes = new TextEncoder().encode('approved original bytes')
@@ -434,6 +435,30 @@ describe('Media Library ingestion service', () => {
       processingErrorCode: 'image_unsupported_format',
     })
     expect(f.storage.storeRendition).not.toHaveBeenCalled()
+  })
+
+  it('marks an invalid Capture Location as repair required', async () => {
+    const f = fixture()
+    const intent = await f.service.createUploadIntent({
+      ownerUserId: 'owner_01',
+      idempotencyKey: 'upload_01',
+      contentType: 'image/jpeg',
+      byteSize: originalBytes.byteLength,
+      checksumSha256: originalChecksum,
+    })
+    f.captureLocationVault.seal.mockImplementationOnce(() => {
+      throw new CaptureLocationError('invalid_location')
+    })
+
+    await expect(
+      f.service.completeUploadIntent({
+        ownerUserId: 'owner_01',
+        uploadIntentId: intent.id,
+      }),
+    ).resolves.toMatchObject({
+      processingState: 'repair_required',
+      processingErrorCode: 'capture_location_invalid',
+    })
   })
 
   it('resumes after a partial Rendition failure without rewriting confirmed output', async () => {
