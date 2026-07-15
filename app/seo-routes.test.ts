@@ -1,11 +1,25 @@
 import { describe, expect, it } from 'vitest'
 
 import { GET as getEnglishFeed } from './feed.en.xml/route'
+import robots from './robots'
 import sitemap from './sitemap'
 import { getAllPosts } from '~/lib/content'
+import { archivedNewsletterIds } from '~/lib/newsletters'
 import { seo } from '~/lib/seo'
 
 describe('localized discovery routes', () => {
+  it('publishes an explicit crawler policy for public and private surfaces', () => {
+    expect(robots()).toEqual({
+      rules: {
+        userAgent: '*',
+        allow: '/',
+        disallow: ['/admin', '/api/admin', '/confirm/', '/en/confirm/'],
+      },
+      sitemap: new URL('/sitemap.xml', seo.url).href,
+      host: seo.url.origin,
+    })
+  })
+
   it('publishes English feed item URLs under /en while keeping the feed endpoint', async () => {
     const xml = await getEnglishFeed().text()
 
@@ -27,6 +41,7 @@ describe('localized discovery routes', () => {
       '/blog',
       '/photos',
       '/projects',
+      ...archivedNewsletterIds.map((id) => `/newsletters/${id}`),
       ...getAllPosts().map((post) => `/blog/${post.slug}`),
     ]
 

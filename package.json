@@ -20,6 +20,7 @@
     "test:media:storage:live:browser": "vitest run lib/media/storage/bunny.browser.live.test.ts",
     "test:port-post": "node --test scripts/port-post.test.mjs",
     "verify:legacy-urls": "node scripts/verify-legacy-url-contract.mjs",
+    "verify:public-discovery": "node scripts/verify-public-discovery.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
