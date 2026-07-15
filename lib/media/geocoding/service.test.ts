@@ -66,4 +66,16 @@ describe('Media Geocoding service', () => {
       }),
     ).rejects.toEqual(new MediaGeocodingError('dependency_unavailable'))
   })
+
+  it('distinguishes missing GPS from a provider with no address result', async () => {
+    const f = fixture()
+    f.suggester.suggest.mockResolvedValueOnce({ zhHans: '', en: '' })
+
+    await expect(
+      f.service.suggestLocationLabel({
+        ownerUserId: 'owner_01',
+        mediaAssetId,
+      }),
+    ).rejects.toEqual(new MediaGeocodingError('no_results'))
+  })
 })
