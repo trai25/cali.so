@@ -62,7 +62,7 @@ export function NewsletterRetiredPageView({ locale }: { locale: Locale }) {
         </p>
         <nav
           className="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-sm"
-          aria-label={locale === 'en' ? 'Newsletter options' : 'Newsletter 选项'}
+          aria-label={locale === 'en' ? 'Newsletter options' : '电子报选项'}
         >
           <a
             href={feed}
