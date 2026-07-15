@@ -138,6 +138,7 @@ describe('Media Library ingestion repository', () => {
         },
       },
       completedAt: now,
+      requiredRenditionCount: 3,
     }
     await expect(repository.markReady(readyInput)).rejects.toThrow(
       'Rendition manifest is incomplete',

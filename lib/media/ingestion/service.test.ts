@@ -138,7 +138,14 @@ function fixture() {
       events.push(`rendition:record:${input.profileWidth}`)
       return input
     },
-    async markReady({ mediaAssetId, metadata }) {
+    async markReady({
+      mediaAssetId,
+      metadata,
+      requiredRenditionCount,
+    }) {
+      if (renditions.size !== requiredRenditionCount) {
+        throw new Error('Rendition manifest is incomplete')
+      }
       const asset = assets.get(mediaAssetId)!
       Object.assign(asset, metadata, {
         processingState: 'ready',
@@ -446,6 +453,10 @@ describe('Media Library ingestion service', () => {
       processingErrorCode: 'dependency_unavailable',
     })
     expect(f.renditions).toHaveLength(1)
+    const confirmedKey = [...f.renditions.values()][0]!.objectKey
+    const confirmedInspections = f.storage.inspectRendition.mock.calls.filter(
+      ([key]) => key === confirmedKey,
+    ).length
 
     f.failRendition(null)
     await expect(f.service.completeUploadIntent(input)).resolves.toMatchObject({
@@ -458,6 +469,14 @@ describe('Media Library ingestion service', () => {
         call.key.includes('/640-'),
       ),
     ).toHaveLength(1)
+    expect(
+      f.storage.inspectRendition.mock.calls.filter(
+        ([key]) => key === confirmedKey,
+      ),
+    ).toHaveLength(confirmedInspections)
+    expect(
+      f.storage.readRendition.mock.calls.filter(([key]) => key === confirmedKey),
+    ).toHaveLength(2)
   })
 
   it('adopts a verified orphan Rendition after an interrupted catalog write', async () => {

@@ -109,6 +109,7 @@ export interface MediaIngestionRepository {
       | 'originalChecksumSha256'
     >
     completedAt: Date
+    requiredRenditionCount: number
   }): Promise<MediaAssetRecord>
   markFailure(input: {
     mediaAssetId: string
@@ -437,7 +438,12 @@ export function createMediaIngestionService({
             if (!renditionMatches(existing, expected)) {
               throw new MediaIngestionError('rendition_mismatch')
             }
-            await verifyRendition(storage, existing.objectKey, existing)
+            await verifyRendition(
+              storage,
+              existing.objectKey,
+              existing,
+              existing,
+            )
             continue
           }
 
@@ -495,6 +501,7 @@ export function createMediaIngestionService({
             captureLocationEnvelope,
           },
           completedAt: clock.now(),
+          requiredRenditionCount: RENDITION_PROFILE_WIDTHS.length,
         })
       } catch (error) {
         const failure = safeFailure(error)
