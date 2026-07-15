@@ -13,6 +13,7 @@
     "test:ama": "vitest run lib/ama && pnpm db:validate",
     "test:security": "vitest run lib/security",
     "test:localization": "node --test scripts/localization.test.mjs",
+    "test:media:catalog": "vitest run lib/media/catalog",
     "test:media:storage": "vitest run lib/media/storage --exclude='**/*.live.test.ts'",
     "test:media:storage:live": "pnpm test:media:storage:live:server && pnpm test:media:storage:live:browser",
     "test:media:storage:live:server": "vitest run lib/media/storage/bunny.live.test.ts",
