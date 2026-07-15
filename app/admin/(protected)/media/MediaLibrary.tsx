@@ -394,6 +394,41 @@ function Inspector({
     }
   }
 
+  async function suggestLocationLabel() {
+    setPending('location')
+    setNotice(null)
+    try {
+      const response = await fetch(
+        `/api/admin/media/assets/${asset.id}/location-label`,
+        { method: 'POST' },
+      )
+      const body = await responseJson(response)
+      const nextSuggestion = body.suggestion as {
+        zhHans?: string
+        en?: string
+      }
+      if (nextSuggestion.zhHans) setLocationZh(nextSuggestion.zhHans)
+      if (nextSuggestion.en) setLocationEn(nextSuggestion.en)
+      setNotice(
+        localize(
+          locale,
+          '已根据私密拍摄位置填写建议，请审核后保存。',
+          'Suggested from the private Capture Location. Review before saving.',
+        ),
+      )
+    } catch {
+      setNotice(
+        localize(
+          locale,
+          '没有可用的拍摄位置建议，现有素材不受影响。',
+          'No Capture Location suggestion is available. The Media Asset is unchanged.',
+        ),
+      )
+    } finally {
+      setPending(null)
+    }
+  }
+
   async function changeLifecycle(intent: 'archive' | 'restore') {
     if (
       intent === 'archive' &&
@@ -564,6 +599,23 @@ function Inspector({
       )}
 
       <div className="mt-6 grid gap-4 border-t border-dotted border-border pt-5">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-sm font-medium">
+            <T zh="地点标签" en="Location Label" />
+          </h3>
+          <button
+            type="button"
+            disabled={pending !== null || asset.lifecycle !== 'active'}
+            onClick={suggestLocationLabel}
+            className="min-h-11 px-2 text-sm font-medium text-muted-foreground outline-none disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
+          >
+            {pending === 'location' ? (
+              <T zh="正在查询…" en="Suggesting…" />
+            ) : (
+              <T zh="根据拍摄位置建议" en="Suggest from Capture Location" />
+            )}
+          </button>
+        </div>
         <Field
           label={<T zh="地点标签（英文）" en="Location Label (English)" />}
           value={locationEn}

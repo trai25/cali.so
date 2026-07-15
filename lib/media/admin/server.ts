@@ -17,6 +17,10 @@ import { createMediaAltTextRepository } from '../alt-text/repository'
 import { createMediaAltTextService } from '../alt-text/service'
 import { createMediaAssetReviewRepository } from '../asset-review/repository'
 import { createMediaAssetReviewService } from '../asset-review/service'
+import { parseMediaGeocodingEnv } from '../geocoding/config'
+import { createGoogleMapsLocationLabelSuggester } from '../geocoding/provider'
+import { createMediaGeocodingRepository } from '../geocoding/repository'
+import { createMediaGeocodingService } from '../geocoding/service'
 import { createMediaIngestionRepository } from '../ingestion/repository'
 import { createMediaIngestionService } from '../ingestion/service'
 import { createCaptureLocationVault } from '../privacy/capture-location'
@@ -46,10 +50,11 @@ function createServices() {
   if (!mediaEncryptionKey) {
     throw new Error('Invalid Media environment: MEDIA_ENCRYPTION_KEY')
   }
+  const captureLocationVault = createCaptureLocationVault(mediaEncryptionKey)
   const ingestion = createMediaIngestionService({
     repository: ingestionRepository,
     storage,
-    captureLocationVault: createCaptureLocationVault(mediaEncryptionKey),
+    captureLocationVault,
   })
   const purge = createMediaPurgeService({
     repository: createMediaPurgeRepository(database),
@@ -86,9 +91,22 @@ function createServices() {
       })
     : null
 
+  const geocodingConfig = parseMediaGeocodingEnv(process.env)
+  const geocoding =
+    geocodingConfig.enabled && geocodingConfig.apiKey
+      ? createMediaGeocodingService({
+          repository: createMediaGeocodingRepository(database),
+          captureLocationVault,
+          suggester: createGoogleMapsLocationLabelSuggester({
+            apiKey: geocodingConfig.apiKey,
+          }),
+        })
+      : null
+
   return {
     altText,
     baseUrl: environment.SITE_URL,
+    geocoding,
     ingestion,
     ingestionRepository,
     purge,

@@ -86,6 +86,9 @@ jobs:
       - name: Test media ingestion workflow
         run: pnpm test:media:ingestion
 
+      - name: Test media Location Label suggestions
+        run: pnpm test:media:geocoding
+
       - name: Test media Alt Text Suggestions
         run: pnpm test:media:alt-text
 
