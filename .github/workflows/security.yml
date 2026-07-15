@@ -56,6 +56,9 @@ jobs:
       - name: Test media catalog constraints
         run: pnpm test:media:catalog
 
+      - name: Test media image processing
+        run: pnpm test:media:processing
+
       - name: Test localization
         run: pnpm test:localization
 
