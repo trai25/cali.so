@@ -59,6 +59,7 @@ the full suite and production build must pass from a frozen-lockfile install.
 
 ```bash
 pnpm typecheck
+pnpm test:unit
 pnpm test:localization
 pnpm test:port-post
 pnpm test:ama

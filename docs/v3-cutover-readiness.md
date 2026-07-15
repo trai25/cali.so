@@ -56,6 +56,8 @@ and are not part of the v3 launch surface.
 The following passed from the frozen installation:
 
 - TypeScript typecheck.
+- 274 Vitest unit and integration tests across application, component, and
+  library code, excluding only explicitly live provider suites.
 - 125 AMA tests and 5 migration checks.
 - 3 security tests.
 - 157 localization checks.
@@ -64,7 +66,6 @@ The following passed from the frozen installation:
 - 9 Media Library processing tests.
 - 40 Media Library storage tests.
 - 4 port-post tests.
-- 1 viewport-edge-fade namespace regression test.
 - Production build with 78 generated pages.
 - 5 Instant Navigation browser tests.
 - 52 legacy URL probes against the production server.
@@ -73,7 +74,7 @@ The following passed from the frozen installation:
 - OSV audit of 613 production packages with no findings.
 - Full-SHA GitHub Action reference check.
 - Redacted Gitleaks 8.30.1 scan across 355 commits with no findings.
-- `git diff --check main`.
+- `git diff --check origin/main`.
 
 The content check exposed five trailing spaces in two historical MDX files.
 They were removed without changing rendered content.
@@ -157,7 +158,7 @@ operator before cutover.
    separate authorization.
 7. Review the #107 Vercel Preview across the remaining browser matrix and
    update this report with its URL and result.
-8. Obtain separate Standards and Spec reviews over `git diff main...HEAD` and
+8. Obtain separate Standards and Spec reviews over `git diff origin/main...HEAD` and
    resolve every finding.
 9. Re-run the complete release suite on the final #107 commit.
 10. Only after every blocker above is passed, approve the separately operated

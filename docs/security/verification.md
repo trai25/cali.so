@@ -25,6 +25,7 @@ Local recheck:
 
 ```sh
 pnpm typecheck
+pnpm test:unit
 pnpm test:ama
 pnpm test:security
 pnpm audit:prod
