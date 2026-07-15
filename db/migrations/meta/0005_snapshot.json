@@ -915,7 +915,7 @@
         },
         "media_renditions_dimensions_check": {
           "name": "media_renditions_dimensions_check",
-          "value": "\"media_renditions\".\"width\" BETWEEN 1 AND \"media_renditions\".\"profile_width\" AND \"media_renditions\".\"height\" > 0"
+          "value": "\"media_renditions\".\"width\" BETWEEN 1 AND \"media_renditions\".\"profile_width\" AND \"media_renditions\".\"height\" > 0 AND (\"media_renditions\".\"width\"::bigint * \"media_renditions\".\"height\"::bigint) <= 100000000"
         },
         "media_renditions_byte_size_check": {
           "name": "media_renditions_byte_size_check",
@@ -1104,7 +1104,7 @@
         },
         "media_upload_intents_completion_check": {
           "name": "media_upload_intents_completion_check",
-          "value": "\"media_upload_intents\".\"completed_at\" IS NULL OR (\"media_upload_intents\".\"completed_at\" >= \"media_upload_intents\".\"created_at\" AND \"media_upload_intents\".\"completed_at\" <= \"media_upload_intents\".\"expires_at\")"
+          "value": "\"media_upload_intents\".\"completed_at\" IS NULL OR \"media_upload_intents\".\"completed_at\" >= \"media_upload_intents\".\"created_at\""
         }
       },
       "isRLSEnabled": false

@@ -69,7 +69,7 @@ CREATE TABLE "media_renditions" (
 	CONSTRAINT "media_renditions_object_key_check" CHECK (length(btrim("media_renditions"."object_key")) > 0),
 	CONSTRAINT "media_renditions_profile_check" CHECK ("media_renditions"."profile_width" IN (640, 1024, 1600)),
 	CONSTRAINT "media_renditions_checksum_check" CHECK ("media_renditions"."checksum_sha256" ~ '^[0-9a-f]{64}$'),
-	CONSTRAINT "media_renditions_dimensions_check" CHECK ("media_renditions"."width" BETWEEN 1 AND "media_renditions"."profile_width" AND "media_renditions"."height" > 0),
+	CONSTRAINT "media_renditions_dimensions_check" CHECK ("media_renditions"."width" BETWEEN 1 AND "media_renditions"."profile_width" AND "media_renditions"."height" > 0 AND ("media_renditions"."width"::bigint * "media_renditions"."height"::bigint) <= 100000000),
 	CONSTRAINT "media_renditions_byte_size_check" CHECK ("media_renditions"."byte_size" > 0),
 	CONSTRAINT "media_renditions_content_type_check" CHECK ("media_renditions"."content_type" = 'image/jpeg'),
 	CONSTRAINT "media_renditions_color_space_check" CHECK ("media_renditions"."color_space" = 'srgb'),
@@ -95,7 +95,7 @@ CREATE TABLE "media_upload_intents" (
 	CONSTRAINT "media_upload_intents_byte_size_check" CHECK ("media_upload_intents"."byte_size" BETWEEN 1 AND 52428800),
 	CONSTRAINT "media_upload_intents_checksum_check" CHECK ("media_upload_intents"."checksum_sha256" ~ '^[0-9a-f]{64}$'),
 	CONSTRAINT "media_upload_intents_expiry_check" CHECK ("media_upload_intents"."expires_at" > "media_upload_intents"."created_at"),
-	CONSTRAINT "media_upload_intents_completion_check" CHECK ("media_upload_intents"."completed_at" IS NULL OR ("media_upload_intents"."completed_at" >= "media_upload_intents"."created_at" AND "media_upload_intents"."completed_at" <= "media_upload_intents"."expires_at"))
+	CONSTRAINT "media_upload_intents_completion_check" CHECK ("media_upload_intents"."completed_at" IS NULL OR "media_upload_intents"."completed_at" >= "media_upload_intents"."created_at")
 );
 --> statement-breakpoint
 ALTER TABLE "media_assets" ADD CONSTRAINT "media_assets_upload_intent_id_media_upload_intents_id_fk" FOREIGN KEY ("upload_intent_id") REFERENCES "public"."media_upload_intents"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint

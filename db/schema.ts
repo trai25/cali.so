@@ -174,7 +174,7 @@ export const mediaUploadIntents = pgTable(
     ),
     check(
       'media_upload_intents_completion_check',
-      sql`${table.completedAt} IS NULL OR (${table.completedAt} >= ${table.createdAt} AND ${table.completedAt} <= ${table.expiresAt})`,
+      sql`${table.completedAt} IS NULL OR ${table.completedAt} >= ${table.createdAt}`,
     ),
   ],
 )
@@ -346,7 +346,7 @@ export const mediaRenditions = pgTable(
     ),
     check(
       'media_renditions_dimensions_check',
-      sql`${table.width} BETWEEN 1 AND ${table.profileWidth} AND ${table.height} > 0`,
+      sql`${table.width} BETWEEN 1 AND ${table.profileWidth} AND ${table.height} > 0 AND (${table.width}::bigint * ${table.height}::bigint) <= 100000000`,
     ),
     check('media_renditions_byte_size_check', sql`${table.byteSize} > 0`),
     check('media_renditions_content_type_check', sql`${table.contentType} = 'image/jpeg'`),

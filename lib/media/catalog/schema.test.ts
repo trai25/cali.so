@@ -135,6 +135,27 @@ describe('Media Library catalog migration', () => {
     ).resolves.toMatchObject({ ownerUserId: 'user_other' })
   })
 
+  it('allows recovery to record a verified completion after intent expiry', async () => {
+    const intent = await createUploadIntent()
+
+    await expect(
+      client.query(
+        `UPDATE media_upload_intents
+         SET completed_at = '2026-07-16T00:05:00.000Z'
+         WHERE id = $1`,
+        [intent.id],
+      ),
+    ).resolves.toBeDefined()
+    await expect(
+      client.query(
+        `UPDATE media_upload_intents
+         SET completed_at = '2026-07-14T23:59:59.000Z'
+         WHERE id = $1`,
+        [intent.id],
+      ),
+    ).rejects.toThrow()
+  })
+
   it('keeps the migration additive over the existing AMA tables', async () => {
     const tables = await client.query<{ table_name: string }>(
       `SELECT table_name
@@ -281,19 +302,27 @@ describe('Media Library catalog migration', () => {
       originalKey: intent.originalKey,
     })
     const objectKey = `renditions/${asset.id}/photo-${checksum}.jpg`
-    const insert = (profileWidth: number, key = objectKey) =>
+    const insert = (
+      profileWidth: number,
+      key = objectKey,
+      width = 640,
+      height = 427,
+    ) =>
       client.query(
         `INSERT INTO media_renditions
           (media_asset_id, profile_width, object_key, checksum_sha256,
            byte_size, width, height)
-         VALUES ($1, $2, $3, $4, 1000, 640, 427)`,
-        [asset.id, profileWidth, key, checksum],
+         VALUES ($1, $2, $3, $4, 1000, $5, $6)`,
+        [asset.id, profileWidth, key, checksum, width, height],
       )
 
     await insert(640)
     await expect(insert(640, `${objectKey}-other`)).rejects.toThrow()
     await expect(insert(800, `${objectKey}-invalid`)).rejects.toThrow()
     await expect(insert(1024, objectKey)).rejects.toThrow()
+    await expect(
+      insert(1024, `${objectKey}-oversized`, 1, 100_000_001),
+    ).rejects.toThrow()
   })
 
   it('stores Capture Location only as an encrypted envelope column', async () => {
