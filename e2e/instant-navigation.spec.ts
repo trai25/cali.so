@@ -189,11 +189,24 @@ test('keyboard controls restore focus across public overlays', async ({ page }) 
   await expect(articleMap).toBeFocused()
 })
 
-test('disabled administration stays outside public prefetching', async ({ page }) => {
+test('administration stays outside public prefetching and requires login', async ({
+  page,
+}) => {
   const prefetches: string[] = []
+  const cspErrors: string[] = []
   page.on('request', (request) => {
     if (request.headers()['next-router-prefetch'] === '1') {
       prefetches.push(request.url())
+    }
+  })
+  page.on('console', (message) => {
+    if (
+      message.type() === 'error' &&
+      /Content Security Policy|violates the following Content Security Policy/.test(
+        message.text(),
+      )
+    ) {
+      cspErrors.push(message.text())
     }
   })
 
@@ -203,8 +216,13 @@ test('disabled administration stays outside public prefetching', async ({ page }
     false,
   )
 
-  const response = await page.goto('/admin')
-  expect(response?.status()).toBe(404)
+  const response = await page.goto('/admin/photos')
+  expect(response?.status()).toBe(200)
+  await expect(page).toHaveURL('/admin/login')
+  await expect(
+    page.getByRole('heading', { level: 1, name: '管理员登录' }),
+  ).toBeVisible()
+  expect(cspErrors).toEqual([])
 })
 
 test('the home page reuses route shells without deeper per-link prefetches', async ({

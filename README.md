@@ -17,8 +17,9 @@ general-purpose blog template.
   English the matching `/en` route family
 - Static public pages with ISR-backed social data and committed fallback
   snapshots
-- Drizzle and Neon groundwork for AMA operations, kept disabled for the v3
-  production launch
+- An always-available owner admin for Media and AMA operations, protected by
+  server-side authentication, origin checks, and rate limits; public AMA
+  transactions remain disabled for the v3 production launch
 - A Bunny-backed Media Library with owner review and curation in admin; its
   active Published Photo Selection powers `/photos` and the homepage preview
   while private Originals remain server-only
@@ -93,9 +94,10 @@ pnpm audit:prod
 - Preview and Production use separate credentials and data. Preview data must
   be disposable or irreversibly sanitized.
 - The Vercel runtime never receives migration credentials.
-- AMA, admin, payment, booking-finalization, Google, and Tencent capabilities
-  remain disabled in Production until their later product and security gates
-  are complete.
+- Owner admin remains available in every environment and relies on
+  authentication rather than an environment switch. Public AMA mutations,
+  payments, booking finalization, Google, and Tencent remain disabled in
+  Production until their later product and security gates are complete.
 - The public photo surfaces depend on migrations `0005` through `0008`, the
   private Originals and public Renditions boundary, and an active Published
   Photo Selection. The retired static photo fallback is not part of v3.

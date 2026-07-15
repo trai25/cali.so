@@ -46,7 +46,6 @@ jobs:
       AMA_PUBLIC_MUTATIONS_ENABLED: "false"
       AMA_PAYMENTS_ENABLED: "false"
       AMA_BOOKING_FINALIZATION_ENABLED: "false"
-      AMA_ADMIN_ENABLED: "false"
       AMA_GOOGLE_INTEGRATION_ENABLED: "false"
       AMA_TENCENT_INTEGRATION_ENABLED: "false"
     steps:
@@ -135,7 +134,7 @@ jobs:
       - name: Verify public discovery and failure handling
         run: pnpm verify:public-discovery
 
-      - name: Verify disabled production security boundary
+      - name: Verify production security boundary
         run: pnpm verify:security-boundary
 
   codeql:

@@ -24,9 +24,13 @@ an attacker can read the implementation.
 - Give each integration a distinct credential and the narrowest scopes it
   supports. Rotate on suspected exposure and remove old credentials after a
   verified cutover.
-- Keep public mutations, payments, booking finalization, admin access, Google,
-  and Tencent behind independent server-side kill switches that fail closed.
-  Client-only flags are not controls.
+- Keep public mutations, payments, booking finalization, Google, and Tencent
+  behind independent server-side kill switches that fail closed. Client-only
+  flags are not controls.
+- Owner admin is always reachable and has no environment switch. Every admin
+  page, data read, and mutation must enforce owner authentication close to its
+  data source; browser mutations additionally require same-origin requests and
+  rate limits.
 
 ## Database privilege separation
 

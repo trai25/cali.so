@@ -45,7 +45,7 @@ export function createMagicLinkRequestHandler(
   defer: Defer = (task) => task(),
 ) {
   return async function POST(request: Request) {
-    const blocked = await security.protectBrowserMutation(request, ['admin'])
+    const blocked = await security.protectOwnerAdminMutation(request)
     if (blocked) return blocked
 
     let email = ''
@@ -71,19 +71,19 @@ export function createMagicLinkRequestHandler(
 
 export function createMagicLinkVerifyHandler(auth: OwnerAuth, security: AmaSecurity) {
   return async function GET(request: Request) {
-    const blocked = security.protectFeatures(request, ['admin'])
-    if (blocked) return blocked
-
     const token = new URL(request.url).searchParams.get('token')
     const session = await auth.verifyMagicToken(token)
-    if (!session) return redirect(auth.url('/admin/login?error=invalid-link'))
+    if (!session) {
+      security.recordAuthenticationDenial(request)
+      return redirect(auth.url('/admin/login?error=invalid-link'))
+    }
     return redirect(auth.url('/admin'), sessionCookie(session))
   }
 }
 
 export function createLogoutHandler(auth: OwnerAuth, security: AmaSecurity) {
   return async function POST(request: Request) {
-    const blocked = await security.protectBrowserMutation(request, [])
+    const blocked = await security.protectOwnerAdminMutation(request)
     if (blocked) return blocked
 
     const session = readRequestCookie(request, AUTH_SESSION_COOKIE)

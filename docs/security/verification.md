@@ -10,7 +10,7 @@ file; use GitHub private vulnerability reporting.
   vulnerability reporting.
 - [x] `.github/dependabot.yml` covers pnpm/npm dependencies and GitHub Actions.
 - [x] `.github/workflows/security.yml` runs the build, typecheck, AMA,
-  migration, localization, public-link, navigation, disabled-boundary, and
+  migration, localization, public-link, navigation, production-boundary, and
   CodeQL checks on pull requests targeting any branch and on pushes to
   integration or production; CodeQL also runs on a schedule and manually.
 - [x] Workflow actions are pinned to full, verified commit SHAs with release
@@ -90,8 +90,8 @@ Project checks completed on 2026-07-14 and 2026-07-15 verified:
 - [x] Preview uses an isolated Neon branch and a pooled runtime credential. Its
   runtime role was exercised with CRUD-only access and no schema, database,
   role-management, RLS-bypass, replication, or Neon-admin privileges.
-- [x] The Preview environment explicitly sets all six AMA capability switches
-  to `false`.
+- [x] The Preview environment explicitly sets all five optional AMA capability
+  switches to `false`. Owner admin has no capability switch.
 - [x] The Preview-only configuration includes its database and Redis runtime
   credentials, Google OAuth credentials, admin allowlist, site origin, and
   independently generated session, encryption, and rate-limit hashing secrets.
@@ -111,5 +111,7 @@ Project checks completed on 2026-07-14 and 2026-07-15 verified:
   management, and keep `MIGRATION_DATABASE_URL` absent from Vercel.
 - [ ] Verify logs and drains follow the allowlist in `baseline.md`, with
   deliberate access and retention.
-- [ ] Configure the six kill switches explicitly in Development and Production;
-  keep them false until the corresponding capability is approved for release.
+- [ ] Configure the five optional kill switches explicitly in Development and
+  Production; keep them false until the corresponding capability is approved
+  for release. Verify owner admin remains reachable only through its
+  authentication boundary.

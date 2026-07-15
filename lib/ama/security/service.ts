@@ -34,7 +34,6 @@ export type AmaFeatureFlags = {
   publicMutations: boolean
   payments: boolean
   bookingFinalization: boolean
-  admin: boolean
   google: boolean
   tencent: boolean
 }
@@ -112,24 +111,33 @@ export function createAmaSecurity({
     return createHmac('sha256', pseudonymKey).update(session).digest('hex')
   }
 
+  async function protectBrowserMutation(
+    request: Request,
+    required: readonly AmaFeature[],
+  ) {
+    const disabled = disabledFeature(request, required)
+    if (disabled) return disabled
+
+    if (checkBrowserMutationRequest(request, baseUrl)) {
+      recordAuditEvent(request, {
+        event: 'browser_mutation.denied',
+        outcome: 'denied',
+      })
+      return browserMutationDeniedResponse()
+    }
+    return null
+  }
+
   return {
     protectFeatures(request: Request, required: readonly AmaFeature[]) {
       return disabledFeature(request, required)
     },
 
-    async protectBrowserMutation(request: Request, required: readonly AmaFeature[]) {
-      const disabled = disabledFeature(request, required)
-      if (disabled) return disabled
-
-      if (checkBrowserMutationRequest(request, baseUrl)) {
-        recordAuditEvent(request, {
-          event: 'browser_mutation.denied',
-          outcome: 'denied',
-        })
-        return browserMutationDeniedResponse()
-      }
-      return null
+    protectOwnerAdminMutation(request: Request) {
+      return protectBrowserMutation(request, [])
     },
+
+    protectBrowserMutation,
 
     recordAuthenticationDenial(request: Request) {
       recordAuditEvent(request, {

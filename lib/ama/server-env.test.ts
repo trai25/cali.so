@@ -23,16 +23,15 @@ describe('AMA server environment', () => {
       publicMutations: false,
       payments: false,
       bookingFinalization: false,
-      admin: false,
       google: false,
       tencent: false,
     })
   })
 
   it('rejects ambiguous launch switches before private services initialize', () => {
-    expect(() => parseAmaFeatures({ AMA_ADMIN_ENABLED: 'yes' })).toThrowError(
-      /AMA_ADMIN_ENABLED/,
-    )
+    expect(() =>
+      parseAmaFeatures({ AMA_GOOGLE_INTEGRATION_ENABLED: 'yes' }),
+    ).toThrowError(/AMA_GOOGLE_INTEGRATION_ENABLED/)
   })
 
   it('accepts the complete server-only configuration', () => {
@@ -45,7 +44,6 @@ describe('AMA server environment', () => {
       publicMutations: false,
       payments: false,
       bookingFinalization: false,
-      admin: false,
       google: false,
       tencent: false,
     })
@@ -200,7 +198,6 @@ describe('AMA server environment', () => {
       AMA_PUBLIC_MUTATIONS_ENABLED: 'true',
       AMA_PAYMENTS_ENABLED: 'true',
       AMA_BOOKING_FINALIZATION_ENABLED: 'true',
-      AMA_ADMIN_ENABLED: 'true',
       AMA_GOOGLE_INTEGRATION_ENABLED: 'true',
       AMA_TENCENT_INTEGRATION_ENABLED: 'true',
     })
@@ -209,7 +206,6 @@ describe('AMA server environment', () => {
       publicMutations: true,
       payments: true,
       bookingFinalization: true,
-      admin: true,
       google: true,
       tencent: true,
     })
@@ -217,8 +213,11 @@ describe('AMA server environment', () => {
 
   it('rejects ambiguous feature-switch values', () => {
     expect(() =>
-      parseServerEnv({ ...validEnvironment, AMA_ADMIN_ENABLED: 'yes' }),
-    ).toThrowError(/AMA_ADMIN_ENABLED/)
+      parseServerEnv({
+        ...validEnvironment,
+        AMA_GOOGLE_INTEGRATION_ENABLED: 'yes',
+      }),
+    ).toThrowError(/AMA_GOOGLE_INTEGRATION_ENABLED/)
   })
 
   it('rejects migration credentials in the runtime environment', () => {

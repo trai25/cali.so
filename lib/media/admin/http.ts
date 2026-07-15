@@ -23,8 +23,7 @@ type Authenticator = {
 type Security = Pick<
   AmaSecurity,
   | 'limitAdminMutation'
-  | 'protectBrowserMutation'
-  | 'protectFeatures'
+  | 'protectOwnerAdminMutation'
   | 'recordAuthenticationDenial'
   | 'recordPrivilegedAction'
 >
@@ -161,8 +160,8 @@ async function authenticate(
   mutation: boolean,
 ): Promise<AccessResult> {
   const blocked = mutation
-    ? await dependencies.security.protectBrowserMutation(request, ['admin'])
-    : dependencies.security.protectFeatures(request, ['admin'])
+    ? await dependencies.security.protectOwnerAdminMutation(request)
+    : null
   if (blocked) return { response: blocked }
 
   let principal: OwnerPrincipal | null

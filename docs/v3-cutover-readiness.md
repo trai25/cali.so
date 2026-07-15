@@ -40,13 +40,14 @@ Renditions. The retired static photo fallback has been removed.
 | Frozen install | PASS | `pnpm install --frozen-lockfile` completed from the audited commit. |
 | Repository validation | PASS | Every command and count in the automated evidence section passed. |
 | Public browser behavior | PASS | Desktop, mobile, both locales, light and dark appearance, reduced motion, metadata, overflow, accessibility tree, and dock targets were reviewed locally. |
+| Owner admin boundary | PASS | Admin login remains reachable without a feature flag; protected pages and APIs enforce owner authentication, same-origin mutations, rate limits, audit events, and the strict admin CSP. |
 | Complete diff Standards review | FAIL | Portal layering and admin typography findings were fixed. The Media `lifecycle` vocabulary breach remains tracked in #134 and needs resolution or an explicit maintainer exception. |
 | Complete diff Spec review | PASS | No scope creep, incorrect PASS treatment, or missing local evidence was found; the unresolved hosted and production requirements below correctly keep the verdict at NOT READY. |
 | Production-like PR Preview | AWAITING CONFIRMATION | Review the public Preview created by the #107 PR after Vercel finishes. |
 | GitHub security settings | PASS | Secret scanning, push protection, Dependabot security updates, read-only Actions defaults, and full-SHA action policy are enabled. |
 | Required GitHub checks | FAIL | Neither the `v2` ruleset nor `main` branch protection requires `Quality` and `CodeQL`. Changing protection requires separate maintainer authorization. |
 | Current Vercel project settings | UNKNOWN | The authenticated CLI user is `cali`, but project inspection returns `Not authorized`. Historical evidence cannot replace a current check. |
-| Production capability switches | UNKNOWN | Confirm all six `AMA_*_ENABLED` values are explicitly `false` in Production. |
+| Production capability switches | UNKNOWN | Confirm all five optional `AMA_*_ENABLED` values are explicitly `false` in Production. Owner admin has no capability switch. |
 | Preview and Production secret isolation | UNKNOWN | The last verified state shared one Resend key across environments; current Vercel state is inaccessible. |
 | Production runtime database grants | AWAITING CONFIRMATION | Requires two fresh confirmations before inspecting the production role or sensitive cloud state. |
 | Production migration credential | AWAITING CONFIRMATION | Confirm `MIGRATION_DATABASE_URL` is absent from Vercel and available only to the controlled migration operation. |
@@ -80,7 +81,7 @@ The following passed from the frozen installation:
 - 11 Media reconciliation tests.
 - 4 port-post tests.
 - Production build with 85 generated pages using the CI placeholder
-  environment and every AMA capability disabled.
+  environment and every optional AMA capability disabled.
 - 7 Instant Navigation, keyboard, motion, and typography browser tests.
 - 53 legacy URL probes against the production server.
 - 354 internal links and 147 live external links across all 28 sitemap pages.
@@ -179,16 +180,16 @@ Final review artifacts after the accessibility corrections:
   object artwork rather than site chrome.
 - The compact localized-text component name `T` is retained as an established
   JSX convention whose `zh` and `en` props make its role explicit. The small
-  duplicated Google status mapping is retained inside the disabled owner-only
-  AMA surface; neither judgement finding is a cutover defect.
+  duplicated Google status mapping is retained inside the owner-only AMA
+  surface; neither judgement finding is a cutover defect.
 
 ## Migration and provider boundary
 
 Migrations `0001` through `0004` are additive AMA foundations. Migrations
 `0005` through `0008` define the Media catalog, Photo Selection publication,
 publication revisions, and durable Purge progress. Their checked-in snapshots
-and migration tests pass. Unlike the disabled AMA domain, the v3 public photo
-surfaces now require the Media migrations, production Bunny configuration,
+and migration tests pass. Unlike the optional public AMA flows, the v3 public
+photo surfaces require the Media migrations, production Bunny configuration,
 and an active Published Photo Selection. Git remains authoritative for writing
 and ordinary site content, but not for the curated photo wall.
 
@@ -200,7 +201,7 @@ Before cutover, an authorized operator must:
    role, preserving the additive migration history;
 4. verify private Originals, public Renditions, and the active Published Photo
    Selection against the production Bunny and Neon boundary;
-5. leave all six AMA capability switches explicitly false; and
+5. leave all five optional AMA capability switches explicitly false; and
 6. smoke-test the public site without exercising disabled AMA provider
    workflows.
 
@@ -226,7 +227,8 @@ operator before cutover.
    hosted-control inventory without printing secret values.
 2. Separate Preview and Production Resend credentials if the historical shared
    assignment still exists.
-3. Confirm the six Production capability switches are explicitly false.
+3. Confirm the five optional Production capability switches are explicitly
+   false and owner admin remains protected by authentication.
 4. With two fresh confirmations, verify production runtime database grants,
    migration-credential isolation, and migration state.
 5. Verify the production Bunny and Neon Media boundary, run the protected live

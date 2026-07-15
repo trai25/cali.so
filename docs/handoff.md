@@ -33,9 +33,10 @@ Current as of July 2026.
   failure.
 - The fixed bottom dock is the primary navigation. The visual contract lives
   in `docs/design-language.md`.
-- The AMA domain has owner-auth, availability, database, and security
-  groundwork, but all public, admin, payment, provider, and finalization
-  capabilities stay disabled for the v3 production launch.
+- The owner admin is always reachable for Media and AMA operations, with
+  server-side authentication, origin checks, rate limits, and audit events.
+  Public AMA mutations, payment, provider, and finalization capabilities stay
+  disabled for the v3 production launch.
 - Security baseline controls from PR #97 remain mandatory: CSP and security
   headers, same-origin mutation policy, rate limits, kill switches,
   privacy-safe audit events, isolated credentials, and security automation.
@@ -51,8 +52,8 @@ Current as of July 2026.
 2. Complete all three issue #91 stages: Cache Components baseline,
    route-by-route Instant Navigations, then Partial Prefetching and browser
    regression coverage.
-3. Keep unfinished AMA and admin surfaces disabled and prove the Production
-   boundary fails closed.
+3. Keep owner admin authenticated and reachable while unfinished public AMA,
+   payment, provider, and finalization capabilities fail closed.
 4. Validate from a frozen-lockfile install: types, all tests, migrations,
    localization, security, production build, dependency audit, links, HTTP
    contracts, and browser checks.
@@ -125,16 +126,16 @@ The Vercel runtime receives only the CRUD-only `DATABASE_URL`. Never put
   utilities.
 - Preview and Production credentials and data are separate. Preview data must
   be disposable or irreversibly sanitized.
-- The six `AMA_*_ENABLED` variables fail closed. Leave every one `false` for
-  the v3 launch.
+- The five optional `AMA_*_ENABLED` variables fail closed. Leave every one
+  `false` for the v3 launch; owner admin has no capability switch.
 - Design references are private. Public code and documentation use only the
   vocabulary in `docs/design-language.md`.
 
 ## Post-launch work
 
-- Complete the Clerk-based admin authentication and recovery boundary in #93,
-  then resume the AMA product slices (#82 through #87) behind their security
-  and privacy gates.
+- Complete the Clerk-based admin authentication and recovery boundary in #93
+  without disabling owner admin, then resume the public AMA product slices
+  (#82 through #87) behind their security and privacy gates.
 - Revisit Bunny S3 preview constraints and provider capabilities before
   expanding the Media Library beyond the curated photo workflow.
 - Re-enable private capabilities only after their provider, retention,
