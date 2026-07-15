@@ -50,6 +50,9 @@ jobs:
       - name: Test localization
         run: pnpm test:localization
 
+      - name: Audit production dependencies
+        run: pnpm audit:prod
+
       - name: Build
         run: pnpm build
         env:

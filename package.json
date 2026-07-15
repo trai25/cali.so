@@ -5,6 +5,7 @@
   "packageManager": "pnpm@10.12.1",
   "scripts": {
     "dev": "next dev",
+    "audit:prod": "node scripts/audit-production-dependencies.mjs",
     "build": "next build",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",

@@ -27,12 +27,15 @@ Local recheck:
 pnpm typecheck
 pnpm test:ama
 pnpm test:security
+pnpm audit:prod
 pnpm verify:security-boundary
 git grep -nE 'uses: [^#[:space:]]+@(v|main|master|[0-9a-f]{1,39})([[:space:]]|$)' -- '.github/workflows/*.yml'
 ```
 
-The `git grep` command should return no unpinned action references. Security
-scan output must remain private.
+The production dependency audit queries OSV from the installed pnpm graph
+because npm retired the endpoint used by `pnpm audit`. The `git grep` command
+should return no unpinned action references. Security scan output must remain
+private.
 
 ## GitHub
 
@@ -75,6 +78,15 @@ Project checks completed on 2026-07-14 and 2026-07-15 verified:
   role-management, RLS-bypass, replication, or Neon-admin privileges.
 - [x] The Preview environment explicitly sets all six AMA capability switches
   to `false`.
+- [x] The Preview-only configuration includes its database and Redis runtime
+  credentials, Google OAuth credentials, admin allowlist, site origin, and
+  independently generated session, encryption, and rate-limit hashing secrets.
+  No values are recorded here.
+- [ ] Rotate the Preview-only Google OAuth secret before enabling the Google
+  capability; the integration remains disabled meanwhile.
+- [ ] The current Resend API key is assigned to both Preview and Production.
+  Replace it with separate environment-scoped keys before cutover; keep the
+  Preview key limited to test mail.
 - [x] The active `Admin Security` firewall rule challenges exactly
   `POST /api/admin/auth/request`.
 - [ ] Provision isolated Development credentials before expecting that
