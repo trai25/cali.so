@@ -10,6 +10,7 @@ export type MediaGeocodingErrorCode =
   | 'dependency_unavailable'
   | 'invalid_request'
   | 'no_capture_location'
+  | 'no_results'
   | 'not_found'
 
 export class MediaGeocodingError extends Error {
@@ -69,7 +70,7 @@ export function createMediaGeocodingService({
         )
         const suggestion = await suggester.suggest(location)
         if (!suggestion.zhHans && !suggestion.en) {
-          throw new MediaGeocodingError('no_capture_location')
+          throw new MediaGeocodingError('no_results')
         }
         return suggestion
       } catch (error) {

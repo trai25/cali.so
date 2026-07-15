@@ -122,4 +122,37 @@ describe('Media reconciliation repository', () => {
       { ownerUserId: 'owner_01', mediaAssetId: readyAssetId },
     ])
   })
+
+  it.each(['archived', 'purging'] as const)(
+    'does not recover %s assets',
+    async (lifecycle) => {
+      await client.query(
+        `UPDATE media_assets
+         SET lifecycle = $1, archived_at = $2, purge_started_at = $3
+         WHERE id = $4`,
+        [
+          lifecycle,
+          '2026-07-15T11:00:00.000Z',
+          lifecycle === 'purging' ? '2026-07-15T11:30:00.000Z' : null,
+          retryAssetId,
+        ],
+      )
+
+      const candidates = await repository.listRecoveryCandidates({
+        createdBefore: new Date('2026-07-15T11:55:00.000Z'),
+        processingStaleBefore: new Date('2026-07-15T11:55:00.000Z'),
+        limit: 5,
+      })
+
+      expect(candidates.map(({ uploadIntentId }) => uploadIntentId)).toEqual([
+        abandonedIntentId,
+      ])
+      await expect(
+        repository.findOwnedRecoverableAsset({
+          ownerUserId: 'owner_01',
+          mediaAssetId: retryAssetId,
+        }),
+      ).resolves.toBeNull()
+    },
+  )
 })

@@ -45,23 +45,29 @@ describe('Media Library Alt Text environment', () => {
     ).toBe(true)
   })
 
-  it('rejects excessive timeouts and retries', () => {
+  it('rejects any deviation from the AI Gateway policy constants', () => {
     expect(() =>
       parseMediaAltTextEnv({ MEDIA_ALT_TEXT_TIMEOUT_MS: '11999' }),
-    ).toThrow('MEDIA_ALT_TEXT_TIMEOUT_MS')
+    ).toThrow(
+      'MEDIA_ALT_TEXT_TIMEOUT_MS: Must be 12000 (AI Gateway policy)',
+    )
     expect(() =>
       parseMediaAltTextEnv({ MEDIA_ALT_TEXT_MAX_RETRIES: '2' }),
-    ).toThrow('MEDIA_ALT_TEXT_MAX_RETRIES')
+    ).toThrow('MEDIA_ALT_TEXT_MAX_RETRIES: Must be 1 (AI Gateway policy)')
     expect(() =>
       parseMediaAltTextEnv({
         MEDIA_ALT_TEXT_RATE_LIMIT_MAX_REQUESTS: '11',
       }),
-    ).toThrow('MEDIA_ALT_TEXT_RATE_LIMIT_MAX_REQUESTS')
+    ).toThrow(
+      'MEDIA_ALT_TEXT_RATE_LIMIT_MAX_REQUESTS: Must be 10 (owner rate-limit policy)',
+    )
     expect(() =>
       parseMediaAltTextEnv({
         MEDIA_ALT_TEXT_RATE_LIMIT_WINDOW_SECONDS: '3599',
       }),
-    ).toThrow('MEDIA_ALT_TEXT_RATE_LIMIT_WINDOW_SECONDS')
+    ).toThrow(
+      'MEDIA_ALT_TEXT_RATE_LIMIT_WINDOW_SECONDS: Must be 3600 (owner rate-limit policy)',
+    )
   })
 
   it('requires Vercel OIDC in deployed environments', () => {
