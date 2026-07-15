@@ -15,11 +15,10 @@ import {
   type ComponentPropsWithoutRef,
 } from "react";
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import type { IconComponent } from "~/lib/icon-context";
 import { cn } from "~/lib/utils";
 import { spring } from "~/lib/springs";
-import { fontWeights } from "~/lib/font-weight";
 import { useShape } from "~/lib/shape-context";
 import { useSurface } from "~/lib/surface-context";
 import { surfaceClasses } from "~/lib/surface-classes";
@@ -158,6 +157,7 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
     const isMouseInside = useRef(false);
     const shape = useShape();
     const substrate = useSurface();
+    const shouldReduceMotion = useReducedMotion();
     // Active pill lifts 3 levels above substrate (1 above the muted track + 2 for pop).
     // On the page (substrate 1) this lands on surface 4 — matches the original design.
     // Inside a dialog (substrate 5) it lifts to surface 8 instead of staying at 4.
@@ -294,17 +294,18 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
                 shape.bg
               )}
               initial={false}
-              animate={{
+              animate={{ opacity: isHovering ? 0.85 : 1 }}
+              style={{
                 left: selectedRect.left,
                 width: selectedRect.width,
                 top: selectedRect.top,
                 height: selectedRect.height,
-                opacity: isHovering ? 0.85 : 1,
               }}
-              transition={{
-                ...spring.moderate,
-                opacity: { duration: 0.08 },
-              }}
+              transition={
+                shouldReduceMotion
+                  ? { duration: 0 }
+                  : { ...spring.moderate, opacity: { duration: 0.08 } }
+              }
             />
           )}
 
@@ -316,39 +317,27 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
                   "absolute pointer-events-none bg-hover",
                   shape.bg
                 )}
-                initial={{
-                  left: selectedRect.left,
-                  width: selectedRect.width,
-                  top: selectedRect.top,
-                  height: selectedRect.height,
-                  opacity: 0,
-                }}
-                animate={{
+                initial={shouldReduceMotion ? false : { opacity: 0 }}
+                animate={{ opacity: 0.4 }}
+                style={{
                   left: hoverRect.left,
                   width: hoverRect.width,
                   top: hoverRect.top,
                   height: hoverRect.height,
-                  opacity: 0.4,
                 }}
-                exit={
-                  !isMouseInside.current && selectedRect
-                    ? {
-                        left: selectedRect.left,
-                        width: selectedRect.width,
-                        top: selectedRect.top,
-                        height: selectedRect.height,
-                        opacity: 0,
-                        transition: {
-                          ...spring.moderate,
-                          opacity: { duration: 0.06 },
-                        },
-                      }
-                    : { opacity: 0, transition: spring.fast.exit }
+                exit={{
+                  opacity: 0,
+                  transition: shouldReduceMotion
+                    ? { duration: 0 }
+                    : !isMouseInside.current
+                      ? { duration: 0.06 }
+                      : spring.fast.exit,
+                }}
+                transition={
+                  shouldReduceMotion
+                    ? { duration: 0 }
+                    : { ...spring.fast, opacity: { duration: 0.08 } }
                 }
-                transition={{
-                  ...spring.fast,
-                  opacity: { duration: 0.08 },
-                }}
               />
             )}
           </AnimatePresence>
@@ -362,17 +351,24 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
                   shape.focusRing
                 )}
                 initial={false}
-                animate={{
+                animate={{ opacity: 1 }}
+                style={{
                   left: focusRect.left - 2,
                   top: focusRect.top - 2,
                   width: focusRect.width + 4,
                   height: focusRect.height + 4,
                 }}
-                exit={{ opacity: 0, transition: spring.fast.exit }}
-                transition={{
-                  ...spring.fast,
-                  opacity: { duration: 0.08 },
+                exit={{
+                  opacity: 0,
+                  transition: shouldReduceMotion
+                    ? { duration: 0 }
+                    : spring.fast.exit,
                 }}
+                transition={
+                  shouldReduceMotion
+                    ? { duration: 0 }
+                    : { ...spring.fast, opacity: { duration: 0.08 } }
+                }
               />
             )}
           </AnimatePresence>
@@ -443,32 +439,17 @@ const TabItem = forwardRef<HTMLButtonElement, TabItemProps>(
             )}
           />
         )}
-        {/* Both stacked spans carry the text-box trim so the invisible bold
-            sizer and the visible label keep identical boxes. Icon-only tabs
-            skip the span so flex gap doesn't leave a phantom trailing gap. */}
+        {/* Icon-only tabs skip the span so flex gap doesn't leave a phantom
+            trailing gap. Selection is communicated by color, never weight. */}
         {label !== "" && (
-        <span className="inline-grid text-[14px] whitespace-nowrap">
-          <span
-            className="col-start-1 row-start-1 invisible [text-box:trim-both_cap_alphabetic]"
-            style={{ fontVariationSettings: fontWeights.semibold }}
-            aria-hidden="true"
-          >
-            {label}
-          </span>
           <span
             className={cn(
-              "col-start-1 row-start-1 transition-[color,font-variation-settings] duration-150 [text-box:trim-both_cap_alphabetic]",
+              "text-[14px] whitespace-nowrap transition-colors duration-150 [text-box:trim-both_cap_alphabetic]",
               isActive ? "text-foreground" : "text-muted-foreground"
             )}
-            style={{
-              fontVariationSettings: isSelected
-                ? fontWeights.semibold
-                : fontWeights.normal,
-            }}
           >
             {label}
           </span>
-        </span>
         )}
       </TabsPrimitive.Tab>
     );

@@ -85,6 +85,55 @@ test('preferences preserve theme, locale, and reduced motion', async ({ page }) 
     .toBe('none')
 })
 
+test('public motion and typography follow the design contract', async ({ page }) => {
+  await page.goto('/en')
+
+  const preferences = page.getByRole('button', { name: 'Preferences' })
+  await preferences.click()
+
+  const chineseLabel = page.getByRole('tab', { name: '中文' }).locator('span').last()
+  const englishLabel = page.getByRole('tab', { name: 'English' }).locator('span').last()
+  const [chineseWeight, englishWeight] = await Promise.all([
+    chineseLabel.evaluate((element) => getComputedStyle(element).fontVariationSettings),
+    englishLabel.evaluate((element) => getComputedStyle(element).fontVariationSettings),
+  ])
+  expect(chineseWeight).toBe(englishWeight)
+
+  await page.keyboard.press('Escape')
+  await expect(preferences).toBeFocused()
+  await expect(page.locator('.footer-label').first()).toHaveCSS(
+    'letter-spacing',
+    '-0.154px',
+  )
+
+  await page.goto('/en/blog/do-buttons-need-pointer-cursors')
+  await expect(page.locator('.tweet-card-body')).toHaveCSS('font-size', '14px')
+
+  const zoom = page.locator('.zoom-trigger').last()
+  await expect
+    .poll(() => zoom.evaluate((element) => element.closest('.reveal-pending') !== null))
+    .toBe(true)
+  await zoom.scrollIntoViewIfNeeded()
+  await expect
+    .poll(() => zoom.evaluate((element) => element.closest('.reveal-in') !== null))
+    .toBe(true)
+  await expect(zoom).toHaveCSS('animation-duration', '0.3s')
+  await expect(zoom).toHaveCSS(
+    'animation-timing-function',
+    'cubic-bezier(0.2, 0.8, 0.2, 1)',
+  )
+
+  await page.goto('/en/release-contract-check')
+  await expect(page.locator('.error-proof-meta')).toHaveCSS(
+    'letter-spacing',
+    '-0.154px',
+  )
+  await expect(page.locator('.error-kicker')).toHaveCSS(
+    'letter-spacing',
+    '-0.154px',
+  )
+})
+
 test('keyboard controls restore focus across public overlays', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/en')

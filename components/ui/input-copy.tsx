@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef, useState, useCallback, useRef, useEffect, useId, type HTMLAttributes } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { useIcon } from "~/lib/icon-context";
 import { fontWeights } from "~/lib/font-weight";
@@ -39,6 +39,19 @@ const InputCopy = forwardRef<HTMLDivElement, InputCopyProps>(
     const tooltipVisibleRef = useRef(false);
     const tooltipWasVisibleRef = useRef(false);
     const shape = useShape();
+    const shouldReduceMotion = useReducedMotion();
+    const feedbackInitial = shouldReduceMotion
+      ? false
+      : { opacity: 0, scale: 0.6 };
+    const restingInitial = shouldReduceMotion
+      ? false
+      : { opacity: 0, scale: 0.8 };
+    const feedbackExit = shouldReduceMotion
+      ? { opacity: 0, transition: { duration: 0 } }
+      : { opacity: 0, scale: 0.8 };
+    const feedbackTransition = shouldReduceMotion
+      ? { duration: 0 }
+      : spring.fast;
 
     // Associate the visible label with the button: the button's accessible
     // name reads "Copy <label>" (its own state label + the field label).
@@ -114,10 +127,10 @@ const InputCopy = forwardRef<HTMLDivElement, InputCopyProps>(
         {status === "error" ? (
           <motion.span
             key={`error-${copyCount}`}
-            initial={{ opacity: 0, scale: 0.6 }}
+            initial={feedbackInitial}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={spring.fast}
+            exit={feedbackExit}
+            transition={feedbackTransition}
             className="flex items-center justify-center text-destructive [&_svg]:stroke-[1.5] [&_svg]:transition-[stroke-width] [&_svg]:duration-150 group-hover:[&_svg]:stroke-[2]"
           >
             <svg
@@ -131,10 +144,12 @@ const InputCopy = forwardRef<HTMLDivElement, InputCopyProps>(
             >
               <motion.path
                 d="M9 9L15 15M15 9L9 15"
-                initial={{ pathLength: 0 }}
+                initial={shouldReduceMotion ? false : { pathLength: 0 }}
                 animate={{
                   pathLength: 1,
-                  transition: { duration: 0.08, ease: "easeOut" },
+                  transition: shouldReduceMotion
+                    ? { duration: 0 }
+                    : { duration: 0.08, ease: "easeOut" },
                 }}
               />
             </svg>
@@ -142,10 +157,10 @@ const InputCopy = forwardRef<HTMLDivElement, InputCopyProps>(
         ) : status === "copied" ? (
           <motion.span
             key={`check-${copyCount}`}
-            initial={{ opacity: 0, scale: 0.6 }}
+            initial={feedbackInitial}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={spring.fast}
+            exit={feedbackExit}
+            transition={feedbackTransition}
             className="flex items-center justify-center [&_svg]:stroke-[1.5] [&_svg]:transition-[stroke-width] [&_svg]:duration-150 group-hover:[&_svg]:stroke-[2]"
           >
             <svg
@@ -159,10 +174,12 @@ const InputCopy = forwardRef<HTMLDivElement, InputCopyProps>(
             >
               <motion.path
                 d="M6 12L10 16L18 8"
-                initial={{ pathLength: 0 }}
+                initial={shouldReduceMotion ? false : { pathLength: 0 }}
                 animate={{
                   pathLength: 1,
-                  transition: { duration: 0.08, ease: "easeOut" },
+                  transition: shouldReduceMotion
+                    ? { duration: 0 }
+                    : { duration: 0.08, ease: "easeOut" },
                 }}
               />
             </svg>
@@ -170,10 +187,10 @@ const InputCopy = forwardRef<HTMLDivElement, InputCopyProps>(
         ) : (
           <motion.span
             key="copy"
-            initial={{ opacity: 0, scale: 0.8 }}
+            initial={restingInitial}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={spring.fast}
+            exit={feedbackExit}
+            transition={feedbackTransition}
             className="flex items-center justify-center"
           >
             <CopyIcon size={14} strokeWidth={1.5} className="transition-[stroke-width] duration-150 group-hover:stroke-[2]" />
@@ -195,10 +212,10 @@ const InputCopy = forwardRef<HTMLDivElement, InputCopyProps>(
             <motion.span
               key={`error-label-${copyCount}`}
               className="flex items-center gap-1.5 text-destructive"
-              initial={{ opacity: 0, scale: 0.6 }}
+              initial={feedbackInitial}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={spring.fast}
+              exit={feedbackExit}
+              transition={feedbackTransition}
             >
               <span className="flex items-center justify-center">
                 <svg
@@ -213,10 +230,12 @@ const InputCopy = forwardRef<HTMLDivElement, InputCopyProps>(
                 >
                   <motion.path
                     d="M9 9L15 15M15 9L9 15"
-                    initial={{ pathLength: 0 }}
+                    initial={shouldReduceMotion ? false : { pathLength: 0 }}
                     animate={{
                       pathLength: 1,
-                      transition: { duration: 0.08, ease: "easeOut" },
+                      transition: shouldReduceMotion
+                        ? { duration: 0 }
+                        : { duration: 0.08, ease: "easeOut" },
                     }}
                   />
                 </svg>
@@ -230,10 +249,10 @@ const InputCopy = forwardRef<HTMLDivElement, InputCopyProps>(
             <motion.span
               key={`check-label-${copyCount}`}
               className="flex items-center gap-1.5"
-              initial={{ opacity: 0, scale: 0.6 }}
+              initial={feedbackInitial}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={spring.fast}
+              exit={feedbackExit}
+              transition={feedbackTransition}
             >
               <span className="flex items-center justify-center">
                 <svg
@@ -248,10 +267,12 @@ const InputCopy = forwardRef<HTMLDivElement, InputCopyProps>(
                 >
                   <motion.path
                     d="M6 12L10 16L18 8"
-                    initial={{ pathLength: 0 }}
+                    initial={shouldReduceMotion ? false : { pathLength: 0 }}
                     animate={{
                       pathLength: 1,
-                      transition: { duration: 0.08, ease: "easeOut" },
+                      transition: shouldReduceMotion
+                        ? { duration: 0 }
+                        : { duration: 0.08, ease: "easeOut" },
                     }}
                   />
                 </svg>
@@ -265,10 +286,10 @@ const InputCopy = forwardRef<HTMLDivElement, InputCopyProps>(
             <motion.span
               key="copy-label"
               className="flex items-center gap-1.5"
-              initial={{ opacity: 0, scale: 0.8 }}
+              initial={restingInitial}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={spring.fast}
+              exit={feedbackExit}
+              transition={feedbackTransition}
             >
               <span className="flex items-center justify-center">
                 <CopyIcon size={14} strokeWidth={1.5} className="transition-[stroke-width] duration-150 group-hover:stroke-[2]" />

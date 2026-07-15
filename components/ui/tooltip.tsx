@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { spring } from "~/lib/springs";
 import { fontWeights } from "~/lib/font-weight";
@@ -130,6 +130,7 @@ function Tooltip({
   const [internalOpen, setInternalOpen] = useState(false);
   const open = forceOpen !== undefined ? forceOpen : internalOpen;
   const shape = useShape();
+  const shouldReduceMotion = useReducedMotion();
   const portalContainer = useContext(TooltipPortalContainerContext);
   const hasAmbientProvider = useContext(TooltipGroupContext);
 
@@ -183,13 +184,25 @@ function Tooltip({
                     ...(baseStyle as React.CSSProperties | undefined),
                     fontVariationSettings: fontWeights.medium,
                   }}
-                  initial={{ opacity: 0, ...slideOffset }}
+                  initial={
+                    shouldReduceMotion
+                      ? false
+                      : { opacity: 0, ...slideOffset }
+                  }
                   animate={
                     exiting
-                      ? { opacity: 0, ...slideOffset }
+                      ? shouldReduceMotion
+                        ? { opacity: 0, x: 0, y: 0 }
+                        : { opacity: 0, ...slideOffset }
                       : { opacity: 1, x: 0, y: 0 }
                   }
-                  transition={exiting ? spring.fast.exit : spring.fast}
+                  transition={
+                    shouldReduceMotion
+                      ? { duration: 0 }
+                      : exiting
+                        ? spring.fast.exit
+                        : spring.fast
+                  }
                 />
               );
             }}

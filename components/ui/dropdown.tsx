@@ -13,7 +13,7 @@ import {
   type HTMLAttributes,
   type ComponentProps,
 } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Menu } from "@base-ui/react/menu";
 import type { MenuTriggerProps } from "@base-ui/react/menu";
 import {
@@ -66,6 +66,7 @@ interface DropdownProps extends HTMLAttributes<HTMLDivElement> {
 const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
   ({ children, checkedIndex, className, ...props }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
+    const shouldReduceMotion = useReducedMotion();
     const {
       activeIndex,
       setActiveIndex,
@@ -155,18 +156,24 @@ const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
               <motion.div
                 className={`absolute ${shape.bg} bg-active pointer-events-none`}
                 initial={false}
-                animate={{
+                animate={{ opacity: isHoveringOther ? 0.8 : 1 }}
+                style={{
                   top: checkedRect.top,
                   left: checkedRect.left,
                   width: checkedRect.width,
                   height: checkedRect.height,
-                  opacity: isHoveringOther ? 0.8 : 1,
                 }}
-                exit={{ opacity: 0, transition: spring.moderate.exit }}
-                transition={{
-                  ...spring.moderate,
-                  opacity: { duration: 0.08 },
+                exit={{
+                  opacity: 0,
+                  transition: shouldReduceMotion
+                    ? { duration: 0 }
+                    : spring.moderate.exit,
                 }}
+                transition={
+                  shouldReduceMotion
+                    ? { duration: 0 }
+                    : { ...spring.moderate, opacity: { duration: 0.08 } }
+                }
               />
             )}
           </AnimatePresence>
@@ -177,25 +184,25 @@ const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
               <motion.div
                 key={sessionRef.current}
                 className={`absolute ${shape.bg} bg-hover pointer-events-none`}
-                initial={{
-                  opacity: 0,
-                  top: checkedRect?.top ?? activeRect.top,
-                  left: checkedRect?.left ?? activeRect.left,
-                  width: checkedRect?.width ?? activeRect.width,
-                  height: checkedRect?.height ?? activeRect.height,
-                }}
-                animate={{
-                  opacity: 1,
+                initial={shouldReduceMotion ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                style={{
                   top: activeRect.top,
                   left: activeRect.left,
                   width: activeRect.width,
                   height: activeRect.height,
                 }}
-                exit={{ opacity: 0, transition: spring.fast.exit }}
-                transition={{
-                  ...spring.fast,
-                  opacity: { duration: 0.08 },
+                exit={{
+                  opacity: 0,
+                  transition: shouldReduceMotion
+                    ? { duration: 0 }
+                    : spring.fast.exit,
                 }}
+                transition={
+                  shouldReduceMotion
+                    ? { duration: 0 }
+                    : { ...spring.fast, opacity: { duration: 0.08 } }
+                }
               />
             )}
           </AnimatePresence>
@@ -206,17 +213,24 @@ const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
               <motion.div
                 className={`absolute ${shape.focusRing} pointer-events-none z-20 border border-[color:var(--focus-ring,#6B97FF)]`}
                 initial={false}
-                animate={{
+                animate={{ opacity: 1 }}
+                style={{
                   left: focusRect.left - 2,
                   top: focusRect.top - 2,
                   width: focusRect.width + 4,
                   height: focusRect.height + 4,
                 }}
-                exit={{ opacity: 0, transition: spring.fast.exit }}
-                transition={{
-                  ...spring.fast,
-                  opacity: { duration: 0.08 },
+                exit={{
+                  opacity: 0,
+                  transition: shouldReduceMotion
+                    ? { duration: 0 }
+                    : spring.fast.exit,
                 }}
+                transition={
+                  shouldReduceMotion
+                    ? { duration: 0 }
+                    : { ...spring.fast, opacity: { duration: 0.08 } }
+                }
               />
             )}
           </AnimatePresence>
@@ -366,6 +380,7 @@ const DropdownContent = forwardRef<HTMLDivElement, DropdownContentProps>(
   ) => {
     const { open, actionsRef } = useDropdownMenuContext();
     const containerRef = useRef<HTMLDivElement>(null);
+    const shouldReduceMotion = useReducedMotion();
 
     const {
       activeIndex,
@@ -477,13 +492,25 @@ const DropdownContent = forwardRef<HTMLDivElement, DropdownContentProps>(
           className="z-50 outline-none"
         >
           <motion.div
-            initial={{ opacity: 0, y: -4, scaleY: 0.96 }}
+            initial={
+              shouldReduceMotion
+                ? false
+                : { opacity: 0, y: -4, scaleY: 0.96 }
+            }
             animate={
               open
                 ? { opacity: 1, y: 0, scaleY: 1 }
-                : { opacity: 0, y: -4, scaleY: 0.96 }
+                : shouldReduceMotion
+                  ? { opacity: 0, y: 0, scaleY: 1 }
+                  : { opacity: 0, y: -4, scaleY: 0.96 }
             }
-            transition={open ? spring.fast : spring.fast.exit}
+            transition={
+              shouldReduceMotion
+                ? { duration: 0 }
+                : open
+                  ? spring.fast
+                  : spring.fast.exit
+            }
             style={{ transformOrigin: "top center" }}
             // Base UI defers unmount while actionsRef is set; release it once
             // the exit spring has finished so the close animation fully plays.
@@ -549,18 +576,24 @@ const DropdownContent = forwardRef<HTMLDivElement, DropdownContentProps>(
                     <motion.div
                       className={`absolute ${shape.bg} bg-active pointer-events-none`}
                       initial={false}
-                      animate={{
+                      animate={{ opacity: isHoveringOther ? 0.8 : 1 }}
+                      style={{
                         top: checkedRect.top,
                         left: checkedRect.left,
                         width: checkedRect.width,
                         height: checkedRect.height,
-                        opacity: isHoveringOther ? 0.8 : 1,
                       }}
-                      exit={{ opacity: 0, transition: spring.moderate.exit }}
-                      transition={{
-                        ...spring.moderate,
-                        opacity: { duration: 0.08 },
+                      exit={{
+                        opacity: 0,
+                        transition: shouldReduceMotion
+                          ? { duration: 0 }
+                          : spring.moderate.exit,
                       }}
+                      transition={
+                        shouldReduceMotion
+                          ? { duration: 0 }
+                          : { ...spring.moderate, opacity: { duration: 0.08 } }
+                      }
                     />
                   )}
                 </AnimatePresence>
@@ -571,25 +604,25 @@ const DropdownContent = forwardRef<HTMLDivElement, DropdownContentProps>(
                     <motion.div
                       key={sessionRef.current}
                       className={`absolute ${shape.bg} bg-hover pointer-events-none`}
-                      initial={{
-                        opacity: 0,
-                        top: checkedRect?.top ?? activeRect.top,
-                        left: checkedRect?.left ?? activeRect.left,
-                        width: checkedRect?.width ?? activeRect.width,
-                        height: checkedRect?.height ?? activeRect.height,
-                      }}
-                      animate={{
-                        opacity: 1,
+                      initial={shouldReduceMotion ? false : { opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      style={{
                         top: activeRect.top,
                         left: activeRect.left,
                         width: activeRect.width,
                         height: activeRect.height,
                       }}
-                      exit={{ opacity: 0, transition: spring.fast.exit }}
-                      transition={{
-                        ...spring.fast,
-                        opacity: { duration: 0.08 },
+                      exit={{
+                        opacity: 0,
+                        transition: shouldReduceMotion
+                          ? { duration: 0 }
+                          : spring.fast.exit,
                       }}
+                      transition={
+                        shouldReduceMotion
+                          ? { duration: 0 }
+                          : { ...spring.fast, opacity: { duration: 0.08 } }
+                      }
                     />
                   )}
                 </AnimatePresence>
@@ -600,17 +633,24 @@ const DropdownContent = forwardRef<HTMLDivElement, DropdownContentProps>(
                     <motion.div
                       className={`absolute ${shape.focusRing} pointer-events-none z-20 border border-[color:var(--focus-ring,#6B97FF)]`}
                       initial={false}
-                      animate={{
+                      animate={{ opacity: 1 }}
+                      style={{
                         left: focusRect.left - 2,
                         top: focusRect.top - 2,
                         width: focusRect.width + 4,
                         height: focusRect.height + 4,
                       }}
-                      exit={{ opacity: 0, transition: spring.fast.exit }}
-                      transition={{
-                        ...spring.fast,
-                        opacity: { duration: 0.08 },
+                      exit={{
+                        opacity: 0,
+                        transition: shouldReduceMotion
+                          ? { duration: 0 }
+                          : spring.fast.exit,
                       }}
+                      transition={
+                        shouldReduceMotion
+                          ? { duration: 0 }
+                          : { ...spring.fast, opacity: { duration: 0.08 } }
+                      }
                     />
                   )}
                 </AnimatePresence>

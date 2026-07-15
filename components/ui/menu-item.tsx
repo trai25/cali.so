@@ -11,9 +11,8 @@ import {
   type ReactNode,
 } from "react";
 import type { IconComponent } from "~/lib/icon-context";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { cn } from "~/lib/utils";
-import { fontWeights } from "~/lib/font-weight";
 import { shapeMap } from "~/lib/shape-context";
 
 // MenuItem is only used inside Dropdown, which opts out of the global pill
@@ -110,6 +109,7 @@ const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(
   ) => {
     const internalRef = useRef<HTMLDivElement>(null);
     const hasMounted = useRef(false);
+    const shouldReduceMotion = useReducedMotion();
     const { registerItem, activeIndex, checkedIndex, renderMenuItem } =
       useDropdown();
 
@@ -123,7 +123,7 @@ const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(
     }, []);
 
     const isActive = activeIndex === index;
-    const skipAnimation = !hasMounted.current;
+    const skipAnimation = shouldReduceMotion || !hasMounted.current;
 
     const mergeRef = (node: HTMLDivElement | null) => {
       (internalRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
@@ -165,28 +165,15 @@ const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(
             />
           </span>
         )}
-        {/* Both stacked spans carry the text-box trim so the invisible bold
-            sizer and the visible label keep identical boxes. */}
-        <span className="inline-grid flex-1 text-[14px]">
-          <span
-            className="col-start-1 row-start-1 invisible [text-box:trim-both_cap_alphabetic]"
-            style={{ fontVariationSettings: fontWeights.semibold }}
-            aria-hidden="true"
-          >
-            {label}
-          </span>
+        {/* Selection is communicated by color, never a weight change. */}
+        <span className="flex-1 text-[14px]">
           <span
             className={cn(
-              "col-start-1 row-start-1 transition-[color,font-variation-settings] duration-150 [text-box:trim-both_cap_alphabetic]",
+              "transition-colors duration-150 [text-box:trim-both_cap_alphabetic]",
               isActive || checked
                 ? "text-foreground"
                 : "text-muted-foreground"
             )}
-            style={{
-              fontVariationSettings: checked
-                ? fontWeights.semibold
-                : fontWeights.normal,
-            }}
           >
             {label}
           </span>
@@ -213,12 +200,18 @@ const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(
                 initial={{ pathLength: skipAnimation ? 1 : 0 }}
                 animate={{
                   pathLength: 1,
-                  transition: { duration: 0.08, ease: "easeOut" },
+                  transition: shouldReduceMotion
+                    ? { duration: 0 }
+                    : { duration: 0.08, ease: "easeOut" },
                 }}
-                exit={{
-                  pathLength: 0,
-                  transition: { duration: 0.04, ease: "easeIn" },
-                }}
+                exit={
+                  shouldReduceMotion
+                    ? { pathLength: 1, transition: { duration: 0 } }
+                    : {
+                        pathLength: 0,
+                        transition: { duration: 0.04, ease: "easeIn" },
+                      }
+                }
               />
             </motion.svg>
           )}

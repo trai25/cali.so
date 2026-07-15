@@ -14,7 +14,7 @@ import {
   type ReactNode,
   type HTMLAttributes,
 } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Select as SelectPrimitive } from "@base-ui/react/select";
 import type { IconComponent } from "~/lib/icon-context";
@@ -265,6 +265,7 @@ const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
   ({ className, children }, ref) => {
     const { open, value, actionsRef } = useSelectContext();
     const shape = useShape();
+    const shouldReduceMotion = useReducedMotion();
     const containerRef = useRef<HTMLDivElement>(null);
 
     const {
@@ -344,13 +345,25 @@ const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
           className="z-50 outline-none"
         >
           <motion.div
-            initial={{ opacity: 0, y: -4, scaleY: 0.96 }}
+            initial={
+              shouldReduceMotion
+                ? false
+                : { opacity: 0, y: -4, scaleY: 0.96 }
+            }
             animate={
               open
                 ? { opacity: 1, y: 0, scaleY: 1 }
-                : { opacity: 0, y: -4, scaleY: 0.96 }
+                : shouldReduceMotion
+                  ? { opacity: 0, y: 0, scaleY: 1 }
+                  : { opacity: 0, y: -4, scaleY: 0.96 }
             }
-            transition={open ? spring.fast : spring.fast.exit}
+            transition={
+              shouldReduceMotion
+                ? { duration: 0 }
+                : open
+                  ? spring.fast
+                  : spring.fast.exit
+            }
             style={{ transformOrigin: "top center" }}
             // Base UI defers unmount while actionsRef is set; release it once
             // the exit spring has finished so the close animation fully plays.
@@ -415,18 +428,24 @@ const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
                     <motion.div
                       className={`absolute ${shape.bg} bg-active pointer-events-none`}
                       initial={false}
-                      animate={{
+                      animate={{ opacity: isHoveringOther ? 0.8 : 1 }}
+                      style={{
                         top: checkedRect.top,
                         left: checkedRect.left,
                         width: checkedRect.width,
                         height: checkedRect.height,
-                        opacity: isHoveringOther ? 0.8 : 1,
                       }}
-                      exit={{ opacity: 0, transition: spring.moderate.exit }}
-                      transition={{
-                        ...spring.moderate,
-                        opacity: { duration: 0.08 },
+                      exit={{
+                        opacity: 0,
+                        transition: shouldReduceMotion
+                          ? { duration: 0 }
+                          : spring.moderate.exit,
                       }}
+                      transition={
+                        shouldReduceMotion
+                          ? { duration: 0 }
+                          : { ...spring.moderate, opacity: { duration: 0.08 } }
+                      }
                     />
                   )}
                 </AnimatePresence>
@@ -437,25 +456,25 @@ const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
                     <motion.div
                       key={sessionRef.current}
                       className={`absolute ${shape.bg} bg-hover pointer-events-none`}
-                      initial={{
-                        opacity: 0,
-                        top: checkedRect?.top ?? activeRect.top,
-                        left: checkedRect?.left ?? activeRect.left,
-                        width: checkedRect?.width ?? activeRect.width,
-                        height: checkedRect?.height ?? activeRect.height,
-                      }}
-                      animate={{
-                        opacity: 1,
+                      initial={shouldReduceMotion ? false : { opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      style={{
                         top: activeRect.top,
                         left: activeRect.left,
                         width: activeRect.width,
                         height: activeRect.height,
                       }}
-                      exit={{ opacity: 0, transition: spring.fast.exit }}
-                      transition={{
-                        ...spring.fast,
-                        opacity: { duration: 0.08 },
+                      exit={{
+                        opacity: 0,
+                        transition: shouldReduceMotion
+                          ? { duration: 0 }
+                          : spring.fast.exit,
                       }}
+                      transition={
+                        shouldReduceMotion
+                          ? { duration: 0 }
+                          : { ...spring.fast, opacity: { duration: 0.08 } }
+                      }
                     />
                   )}
                 </AnimatePresence>
@@ -466,17 +485,24 @@ const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
                     <motion.div
                       className={`absolute ${shape.focusRing} pointer-events-none z-20 border border-[color:var(--focus-ring)]`}
                       initial={false}
-                      animate={{
+                      animate={{ opacity: 1 }}
+                      style={{
                         left: focusRect.left - 2,
                         top: focusRect.top - 2,
                         width: focusRect.width + 4,
                         height: focusRect.height + 4,
                       }}
-                      exit={{ opacity: 0, transition: spring.fast.exit }}
-                      transition={{
-                        ...spring.fast,
-                        opacity: { duration: 0.08 },
+                      exit={{
+                        opacity: 0,
+                        transition: shouldReduceMotion
+                          ? { duration: 0 }
+                          : spring.fast.exit,
                       }}
+                      transition={
+                        shouldReduceMotion
+                          ? { duration: 0 }
+                          : { ...spring.fast, opacity: { duration: 0.08 } }
+                      }
                     />
                   )}
                 </AnimatePresence>
@@ -521,6 +547,7 @@ const SelectItem = forwardRef<HTMLDivElement, SelectItemProps>(
     const contentCtx = useContext(SelectContentContext);
     const internalRef = useRef<HTMLDivElement>(null);
     const shape = useShape();
+    const shouldReduceMotion = useReducedMotion();
     const hasMounted = useRef(false);
 
     useEffect(() => {
@@ -535,7 +562,7 @@ const SelectItem = forwardRef<HTMLDivElement, SelectItemProps>(
 
     const isActive = contentCtx?.activeIndex === index;
     const isChecked = selectCtx.value === value;
-    const skipAnimation = !hasMounted.current;
+    const skipAnimation = shouldReduceMotion || !hasMounted.current;
 
     return (
       <SelectPrimitive.Item
@@ -608,12 +635,18 @@ const SelectItem = forwardRef<HTMLDivElement, SelectItemProps>(
                 initial={{ pathLength: skipAnimation ? 1 : 0 }}
                 animate={{
                   pathLength: 1,
-                  transition: { duration: 0.08, ease: "easeOut" },
+                  transition: shouldReduceMotion
+                    ? { duration: 0 }
+                    : { duration: 0.08, ease: "easeOut" },
                 }}
-                exit={{
-                  pathLength: 0,
-                  transition: { duration: 0.04, ease: "easeIn" },
-                }}
+                exit={
+                  shouldReduceMotion
+                    ? { pathLength: 1, transition: { duration: 0 } }
+                    : {
+                        pathLength: 0,
+                        transition: { duration: 0.04, ease: "easeIn" },
+                      }
+                }
               />
             </motion.svg>
           )}
