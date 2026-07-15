@@ -14,6 +14,9 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
+// Admin account data intentionally renders per request.
+export const instant = false
+
 const availabilityNotices = new Set(['saved', 'invalid', 'failed'] as const)
 const calendarNotices = new Set([
   'disconnected',

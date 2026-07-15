@@ -1,4 +1,6 @@
 import { MDXRemote } from 'next-mdx-remote/rsc'
+import { cacheLife } from 'next/cache'
+import { notFound } from 'next/navigation'
 import rehypePrettyCode from 'rehype-pretty-code'
 import rehypeSlug from 'rehype-slug'
 import remarkGfm from 'remark-gfm'
@@ -8,7 +10,13 @@ import { mdxComponents } from '~/components/mdx/mdx-components'
 import { PolaroidCover } from '~/components/polaroid-cover'
 import { PostToc } from '~/components/post-toc'
 import { RevealScope } from '~/components/reveal-scope'
-import { buildPostRail, getAllPosts, getPost, POST_ARTICLE_START_ID } from '~/lib/content'
+import {
+  buildPostRail,
+  getAllPosts,
+  getPost,
+  isPostSlug,
+  POST_ARTICLE_START_ID,
+} from '~/lib/content'
 import { LocalDate, T } from '~/lib/i18n'
 import { localeMetadata } from '~/lib/locale-metadata'
 import type { Locale } from '~/lib/locale-route'
@@ -19,8 +27,13 @@ export function generatePostStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }))
 }
 
+export function requirePostSlug(slug: string) {
+  if (!isPostSlug(slug)) notFound()
+  return slug
+}
+
 export function blogPostMetadata(locale: Locale, slug: string) {
-  const post = getPost(slug)
+  const post = getPost(requirePostSlug(slug))
 
   return localeMetadata({
     locale,
@@ -32,12 +45,19 @@ export function blogPostMetadata(locale: Locale, slug: string) {
   })
 }
 
-export async function BlogPostPageView({ slug, locale }: { slug: string; locale: Locale }) {
+async function CachedPostBody({
+  locale,
+  slug,
+}: {
+  locale: Locale
+  slug: string
+}) {
+  'use cache'
+  cacheLife('max')
+
   const post = getPost(slug)
-  const rail = buildPostRail(post.title, post.body)
-  const railEn = buildPostRail(post.titleEn, post.bodyEn, 'en-')
-  const english = locale === 'en'
-  const source = english ? post.bodyEn : post.body
+  const source = locale === 'en' ? post.bodyEn : post.body
+
   const prefixIdsPlugin: [typeof rehypePrefixIds, { prefix: string }] = [
     rehypePrefixIds,
     { prefix: 'en-' },
@@ -49,9 +69,30 @@ export async function BlogPostPageView({ slug, locale }: { slug: string; locale:
     rehypePrettyCode,
     { theme: { light: 'github-light-default', dark: 'github-dark-default' } },
   ]
-  const rehypePlugins = english
-    ? [rehypeSlug, prefixIdsPlugin, prettyCodePlugin]
-    : [rehypeSlug, prettyCodePlugin]
+  const rehypePlugins =
+    locale === 'en'
+      ? [rehypeSlug, prefixIdsPlugin, prettyCodePlugin]
+      : [rehypeSlug, prettyCodePlugin]
+
+  return (
+    <MDXRemote
+      source={source}
+      components={mdxComponents(slug, locale)}
+      options={{
+        mdxOptions: {
+          remarkPlugins: [remarkGfm],
+          rehypePlugins,
+        },
+      }}
+    />
+  )
+}
+
+export async function BlogPostPageView({ slug, locale }: { slug: string; locale: Locale }) {
+  const post = getPost(requirePostSlug(slug))
+  const rail = buildPostRail(post.title, post.body)
+  const railEn = buildPostRail(post.titleEn, post.bodyEn, 'en-')
+  const english = locale === 'en'
 
   return (
     <>
@@ -91,16 +132,7 @@ export async function BlogPostPageView({ slug, locale }: { slug: string; locale:
           </div>
         </header>
         <RevealScope lang={english ? 'en' : 'zh-CN'} className="post-body-stage prose enter mt-10">
-          <MDXRemote
-            source={source}
-            components={mdxComponents(post.slug, locale)}
-            options={{
-              mdxOptions: {
-                remarkPlugins: [remarkGfm],
-                rehypePlugins,
-              },
-            }}
-          />
+          <CachedPostBody slug={post.slug} locale={locale} />
         </RevealScope>
       </article>
     </>

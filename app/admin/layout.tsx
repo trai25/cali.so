@@ -6,6 +6,9 @@ import { rootMetadata, SiteDocument } from '../_components/site-document'
 
 export const metadata = rootMetadata
 
+// Admin authentication and account data intentionally render per request.
+export const instant = false
+
 export default function AdminRootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   requireAmaAdminEnabled()
   return (

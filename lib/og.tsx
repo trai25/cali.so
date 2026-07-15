@@ -1,10 +1,11 @@
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
+import { cacheLife } from 'next/cache'
 
 // Loaded outside the build graph: Turbopack chokes on harfbuzz's wasm when
 // subset-font gets bundled or traced (NftJsonAsset error), and
-// serverExternalPackages doesn't take here. OG routes are force-static,
-// so this only ever runs at build, where node_modules is present.
+// serverExternalPackages doesn't take here. The cached OG helpers prerender
+// once per deployment, where node_modules is present.
 async function loadSubsetFont() {
   const mod = await import(/* turbopackIgnore: true */ 'subset-font')
   return mod.default
@@ -27,13 +28,18 @@ const FONTS_DIR = path.join(process.cwd(), 'app/_fonts')
 // ships as a ~1.6MB woff2 satori can't read — subset to the exact text
 // (plus digits/punctuation) and convert to sfnt per image.
 export async function ogFonts(text: string) {
+  'use cache'
+  cacheLife('max')
+
   const subsetFont = await loadSubsetFont()
   const chars = text + '0123456789 ·，。…（）「」?？!！'
   const [regular, semibold] = await Promise.all(
     ['FrexSansGB-Regular.woff2', 'FrexSansGB-SemiBold.woff2'].map(async (file) =>
-      subsetFont(await readFile(path.join(FONTS_DIR, file)), chars, {
-        targetFormat: 'sfnt',
-      }),
+      new Uint8Array(
+        await subsetFont(await readFile(path.join(FONTS_DIR, file)), chars, {
+          targetFormat: 'sfnt',
+        }),
+      ).buffer,
     ),
   )
   return [
@@ -51,6 +57,9 @@ const MIME: Record<string, string> = {
 }
 
 export async function coverDataUri(publicSrc: string): Promise<string> {
+  'use cache'
+  cacheLife('max')
+
   // cover.src is the public /content/... URL; the file lives in content/
   const relativePath = publicSrc.startsWith('/content/')
     ? publicSrc.slice('/content/'.length)

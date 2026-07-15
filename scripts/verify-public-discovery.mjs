@@ -125,22 +125,30 @@ async function verifyDiscoveryFiles(baseUrl) {
 }
 
 async function verifyNotFound(baseUrl) {
-  const response = await fetch(new URL('/release-check-missing', baseUrl))
-  assert.equal(response.status, 404)
-  const body = await response.text()
-  const document = new JSDOM(body).window.document
-  for (const element of document.querySelectorAll(
-    'script, style, template, noscript',
-  )) {
-    element.remove()
+  for (const pathname of [
+    '/release-check-missing',
+    '/blog/not-a-published-post',
+    '/en/blog/not-a-published-post',
+    '/newsletters/not-an-id',
+    '/en/newsletters/not-an-id',
+  ]) {
+    const response = await fetch(new URL(pathname, baseUrl))
+    assert.equal(response.status, 404, `${pathname} status`)
+    const body = await response.text()
+    const document = new JSDOM(body).window.document
+    for (const element of document.querySelectorAll(
+      'script, style, template, noscript',
+    )) {
+      element.remove()
+    }
+    const visibleText = document.body?.textContent ?? ''
+    assert.match(visibleText, /This page slipped off the grid/)
+    assert.match(visibleText, /Go home/)
+    assert.doesNotMatch(
+      visibleText,
+      /(?:node_modules|\/Users\/|Error:|at\s+\w+\s*\()/,
+    )
   }
-  const visibleText = document.body?.textContent ?? ''
-  assert.match(visibleText, /This page slipped off the grid/)
-  assert.match(visibleText, /Go home/)
-  assert.doesNotMatch(
-    visibleText,
-    /(?:node_modules|\/Users\/|Error:|at\s+\w+\s*\()/,
-  )
 }
 
 const server = await openProductionServer(process.env.PUBLIC_DISCOVERY_BASE_URL)

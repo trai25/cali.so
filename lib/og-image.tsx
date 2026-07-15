@@ -1,3 +1,4 @@
+import { cacheLife } from 'next/cache'
 import { ImageResponse } from 'next/og'
 
 import type { Post } from './content'
@@ -14,7 +15,10 @@ const TAGLINES: Record<Locale, string> = {
 
 const IMAGE_SIZE = { width: 1200, height: 630 } as const
 
-export async function createSiteOgImage(locale: Locale) {
+async function renderSiteOgImage(locale: Locale) {
+  'use cache'
+  cacheLife('max')
+
   const tagline = TAGLINES[locale]
 
   return new ImageResponse(
@@ -47,10 +51,21 @@ export async function createSiteOgImage(locale: Locale) {
       </OgSheet>
     ),
     { ...IMAGE_SIZE, fonts: await ogFonts(NAME + tagline) },
-  )
+  ).arrayBuffer()
 }
 
-export async function createPostOgImage(post: Post, locale: Locale) {
+export async function createSiteOgImage(locale: Locale) {
+  return new Response(await renderSiteOgImage(locale), {
+    headers: { 'content-type': 'image/png' },
+  })
+}
+
+type PostOgInput = Pick<Post, 'slug' | 'title' | 'titleEn' | 'publishedAt' | 'cover'>
+
+async function renderPostOgImage(post: PostOgInput, locale: Locale) {
+  'use cache'
+  cacheLife('max')
+
   const title = locale === 'en' ? post.titleEn : post.title
   const date = locale === 'en' ? formatDateEn(post.publishedAt) : formatDate(post.publishedAt)
 
@@ -119,5 +134,19 @@ export async function createPostOgImage(post: Post, locale: Locale) {
       ...IMAGE_SIZE,
       fonts: await ogFonts(title + date + NAME),
     },
-  )
+  ).arrayBuffer()
+}
+
+export async function createPostOgImage(post: Post, locale: Locale) {
+  const input: PostOgInput = {
+    slug: post.slug,
+    title: post.title,
+    titleEn: post.titleEn,
+    publishedAt: post.publishedAt,
+    cover: post.cover,
+  }
+
+  return new Response(await renderPostOgImage(input, locale), {
+    headers: { 'content-type': 'image/png' },
+  })
 }

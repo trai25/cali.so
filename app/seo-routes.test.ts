@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { GET as getEnglishFeed } from './feed.en.xml/route'
+import { buildEnglishFeedXml } from './feed.en.xml/route'
 import robots from './robots'
 import sitemap from './sitemap'
 import { getAllPosts } from '~/lib/content'
@@ -21,7 +21,7 @@ describe('localized discovery routes', () => {
   })
 
   it('publishes English feed item URLs under /en while keeping the feed endpoint', async () => {
-    const xml = await getEnglishFeed().text()
+    const xml = buildEnglishFeedXml()
 
     expect(xml).toContain(
       `<atom:link href="${new URL('/feed.en.xml', seo.url).href}" rel="self"`,
