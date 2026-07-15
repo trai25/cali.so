@@ -9,6 +9,7 @@ export const RENDITION_PROFILE_WIDTHS = [640, 1024, 1600] as const
 
 const MAX_IMAGE_PIXELS = 100_000_000
 const acceptedFormats = new Set(['heif', 'jpeg', 'png'])
+const pngSignature = Buffer.from('89504e470d0a1a0a', 'hex')
 const exifFields = [
   'Make',
   'Model',
@@ -117,6 +118,32 @@ function mapSharpError(error: unknown): MediaImageError {
   )
 }
 
+function isAnimatedPng(input: Buffer) {
+  if (
+    input.length < pngSignature.length ||
+    !input.subarray(0, 8).equals(pngSignature)
+  ) {
+    return false
+  }
+
+  let offset = pngSignature.length
+  while (offset + 12 <= input.length) {
+    const length = input.readUInt32BE(offset)
+    const dataStart = offset + 8
+    const chunkEnd = dataStart + length + 4
+    if (chunkEnd > input.length) return false
+
+    const type = input.toString('ascii', offset + 4, dataStart)
+    if (type === 'acTL' && length === 8) {
+      return input.readUInt32BE(dataStart) > 1
+    }
+    if (type === 'IEND') return false
+    offset = chunkEnd
+  }
+
+  return false
+}
+
 function orientation(metadata: OwnedExif) {
   const value = metadata.Orientation
   return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 8
@@ -142,10 +169,15 @@ async function heifPipeline(input: Buffer, value: number) {
     !Number.isSafeInteger(decoded.width) ||
     !Number.isSafeInteger(decoded.height) ||
     decoded.width <= 0 ||
-    decoded.height <= 0 ||
-    decoded.width * decoded.height > MAX_IMAGE_PIXELS ||
-    decoded.data.byteLength !== decoded.width * decoded.height * 4
+    decoded.height <= 0
   ) {
+    throw new MediaImageError('invalid_image')
+  }
+  const decodedPixels = decoded.width * decoded.height
+  if (!Number.isSafeInteger(decodedPixels) || decodedPixels > MAX_IMAGE_PIXELS) {
+    throw new MediaImageError('pixel_limit')
+  }
+  if (decoded.data.byteLength !== decodedPixels * 4) {
     throw new MediaImageError('invalid_image')
   }
   return applyOrientation(
@@ -176,7 +208,10 @@ export async function processOriginalImage(bytes: Uint8Array) {
   if (source.format === 'heif' && source.compression !== 'hevc') {
     throw new MediaImageError('unsupported_format')
   }
-  if ((source.pages ?? 1) !== 1) {
+  if (
+    (source.pages ?? 1) !== 1 ||
+    (source.format === 'png' && isAnimatedPng(input))
+  ) {
     throw new MediaImageError('animated')
   }
 
@@ -235,6 +270,7 @@ export async function processOriginalImage(bytes: Uint8Array) {
       }),
     )
   } catch (error) {
+    if (error instanceof MediaImageError) throw error
     throw mapSharpError(error)
   }
 

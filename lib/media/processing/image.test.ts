@@ -145,6 +145,38 @@ describe('Media Library image processing', () => {
     )
   })
 
+  it('accepts static PNG Originals', async () => {
+    const png = await sharp({
+      create: {
+        width: 4,
+        height: 4,
+        channels: 4,
+        background: '#ffffff',
+      },
+    })
+      .png()
+      .toBuffer()
+
+    await expect(processOriginalImage(png)).resolves.toMatchObject({
+      original: { format: 'png', width: 4, height: 4 },
+    })
+  })
+
+  it(
+    'rejects animated PNG Originals when the decoder reports one page',
+    async () => {
+      const animatedPng = Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACGFjVEwAAAACAAAAAPONk3AAAAAaZmNUTAAAAAAAAAABAAAAAQAAAAAAAAAAAAEACgAAWn8w0AAAAA1JREFUeJxj+M/A8B8ABQAB/4mZPR0AAAAaZmNUTAAAAAEAAAABAAAAAQAAAAAAAAAAAAEACgAAwQzaBAAAABFmZEFUAAAAAnicY2Bg+P8fAAMCAf/1e6XXAAAAAElFTkSuQmCC',
+        'base64',
+      )
+      expect((await sharp(animatedPng).metadata()).pages).toBeUndefined()
+
+      await expect(processOriginalImage(animatedPng)).rejects.toEqual(
+        new MediaImageError('animated'),
+      )
+    },
+  )
+
   it('does not treat AVIF as an allowed HEIC Original', async () => {
     const avif = await sharp({
       create: {
