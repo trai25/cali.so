@@ -5,8 +5,9 @@ import {
 
 export const metadata = newsletterRetiredMetadata('zh')
 
-// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+// This unlinked legacy token route intentionally blocks. Its response is
+// static and safe, but an arbitrary token cannot produce a reusable route
+// shell during prerendering.
 export const instant = false
 
 // The token parameter is deliberately not accepted or read. This route only

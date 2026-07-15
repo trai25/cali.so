@@ -18,7 +18,7 @@ export interface SocialData {
 
 export async function getGitHub(): Promise<GitHubSnapshot> {
   'use cache'
-  cacheLife({ stale: 300, revalidate: 21_600, expire: 86_400 })
+  cacheLife({ stale: 21_600, revalidate: 21_600, expire: 604_800 })
   cacheTag('social-live')
 
   try {
@@ -49,7 +49,7 @@ export async function getGitHub(): Promise<GitHubSnapshot> {
 
 export async function getSocial(): Promise<SocialData> {
   'use cache'
-  cacheLife({ stale: 300, revalidate: 43_200, expire: 172_800 })
+  cacheLife({ stale: 43_200, revalidate: 43_200, expire: 604_800 })
   cacheTag('social-live')
 
   const social = bakedSocial as SocialData
