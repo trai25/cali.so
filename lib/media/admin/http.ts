@@ -192,7 +192,27 @@ async function requestJson(request: Request) {
     throw new MediaAssetReviewError('invalid_request')
   }
   try {
-    const body: unknown = await request.json()
+    const reader = request.body?.getReader()
+    if (!reader) throw new MediaAssetReviewError('invalid_request')
+    const chunks: Uint8Array[] = []
+    let byteLength = 0
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      byteLength += value.byteLength
+      if (byteLength > 32_768) {
+        await reader.cancel().catch(() => undefined)
+        throw new MediaAssetReviewError('invalid_request')
+      }
+      chunks.push(value)
+    }
+    const bytes = new Uint8Array(byteLength)
+    let offset = 0
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset)
+      offset += chunk.byteLength
+    }
+    const body: unknown = JSON.parse(new TextDecoder().decode(bytes))
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
       throw new MediaAssetReviewError('invalid_request')
     }
