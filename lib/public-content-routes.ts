@@ -1,3 +1,5 @@
+// Publishing a post requires adding its directory slug here. The public-route
+// proxy, post index, feeds, and sitemap all consume this explicit allowlist.
 export const publishedPostSlugs = [
   '2023-year-in-review',
   '8-laws-to-a-successful-engineer',
