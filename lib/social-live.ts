@@ -1,7 +1,6 @@
 import { cacheLife, cacheTag } from 'next/cache'
 
 import type { GitHubSnapshot, SocialSnapshot } from '~/components/social-cards'
-
 import bakedGithub from '~/content/github.json'
 import bakedSocial from '~/content/social.json'
 
@@ -11,11 +10,11 @@ export interface SocialData {
   youtube: SocialSnapshot
 }
 
-// Live social numbers use Cache Components to join the static shell and the
-// fetch Data Cache to share refreshes across routes and serverless instances.
-// The baked content/*.json snapshots stay as fallback seeds, so builds and
-// outages degrade to the last committed numbers instead of an empty card. X
-// has no public endpoint; its count stays manual in content/social.json.
+// Live social numbers use Cache Components so counts refresh without a
+// rebuild. The baked content/*.json snapshots stay as fallback seeds —
+// builds and outages degrade to the last committed numbers instead of an
+// empty card. X has no public endpoint; its count stays manual in
+// content/social.json.
 
 export async function getGitHub(): Promise<GitHubSnapshot> {
   'use cache'
@@ -24,15 +23,12 @@ export async function getGitHub(): Promise<GitHubSnapshot> {
 
   try {
     const [contrib, user] = await Promise.all([
-      fetch('https://github-contributions-api.jogruber.de/v4/CaliCastle?y=last', {
-        next: { revalidate: 21_600, tags: ['social-live'] },
-      }).then((r) => {
+      fetch('https://github-contributions-api.jogruber.de/v4/CaliCastle?y=last').then((r) => {
         if (!r.ok) throw new Error(`contributions ${r.status}`)
         return r.json()
       }),
       fetch('https://api.github.com/users/CaliCastle', {
         headers: { accept: 'application/vnd.github+json', 'user-agent': 'cali.so' },
-        next: { revalidate: 21_600, tags: ['social-live'] },
       }).then((r) => {
         if (!r.ok) throw new Error(`user ${r.status}`)
         return r.json()
@@ -60,7 +56,6 @@ export async function getSocial(): Promise<SocialData> {
   try {
     const html = await fetch('https://www.youtube.com/@calicastle', {
       headers: { 'accept-language': 'en-US' },
-      next: { revalidate: 43_200, tags: ['social-live'] },
     }).then((r) => {
       if (!r.ok) throw new Error(`youtube ${r.status}`)
       return r.text()
