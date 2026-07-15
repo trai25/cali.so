@@ -8,5 +8,6 @@ and `docs/adr/` (context-scoped decisions). System-wide ADRs live in `docs/adr/`
 
 - [AMA Booking](./lib/ama/CONTEXT.md) — sells and manages Cali's paid
   one-to-one AMA sessions
-- [Media Library](./lib/media/CONTEXT.md): proposed post-launch context for
-  storing, describing, and curating reusable files and public photo selections
+- [Media Library](./lib/media/CONTEXT.md): post-launch foundation for storing,
+  describing, and curating reusable files and public photo selections; no
+  public or admin surface ships in the v3 launch

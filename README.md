@@ -19,6 +19,9 @@ general-purpose blog template.
   snapshots
 - Drizzle and Neon groundwork for AMA operations, kept disabled for the v3
   production launch
+- Post-launch Media Library foundations for Bunny storage, a Neon catalog,
+  image processing, and resumable ingestion, with no public or admin surface
+  enabled for the v3 launch
 - CSP, same-origin mutation checks, rate limits, capability kill switches,
   security automation, and isolated Preview credentials
 
@@ -60,8 +63,16 @@ pnpm test:localization
 pnpm test:port-post
 pnpm test:ama
 pnpm test:security
+pnpm test:media:storage
+pnpm test:media:catalog
+pnpm test:media:processing
+pnpm test:media:ingestion
 pnpm build
-pnpm audit --prod
+pnpm test:navigation
+pnpm verify:legacy-urls
+pnpm verify:public-discovery
+pnpm verify:security-boundary
+pnpm audit:prod
 ```
 
 ## Deployment constraints
@@ -76,6 +87,9 @@ pnpm audit --prod
 - AMA, admin, payment, booking-finalization, Google, and Tencent capabilities
   remain disabled in Production until their later product and security gates
   are complete.
+- Media Library foundations remain unreachable from public and admin routes at
+  launch. Static repository media stays authoritative until post-launch
+  provider, migration, privacy, and operations gates are approved.
 - Production database or sensitive cloud-data access requires two fresh
   confirmations immediately before access.
 

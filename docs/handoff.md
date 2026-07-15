@@ -12,11 +12,8 @@ Current as of July 2026.
 - Release scope and evidence are tracked by
   [#98](https://github.com/CaliCastle/cali.so/issues/98). Do not merge to
   `main` until its complete dependency chain and final proof are green.
-- The release work is intentionally split into reviewable slices:
-  v3 identity and licensing (#99), bilingual routes and localized OG (#100),
-  legacy URLs (#101), discovery and failures (#102), production security
-  boundary (#103), Cache Components (#104), Instant Navigations (#105),
-  Partial Prefetching (#106), and cutover proof (#107).
+- Release slices #99 through #106 are merged into `v2`. Final cutover proof is
+  tracked by #107; its checked-in report is the current readiness authority.
 
 ## Current architecture
 
@@ -82,9 +79,17 @@ pnpm test:localization
 pnpm test:port-post
 pnpm test:ama
 pnpm test:security
+pnpm test:media:storage
+pnpm test:media:catalog
+pnpm test:media:processing
+pnpm test:media:ingestion
 pnpm db:validate
 pnpm build
-pnpm audit --prod
+pnpm test:navigation
+pnpm verify:legacy-urls
+pnpm verify:public-discovery
+pnpm verify:security-boundary
+pnpm audit:prod
 ```
 
 Run migrations only with an explicitly supplied migration credential:

@@ -2,8 +2,10 @@
 
 ## Status
 
-Proposed post-launch context. It does not describe shipped v3 behavior; static
-local media remains the launch implementation.
+Post-launch foundation implemented for storage, catalog persistence, image
+processing, privacy boundaries, and resumable ingestion. It has no public or
+admin route and does not describe shipped v3 behavior; static local media
+remains the launch implementation.
 
 The Media Library owns reusable files, their safe descriptive metadata, and
 the selections that publish them across the personal site.
