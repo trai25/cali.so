@@ -75,6 +75,9 @@ jobs:
           AMA_GOOGLE_INTEGRATION_ENABLED: "false"
           AMA_TENCENT_INTEGRATION_ENABLED: "false"
 
+      - name: Test instant navigations
+        run: pnpm test:navigation
+
       - name: Verify legacy URL contract
         run: pnpm verify:legacy-urls
 

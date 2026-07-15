@@ -21,8 +21,12 @@ const legacyRewrites = legacyUrlManifest.entries.flatMap((entry) =>
     : [],
 )
 
+const exposeNavigationTestingApi =
+  process.env.NEXT_INSTANT_NAVIGATION_TEST === '1'
+
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  partialPrefetching: true,
 
   // Pin the project root: when developing from a git worktree nested inside
   // another checkout, Next's lockfile-based root inference walks too far up.
@@ -35,6 +39,7 @@ const nextConfig: NextConfig = {
   // Shared-element morphs (cover/title) on route navigation; browsers
   // without the View Transitions API just navigate instantly.
   experimental: {
+    exposeTestingApiInProductionBuild: exposeNavigationTestingApi,
     viewTransition: true,
     globalNotFound: true,
     sri: { algorithm: 'sha256' },

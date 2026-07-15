@@ -1,6 +1,7 @@
 import { MDXRemote } from 'next-mdx-remote/rsc'
 import { cacheLife } from 'next/cache'
 import { notFound } from 'next/navigation'
+import { Suspense } from 'react'
 import rehypePrettyCode from 'rehype-pretty-code'
 import rehypeSlug from 'rehype-slug'
 import remarkGfm from 'remark-gfm'
@@ -43,6 +44,61 @@ export function blogPostMetadata(locale: Locale, slug: string) {
       locale === 'en' ? post.descriptionEn : (post.description ?? post.title),
     type: 'article',
   })
+}
+
+export function BlogPostRoute({
+  locale,
+  params,
+}: {
+  locale: Locale
+  params: Promise<{ slug: string }>
+}) {
+  return (
+    <Suspense fallback={<BlogPostLoadingShell locale={locale} />}>
+      <BlogPostRouteContent locale={locale} params={params} />
+    </Suspense>
+  )
+}
+
+async function BlogPostRouteContent({
+  locale,
+  params,
+}: {
+  locale: Locale
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+  return <BlogPostPageView slug={slug} locale={locale} />
+}
+
+function BlogPostLoadingShell({ locale }: { locale: Locale }) {
+  const label = locale === 'en' ? 'Loading article' : '正在加载文章'
+
+  return (
+    <article
+      aria-busy="true"
+      className="post-article mx-auto min-h-[calc(100svh-3.5rem)] w-full max-w-[37.5rem] px-6"
+    >
+      <div role="status" aria-label={label}>
+        <span className="sr-only">{label}</span>
+        <div aria-hidden className="polaroid">
+          <div className="polaroid-photo aspect-video bg-muted/40" />
+          <div className="polaroid-caption">
+            <span className="h-2 w-24 bg-muted/50" />
+          </div>
+        </div>
+        <div aria-hidden className="mt-10 h-24 space-y-3">
+          <div className="h-7 w-4/5 bg-muted/60" />
+          <div className="h-3 w-32 bg-muted/45" />
+        </div>
+        <div aria-hidden className="mt-10 space-y-3">
+          <div className="h-3 w-full bg-muted/35" />
+          <div className="h-3 w-11/12 bg-muted/35" />
+          <div className="h-3 w-3/4 bg-muted/35" />
+        </div>
+      </div>
+    </article>
+  )
 }
 
 async function CachedPostBody({
