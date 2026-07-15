@@ -88,7 +88,7 @@ The following passed from the frozen installation:
 - Disabled production security-boundary verification.
 - OSV audit of 621 production packages with no findings.
 - Full-SHA GitHub Action reference check.
-- Redacted Gitleaks 8.30.1 scan across 376 commits with no findings.
+- Redacted Gitleaks 8.30.1 scan of the reachable history with no findings.
 - `git diff --check origin/main`.
 
 The content check exposed five trailing spaces in two historical MDX files.
