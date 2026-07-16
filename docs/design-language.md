@@ -56,9 +56,11 @@ Hard rules:
 - Route changes keep the ambient guides, dock, and other global chrome fixed.
   The route content defocuses by 2px while fading, then the destination focuses
   into place. Shared post covers and titles remain separate morph elements.
-  Pointer-initiated post links prepare those identities before navigation;
-  keyboard navigation omits the shared morph. Reduced motion swaps every route
-  instantly.
+  Only a primary pointer or touch activation on a post link enables this route
+  motion and prepares those identities. Keyboard, dock, settings, ordinary
+  links, browser history, and reduced-motion navigation swap instantly. The
+  pointer opt-in resets after the loading shell finishes handing off to the
+  article.
 - Scroll reveals are allowed only as gentle arrivals: below-fold long-form
   blocks may sharpen in (blur 2px → 0 + fade, 300ms `--ease-swift`, ≤45ms
   stagger within a batch) as they enter the viewport. Never parallax, never
@@ -521,10 +523,11 @@ generated, and the transition plays over already-available content.
 
 Implementation: `experimental.viewTransition` + `view-transition-name` pairs
 (`cover-<slug>` via PolaroidCover's `morph` prop, `title-<slug>` on row
-title/post h1). Root: old page 250ms fade + `blur(2px)` defocus, new page
-300ms focus-in; shared groups 320ms `--ease-swift`. The shared h1 remains
-unanimated, metadata develops from 320–570ms, and the prose starts at 520ms.
-This overlap hands the title card into reading without delaying navigation.
+title/post h1). The document root remains static; the named route-content group
+uses a 250ms fade + `blur(2px)` defocus and a 300ms focus-in. Shared groups use
+320ms `--ease-swift`. The shared h1 remains unanimated, metadata develops from
+320–570ms, and the prose starts at 520ms. This overlap hands the title card
+into reading without delaying navigation.
 
 ## Instant-photo cover treatment
 

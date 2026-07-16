@@ -12,43 +12,185 @@ const prefetchKind = {
   runtimeShell: '3',
 } as const
 
-async function observeCoverMorph(
-  page: import('@playwright/test').Page,
-  name: string,
-) {
-  await page.evaluate((transitionName) => {
-    const state = window as typeof window & {
-      __postCoverMorphObserved?: boolean
-    }
-    state.__postCoverMorphObserved = false
-
-    let frame = 0
-    const sample = () => {
-      const animationName = getComputedStyle(
-        document.documentElement,
-        `::view-transition-group(${transitionName})`,
-      ).animationName
-      if (animationName !== 'none') state.__postCoverMorphObserved = true
-      frame += 1
-      if (frame < 120) requestAnimationFrame(sample)
-    }
-    requestAnimationFrame(sample)
-  }, name)
+type ViewTransitionLifecycleObservation = {
+  counts: Record<string, number>
+  nonZeroCounts: Record<string, number>
+  samples: number
+  stop: () => void
 }
 
-async function expectCoverMorph(page: import('@playwright/test').Page) {
+type ViewTransitionObservationWindow = typeof window & {
+  __routeMotionObservation?: ViewTransitionLifecycleObservation
+}
+
+async function observeViewTransitionLifecycles(
+  page: import('@playwright/test').Page,
+) {
+  await page.evaluate(() => {
+    const state = window as ViewTransitionObservationWindow
+    state.__routeMotionObservation?.stop()
+
+    const seen = new WeakSet<Animation>()
+    const lifecycleStarts = new Map<string, Set<number>>()
+    const nonZeroLifecycleStarts = new Map<string, Set<number>>()
+    let observing = true
+    const observation: ViewTransitionLifecycleObservation = {
+      counts: {},
+      nonZeroCounts: {},
+      samples: 0,
+      stop: () => {
+        observing = false
+      },
+    }
+    state.__routeMotionObservation = observation
+
+    function sample() {
+      for (const animation of document.documentElement.getAnimations({
+        subtree: true,
+      })) {
+        if (seen.has(animation)) continue
+
+        const effect = animation.effect
+        if (!(effect instanceof KeyframeEffect)) continue
+
+        const pseudo = effect.pseudoElement
+        if (!pseudo?.startsWith('::view-transition-')) continue
+
+        const startTime = animation.startTime
+        if (typeof startTime !== 'number') continue
+
+        seen.add(animation)
+        const starts = lifecycleStarts.get(pseudo) ?? new Set<number>()
+        starts.add(startTime)
+        lifecycleStarts.set(pseudo, starts)
+        observation.counts[pseudo] = starts.size
+
+        const duration = effect.getComputedTiming().duration
+        if (typeof duration === 'number' && duration > 0) {
+          const nonZeroStarts =
+            nonZeroLifecycleStarts.get(pseudo) ?? new Set<number>()
+          nonZeroStarts.add(startTime)
+          nonZeroLifecycleStarts.set(pseudo, nonZeroStarts)
+          observation.nonZeroCounts[pseudo] = nonZeroStarts.size
+        }
+      }
+
+      observation.samples += 1
+      if (observing) requestAnimationFrame(sample)
+    }
+
+    requestAnimationFrame(sample)
+  })
+}
+
+async function viewTransitionLifecycleCount(
+  page: import('@playwright/test').Page,
+  pseudo: string,
+  nonZero = false,
+) {
+  return page.evaluate(
+    ({ pseudoElement, onlyNonZero }) => {
+      const observation = (window as ViewTransitionObservationWindow)
+        .__routeMotionObservation
+      const counts = onlyNonZero
+        ? observation?.nonZeroCounts
+        : observation?.counts
+      return counts?.[pseudoElement] ?? 0
+    },
+    { pseudoElement: pseudo, onlyNonZero: nonZero },
+  )
+}
+
+async function expectNonZeroViewTransitionLifecycle(
+  page: import('@playwright/test').Page,
+  pseudo: string,
+) {
+  await expect
+    .poll(() => viewTransitionLifecycleCount(page, pseudo, true), {
+      message: `expected a non-zero ${pseudo} transition lifecycle`,
+    })
+    .toBeGreaterThan(0)
+}
+
+async function expectStaticRootTransition(
+  page: import('@playwright/test').Page,
+) {
+  expect(
+    await viewTransitionLifecycleCount(
+      page,
+      '::view-transition-old(root)',
+      true,
+    ),
+  ).toBe(0)
+  expect(
+    await viewTransitionLifecycleCount(
+      page,
+      '::view-transition-new(root)',
+      true,
+    ),
+  ).toBe(0)
+}
+
+async function waitForCoverTransitionToFinish(
+  page: import('@playwright/test').Page,
+  pseudo: string,
+) {
+  await page.evaluate(async (pseudoElement) => {
+    const animations = document.documentElement
+      .getAnimations({ subtree: true })
+      .filter((animation) => {
+        const effect = animation.effect
+        if (!(effect instanceof KeyframeEffect)) return false
+        if (effect.pseudoElement !== pseudoElement) return false
+
+        const duration = effect.getComputedTiming().duration
+        return typeof duration === 'number' && duration > 0
+      })
+
+    await Promise.allSettled(animations.map((animation) => animation.finished))
+  }, pseudo)
+}
+
+async function nonZeroViewTransitionLifecycleCount(
+  page: import('@playwright/test').Page,
+) {
+  return page.evaluate(() => {
+    const counts = (window as ViewTransitionObservationWindow)
+      .__routeMotionObservation?.nonZeroCounts
+    return Object.values(counts ?? {}).reduce((total, count) => total + count, 0)
+  })
+}
+
+async function waitForTransitionObserverSamples(
+  page: import('@playwright/test').Page,
+  additionalSamples = 2,
+) {
+  const firstSample = await page.evaluate(
+    () =>
+      (window as ViewTransitionObservationWindow).__routeMotionObservation
+        ?.samples ?? 0,
+  )
   await expect
     .poll(
       () =>
         page.evaluate(
           () =>
-            (window as typeof window & {
-              __postCoverMorphObserved?: boolean
-            }).__postCoverMorphObserved ?? false,
+            (window as ViewTransitionObservationWindow)
+              .__routeMotionObservation?.samples ?? 0,
         ),
-      { message: 'expected the shared post cover transition to become active' },
+      { message: 'expected the animation observer to sample committed frames' },
     )
-    .toBe(true)
+    .toBeGreaterThanOrEqual(firstSample + additionalSamples)
+}
+
+async function stopViewTransitionLifecycleObserver(
+  page: import('@playwright/test').Page,
+) {
+  await page.evaluate(() => {
+    const observation = (window as ViewTransitionObservationWindow)
+      .__routeMotionObservation
+    observation?.stop()
+  })
 }
 
 test('the Chinese post shell is prefetched from the home page', async ({ page }) => {
@@ -127,9 +269,10 @@ test('the Chinese post shell morphs from the blog index cover', async ({ page })
         getComputedStyle(element).getPropertyValue('view-transition-name'),
       ),
   ])
+  const coverPseudo = `::view-transition-group(${coverTransitionName})`
+  await observeViewTransitionLifecycles(page)
 
   await instant(page, async () => {
-    await observeCoverMorph(page, coverTransitionName)
     await postLink.click()
 
     await expect(page).toHaveURL(`/blog/${postSlug}`)
@@ -142,7 +285,10 @@ test('the Chinese post shell morphs from the blog index cover', async ({ page })
       '--post-title-transition-name',
       titleTransitionName,
     )
-    await expectCoverMorph(page)
+    await expectNonZeroViewTransitionLifecycle(page, coverPseudo)
+    await expectStaticRootTransition(page)
+    await waitForCoverTransitionToFinish(page, coverPseudo)
+    await observeViewTransitionLifecycles(page)
   })
 
   await expect(
@@ -151,6 +297,21 @@ test('the Chinese post shell morphs from the blog index cover', async ({ page })
       name: '2023 年终总结，致我不同寻常的 28',
     }),
   ).toBeVisible()
+  await expectNonZeroViewTransitionLifecycle(page, coverPseudo)
+  await expectStaticRootTransition(page)
+  await expect(page.locator('html')).toHaveAttribute('data-route-motion', 'none')
+
+  const animatedTransitionsBeforeBack =
+    await nonZeroViewTransitionLifecycleCount(page)
+  await page.goBack()
+  await expect(page).toHaveURL('/blog')
+  await expect(postLink).toBeVisible()
+  await waitForTransitionObserverSamples(page)
+  await expect(page.locator('html')).toHaveAttribute('data-route-motion', 'none')
+  expect(await nonZeroViewTransitionLifecycleCount(page)).toBe(
+    animatedTransitionsBeforeBack,
+  )
+  await stopViewTransitionLifecycleObserver(page)
 })
 
 test('the English post shell morphs from the blog index cover', async ({ page }) => {
@@ -172,11 +333,12 @@ test('the English post shell morphs from the blog index cover', async ({ page })
       .locator('.blog-row-title')
       .evaluate((element) =>
         getComputedStyle(element).getPropertyValue('view-transition-name'),
-    ),
+      ),
   ])
+  const coverPseudo = `::view-transition-group(${coverTransitionName})`
+  await observeViewTransitionLifecycles(page)
 
   await instant(page, async () => {
-    await observeCoverMorph(page, coverTransitionName)
     await postLink.click()
 
     await expect(page).toHaveURL(`/en/blog/${postSlug}`)
@@ -189,7 +351,10 @@ test('the English post shell morphs from the blog index cover', async ({ page })
       '--post-title-transition-name',
       titleTransitionName,
     )
-    await expectCoverMorph(page)
+    await expectNonZeroViewTransitionLifecycle(page, coverPseudo)
+    await expectStaticRootTransition(page)
+    await waitForCoverTransitionToFinish(page, coverPseudo)
+    await observeViewTransitionLifecycles(page)
   })
 
   await expect(
@@ -198,6 +363,146 @@ test('the English post shell morphs from the blog index cover', async ({ page })
       name: '2023 Year in Review: My Unusual 28th Year',
     }),
   ).toBeVisible()
+  await expectNonZeroViewTransitionLifecycle(page, coverPseudo)
+  await expectStaticRootTransition(page)
+  await expect(page.locator('html')).toHaveAttribute('data-route-motion', 'none')
+  await stopViewTransitionLifecycleObserver(page)
+})
+
+test('keyboard post navigation keeps every route group instant', async ({
+  page,
+}) => {
+  await page.goto('/blog')
+  await page.waitForLoadState('networkidle')
+
+  const postLink = page
+    .getByRole('link', {
+      name: /2023 年终总结，致我不同寻常的 28/,
+    })
+    .first()
+  await observeViewTransitionLifecycles(page)
+
+  await instant(page, async () => {
+    await postLink.focus()
+    await page.keyboard.press('Enter')
+
+    await expect(page).toHaveURL(`/blog/${postSlug}`)
+    await expect(page.getByRole('status', { name: '正在加载文章' })).toBeVisible()
+    await expect(page.locator('html')).toHaveAttribute('data-route-motion', 'none')
+    await expect(page.locator('html')).toHaveCSS(
+      '--post-cover-transition-name',
+      '',
+    )
+    await expect(page.locator('html')).toHaveCSS(
+      '--post-title-transition-name',
+      '',
+    )
+    await waitForTransitionObserverSamples(page)
+    expect(await nonZeroViewTransitionLifecycleCount(page)).toBe(0)
+  })
+
+  await expect(
+    page.getByRole('heading', {
+      level: 1,
+      name: '2023 年终总结，致我不同寻常的 28',
+    }),
+  ).toBeVisible()
+  await waitForTransitionObserverSamples(page)
+  expect(await nonZeroViewTransitionLifecycleCount(page)).toBe(0)
+  await expect(page.locator('html')).toHaveAttribute('data-route-motion', 'none')
+  await stopViewTransitionLifecycleObserver(page)
+})
+
+test('reduced motion keeps pointer post navigation instant', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/en/blog')
+  await page.waitForLoadState('networkidle')
+
+  const postLink = page
+    .getByRole('link', {
+      name: /2023 Year in Review: My Unusual 28th Year/,
+    })
+    .first()
+  await observeViewTransitionLifecycles(page)
+
+  await instant(page, async () => {
+    await postLink.click()
+
+    await expect(page).toHaveURL(`/en/blog/${postSlug}`)
+    await expect(page.getByRole('status', { name: 'Loading article' })).toBeVisible()
+    await expect(page.locator('html')).not.toHaveAttribute('data-route-motion')
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+        ),
+      )
+      .toBe(true)
+    await waitForTransitionObserverSamples(page)
+    expect(await nonZeroViewTransitionLifecycleCount(page)).toBe(0)
+  })
+
+  await expect(
+    page.getByRole('heading', {
+      level: 1,
+      name: '2023 Year in Review: My Unusual 28th Year',
+    }),
+  ).toBeVisible()
+  await waitForTransitionObserverSamples(page)
+  expect(await nonZeroViewTransitionLifecycleCount(page)).toBe(0)
+  await expect(page.locator('html')).toHaveAttribute('data-route-motion', 'none')
+  await stopViewTransitionLifecycleObserver(page)
+})
+
+test.describe('touch post navigation', () => {
+  test.use({ hasTouch: true })
+
+  test('a real touch tap preserves both post morph lifecycles', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 393, height: 852 })
+    await page.goto('/blog')
+    await page.waitForLoadState('networkidle')
+
+    const postLink = page
+      .getByRole('link', {
+        name: /2023 年终总结，致我不同寻常的 28/,
+      })
+      .first()
+    const coverTransitionName = await postLink
+      .locator('.print-thumb')
+      .evaluate((element) =>
+        getComputedStyle(element).getPropertyValue('view-transition-name'),
+      )
+    const coverPseudo = `::view-transition-group(${coverTransitionName})`
+    await observeViewTransitionLifecycles(page)
+
+    await instant(page, async () => {
+      await postLink.tap()
+
+      await expect(page).toHaveURL(`/blog/${postSlug}`)
+      await expect(page.getByRole('status', { name: '正在加载文章' })).toBeVisible()
+      await expect(page.locator('html')).not.toHaveAttribute('data-route-motion')
+      await expectNonZeroViewTransitionLifecycle(page, coverPseudo)
+      await expectStaticRootTransition(page)
+      await waitForCoverTransitionToFinish(page, coverPseudo)
+      await observeViewTransitionLifecycles(page)
+    })
+
+    await expect(
+      page.getByRole('heading', {
+        level: 1,
+        name: '2023 年终总结，致我不同寻常的 28',
+      }),
+    ).toBeVisible()
+    await expectNonZeroViewTransitionLifecycle(page, coverPseudo)
+    await expectStaticRootTransition(page)
+    await expect(page.locator('html')).toHaveAttribute(
+      'data-route-motion',
+      'none',
+    )
+    await stopViewTransitionLifecycleObserver(page)
+  })
 })
 
 test('preferences preserve theme, locale, and reduced motion', async ({ page }) => {
