@@ -5,12 +5,18 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { HalftonePortrait } from './halftone-portrait'
 
+const navigation = vi.hoisted(() => ({ pathname: '/' }))
+
 vi.mock('next/navigation', () => ({
-  usePathname: () => '/',
+  usePathname: () => navigation.pathname,
 }))
 
 describe('HalftonePortrait', () => {
-  it('keeps the server-rendered portrait visually empty', () => {
+  it.each([
+    { pathname: '/', label: '肖像' },
+    { pathname: '/en', label: 'Portrait' },
+  ])('keeps the $pathname server-rendered portrait visually empty', ({ pathname, label }) => {
+    navigation.pathname = pathname
     const container = document.createElement('div')
     container.innerHTML = renderToStaticMarkup(
       <HalftonePortrait
@@ -27,6 +33,6 @@ describe('HalftonePortrait', () => {
     expect(shell?.hasAttribute('data-ready')).toBe(false)
     expect(sources).toHaveLength(2)
     expect(Array.from(sources).every((source) => source.hidden)).toBe(true)
-    expect(container.querySelector('canvas')?.getAttribute('aria-label')).toBe('肖像')
+    expect(container.querySelector('canvas')?.getAttribute('aria-label')).toBe(label)
   })
 })

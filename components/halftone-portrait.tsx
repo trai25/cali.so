@@ -138,10 +138,11 @@ export function HalftonePortrait({
     }
 
     function drawField(field: Field, alpha: number) {
-      if (alpha <= 0.01) return
+      if (alpha <= 0.01) return false
       ctx.globalAlpha = alpha
       ctx.fillStyle = field.ink
       const maxR = CELL * 0.52
+      let painted = false
       for (const cell of field.cells) {
         let { x, y } = cell
         let r = cell.tone * maxR
@@ -162,8 +163,10 @@ export function HalftonePortrait({
         ctx.beginPath()
         ctx.arc(x, y, r, 0, Math.PI * 2)
         ctx.fill()
+        painted = true
       }
       ctx.globalAlpha = 1
+      return painted
     }
 
     function draw() {
@@ -178,19 +181,16 @@ export function HalftonePortrait({
         const fromField = fields[fade.from]
         const toField = fields[fade.to]
         if (fromField) {
-          drawField(fromField, 1 - ease)
-          painted = true
+          painted = drawField(fromField, 1 - ease) || painted
         }
         if (toField) {
-          drawField(toField, ease)
-          painted = true
+          painted = drawField(toField, ease) || painted
         }
         if (t >= 1) fade = null
       } else {
         const field = fields[active]
         if (field) {
-          drawField(field, 1)
-          painted = true
+          painted = drawField(field, 1)
         }
       }
       if (painted && !wrapper.hasAttribute('data-ready')) {
