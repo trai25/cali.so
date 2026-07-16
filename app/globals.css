@@ -1768,8 +1768,12 @@ a:focus-visible .external-label .external-mark {
   z-index: var(--z-card);
 }
 
+/* Image-enabled preview cards: height comes from the content (the 16:9
+   frame still holds its slot while the image loads). Uniform padding so
+   the frame's corners run concentric with the card's. */
 .link-card-with-image {
-  height: 17rem;
+  padding: 0.625rem;
+  border-radius: var(--radius-2xl);
 }
 
 .link-card-image-frame {
@@ -1778,7 +1782,8 @@ a:focus-visible .external-label .external-mark {
   width: 100%;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  border-radius: calc(var(--radius) - 0.125rem);
+  /* concentric with the card: outer radius minus the padding inset */
+  border-radius: calc(var(--radius-2xl) - 0.625rem);
   background: color-mix(in oklch, var(--muted) 72%, var(--paper));
   box-shadow: inset 0 0 0 1px var(--border);
 }
@@ -1793,6 +1798,50 @@ a:focus-visible .external-label .external-mark {
 .external-link img[data-failed],
 .link-card img[data-failed] {
   visibility: hidden;
+}
+
+/* Favicon tone treatment (components/favicon-tone.ts): a pale glyph on
+   the light theme — or a dark one in dark mode — would vanish into the
+   page. Grayscale marks simply invert to the theme's ink, like native
+   icons; marks with brand color instead sit on a quiet chip (--primary
+   softened toward the page) since inverting would corrupt the color.
+   Padding + border-box keeps the slot size: no layout shift. Opaque
+   near-white tiles just get an edge on the light page. */
+.external-link img[data-tone='light-mono'],
+.link-card-site img[data-tone='light-mono'],
+.dark .external-link img[data-tone='dark-mono'],
+.dark .link-card-site img[data-tone='dark-mono'] {
+  filter: invert(1);
+}
+
+.dark .external-link img[data-tone='light-mono'],
+.dark .link-card-site img[data-tone='light-mono'] {
+  filter: none;
+}
+
+.external-link img[data-tone='light'],
+.link-card-site img[data-tone='light'],
+.dark .external-link img[data-tone='dark'],
+.dark .link-card-site img[data-tone='dark'] {
+  box-sizing: border-box;
+  padding: 2px;
+  background: color-mix(in oklab, var(--primary) 88%, var(--background));
+}
+
+.dark .external-link img[data-tone='light'],
+.dark .link-card-site img[data-tone='light'] {
+  padding: 0;
+  background: none;
+}
+
+.external-link img[data-tone='flat'],
+.link-card-site img[data-tone='flat'] {
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.dark .external-link img[data-tone='flat'],
+.dark .link-card-site img[data-tone='flat'] {
+  box-shadow: none;
 }
 
 .link-card[data-open] {
