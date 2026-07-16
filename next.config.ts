@@ -32,16 +32,10 @@ const nextConfig: NextConfig = {
   // slug is dynamic, so output tracing cannot discover these files from the
   // readFile calls on its own when packaging serverless functions.
   outputFileTracingIncludes: {
-    '/blog/\\[slug\\]': ['./content/blog/**/*'],
-    '/en/blog/\\[slug\\]': ['./content/blog/**/*'],
-    '/blog/\\[slug\\]/opengraph-image': ['./content/blog/**/*'],
-    '/en/blog/\\[slug\\]/opengraph-image': ['./content/blog/**/*'],
-    '/newsletters/\\[id\\]/opengraph-image': [
-      './content/newsletters/**/*',
-    ],
-    '/en/newsletters/\\[id\\]/opengraph-image': [
-      './content/newsletters/**/*',
-    ],
+    '/blog/**': ['./content/blog/**/*'],
+    '/en/blog/**': ['./content/blog/**/*'],
+    '/newsletters/**': ['./content/newsletters/**/*'],
+    '/en/newsletters/**': ['./content/newsletters/**/*'],
     '/content/\\[\\.\\.\\.path\\]': [
       './content/blog/**/*',
       './content/newsletters/**/*',
