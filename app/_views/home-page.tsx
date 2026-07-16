@@ -46,10 +46,7 @@ export async function HomePageView({ locale }: { locale: Locale }) {
             <HomeIntroduction social={social.x} github={github} />
           </div>
         </div>
-        <div
-          className="enter w-[9.35rem] shrink-0 sm:w-60"
-          style={{ '--enter-delay': '80ms' } as React.CSSProperties}
-        >
+        <div className="w-[9.35rem] shrink-0 sm:w-60">
           <HalftonePortrait
             srcLight="/images/headshot.jpg"
             srcDark="/images/portrait-square.jpg"

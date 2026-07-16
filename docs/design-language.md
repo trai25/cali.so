@@ -281,9 +281,12 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
   below a 6% floor so the figure emerges from nothing. A fine pointer swells
   (+8%) and repels (≤3px) dots within ~150px, smoothed per-frame (0.16
   lerp, rAF only while active). Touch and reduced motion get the static
-  print; no-JS gets the photo printed down (grayscale, 85%). Its wrapper is
-  149.6px wide on mobile (15% below the original 176px presentation) and
-  returns to the fixed 240px size from the 40rem breakpoint onward.
+  print. The server-rendered shell is visually empty; once the client paints
+  the first valid dot field, the portrait fades in over 400ms. Reduced motion
+  reveals it instantly, while no-JS leaves the reserved square empty. Its
+  wrapper is 149.6px wide on mobile (15% below the original 176px
+  presentation) and returns to the fixed 240px size from the 40rem breakpoint
+  onward.
 - **Rulers**: measuring ticks (48px major / 12px minor) ride top and
   bottom as arcs of an enormous circle (fixed 40px rise at the viewport
   edge, so R = w²/8s at any width) — a bent steel rule whose ends bow away
