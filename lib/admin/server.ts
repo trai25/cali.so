@@ -1,19 +1,41 @@
 import 'server-only'
 
-import { authenticateOwnerRequest } from '~/lib/ama/auth/http'
-import { getOwnerAuth, isOwnerAuthenticated } from '~/lib/ama/auth/server'
-import { getServerEnv } from '~/lib/ama/server-env'
-import { getAmaSecurity } from '~/lib/ama/security/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
+import { forbidden } from 'next/navigation'
+import { cache } from 'react'
 
-export async function getOwnerPrincipal() {
-  if (!(await isOwnerAuthenticated())) return null
-  return { id: getServerEnv().ADMIN_EMAIL }
+import { getAmaSecurity } from '~/lib/ama/security/server'
+import { getServerEnv } from '~/lib/ama/server-env'
+
+import { createOwnerAuthorizer } from './authorization'
+
+const authorizeOwner = createOwnerAuthorizer({
+  getOwnerDataId() {
+    return getServerEnv().ADMIN_EMAIL
+  },
+  async getAuthentication() {
+    const { isAuthenticated, sessionStatus, userId } = await auth()
+    return { isAuthenticated, sessionStatus, userId }
+  },
+  async getUser(userId) {
+    return (await clerkClient()).users.getUser(userId)
+  },
+})
+
+export const getOwnerAccess = cache(authorizeOwner)
+
+export async function requireOwnerPage(returnBackUrl: string) {
+  const access = await getOwnerAccess()
+  if (access.status === 'authorized') return access.principal
+  if (access.status === 'forbidden') forbidden()
+
+  const { redirectToSignIn } = await auth()
+  return redirectToSignIn({ returnBackUrl })
 }
 
 export const ownerRequestAuthenticator = {
-  async authenticate(request: Request) {
-    const authenticated = await authenticateOwnerRequest(getOwnerAuth(), request)
-    return authenticated ? { id: getServerEnv().ADMIN_EMAIL } : null
+  authenticate() {
+    return getOwnerAccess()
   },
 }
 

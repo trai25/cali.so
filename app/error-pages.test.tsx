@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ErrorPageView } from './_views/error-page'
+import { ForbiddenPageView } from './_views/forbidden-page'
 import { NotFoundPageView } from './_views/not-found-page'
 import GlobalError from './global-error'
 
@@ -23,6 +24,17 @@ vi.mock('next/font/local', () => ({
 afterEach(cleanup)
 
 describe('public error recovery', () => {
+  it('renders a deliberate bilingual owner-denied surface', () => {
+    render(<ForbiddenPageView />)
+
+    expect(screen.getByText('ADMIN / 403')).toBeTruthy()
+    expect(screen.getByText('这个账户没有管理员权限。')).toBeTruthy()
+    expect(screen.getByText('This account is not the site owner.')).toBeTruthy()
+    expect(
+      screen.getByRole('link', { name: /返回首页|Go home/ }).getAttribute('href'),
+    ).toBe('/')
+  })
+
   it('keeps the not-found proof sheet bilingual', () => {
     render(<NotFoundPageView />)
 

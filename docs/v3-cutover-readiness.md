@@ -40,7 +40,7 @@ Renditions. The retired static photo fallback has been removed.
 | Frozen install | PASS | `pnpm install --frozen-lockfile` completed from the audited commit. |
 | Repository validation | PASS | Every command and count in the automated evidence section passed. |
 | Public browser behavior | PASS | Desktop, mobile, both locales, light and dark appearance, reduced motion, metadata, overflow, accessibility tree, and dock targets were reviewed locally. |
-| Owner admin boundary | PASS | Admin login remains reachable without a feature flag; protected pages and APIs enforce owner authentication, same-origin mutations, rate limits, audit events, and the strict admin CSP. |
+| Owner admin boundary | AWAITING CONFIRMATION | Local and CI checks prove direct Clerk sign-in redirects plus exact `publicMetadata.siteOwner = "yes"` authorization, same-origin mutations, rate limits, audit events, and strict admin CSP. Confirm the Clerk keys and owner metadata in the deployed environments. |
 | Complete diff Standards review | FAIL | Portal layering and admin typography findings were fixed. The Media `lifecycle` vocabulary breach remains tracked in #134 and needs resolution or an explicit maintainer exception. |
 | Complete diff Spec review | PASS | No scope creep, incorrect PASS treatment, or missing local evidence was found; the unresolved hosted and production requirements below correctly keep the verdict at NOT READY. |
 | Production-like PR Preview | AWAITING CONFIRMATION | Review the public Preview created by the #107 PR after Vercel finishes. |
@@ -48,7 +48,7 @@ Renditions. The retired static photo fallback has been removed.
 | Required GitHub checks | FAIL | Neither the `v2` ruleset nor `main` branch protection requires `Quality` and `CodeQL`. Changing protection requires separate maintainer authorization. |
 | Current Vercel project settings | UNKNOWN | The authenticated CLI user is `cali`, but project inspection returns `Not authorized`. Historical evidence cannot replace a current check. |
 | Production capability switches | UNKNOWN | Confirm all five optional `AMA_*_ENABLED` values are explicitly `false` in Production. Owner admin has no capability switch. |
-| Preview and Production secret isolation | UNKNOWN | The last verified state shared one Resend key across environments; current Vercel state is inaccessible. |
+| Preview and Production secret isolation | UNKNOWN | Confirm Preview and Production use separate Clerk secret keys and other provider credentials; current Vercel state is inaccessible. |
 | Production runtime database grants | AWAITING CONFIRMATION | Requires two fresh confirmations before inspecting the production role or sensitive cloud state. |
 | Production migration credential | AWAITING CONFIRMATION | Confirm `MIGRATION_DATABASE_URL` is absent from Vercel and available only to the controlled migration operation. |
 | Production migrations | AWAITING CONFIRMATION | Eight additive migrations validate locally. Media migrations `0005` through `0008` are required for the v3 photo surface; execution and schema state require a separately authorized cutover step. |
@@ -63,10 +63,10 @@ Renditions. The retired static photo fallback has been removed.
 The following passed from the frozen installation:
 
 - TypeScript typecheck.
-- 385 Vitest unit and integration tests across application, component, and
+- 394 Vitest unit and integration tests across application, component, and
   library code, excluding only explicitly live provider suites.
-- 125 AMA tests and 5 migration checks.
-- 4 security tests.
+- 112 AMA tests and 5 migration checks.
+- 5 security tests.
 - 148 localization checks.
 - 19 Media Library catalog tests.
 - 17 Media Library ingestion and privacy tests.
@@ -74,20 +74,20 @@ The following passed from the frozen installation:
 - 41 Media Library storage tests.
 - 7 Media Library geocoding tests.
 - 18 Media Library Alt Text tests.
-- 26 Media Library admin tests.
+- 27 Media Library admin tests.
 - 12 Media Asset review tests.
 - 27 Photo Selection publication tests.
 - 8 Media Asset Purge tests.
 - 11 Media reconciliation tests.
 - 4 port-post tests.
-- Production build with 85 generated pages using the CI placeholder
+- Production build with 83 generated pages using the CI placeholder
   environment and every optional AMA capability disabled.
 - 7 Instant Navigation, keyboard, motion, and typography browser tests.
 - 53 legacy URL probes against the production server.
 - 354 internal links and 147 live external links across all 28 sitemap pages.
 - Public discovery and failure-handling verification.
 - Disabled production security-boundary verification.
-- OSV audit of 621 production packages with no findings.
+- OSV audit of 626 production packages with no findings.
 - Full-SHA GitHub Action reference check.
 - Redacted Gitleaks 8.30.1 scan of the reachable history with no findings.
 - `git diff --check origin/main`.

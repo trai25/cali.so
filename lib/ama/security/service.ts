@@ -2,8 +2,6 @@ import 'server-only'
 
 import { createHmac } from 'node:crypto'
 
-import { AUTH_SESSION_COOKIE } from '../auth/service'
-import { readRequestCookie } from '../cookies'
 import {
   browserMutationDeniedResponse,
   checkBrowserMutationRequest,
@@ -47,7 +45,6 @@ export type SecurityAuditEvent = {
     | 'admin_authentication.denied'
     | 'admin_mutation.rate_limited'
     | 'admin_mutation.limiter_error'
-    | 'auth_request.failed'
     | PrivilegedAuditEvent
   timestamp: string
   outcome: 'allowed' | 'denied' | 'error'
@@ -105,10 +102,8 @@ export function createAmaSecurity({
     return featureUnavailableResponse()
   }
 
-  function actorId(request: Request) {
-    const session =
-      readRequestCookie(request, AUTH_SESSION_COOKIE) ?? 'missing-admin-session'
-    return createHmac('sha256', pseudonymKey).update(session).digest('hex')
+  function privateActorId(actorId: string) {
+    return createHmac('sha256', pseudonymKey).update(actorId).digest('hex')
   }
 
   async function protectBrowserMutation(
@@ -146,37 +141,34 @@ export function createAmaSecurity({
       })
     },
 
-    recordAuthRequestFailure(request: Request) {
-      recordAuditEvent(request, {
-        event: 'auth_request.failed',
-        outcome: 'error',
-      })
-    },
-
-    recordPrivilegedAction(request: Request, action: PrivilegedAuditEvent) {
+    recordPrivilegedAction(
+      request: Request,
+      action: PrivilegedAuditEvent,
+      actorId: string,
+    ) {
       recordAuditEvent(request, {
         event: action,
         outcome: 'allowed',
-        actorId: actorId(request),
+        actorId: privateActorId(actorId),
       })
     },
 
-    async limitAdminMutation(request: Request) {
-      const privateActorId = actorId(request)
+    async limitAdminMutation(request: Request, actorId: string) {
+      const pseudonymousActorId = privateActorId(actorId)
       try {
-        const result = await rateLimiter.limit(privateActorId)
+        const result = await rateLimiter.limit(pseudonymousActorId)
         if (result.success) return null
         recordAuditEvent(request, {
           event: 'admin_mutation.rate_limited',
           outcome: 'denied',
-          actorId: privateActorId,
+          actorId: pseudonymousActorId,
         })
         return rateLimitedResponse(retryAfterSeconds)
       } catch {
         recordAuditEvent(request, {
           event: 'admin_mutation.limiter_error',
           outcome: 'error',
-          actorId: privateActorId,
+          actorId: pseudonymousActorId,
         })
         return featureUnavailableResponse(retryAfterSeconds)
       }

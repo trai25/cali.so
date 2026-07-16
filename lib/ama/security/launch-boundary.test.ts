@@ -22,7 +22,7 @@ describe('AMA launch boundary', () => {
     })
 
     const response = boundary.protect(
-      new Request('https://cali.so/api/admin/auth/request'),
+      new Request('https://cali.so/api/admin/ama/google/connect'),
       ['google'],
     )
 
@@ -46,7 +46,7 @@ describe('AMA launch boundary', () => {
     })
 
     expect(
-      boundary.protect(new Request('https://cali.so/api/admin/auth/request'), [
+      boundary.protect(new Request('https://cali.so/api/admin/ama/google/connect'), [
         'google',
       ]),
     ).toBeNull()

@@ -1,3 +1,5 @@
+import { createHmac } from 'node:crypto'
+
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('server-only', () => ({}))
@@ -10,7 +12,9 @@ import {
   createMediaAssetActionHandler,
   createMediaAssetListHandler,
   createMediaLocationLabelHandler,
+  createMediaOriginalUploadHandler,
   createMediaResumeHandler,
+  createMediaUploadCompletionHandler,
   createMediaUploadIntentHandler,
   createPhotoSelectionDraftHandler,
   createPhotoSelectionPublishHandler,
@@ -53,8 +57,11 @@ function fixture(rateLimitAllows = true) {
   const authenticator = {
     async authenticate(value: Request) {
       return value.headers.get('cookie') === 'owner=valid'
-        ? { id: 'owner_01' }
-        : null
+        ? {
+            status: 'authorized' as const,
+            principal: { id: 'owner_01', actorId: 'user_owner' },
+          }
+        : { status: 'unauthenticated' as const }
     },
   }
   const security = createAmaSecurity({
@@ -108,6 +115,31 @@ describe('Media admin HTTP contract', () => {
     await expect(allowed.json()).resolves.toEqual({ assets: [{ id: 'asset_01' }] })
     expect(f.calls).toEqual([{ ownerUserId: 'owner_01', view: 'archived' }])
     expect(f.auditEvents[0]?.event).toBe('admin_authentication.denied')
+  })
+
+  it('forbids a signed-in Clerk user without owner metadata', async () => {
+    const f = fixture()
+    const handler = createMediaAssetListHandler({
+      authenticator: {
+        async authenticate() {
+          return { status: 'forbidden' }
+        },
+      },
+      security: f.security,
+      review: {
+        async listAssets() {
+          throw new Error('forbidden requests must not read assets')
+        },
+      },
+    })
+
+    const response = await handler(request('/api/admin/media/assets'))
+
+    expect(response.status).toBe(403)
+    await expect(response.json()).resolves.toEqual({ error: 'forbidden' })
+    expect(f.auditEvents.at(-1)?.event).toBe(
+      'admin_authentication.denied',
+    )
   })
 
   it('rejects invalid list views without calling the review service', async () => {
@@ -535,6 +567,74 @@ describe('Media admin HTTP contract', () => {
     expect(f.auditEvents.at(-1)?.event).toBe(
       'media_asset.processing_resumed',
     )
+  })
+
+  it('resolves an original upload through the established owner data namespace', async () => {
+    const f = fixture()
+    const handler = createMediaOriginalUploadHandler({
+      authenticator: f.authenticator,
+      security: f.security,
+      baseUrl: new URL('https://cali.so'),
+      ingestionRepository: {
+        async findUploadIntent(ownerUserId, uploadIntentId) {
+          f.calls.push({ ownerUserId, uploadIntentId })
+          return null
+        },
+      },
+      storage: {
+        async storeOriginal() {
+          throw new Error('a missing intent must not reach storage')
+        },
+      },
+    })
+
+    const response = await handler(
+      request('/api/admin/media/upload-intents/upload_01/original', {
+        method: 'PUT',
+      }),
+      'upload_01',
+    )
+
+    expect(response.status).toBe(404)
+    expect(f.calls).toEqual([
+      { ownerUserId: 'owner_01', uploadIntentId: 'upload_01' },
+    ])
+  })
+
+  it('completes an upload in the data namespace and audits the Clerk actor', async () => {
+    const f = fixture()
+    const handler = createMediaUploadCompletionHandler({
+      authenticator: f.authenticator,
+      security: f.security,
+      ingestion: {
+        async completeUploadIntent(input) {
+          f.calls.push(input)
+          return {
+            id: mediaAssetId,
+            processingState: 'ready',
+            processingErrorCode: null,
+          }
+        },
+      },
+    })
+
+    const response = await handler(
+      request('/api/admin/media/upload-intents/upload_01/complete', {
+        method: 'POST',
+      }),
+      'upload_01',
+    )
+
+    expect(response.status).toBe(200)
+    expect(f.calls).toEqual([
+      { ownerUserId: 'owner_01', uploadIntentId: 'upload_01' },
+    ])
+    expect(f.auditEvents.at(-1)).toMatchObject({
+      event: 'media_upload.completed',
+      actorId: createHmac('sha256', Buffer.alloc(32, 7))
+        .update('user_owner')
+        .digest('hex'),
+    })
   })
 
   it('audits private location access when geocoding fails', async () => {

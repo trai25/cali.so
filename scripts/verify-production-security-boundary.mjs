@@ -7,6 +7,7 @@ import { openProductionServer } from './production-server.mjs'
 const privateMarkers = [
   'ci-google-secret',
   'ci-redis-token',
+  'sk_live_ci_secret_not_real',
   'owner@example.com',
   'security-boundary-callback-code',
   'security-boundary-callback-state',
@@ -87,12 +88,25 @@ async function verifyPublicPages(baseUrl) {
 }
 
 async function verifyAdminPages(baseUrl) {
-  const login = await fetchBoundary(baseUrl, '/admin/login')
-  assert.equal(login.response.status, 200, '/admin/login status')
-  assert.match(
-    login.body,
-    /<meta name="robots" content="noindex(?:, nofollow)?"\/?>/,
-  )
+  for (const path of [
+    '/admin',
+    '/admin/login',
+    '/admin/photos?view=draft',
+  ]) {
+    const { response } = await fetchBoundary(baseUrl, path)
+    assert.equal(response.status, 307, `${path} Clerk redirect status`)
+    const location = new URL(response.headers.get('location'))
+    assert.equal(location.protocol, 'https:')
+    assert.match(location.pathname, /\/sign-in(?:\/|$)/)
+    const returnUrl = new URL(location.searchParams.get('redirect_url'))
+    const requestedUrl = new URL(path, baseUrl)
+    assert.equal(returnUrl.origin, requestedUrl.origin, `${path} Clerk return origin`)
+    assert.equal(
+      `${returnUrl.pathname}${returnUrl.search}`,
+      `${requestedUrl.pathname}${requestedUrl.search}`,
+      `${path} Clerk return path`,
+    )
+  }
 }
 
 async function verifyAdminApiSecurity(baseUrl) {
@@ -103,24 +117,13 @@ async function verifyAdminApiSecurity(baseUrl) {
 
   for (const request of [
     {
-      path: '/api/admin/auth/request',
-      init: {
-        method: 'POST',
-        headers: {
-          origin: 'https://attacker.example',
-          'sec-fetch-site': 'cross-site',
-        },
-        body: new URLSearchParams({ email: 'owner@example.com' }),
-      },
-    },
-    {
       path: '/api/admin/auth/logout',
       init: {
         method: 'POST',
         headers: {
           origin: 'https://attacker.example',
           'sec-fetch-site': 'cross-site',
-          cookie: '__Host-ama_session=security-boundary-session',
+          cookie: '__session=security-boundary-session',
         },
       },
     },
@@ -133,6 +136,15 @@ async function verifyAdminApiSecurity(baseUrl) {
     assert.equal(response.status, 403, `${request.path} cross-site status`)
     assert.equal(response.headers.get('cache-control'), 'no-store')
     assert.equal(body, '')
+    assert.equal(response.headers.get('set-cookie'), null)
+  }
+
+  for (const path of [
+    '/api/admin/auth/request',
+    '/api/admin/auth/verify?token=retired-magic-link',
+  ]) {
+    const { response } = await fetchBoundary(baseUrl, path)
+    assert.equal(response.status, 404, `${path} retired status`)
     assert.equal(response.headers.get('set-cookie'), null)
   }
 
@@ -150,11 +162,8 @@ async function verifyAdminApiSecurity(baseUrl) {
       }),
     },
   )
-  assert.equal(availability.response.status, 303)
-  assert.equal(
-    new URL(availability.response.headers.get('location'), baseUrl).pathname,
-    '/admin/login',
-  )
+  assert.equal(availability.response.status, 401)
+  assert.equal(availability.response.headers.get('location'), null)
   assert.equal(availability.response.headers.get('set-cookie'), null)
 
   const media = await fetchBoundary(baseUrl, '/api/admin/media/assets')

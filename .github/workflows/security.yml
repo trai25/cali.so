@@ -24,10 +24,11 @@ jobs:
     timeout-minutes: 20
     env:
       DATABASE_URL: postgresql://runtime:runtime@127.0.0.1:5432/cali
-      RESEND_API_KEY: re_ci
-      RESEND_FROM_EMAIL: Cali <test@example.com>
+      # Publishable keys are public by design; CI uses the site's real Clerk
+      # frontend so signed-out redirects can be verified without a secret.
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_live_Y2xlcmsuY2FsaS5zbyQ
+      CLERK_SECRET_KEY: sk_live_ci_secret_not_real
       ADMIN_EMAIL: owner@example.com
-      SESSION_SECRET: ci-session-secret-ci-session-secret-ci-session-secret
       AMA_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
       MEDIA_ENCRYPTION_KEY: BQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQU=
       RATE_LIMIT_HASH_KEY: AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI=

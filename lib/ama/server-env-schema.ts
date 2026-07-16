@@ -17,12 +17,6 @@ function isBase64Key(value: string) {
   }
 }
 
-function isResendSender(value: string) {
-  const bracketed = value.match(/^\s*[^<>]*<([^<>]+)>\s*$/)
-  const mailbox = bracketed?.[1] ?? value.trim()
-  return z.email().safeParse(mailbox).success
-}
-
 function isHttpsUrl(value: string) {
   try {
     return new URL(value).protocol === 'https:'
@@ -73,10 +67,7 @@ const serverEnvironmentSchema = z
   .object({
     DATABASE_URL: z.string().refine(isPostgresUrl),
     MIGRATION_DATABASE_URL: z.never().optional(),
-    RESEND_API_KEY: z.string().min(1),
-    RESEND_FROM_EMAIL: z.string().min(3).refine(isResendSender),
     ADMIN_EMAIL: z.email().transform((value) => value.trim().toLowerCase()),
-    SESSION_SECRET: z.string().min(32),
     AMA_ENCRYPTION_KEY: z.string().refine(isBase64Key),
     RATE_LIMIT_HASH_KEY: z.string().refine(isBase64Key),
     GOOGLE_CLIENT_ID: z.string().trim().min(1).optional(),
@@ -92,8 +83,6 @@ const serverEnvironmentSchema = z
         return url.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(url.hostname)
       })
       .transform((value) => new URL(value)),
-    AUTH_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(5),
-    AUTH_RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().positive().default(900),
     ADMIN_MUTATION_RATE_LIMIT_MAX_REQUESTS: z.coerce
       .number()
       .int()

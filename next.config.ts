@@ -39,6 +39,7 @@ const nextConfig: NextConfig = {
   // Shared-element morphs (cover/title) on route navigation; browsers
   // without the View Transitions API just navigate instantly.
   experimental: {
+    authInterrupts: true,
     exposeTestingApiInProductionBuild: exposeNavigationTestingApi,
     viewTransition: true,
     globalNotFound: true,

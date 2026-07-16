@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 
+import { clerkMiddleware } from '@clerk/nextjs/server'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
@@ -21,7 +22,11 @@ function missingPublicContent(pathname: string) {
     : false
 }
 
-export function proxy(request: NextRequest) {
+function isAdminPage(pathname: string) {
+  return pathname === '/admin' || pathname.startsWith('/admin/')
+}
+
+export function siteProxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   if (missingPublicContent(pathname)) {
@@ -30,7 +35,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.rewrite(notFoundUrl, { status: 404 })
   }
 
-  if (pathname !== '/admin' && !pathname.startsWith('/admin/')) {
+  if (!isAdminPage(pathname)) {
     return NextResponse.next()
   }
 
@@ -45,9 +50,15 @@ export function proxy(request: NextRequest) {
   return response
 }
 
+export const proxy = clerkMiddleware(async (auth, request) => {
+  if (isAdminPage(request.nextUrl.pathname)) await auth.protect()
+  return siteProxy(request)
+})
+
 export const config = {
   matcher: [
     '/admin/:path*',
+    '/api/admin/:path*',
     '/blog/:slug',
     '/en/blog/:slug',
     '/newsletters/:id',

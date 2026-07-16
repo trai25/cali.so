@@ -2,14 +2,11 @@
 
 ## Status
 
-Superseded by [issue #93](https://github.com/CaliCastle/cali.so/issues/93).
-The magic-link implementation remains historical groundwork, but v3 launches
-with owner admin available under the existing authentication boundary, as
-recorded by ADR-0008. Public AMA capabilities remain disabled. Clerk-based
-owner authentication and recovery remains the intended successor without
-making admin availability depend on an environment switch.
+Superseded by ADR-0009. The magic-link implementation and its public endpoints
+have been removed. Its additive database tables remain historical schema until
+a separately reviewed cleanup migration is appropriate.
 
-The earlier decision removed Clerk and implemented a hand-rolled magic-link flow for one owner. Subsequent security review rejected email-only authentication as the final admin boundary. Issue #93 replaces this design with Clerk-based owner authentication, passkeys, and explicit recovery controls.
+The earlier decision removed Clerk and implemented a hand-rolled magic-link flow for one owner. Subsequent security review rejected email-only authentication as the final admin boundary. ADR-0009 restores Clerk as the sole owner authentication boundary.
 
 ## Considered Options
 

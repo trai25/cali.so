@@ -193,20 +193,9 @@ test('administration stays outside public prefetching and requires login', async
   page,
 }) => {
   const prefetches: string[] = []
-  const cspErrors: string[] = []
   page.on('request', (request) => {
     if (request.headers()['next-router-prefetch'] === '1') {
       prefetches.push(request.url())
-    }
-  })
-  page.on('console', (message) => {
-    if (
-      message.type() === 'error' &&
-      /Content Security Policy|violates the following Content Security Policy/.test(
-        message.text(),
-      )
-    ) {
-      cspErrors.push(message.text())
     }
   })
 
@@ -216,14 +205,19 @@ test('administration stays outside public prefetching and requires login', async
     false,
   )
 
-  cspErrors.length = 0
-  const response = await page.goto('/admin/photos')
-  expect(response?.status()).toBe(200)
-  await expect(page).toHaveURL('/admin/login')
-  await expect(
-    page.getByRole('heading', { level: 1, name: '管理员登录' }),
-  ).toBeVisible()
-  expect(cspErrors).toEqual([])
+  for (const path of ['/admin', '/admin/photos?view=draft']) {
+    const response = await page.request.get(path, { maxRedirects: 0 })
+    expect(response.status()).toBe(307)
+    const location = new URL(response.headers().location)
+    expect(location.protocol).toBe('https:')
+    expect(location.pathname).toContain('/sign-in')
+    const returnUrl = new URL(location.searchParams.get('redirect_url')!)
+    const requestedUrl = new URL(path, page.url())
+    expect(returnUrl.origin).toBe(requestedUrl.origin)
+    expect(`${returnUrl.pathname}${returnUrl.search}`).toBe(
+      `${requestedUrl.pathname}${requestedUrl.search}`,
+    )
+  }
 })
 
 test('the home page reuses route shells without deeper per-link prefetches', async ({

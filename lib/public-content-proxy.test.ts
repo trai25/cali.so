@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { describe, expect, it } from 'vitest'
 
-import { proxy } from '../proxy'
+import { siteProxy } from '../proxy'
 
 describe('public content proxy', () => {
   it.each([
@@ -10,7 +10,7 @@ describe('public content proxy', () => {
     '/newsletters/not-an-id',
     '/en/newsletters/not-an-id',
   ])('rewrites an unknown content route before streaming: %s', (pathname) => {
-    const response = proxy(new NextRequest(`https://cali.so${pathname}`))
+    const response = siteProxy(new NextRequest(`https://cali.so${pathname}`))
 
     expect(response.status).toBe(404)
     expect(response.headers.get('x-middleware-rewrite')).toBe(
@@ -24,7 +24,7 @@ describe('public content proxy', () => {
     '/newsletters/1',
     '/en/newsletters/1',
   ])('passes through a published content route: %s', (pathname) => {
-    const response = proxy(new NextRequest(`https://cali.so${pathname}`))
+    const response = siteProxy(new NextRequest(`https://cali.so${pathname}`))
 
     expect(response.status).toBe(200)
     expect(response.headers.get('x-middleware-next')).toBe('1')

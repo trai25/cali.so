@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test'
 
 const port = Number(process.env.PLAYWRIGHT_PORT ?? 3102)
 const externalBaseUrl = process.env.PLAYWRIGHT_BASE_URL
-const baseURL = externalBaseUrl ?? `http://127.0.0.1:${port}`
+const baseURL = externalBaseUrl ?? `http://localhost:${port}`
 
 export default defineConfig({
   testDir: './e2e',
@@ -19,7 +19,7 @@ export default defineConfig({
   webServer: externalBaseUrl
     ? undefined
     : {
-        command: `pnpm start --hostname 127.0.0.1 --port ${port}`,
+        command: `pnpm start --hostname localhost --port ${port}`,
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,

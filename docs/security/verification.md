@@ -92,19 +92,16 @@ Project checks completed on 2026-07-14 and 2026-07-15 verified:
   role-management, RLS-bypass, replication, or Neon-admin privileges.
 - [x] The Preview environment explicitly sets all five optional AMA capability
   switches to `false`. Owner admin has no capability switch.
-- [x] The Preview-only configuration includes its database and Redis runtime
-  credentials, Google OAuth credentials, admin allowlist, site origin, and
-  independently generated session, encryption, and rate-limit hashing secrets.
-  No values are recorded here.
+- [ ] Configure Preview and Production with their environment-specific Clerk
+  secret keys and the public `clerk.cali.so` publishable key. Mark the owner in
+  the Clerk Dashboard with public metadata `{ "siteOwner": "yes" }` and verify
+  a non-owner account receives HTTP 403 from admin APIs. No values are recorded
+  here.
 - [ ] Rotate the Preview-only Google OAuth secret before enabling the Google
   capability; the integration remains disabled meanwhile.
-- [ ] The current Resend API key is assigned to both Preview and Production.
-  Replace it with separate environment-scoped keys before cutover; keep the
-  Preview key limited to test mail. This remains a cutover blocker for issue
-  #107; issue #103 keeps the affected capabilities disabled and records the
-  hosted gap without accessing the credential.
-- [x] The active `Admin Security` firewall rule challenges exactly
-  `POST /api/admin/auth/request`.
+- [ ] Remove the obsolete `Admin Security` firewall rule for
+  `POST /api/admin/auth/request`; Clerk replaced that endpoint and the route now
+  returns 404.
 - [ ] Provision isolated Development credentials before expecting that
   environment to exercise authenticated AMA or provider integrations.
 - [ ] Verify the production runtime database role cannot perform DDL or role

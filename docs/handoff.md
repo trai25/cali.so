@@ -34,9 +34,11 @@ Current as of July 2026.
 - The fixed bottom dock is the primary navigation. The visual contract lives
   in `docs/design-language.md`.
 - The owner admin is always reachable for Media and AMA operations, with
-  server-side authentication, origin checks, rate limits, and audit events.
-  Public AMA mutations, payment, provider, and finalization capabilities stay
-  disabled for the v3 production launch.
+  Clerk authentication and an exact server-checked
+  `publicMetadata.siteOwner = "yes"` authorization marker. Origin checks, rate
+  limits, audit events, and the strict admin CSP remain in force. Public AMA
+  mutations, payment, provider, and finalization capabilities stay disabled for
+  the v3 production launch.
 - Security baseline controls from PR #97 remain mandatory: CSP and security
   headers, same-origin mutation policy, rate limits, kill switches,
   privacy-safe audit events, isolated credentials, and security automation.
@@ -133,9 +135,9 @@ The Vercel runtime receives only the CRUD-only `DATABASE_URL`. Never put
 
 ## Post-launch work
 
-- Complete the Clerk-based admin authentication and recovery boundary in #93
-  without disabling owner admin, then resume the public AMA product slices
-  (#82 through #87) behind their security and privacy gates.
+- Complete the remaining passkey and recovery work in #93 without disabling
+  owner admin, then resume the public AMA product slices (#82 through #87)
+  behind their security and privacy gates.
 - Revisit Bunny S3 preview constraints and provider capabilities before
   expanding the Media Library beyond the curated photo workflow.
 - Re-enable private capabilities only after their provider, retention,
