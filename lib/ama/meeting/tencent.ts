@@ -49,10 +49,18 @@ function invalidResponse(): never {
   )
 }
 
+const TENCENT_MEETING_DOMAINS = ['meeting.tencent.com', 'voovmeeting.com']
+
 function isTencentMeetingUrl(value: string): boolean {
-  return (
-    value.startsWith('https://') &&
-    (value.includes('meeting.tencent.com') || value.includes('voovmeeting.com'))
+  let url: URL
+  try {
+    url = new URL(value)
+  } catch {
+    return false
+  }
+  if (url.protocol !== 'https:') return false
+  return TENCENT_MEETING_DOMAINS.some(
+    (domain) => url.hostname === domain || url.hostname.endsWith(`.${domain}`),
   )
 }
 

@@ -95,6 +95,38 @@ function requestHeaders(fetchMock: ReturnType<typeof vi.fn>, index: number) {
 }
 
 describe('Tencent Meeting adapter', () => {
+  it('rejects lookalike hosts that only contain a Tencent domain as a substring', async () => {
+    const { adapter } = adapterWithResponses(
+      initializeResponse(),
+      notificationAck(),
+      toolsListResponse([ISO_SCHEMA_TOOL]),
+      createToolResponse({
+        meeting_id: 'tm-spoof',
+        join_url: 'https://meeting.tencent.com.evil.example/dm/abc',
+      }),
+    )
+
+    await expect(adapter.createMeeting(CREATE_INPUT)).rejects.toMatchObject({
+      code: 'invalid_response',
+    })
+  })
+
+  it('accepts subdomains of the real Tencent Meeting domains', async () => {
+    const { adapter } = adapterWithResponses(
+      initializeResponse(),
+      notificationAck(),
+      toolsListResponse([ISO_SCHEMA_TOOL]),
+      createToolResponse({
+        meeting_id: 'tm-sub',
+        join_url: 'https://intl.voovmeeting.com/dm/abc',
+      }),
+    )
+
+    await expect(adapter.createMeeting(CREATE_INPUT)).resolves.toMatchObject({
+      meetingUrl: 'https://intl.voovmeeting.com/dm/abc',
+    })
+  })
+
   it('creates a meeting end-to-end over JSON responses with an ISO time schema', async () => {
     const { adapter, fetchMock } = adapterWithResponses(
       initializeResponse(),
