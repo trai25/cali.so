@@ -1,9 +1,9 @@
 import 'server-only'
 
+import { ownerRequestAuthenticator } from '~/lib/admin/server'
+
 import { availabilityRepository } from '../availability/repository'
 import { createAvailabilityService } from '../availability/service'
-import { authenticateOwnerRequest } from '../auth/http'
-import { getOwnerAuth } from '../auth/server'
 import { createGoogleCalendarClient } from '../google/client'
 import { googleRepository } from '../google/repository'
 import {
@@ -83,8 +83,4 @@ export function getAmaAdminServices() {
   return services
 }
 
-export const ownerRequestAuthenticator = {
-  authenticate(request: Request) {
-    return authenticateOwnerRequest(getOwnerAuth(), request)
-  },
-}
+export { ownerRequestAuthenticator }

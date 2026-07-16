@@ -4,10 +4,7 @@ import { parseAmaFeatures, parseServerEnv } from './server-env-schema'
 
 const validEnvironment = {
   DATABASE_URL: 'postgresql://user:password@example.neon.tech/site',
-  RESEND_API_KEY: 're_test_key',
-  RESEND_FROM_EMAIL: 'Cali <hello@cali.so>',
   ADMIN_EMAIL: 'owner@example.com',
-  SESSION_SECRET: 's'.repeat(64),
   AMA_ENCRYPTION_KEY: Buffer.alloc(32).toString('base64'),
   RATE_LIMIT_HASH_KEY: Buffer.alloc(32, 2).toString('base64'),
   GOOGLE_CLIENT_ID: 'google-client-id.apps.googleusercontent.com',
@@ -38,7 +35,6 @@ describe('AMA server environment', () => {
     const environment = parseServerEnv(validEnvironment)
 
     expect(environment.ADMIN_EMAIL).toBe('owner@example.com')
-    expect(environment.AUTH_RATE_LIMIT_MAX_REQUESTS).toBe(5)
     expect(environment.ADMIN_MUTATION_RATE_LIMIT_MAX_REQUESTS).toBe(30)
     expect(environment.features).toEqual({
       publicMutations: false,
@@ -233,22 +229,18 @@ describe('AMA server environment', () => {
     expect(() =>
       parseServerEnv({
         ...validEnvironment,
-        SESSION_SECRET: 'short-secret',
         AMA_ENCRYPTION_KEY: 'another-production-secret',
       }),
-    ).toThrowError(/SESSION_SECRET, AMA_ENCRYPTION_KEY/)
+    ).toThrowError(/AMA_ENCRYPTION_KEY/)
 
     try {
-      parseServerEnv({ ...validEnvironment, SESSION_SECRET: 'do-not-print-me' })
+      parseServerEnv({
+        ...validEnvironment,
+        AMA_ENCRYPTION_KEY: 'do-not-print-me',
+      })
     } catch (error) {
       expect(String(error)).not.toContain('do-not-print-me')
     }
-  })
-
-  it('rejects a malformed Resend sender mailbox', () => {
-    expect(() =>
-      parseServerEnv({ ...validEnvironment, RESEND_FROM_EMAIL: 'Cali <@@@>' }),
-    ).toThrowError(/RESEND_FROM_EMAIL/)
   })
 
   it('requires Google OAuth credentials without exposing their values', () => {

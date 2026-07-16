@@ -1,6 +1,4 @@
-import { redirect } from 'next/navigation'
-
-import { isOwnerAuthenticated } from '~/lib/ama/auth/server'
+import { requireOwnerPage } from '~/lib/admin/server'
 
 import { AdminShell } from './AdminShell'
 
@@ -8,6 +6,6 @@ import { AdminShell } from './AdminShell'
 export const instant = false
 
 export default async function ProtectedAdminLayout({ children }: { children: React.ReactNode }) {
-  if (!(await isOwnerAuthenticated())) redirect('/admin/login')
+  await requireOwnerPage('/admin')
   return <AdminShell>{children}</AdminShell>
 }

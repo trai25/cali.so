@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ErrorPageView } from './_views/error-page'
+import { ForbiddenPageView } from './_views/forbidden-page'
 import { NotFoundPageView } from './_views/not-found-page'
 import GlobalError from './global-error'
 
@@ -23,6 +24,17 @@ vi.mock('next/font/local', () => ({
 afterEach(cleanup)
 
 describe('public error recovery', () => {
+  it('renders a deliberate bilingual forbidden surface', () => {
+    render(<ForbiddenPageView />)
+
+    expect(screen.getByText('ERROR / 403')).toBeTruthy()
+    expect(screen.getByText('你没有访问这个页面的权限。')).toBeTruthy()
+    expect(screen.getByText('You do not have access to this page.')).toBeTruthy()
+    expect(
+      screen.getByRole('link', { name: /返回首页|Go home/ }).getAttribute('href'),
+    ).toBe('/')
+  })
+
   it('keeps the not-found proof sheet bilingual', () => {
     render(<NotFoundPageView />)
 

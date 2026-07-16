@@ -28,9 +28,11 @@ an attacker can read the implementation.
   behind independent server-side kill switches that fail closed. Client-only
   flags are not controls.
 - Owner admin is always reachable and has no environment switch. Every admin
-  page, data read, and mutation must enforce owner authentication close to its
-  data source; browser mutations additionally require same-origin requests and
-  rate limits.
+  page, data read, and mutation must enforce Clerk authentication and require
+  the authoritative user record to contain the exact public metadata marker
+  `siteOwner: "yes"` close to its data source. Browser mutations additionally
+  require same-origin requests and rate limits. Email addresses and client-side
+  metadata copies never grant access.
 
 ## Database privilege separation
 

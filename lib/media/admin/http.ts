@@ -1,5 +1,9 @@
 import 'server-only'
 
+import type {
+  OwnerAccess,
+  OwnerPrincipal,
+} from '~/lib/admin/authorization'
 import type { AmaSecurity, PrivilegedAuditEvent } from '~/lib/ama/security/service'
 
 import { MediaAltTextError } from '../alt-text/service'
@@ -14,10 +18,8 @@ import { MediaReconciliationError } from '../reconciliation/service'
 import { PhotoSelectionError } from '../photo-selection/service'
 import { storeOriginalFromSameOriginRequest } from '../storage/upload'
 
-type OwnerPrincipal = { id: string }
-
 type Authenticator = {
-  authenticate(request: Request): Promise<OwnerPrincipal | null>
+  authenticate(request: Request): Promise<OwnerAccess>
 }
 
 type Security = Pick<
@@ -106,7 +108,12 @@ export function createPhotoSelectionDraftHandler(
             : Number.NaN,
         mediaAssetIds: body.mediaAssetIds as string[],
       })
-      audit(dependencies, request, 'media_photo_selection.draft_saved')
+      audit(
+        dependencies,
+        request,
+        'media_photo_selection.draft_saved',
+        access.principal.actorId,
+      )
       return json(200, { draft })
     } catch (error) {
       return errorResponse(error)
@@ -139,7 +146,12 @@ export function createPhotoSelectionPublishHandler(
         idempotencyKey:
           typeof body.idempotencyKey === 'string' ? body.idempotencyKey : '',
       })
-      audit(dependencies, request, 'media_photo_selection.published')
+      audit(
+        dependencies,
+        request,
+        'media_photo_selection.published',
+        access.principal.actorId,
+      )
       return json(200, { publication })
     } catch (error) {
       if (
@@ -147,7 +159,12 @@ export function createPhotoSelectionPublishHandler(
         error.code === 'cache_invalidation_failed'
       ) {
         // The immutable publication committed before cache invalidation ran.
-        audit(dependencies, request, 'media_photo_selection.published')
+        audit(
+          dependencies,
+          request,
+          'media_photo_selection.published',
+          access.principal.actorId,
+        )
       }
       return errorResponse(error)
     }
@@ -164,21 +181,29 @@ async function authenticate(
     : null
   if (blocked) return { response: blocked }
 
-  let principal: OwnerPrincipal | null
+  let access: OwnerAccess
   try {
-    principal = await dependencies.authenticator.authenticate(request)
+    access = await dependencies.authenticator.authenticate(request)
   } catch {
     return { response: json(503, { error: 'dependency_unavailable' }) }
   }
-  if (!principal) {
+  if (access.status !== 'authorized') {
     dependencies.security.recordAuthenticationDenial(request)
-    return { response: json(401, { error: 'unauthorized' }) }
+    return {
+      response: json(
+        access.status === 'forbidden' ? 403 : 401,
+        { error: access.status === 'forbidden' ? 'forbidden' : 'unauthorized' },
+      ),
+    }
   }
   if (mutation) {
-    const limited = await dependencies.security.limitAdminMutation(request)
+    const limited = await dependencies.security.limitAdminMutation(
+      request,
+      access.principal.actorId,
+    )
     if (limited) return { response: limited }
   }
-  return { principal }
+  return { principal: access.principal }
 }
 
 async function requestJson(request: Request) {
@@ -228,8 +253,9 @@ function audit(
   dependencies: BaseDependencies,
   request: Request,
   event: PrivilegedAuditEvent,
+  actorId: string,
 ) {
-  dependencies.security.recordPrivilegedAction(request, event)
+  dependencies.security.recordPrivilegedAction(request, event, actorId)
 }
 
 export function createMediaAssetListHandler(
@@ -303,7 +329,7 @@ export function createMediaAssetActionHandler(
       } else {
         return json(400, { error: 'invalid_request' })
       }
-      audit(dependencies, request, event)
+      audit(dependencies, request, event, access.principal.actorId)
       return json(200, { asset })
     } catch (error) {
       return errorResponse(error)
@@ -330,7 +356,12 @@ export function createMediaAltTextHandler(
         ownerUserId: access.principal.id,
         mediaAssetId,
       })
-      audit(dependencies, request, 'media_alt_text.requested')
+      audit(
+        dependencies,
+        request,
+        'media_alt_text.requested',
+        access.principal.actorId,
+      )
       return json(200, { suggestion })
     } catch (error) {
       return errorResponse(error)
@@ -354,7 +385,12 @@ export function createMediaLocationLabelHandler(
     if (!dependencies.geocoding) {
       return json(503, { error: 'feature_disabled' })
     }
-    audit(dependencies, request, 'media_location_label.requested')
+    audit(
+      dependencies,
+      request,
+      'media_location_label.requested',
+      access.principal.actorId,
+    )
     try {
       const suggestion = await dependencies.geocoding.suggestLocationLabel({
         ownerUserId: access.principal.id,
@@ -393,7 +429,12 @@ export function createMediaResumeHandler(
       }
       await dependencies.reconciliation.resumeMediaAsset(identity)
       const asset = await dependencies.review.getAsset(identity)
-      audit(dependencies, request, 'media_asset.processing_resumed')
+      audit(
+        dependencies,
+        request,
+        'media_asset.processing_resumed',
+        access.principal.actorId,
+      )
       return json(200, { asset })
     } catch (error) {
       return errorResponse(error)
@@ -441,7 +482,12 @@ export function createMediaPurgeHandler(
           confirmation:
             typeof body.confirmation === 'string' ? body.confirmation : '',
         })
-        audit(dependencies, request, 'media_asset.purge_requested')
+        audit(
+          dependencies,
+          request,
+          'media_asset.purge_requested',
+          access.principal.actorId,
+        )
         return json(200, { result })
       } catch (error) {
         return errorResponse(error)
@@ -477,7 +523,12 @@ export function createMediaUploadIntentHandler(
         checksumSha256:
           typeof body.checksumSha256 === 'string' ? body.checksumSha256 : '',
       })
-      audit(dependencies, request, 'media_upload.intent_created')
+      audit(
+        dependencies,
+        request,
+        'media_upload.intent_created',
+        access.principal.actorId,
+      )
       return json(201, {
         uploadIntent: {
           id: intent.id,
@@ -558,7 +609,12 @@ export function createMediaUploadCompletionHandler(
         ownerUserId: access.principal.id,
         uploadIntentId,
       })
-      audit(dependencies, request, 'media_upload.completed')
+      audit(
+        dependencies,
+        request,
+        'media_upload.completed',
+        access.principal.actorId,
+      )
       return json(200, {
         mediaAsset: {
           id: asset.id,

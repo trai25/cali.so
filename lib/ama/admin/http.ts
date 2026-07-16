@@ -1,7 +1,13 @@
+import type {
+  OwnerAccess,
+  OwnerPrincipal,
+} from '~/lib/admin/authorization'
+
+import { securityDenialHeaders } from '../security/request-policy'
 import type { AmaFeature, AmaSecurity } from '../security/service'
 
 export interface OwnerRequestAuthenticator {
-  authenticate(request: Request): Promise<boolean>
+  authenticate(request: Request): Promise<OwnerAccess>
 }
 
 export type AvailabilityWindowInput = {
@@ -60,7 +66,7 @@ async function enforceAdminRequestPolicy(
   mode: AdminRequestMode,
   requiredFeatures?: readonly AmaFeature[],
 ) {
-  const { authenticator, security, baseUrl } = dependencies
+  const { authenticator, security } = dependencies
   const blocked = mode === 'browser-mutation'
     ? requiredFeatures
       ? await security.protectBrowserMutation(request, requiredFeatures)
@@ -68,12 +74,32 @@ async function enforceAdminRequestPolicy(
     : security.protectFeatures(request, requiredFeatures ?? [])
   if (blocked) return blocked
 
-  if (!(await authenticator.authenticate(request))) {
+  let access: OwnerAccess
+  try {
+    access = await authenticator.authenticate(request)
+  } catch {
+    return new Response(null, {
+      status: 503,
+      headers: securityDenialHeaders(),
+    })
+  }
+  if (access.status !== 'authorized') {
     security.recordAuthenticationDenial(request)
-    return redirect(baseUrl, '/admin/login')
+    return new Response(null, {
+      status: access.status === 'forbidden' ? 403 : 401,
+      headers: securityDenialHeaders(),
+    })
   }
 
-  return security.limitAdminMutation(request)
+  const limited = await security.limitAdminMutation(
+    request,
+    access.principal.actorId,
+  )
+  return limited ?? access.principal
+}
+
+function denied(result: Response | OwnerPrincipal): result is Response {
+  return result instanceof Response
 }
 
 function formString(formData: FormData, name: string) {
@@ -143,12 +169,12 @@ export function createAvailabilityMutationHandler(
 ) {
   const { service, baseUrl } = dependencies
   return async function POST(request: Request) {
-    const blocked = await enforceAdminRequestPolicy(
+    const access = await enforceAdminRequestPolicy(
       dependencies,
       request,
       'browser-mutation',
     )
-    if (blocked) return blocked
+    if (denied(access)) return access
 
     try {
       const formData = await request.formData()
@@ -170,6 +196,7 @@ export function createAvailabilityMutationHandler(
       dependencies.security.recordPrivilegedAction(
         request,
         'availability_mutation.succeeded',
+        access.actorId,
       )
       return redirect(baseUrl, '/admin?availability=saved')
     } catch {
@@ -183,16 +210,20 @@ export function createGoogleConnectHandler(
 ) {
   const { service, baseUrl } = dependencies
   return async function POST(request: Request) {
-    const blocked = await enforceAdminRequestPolicy(
+    const access = await enforceAdminRequestPolicy(
       dependencies,
       request,
       'browser-mutation',
       ['google'],
     )
-    if (blocked) return blocked
+    if (denied(access)) return access
     try {
       const providerUrl = await service.begin()
-      dependencies.security.recordPrivilegedAction(request, 'google_connect.started')
+      dependencies.security.recordPrivilegedAction(
+        request,
+        'google_connect.started',
+        access.actorId,
+      )
       return redirect(baseUrl, providerUrl)
     } catch {
       return redirect(baseUrl, '/admin?calendar=unavailable')
@@ -205,13 +236,13 @@ export function createGoogleCallbackHandler(
 ) {
   const { service, baseUrl } = dependencies
   return async function GET(request: Request) {
-    const blocked = await enforceAdminRequestPolicy(
+    const access = await enforceAdminRequestPolicy(
       dependencies,
       request,
       'provider-callback',
       ['google'],
     )
-    if (blocked) return blocked
+    if (denied(access)) return access
     const params = new URL(request.url).searchParams
     try {
       const result = await service.complete({
@@ -222,6 +253,7 @@ export function createGoogleCallbackHandler(
       dependencies.security.recordPrivilegedAction(
         request,
         'google_callback.completed',
+        access.actorId,
       )
       return redirect(baseUrl, `/admin?calendar=${result}`)
     } catch {
@@ -235,18 +267,19 @@ export function createGoogleDisconnectHandler(
 ) {
   const { service, baseUrl } = dependencies
   return async function POST(request: Request) {
-    const blocked = await enforceAdminRequestPolicy(
+    const access = await enforceAdminRequestPolicy(
       dependencies,
       request,
       'browser-mutation',
       ['google'],
     )
-    if (blocked) return blocked
+    if (denied(access)) return access
     try {
       await service.disconnect()
       dependencies.security.recordPrivilegedAction(
         request,
         'google_disconnect.succeeded',
+        access.actorId,
       )
       return redirect(baseUrl, '/admin?calendar=disconnected')
     } catch {

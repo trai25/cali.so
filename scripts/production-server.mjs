@@ -26,7 +26,7 @@ async function waitForBaseUrl(child, output) {
     if (child.exitCode !== null) {
       throw new Error(`Next.js exited with code ${child.exitCode}`)
     }
-    const match = output().match(/Local:\s+(http:\/\/127\.0\.0\.1:\d+)/)
+    const match = output().match(/Local:\s+(http:\/\/(?:localhost|127\.0\.0\.1):\d+)/)
     if (match) return match[1]
     await new Promise((resolve) => setTimeout(resolve, 50))
   }
@@ -48,7 +48,7 @@ export async function openProductionServer(externalBaseUrl) {
       path.join(root, 'node_modules/next/dist/bin/next'),
       'start',
       '--hostname',
-      '127.0.0.1',
+      'localhost',
       '--port',
       '0',
     ],

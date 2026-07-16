@@ -16,13 +16,24 @@ const allFeatures: AmaFeatureFlags = {
   tencent: true,
 }
 
-function browserMutation(cookie = '__Host-cali_ama_admin_session=private-session') {
+function browserMutation(cookie = '__session=private-session') {
   return new Request('https://cali.so/api/admin/ama/availability', {
     method: 'POST',
     headers: {
       origin: 'https://cali.so',
       'sec-fetch-site': 'same-origin',
       cookie,
+    },
+  })
+}
+
+function bearerMutation() {
+  return new Request('https://cali.so/api/admin/ama/availability', {
+    method: 'POST',
+    headers: {
+      authorization: 'Bearer rotated-clerk-token',
+      origin: 'https://cali.so',
+      'sec-fetch-site': 'same-origin',
     },
   })
 }
@@ -113,7 +124,10 @@ describe('AMA security service', () => {
       },
     })
 
-    const response = await security.limitAdminMutation(browserMutation())
+    const response = await security.limitAdminMutation(
+      browserMutation(),
+      'user_owner',
+    )
 
     expect(response?.status).toBe(429)
     expect(limiterKey).toMatch(/^[a-f0-9]{64}$/)
@@ -129,7 +143,7 @@ describe('AMA security service', () => {
     ])
   })
 
-  it('keeps the limiter identity stable when unrelated cookies change', async () => {
+  it('keeps the limiter identity stable when Clerk refreshes its session token', async () => {
     const limiterKeys: string[] = []
     const { security } = fixture({
       limit: async (key) => {
@@ -139,16 +153,18 @@ describe('AMA security service', () => {
     })
 
     await security.limitAdminMutation(
-      browserMutation('theme=dark; __Host-cali_ama_admin_session=private-session'),
+      browserMutation('__session=rotated-token-one'),
+      'user_owner',
     )
     await security.limitAdminMutation(
-      browserMutation(
-        '__Host-cali_ama_admin_session=private-session; analytics=new-value',
-      ),
+      browserMutation('__session=rotated-token-two'),
+      'user_owner',
     )
+    await security.limitAdminMutation(bearerMutation(), 'user_owner')
 
-    expect(limiterKeys).toHaveLength(2)
+    expect(limiterKeys).toHaveLength(3)
     expect(limiterKeys[0]).toBe(limiterKeys[1])
+    expect(limiterKeys[1]).toBe(limiterKeys[2])
   })
 
   it('records privileged actions without logging the session', () => {
@@ -157,6 +173,7 @@ describe('AMA security service', () => {
     security.recordPrivilegedAction(
       browserMutation(),
       'availability_mutation.succeeded',
+      'user_owner',
     )
 
     expect(events[0]).toMatchObject({
@@ -175,7 +192,10 @@ describe('AMA security service', () => {
       },
     })
 
-    const response = await security.limitAdminMutation(browserMutation())
+    const response = await security.limitAdminMutation(
+      browserMutation(),
+      'user_owner',
+    )
 
     expect(response?.status).toBe(503)
     expect(events[0]).toMatchObject({

@@ -32,6 +32,11 @@ function fixture(rateLimitAllows = true) {
   const authenticator: OwnerRequestAuthenticator = {
     async authenticate(request) {
       return request.headers.get('cookie') === 'owner=valid'
+        ? {
+            status: 'authorized',
+            principal: { id: 'owner@example.com', actorId: 'user_owner' },
+          }
+        : { status: 'unauthenticated' }
     },
   }
   const availability: AvailabilityMutationService = {
@@ -94,7 +99,7 @@ function fixture(rateLimitAllows = true) {
 }
 
 describe('AMA admin HTTP contract', () => {
-  it('redirects unauthenticated mutations to the canonical login page', async () => {
+  it('rejects unauthenticated mutations', async () => {
     const f = fixture()
     const handler = createAvailabilityMutationHandler({
       authenticator: f.authenticator,
@@ -111,9 +116,38 @@ describe('AMA admin HTTP contract', () => {
       ),
     )
 
-    expect(response.status).toBe(303)
-    expect(response.headers.get('location')).toBe('https://cali.so/admin/login')
+    expect(response.status).toBe(401)
+    expect(response.headers.get('location')).toBeNull()
     expect(f.mutations).toEqual([])
+  })
+
+  it('forbids signed-in Clerk users without owner metadata', async () => {
+    const f = fixture()
+    const handler = createAvailabilityMutationHandler({
+      authenticator: {
+        async authenticate() {
+          return { status: 'forbidden' }
+        },
+      },
+      service: f.availability,
+      security: f.security,
+      baseUrl: new URL('https://cali.so'),
+    })
+
+    const response = await handler(
+      formRequest('/api/admin/ama/availability', {
+        intent: 'create',
+        weekday: '1',
+        start: '09:00',
+        end: '12:00',
+      }),
+    )
+
+    expect(response.status).toBe(403)
+    expect(f.mutations).toEqual([])
+    expect(f.securityEvents.at(-1)?.event).toBe(
+      'admin_authentication.denied',
+    )
   })
 
   it('creates, updates, and deletes same-day Availability Windows', async () => {
