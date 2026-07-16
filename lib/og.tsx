@@ -75,6 +75,22 @@ export async function coverDataUri(publicSrc: string): Promise<string> {
   return `data:${MIME[ext] ?? 'image/png'};base64,${data.toString('base64')}`
 }
 
+export async function publicImageDataUri(publicSrc: string): Promise<string> {
+  'use cache'
+  cacheLife('max')
+
+  const relativePath = publicSrc.startsWith('/') ? publicSrc.slice(1) : null
+
+  if (!relativePath || relativePath.split('/').includes('..')) {
+    throw new Error('Invalid public image path')
+  }
+
+  const file = path.join(process.cwd(), 'public', relativePath)
+  const ext = (file.split('.').pop() ?? 'png').toLowerCase()
+  const data = await readFile(file)
+  return `data:${MIME[ext] ?? 'image/png'};base64,${data.toString('base64')}`
+}
+
 // The drafting sheet: page background plus the boxed guides from the
 // ambient-background layer (dashed hairlines, ~40px insets at OG scale).
 export function OgSheet({ children }: { children: React.ReactNode }) {
