@@ -3,6 +3,15 @@ import { expect, test } from '@playwright/test'
 
 const postSlug = '2023-year-in-review'
 
+// Next 16.3 preview.6 internal wire values, defined by FetchStrategy in
+// next/dist/client/components/segment-cache/cache.js. Re-check on upgrades:
+// 1 = route tree/loading boundary, 2 = PPR runtime data, 3 = runtime shell.
+const prefetchKind = {
+  routeTree: '1',
+  runtimeData: '2',
+  runtimeShell: '3',
+} as const
+
 async function observeCoverMorph(
   page: import('@playwright/test').Page,
   name: string,
@@ -29,13 +38,15 @@ async function observeCoverMorph(
 
 async function expectCoverMorph(page: import('@playwright/test').Page) {
   await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          (window as typeof window & {
-            __postCoverMorphObserved?: boolean
-          }).__postCoverMorphObserved ?? false,
-      ),
+    .poll(
+      () =>
+        page.evaluate(
+          () =>
+            (window as typeof window & {
+              __postCoverMorphObserved?: boolean
+            }).__postCoverMorphObserved ?? false,
+        ),
+      { message: 'expected the shared post cover transition to become active' },
     )
     .toBe(true)
 }
@@ -117,9 +128,8 @@ test('the Chinese post shell morphs from the blog index cover', async ({ page })
       ),
   ])
 
-  await observeCoverMorph(page, coverTransitionName)
-
   await instant(page, async () => {
+    await observeCoverMorph(page, coverTransitionName)
     await postLink.click()
 
     await expect(page).toHaveURL(`/blog/${postSlug}`)
@@ -165,9 +175,8 @@ test('the English post shell morphs from the blog index cover', async ({ page })
     ),
   ])
 
-  await observeCoverMorph(page, coverTransitionName)
-
   await instant(page, async () => {
+    await observeCoverMorph(page, coverTransitionName)
     await postLink.click()
 
     await expect(page).toHaveURL(`/en/blog/${postSlug}`)
@@ -442,7 +451,7 @@ test('the blog index prefetches one shared post shell without runtime article pa
   expect(
     prefetches.some(
       ({ kind, segment, url }) =>
-        kind === '1' &&
+        kind === prefetchKind.routeTree &&
         segment === '/_tree' &&
         new URL(url).pathname.startsWith('/blog/'),
     ),
@@ -450,13 +459,15 @@ test('the blog index prefetches one shared post shell without runtime article pa
   expect(
     prefetches.filter(
       ({ kind, url }) =>
-        kind === '3' && new URL(url).pathname.startsWith('/blog/'),
+        kind === prefetchKind.runtimeShell &&
+        new URL(url).pathname.startsWith('/blog/'),
     ),
   ).toHaveLength(1)
   expect(
     prefetches.some(
       ({ kind, url }) =>
-        kind === '2' && new URL(url).pathname.startsWith('/blog/'),
+        kind === prefetchKind.runtimeData &&
+        new URL(url).pathname.startsWith('/blog/'),
     ),
   ).toBe(false)
 })
