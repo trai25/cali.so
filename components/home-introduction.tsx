@@ -198,7 +198,7 @@ export function HomeIntroduction({ social, github }: { social: SocialSnapshot; g
           }
           en={
             <>
-              I&apos;m Cali, a father of two and a <DesignEngineerPhrase>design engineer</DesignEngineerPhrase> who loves
+              I’m Cali, a father of two and a <DesignEngineerPhrase>design engineer</DesignEngineerPhrase> who loves
               getting the{' '}
               <DetailsPhrase>
                 <span className="home-detail-units home-detail-words">

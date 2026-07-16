@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 
 import { createNewsletterOgImage } from '~/lib/og-image'
+import { newsletterOgImageMetadata } from '~/lib/og-image-metadata'
 import {
   archivedNewsletterIds,
   getArchivedNewsletter,
@@ -11,19 +12,9 @@ export function generateStaticParams() {
   return archivedNewsletterIds.map((id) => ({ id }))
 }
 
-const size = { width: 1200, height: 630 }
-
 export function generateImageMetadata({ params }: { params: { id: string } }) {
   if (!isArchivedNewsletterId(params.id)) return []
-  const newsletter = getArchivedNewsletter(params.id)
-  return [
-    {
-      id: params.id,
-      alt: `${newsletter.titleEn} · Cali Castle`,
-      size,
-      contentType: 'image/png',
-    },
-  ]
+  return newsletterOgImageMetadata(getArchivedNewsletter(params.id), 'en')
 }
 
 export default async function OpengraphImage({

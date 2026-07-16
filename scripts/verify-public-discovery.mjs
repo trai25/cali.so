@@ -42,7 +42,7 @@ const publicPages = [
     {
       title: 'Cali Castle',
       description:
-        "I'm Cali, a father of two and a design engineer who loves getting the details just right.",
+        'I’m Cali, a father of two and a design engineer who loves getting the details just right.',
     },
     {
       zh: 'Cali Castle。两个孩子的爸爸，也是一名热爱把细节做到刚刚好的设计工程师。',
@@ -67,11 +67,14 @@ const publicPages = [
   ),
   ...localizedPages(
     '/photos',
-    { title: '照片', description: 'Cali 公开发布的照片。' },
-    { title: 'Photos', description: 'Photographs published by Cali.' },
+    { title: '照片', description: 'Cali 在工作、生活和旅途中留下的一些瞬间。' },
     {
-      zh: '照片 · Cali Castle。Cali 公开发布的照片。',
-      en: 'Photos · Cali Castle. Photographs published by Cali.',
+      title: 'Photos',
+      description: 'Moments Cali has kept from work, life, and everywhere in between.',
+    },
+    {
+      zh: '照片 · Cali Castle。Cali 在工作、生活和旅途中留下的一些瞬间。',
+      en: 'Photos · Cali Castle. Moments Cali has kept from work, life, and everywhere in between.',
     },
   ),
   ...localizedPages(
@@ -144,6 +147,11 @@ async function verifyMetadata(baseUrl, page) {
   const { document } = dom.window
 
   assert.equal(document.documentElement.lang, page.locale, `${page.path} lang`)
+  assert.doesNotMatch(
+    document.querySelector('meta[name="robots"]')?.getAttribute('content') ?? '',
+    /noindex|nofollow/,
+    `${page.path} indexing`,
+  )
   assert.equal(document.title, page.documentTitle, `${page.path} title`)
   assert.equal(
     requiredElement(

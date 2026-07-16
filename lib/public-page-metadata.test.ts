@@ -13,7 +13,7 @@ describe('public page metadata copy', () => {
       en: {
         title: 'Cali Castle',
         description:
-          "I'm Cali, a father of two and a design engineer who loves getting the details just right.",
+          'I’m Cali, a father of two and a design engineer who loves getting the details just right.',
         ogDescription:
           'A father of two and a design engineer who loves getting the details just right.',
       },
@@ -33,8 +33,11 @@ describe('public page metadata copy', () => {
       },
     })
     expect(publicPageMetadata.photos).toEqual({
-      zh: { title: '照片', description: 'Cali 公开发布的照片。' },
-      en: { title: 'Photos', description: 'Photographs published by Cali.' },
+      zh: { title: '照片', description: 'Cali 在工作、生活和旅途中留下的一些瞬间。' },
+      en: {
+        title: 'Photos',
+        description: 'Moments Cali has kept from work, life, and everywhere in between.',
+      },
     })
     expect(publicPageMetadata.projects).toEqual({
       zh: {

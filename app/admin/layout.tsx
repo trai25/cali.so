@@ -2,10 +2,14 @@ import '../globals.css'
 import type { Metadata } from 'next'
 
 import { rootMetadata, SiteDocument } from '../_components/site-document'
-import { nonPublicRobots } from '~/lib/non-public-metadata'
+import {
+  nonPublicDescriptions,
+  nonPublicRobots,
+} from '~/lib/non-public-metadata'
 
 export const metadata: Metadata = {
   ...rootMetadata,
+  description: nonPublicDescriptions.admin,
   robots: nonPublicRobots,
 }
 

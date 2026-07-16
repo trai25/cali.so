@@ -32,8 +32,12 @@ describe('dynamic OG image metadata', () => {
     expect(englishBlogAlt).toBe(
       'Writing · Cali Castle. Essays by Cali about design, engineering, products, and the people and ideas that matter along the way.',
     )
-    expect(chinesePhotosAlt).toBe('照片 · Cali Castle。Cali 公开发布的照片。')
-    expect(englishPhotosAlt).toBe('Photos · Cali Castle. Photographs published by Cali.')
+    expect(chinesePhotosAlt).toBe(
+      '照片 · Cali Castle。Cali 在工作、生活和旅途中留下的一些瞬间。',
+    )
+    expect(englishPhotosAlt).toBe(
+      'Photos · Cali Castle. Moments Cali has kept from work, life, and everywhere in between.',
+    )
     expect(chineseProjectsAlt).toBe(
       '项目 · Cali Castle。这些年做过的产品、开源工具和小实验。有些实用，有些只是好玩，但每一个我都认真做过。',
     )

@@ -112,44 +112,119 @@ export async function createHomeOgImage(locale: Locale) {
 
 function OgSectionMark({ section }: { section: PublicSection }) {
   const stroke = ogColors.paperInk
-  const fill = ogColors.paper
   const faint = ogColors.border
 
   if (section === 'blog') {
     return (
-      <svg width="232" height="232" viewBox="0 0 232 232" fill="none">
-        <rect x="54" y="26" width="126" height="168" rx="4" fill={fill} stroke={faint} transform="rotate(5 54 26)" />
-        <rect x="42" y="34" width="126" height="168" rx="4" fill={fill} stroke={faint} transform="rotate(-4 42 34)" />
-        <rect x="52" y="31" width="126" height="168" rx="4" fill="white" stroke={stroke} />
-        <path d="M77 70H151M77 92H151M77 114H137M77 157H118" stroke={stroke} strokeWidth="3" strokeLinecap="round" />
+      <svg
+        width="232"
+        height="232"
+        viewBox="0 0 232 232"
+        fill="none"
+        aria-hidden="true"
+      >
+        <g strokeLinecap="round" strokeLinejoin="round">
+          <path
+            d="M61 36C91 31 137 30 177 33C179 78 181 146 177 194C140 198 92 199 53 196C55 148 53 80 61 36Z"
+            stroke={faint}
+            strokeWidth="1.4"
+          />
+          <path
+            d="M48 44C84 38 132 38 166 42C169 91 169 151 164 202C126 203 82 205 43 199C47 149 43 92 48 44Z"
+            stroke={faint}
+            strokeWidth="1.4"
+          />
+          <path
+            d="M55 33C89 29 136 30 178 35C181 82 180 148 176 197C137 201 93 200 51 196C54 147 50 82 55 33Z"
+            stroke={stroke}
+            strokeWidth="1.7"
+          />
+          <path
+            d="M77 71C100 69 128 70 152 71M76 93C101 91 128 93 151 92M77 115C97 113 119 115 138 114M77 157C91 155 106 157 119 156"
+            stroke={stroke}
+            strokeWidth="1.7"
+          />
+        </g>
       </svg>
     )
   }
 
   if (section === 'photos') {
     return (
-      <svg width="232" height="232" viewBox="0 0 232 232" fill="none">
-        <g transform="rotate(-7 116 116)">
-          <rect x="41" y="39" width="150" height="164" fill={fill} stroke={faint} />
-          <rect x="51" y="49" width="130" height="112" fill={faint} />
-        </g>
-        <g transform="rotate(5 116 116)">
-          <rect x="41" y="32" width="150" height="164" fill={fill} stroke={stroke} />
-          <rect x="51" y="42" width="130" height="112" fill="white" stroke={stroke} />
-          <circle cx="148" cy="72" r="14" fill={faint} />
-          <path d="M52 154L87 112L112 137L132 115L181 154" fill={faint} stroke={stroke} strokeWidth="2" strokeLinejoin="round" />
+      <svg
+        width="232"
+        height="232"
+        viewBox="0 0 232 232"
+        fill="none"
+        aria-hidden="true"
+      >
+        <g strokeLinecap="round" strokeLinejoin="round">
+          <path
+            d="M47 42C88 35 139 38 187 47C181 98 177 152 168 198C125 196 83 188 38 178C42 131 45 86 47 42Z"
+            stroke={faint}
+            strokeWidth="1.4"
+          />
+          <path
+            d="M58 31C101 34 145 39 187 47C183 96 177 149 171 197C128 196 81 189 39 181C44 131 51 78 58 31Z"
+            stroke={stroke}
+            strokeWidth="1.7"
+          />
+          <path
+            d="M67 43C101 44 143 49 175 55C172 84 168 116 164 147C129 144 94 139 55 132C59 101 63 71 67 43Z"
+            stroke={stroke}
+            strokeWidth="1.55"
+          />
+          <path
+            d="M59 132C78 115 87 106 102 96C114 112 124 123 135 134C144 124 151 116 160 108C165 120 168 133 171 147"
+            stroke={stroke}
+            strokeWidth="1.65"
+          />
+          <path
+            d="M145 69C150 66 157 67 160 72C163 78 160 84 154 86C148 87 142 83 142 77C142 74 143 71 145 69Z"
+            stroke={faint}
+            strokeWidth="1.55"
+          />
         </g>
       </svg>
     )
   }
 
   return (
-    <svg width="232" height="232" viewBox="0 0 232 232" fill="none">
-      <circle cx="116" cy="116" r="76" stroke={faint} strokeWidth="2" strokeDasharray="6 7" />
-      <path d="M116 20V212M20 116H212M48 48L184 184M184 48L48 184" stroke={faint} strokeWidth="2" />
-      <circle cx="116" cy="116" r="50" fill={fill} stroke={stroke} strokeWidth="2" />
-      <path d="M88 139L101 100L140 87L127 126L88 139Z" fill="white" stroke={stroke} strokeWidth="3" strokeLinejoin="round" />
-      <circle cx="116" cy="113" r="7" fill={stroke} />
+    <svg
+      width="232"
+      height="232"
+      viewBox="0 0 232 232"
+      fill="none"
+      aria-hidden="true"
+    >
+      <g strokeLinecap="round" strokeLinejoin="round">
+        <path
+          d="M116 38C159 37 194 72 193 116C192 160 159 193 115 194C72 193 38 158 39 115C40 72 73 39 116 38Z"
+          stroke={faint}
+          strokeWidth="1.4"
+          strokeDasharray="5 7"
+        />
+        <path
+          d="M116 20C115 69 117 162 116 212M20 116C70 115 164 117 212 116M49 48C82 83 151 151 184 184M184 48C151 80 82 151 48 184"
+          stroke={faint}
+          strokeWidth="1.35"
+        />
+        <path
+          d="M116 66C145 65 167 88 167 116C166 145 145 167 116 167C88 166 65 144 66 116C66 88 88 67 116 66Z"
+          stroke={stroke}
+          strokeWidth="1.7"
+        />
+        <path
+          d="M89 140C94 126 98 112 103 99C115 95 128 91 141 87C136 101 132 114 127 127C114 131 102 136 89 140Z"
+          stroke={stroke}
+          strokeWidth="1.75"
+        />
+        <path
+          d="M111 113C112 109 118 107 121 110C124 114 122 119 118 121C113 122 109 118 111 113Z"
+          stroke={stroke}
+          strokeWidth="1.55"
+        />
+      </g>
     </svg>
   )
 }
