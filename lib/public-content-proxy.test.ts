@@ -1,7 +1,13 @@
 import { NextRequest } from 'next/server'
+import type { NextFetchEvent } from 'next/server'
 import { describe, expect, it } from 'vitest'
 
-import { siteProxy } from '../proxy'
+import { proxy, siteProxy } from '../proxy'
+
+const event = {
+  passThroughOnException() {},
+  waitUntil() {},
+} as unknown as NextFetchEvent
 
 describe('public content proxy', () => {
   it.each([
@@ -23,11 +29,14 @@ describe('public content proxy', () => {
     '/en/blog/how-to-add-rss-to-your-nextjs-app-router',
     '/newsletters/1',
     '/en/newsletters/1',
-  ])('passes through a published content route: %s', (pathname) => {
-    const response = siteProxy(new NextRequest(`https://cali.so${pathname}`))
+  ])('passes through a published content route without Clerk: %s', async (pathname) => {
+    const response = await proxy(
+      new NextRequest(`https://cali.so${pathname}`),
+      event,
+    )
 
-    expect(response.status).toBe(200)
-    expect(response.headers.get('x-middleware-next')).toBe('1')
-    expect(response.headers.has('x-middleware-rewrite')).toBe(false)
+    expect(response?.status).toBe(200)
+    expect(response?.headers.get('x-middleware-next')).toBe('1')
+    expect(response?.headers.has('x-middleware-rewrite')).toBe(false)
   })
 })

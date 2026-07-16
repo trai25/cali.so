@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 
 import { clerkMiddleware } from '@clerk/nextjs/server'
-import type { NextRequest } from 'next/server'
+import type { NextFetchEvent, NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
 import {
@@ -24,6 +24,14 @@ function missingPublicContent(pathname: string) {
 
 function isAdminPage(pathname: string) {
   return pathname === '/admin' || pathname.startsWith('/admin/')
+}
+
+function usesClerk(pathname: string) {
+  return (
+    isAdminPage(pathname) ||
+    pathname === '/api/admin' ||
+    pathname.startsWith('/api/admin/')
+  )
 }
 
 export function siteProxy(request: NextRequest) {
@@ -50,10 +58,15 @@ export function siteProxy(request: NextRequest) {
   return response
 }
 
-export const proxy = clerkMiddleware(async (auth, request) => {
+const clerkProxy = clerkMiddleware(async (auth, request) => {
   if (isAdminPage(request.nextUrl.pathname)) await auth.protect()
   return siteProxy(request)
 })
+
+export function proxy(request: NextRequest, event: NextFetchEvent) {
+  if (!usesClerk(request.nextUrl.pathname)) return siteProxy(request)
+  return clerkProxy(request, event)
+}
 
 export const config = {
   matcher: [
