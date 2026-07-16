@@ -1420,17 +1420,37 @@ html[data-visited] .enter-polaroid .polaroid {
   }
 }
 
+::view-transition-group(root) {
+  animation: none;
+}
+
 ::view-transition-old(root) {
-  animation: vt-defocus 250ms var(--ease-swift) both;
+  display: none;
 }
 
 ::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-old(.route-content) {
+  animation: vt-defocus 250ms var(--ease-swift) both;
+}
+
+::view-transition-new(.route-content) {
   animation: vt-focus 300ms var(--ease-swift) both;
 }
 
 ::view-transition-group(*) {
   animation-duration: var(--duration-route-morph);
   animation-timing-function: var(--ease-swift);
+}
+
+html[data-route-motion='none']::view-transition-group(*),
+html[data-route-motion='none']::view-transition-image-pair(*),
+html[data-route-motion='none']::view-transition-old(*),
+html[data-route-motion='none']::view-transition-new(*) {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
 }
 
 /* The shared title owns the morph. Its supporting metadata develops once the

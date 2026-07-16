@@ -30,11 +30,13 @@ export function PostTransitionLink({
 
     const root = document.documentElement
     if (event.detail === 0) {
+      root.setAttribute('data-route-motion', 'none')
       root.style.removeProperty('--post-cover-transition-name')
       root.style.removeProperty('--post-title-transition-name')
       return
     }
 
+    root.removeAttribute('data-route-motion')
     root.style.setProperty('--post-cover-transition-name', coverTransitionName)
     root.style.setProperty('--post-title-transition-name', titleTransitionName)
   }
@@ -43,6 +45,7 @@ export function PostTransitionLink({
     <Link
       href={href}
       className={className}
+      data-post-transition-link
       onClick={preparePointerMorph}
     >
       {children}

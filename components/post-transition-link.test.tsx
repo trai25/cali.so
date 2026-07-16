@@ -8,12 +8,15 @@ vi.mock('next/link', () => ({
   default: ({
     children,
     onClick,
+    'data-post-transition-link': postTransitionLink,
   }: {
     children: ReactNode
     onClick?: MouseEventHandler<HTMLAnchorElement>
+    'data-post-transition-link'?: boolean
   }) => (
     <a
       href="/blog/a-post"
+      data-post-transition-link={postTransitionLink}
       onClick={(event) => {
         onClick?.(event)
         if (
@@ -39,6 +42,7 @@ import { PostTransitionLink } from './post-transition-link'
 describe('PostTransitionLink', () => {
   afterEach(() => {
     cleanup()
+    document.documentElement.removeAttribute('data-route-motion')
     document.documentElement.style.removeProperty(
       '--post-cover-transition-name',
     )
@@ -47,7 +51,26 @@ describe('PostTransitionLink', () => {
     )
   })
 
+  it('marks the rendered anchor as a post transition link', () => {
+    render(
+      <PostTransitionLink
+        href="/blog/a-post"
+        coverTransitionName="cover-p01"
+        titleTransitionName="title-p01"
+      >
+        Marked post
+      </PostTransitionLink>,
+    )
+
+    expect(
+      screen
+        .getByRole('link', { name: 'Marked post' })
+        .hasAttribute('data-post-transition-link'),
+    ).toBe(true)
+  })
+
   it('carries the clicked row transition names into the destination shell', () => {
+    document.documentElement.setAttribute('data-route-motion', 'none')
     render(
       <PostTransitionLink
         href="/blog/a-post"
@@ -72,9 +95,13 @@ describe('PostTransitionLink', () => {
         '--post-title-transition-name',
       ),
     ).toBe('title-p01')
+    expect(document.documentElement.hasAttribute('data-route-motion')).toBe(
+      false,
+    )
   })
 
   it('navigates without a morph when activated from the keyboard', () => {
+    document.documentElement.setAttribute('data-route-motion', 'none')
     document.documentElement.style.setProperty(
       '--post-cover-transition-name',
       'stale-cover',
@@ -106,6 +133,7 @@ describe('PostTransitionLink', () => {
         '--post-title-transition-name',
       ),
     ).toBe('')
+    expect(document.documentElement.dataset.routeMotion).toBe('none')
   })
 
   it.each([

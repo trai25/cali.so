@@ -77,6 +77,7 @@ function BlogPostLoadingShell({ locale }: { locale: Locale }) {
   return (
     <article
       aria-busy="true"
+      data-post-loading-shell
       className="post-article mx-auto min-h-[calc(100svh-3.5rem)] w-full max-w-[37.5rem] px-6"
     >
       <div role="status" aria-label={label}>
