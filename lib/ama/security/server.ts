@@ -1,9 +1,7 @@
 import 'server-only'
 
-import { Ratelimit } from '@upstash/ratelimit'
-import { Redis } from '@upstash/redis'
-
 import { getServerEnv } from '../server-env'
+import { createRateLimiter } from '../../rate-limit/server'
 import { amaSecurityAuditSink } from './audit-server'
 import { createAmaSecurity } from './service'
 
@@ -13,17 +11,10 @@ export function getAmaSecurity() {
   if (security) return security
 
   const environment = getServerEnv()
-  const redis = new Redis({
-    url: environment.UPSTASH_REDIS_REST_URL,
-    token: environment.UPSTASH_REDIS_REST_TOKEN,
-  })
-  const limiter = new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(
-      environment.ADMIN_MUTATION_RATE_LIMIT_MAX_REQUESTS,
-      `${environment.ADMIN_MUTATION_RATE_LIMIT_WINDOW_SECONDS} s`,
-    ),
+  const limiter = createRateLimiter(environment.rateLimitBackend, {
     prefix: 'cali:ama:admin-mutation',
+    maxRequests: environment.ADMIN_MUTATION_RATE_LIMIT_MAX_REQUESTS,
+    windowSeconds: environment.ADMIN_MUTATION_RATE_LIMIT_WINDOW_SECONDS,
   })
 
   security = createAmaSecurity({

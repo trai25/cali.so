@@ -8,10 +8,12 @@ vi.mock('next/link', () => ({
   default: ({
     children,
     onClick,
+    onNavigate,
     transitionTypes,
   }: {
     children: ReactNode
     onClick?: MouseEventHandler<HTMLAnchorElement>
+    onNavigate?: () => void
     transitionTypes?: string[]
   }) => (
     <a
@@ -19,6 +21,17 @@ vi.mock('next/link', () => ({
       data-transition-types={transitionTypes?.join(',')}
       onClick={(event) => {
         onClick?.(event)
+        if (
+          event.defaultPrevented ||
+          event.button !== 0 ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey
+        ) {
+          return
+        }
+        onNavigate?.()
         event.preventDefault()
       }}
     >
@@ -51,7 +64,9 @@ describe('PostTransitionLink', () => {
       </PostTransitionLink>,
     )
 
-    fireEvent.click(screen.getByRole('link', { name: 'Read post' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Read post' }), {
+      detail: 1,
+    })
 
     expect(
       screen
@@ -71,20 +86,27 @@ describe('PostTransitionLink', () => {
     ).toBe('title-p01')
   })
 
-  it('leaves the current page unchanged for modified clicks', () => {
+  it('navigates without a morph when activated from the keyboard', () => {
+    document.documentElement.style.setProperty(
+      '--post-cover-transition-name',
+      'stale-cover',
+    )
+    document.documentElement.style.setProperty(
+      '--post-title-transition-name',
+      'stale-title',
+    )
+
     render(
       <PostTransitionLink
         href="/blog/a-post"
         coverTransitionName="cover-p01"
         titleTransitionName="title-p01"
       >
-        Open post elsewhere
+        Read with keyboard
       </PostTransitionLink>,
     )
 
-    fireEvent.click(screen.getByRole('link', { name: 'Open post elsewhere' }), {
-      metaKey: true,
-    })
+    fireEvent.click(screen.getByRole('link', { name: 'Read with keyboard' }))
 
     expect(
       document.documentElement.style.getPropertyValue(
@@ -97,4 +119,42 @@ describe('PostTransitionLink', () => {
       ),
     ).toBe('')
   })
+
+  it.each([
+    ['Command-click', { metaKey: true }],
+    ['Control-click', { ctrlKey: true }],
+    ['Shift-click', { shiftKey: true }],
+    ['Alt-click', { altKey: true }],
+    ['middle-click', { button: 1 }],
+  ] satisfies Array<[string, MouseEventInit]>)(
+    'leaves %s native when Next does not navigate',
+    (_label, eventInit) => {
+      render(
+        <PostTransitionLink
+          href="/blog/a-post"
+          coverTransitionName="cover-p01"
+          titleTransitionName="title-p01"
+        >
+          Open post elsewhere
+        </PostTransitionLink>,
+      )
+
+      const handled = fireEvent.click(
+        screen.getByRole('link', { name: 'Open post elsewhere' }),
+        eventInit,
+      )
+
+      expect(
+        document.documentElement.style.getPropertyValue(
+          '--post-cover-transition-name',
+        ),
+      ).toBe('')
+      expect(
+        document.documentElement.style.getPropertyValue(
+          '--post-title-transition-name',
+        ),
+      ).toBe('')
+      expect(handled).toBe(true)
+    },
+  )
 })

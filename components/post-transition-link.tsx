@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import type { MouseEvent, ReactNode } from 'react'
+import { useRef, type MouseEvent, type ReactNode } from 'react'
 
 export function PostTransitionLink({
   href,
@@ -16,19 +16,20 @@ export function PostTransitionLink({
   className?: string
   children: ReactNode
 }) {
-  function prepareFallbackMorph(event: MouseEvent<HTMLAnchorElement>) {
-    if (
-      event.defaultPrevented ||
-      event.button !== 0 ||
-      event.metaKey ||
-      event.ctrlKey ||
-      event.shiftKey ||
-      event.altKey
-    ) {
+  const pointerNavigationRef = useRef(false)
+
+  function recordInputModality(event: MouseEvent<HTMLAnchorElement>) {
+    pointerNavigationRef.current = event.detail !== 0
+  }
+
+  function prepareFallbackMorph() {
+    const root = document.documentElement
+    if (!pointerNavigationRef.current) {
+      root.style.removeProperty('--post-cover-transition-name')
+      root.style.removeProperty('--post-title-transition-name')
       return
     }
 
-    const root = document.documentElement
     root.style.setProperty('--post-cover-transition-name', coverTransitionName)
     root.style.setProperty('--post-title-transition-name', titleTransitionName)
   }
@@ -39,7 +40,8 @@ export function PostTransitionLink({
       prefetch={true}
       transitionTypes={['page-forward']}
       className={className}
-      onClick={prepareFallbackMorph}
+      onClick={recordInputModality}
+      onNavigate={prepareFallbackMorph}
     >
       {children}
     </Link>

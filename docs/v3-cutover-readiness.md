@@ -52,11 +52,11 @@ Renditions. The retired static photo fallback has been removed.
 | Required GitHub checks | FAIL | Neither the `v2` ruleset nor `main` branch protection requires `Quality` and `CodeQL`. The maintainer-operated commands are in `docs/v3-cutover-ops-runbook.md`. |
 | Current Vercel project settings | PASS | Project inspection succeeds with the explicit team scope. The earlier `Not authorized` was a CLI quirk: the team slug `cali` resolves to the personal account, so commands must pass the team ID as `--scope` (see the runbook). |
 | Production capability switches | PASS | All five optional `AMA_*_ENABLED` variables are absent from Production and therefore fail closed. Setting them explicitly `false` remains recommended during provisioning. `AMA_ADMIN_ENABLED` survives in Preview as dead configuration after ADR-0008 and should be removed. |
-| Preview and Production secret isolation | FAIL | `RESEND_API_KEY` is one variable targeting both Production and Preview, and the `KV_*`/`REDIS_URL` group added with the Preview provisioning also targets both environments. |
+| Preview and Production secret isolation | FAIL | `RESEND_API_KEY` is one variable targeting both Production and Preview. The `KV_*`/`REDIS_URL` group also still targets Preview and must be removed there: Redis is Production-only, while Preview rate limits use its isolated Neon database. |
 | Production runtime environment | FAIL | Production `DATABASE_URL` predates the rewrite by over three years, and the v3 server-environment contract is otherwise unmet: no `SESSION_SECRET`, `AMA_ENCRYPTION_KEY`, `RATE_LIMIT_HASH_KEY`, `SITE_URL`, `RESEND_FROM_EMAIL`, rate-limit values, `CRON_SECRET`, or any `BUNNY_*`/`MEDIA_*` variable. The first v3 production build would fail environment validation. |
 | Production runtime database grants | AWAITING CONFIRMATION | Requires two fresh confirmations before inspecting the production role or sensitive cloud state. |
 | Production migration credential | PASS (name level) | `MIGRATION_DATABASE_URL` is absent from every Vercel environment. Its availability to the controlled migration operation is confirmed at cutover time. |
-| Production migrations | AWAITING CONFIRMATION | Nine additive migrations validate locally. Media migrations `0005` through `0009` are required for the v3 photo surface; execution and schema state require a separately authorized cutover step. |
+| Production migrations | AWAITING CONFIRMATION | Ten additive migrations validate locally. Media migrations `0005` through `0009` are required for the v3 photo surface, and `0010` adds Preview's durable rate-limit windows; execution and schema state require a separately authorized cutover step. |
 | Media provider and publication | FAIL | Production has no Bunny or media configuration at all, so the provider boundary, live storage contract, and the two-photo Published Photo Selection cannot exist yet. Provisioning precedes verification. |
 | Other external providers | PASS (name level) | No Google, Tencent, payment, or booking-finalization credentials exist in Production. Legacy-era variables (Clerk, Sanity, Edge Config, a three-year-old Upstash pair) remain for the current `main` site and need pruning or rotation at cutover. |
 | Logs and drains | UNKNOWN | Not exposed through the CLI; verify access, retention, drains, and the privacy allowlist in the Vercel dashboard. |
@@ -193,10 +193,12 @@ Final review artifacts after the accessibility corrections:
 Migrations `0001` through `0004` are additive AMA foundations. Migrations
 `0005` through `0009` define the Media catalog, Photo Selection publication,
 publication revisions, durable Purge progress, and the Catalog State rename.
-Their checked-in snapshots and migration tests pass. Unlike the optional public AMA flows, the v3 public
-photo surfaces require the Media migrations, production Bunny configuration,
-and an active Published Photo Selection. Git remains authoritative for writing
-and ordinary site content, but not for the curated photo wall.
+Migration `0010` adds durable Preview rate-limit windows without storing raw
+request keys. Their checked-in snapshots and migration tests pass. Unlike the
+optional public AMA flows, the v3 public photo surfaces require the Media
+migrations, production Bunny configuration, and an active Published Photo
+Selection. Git remains authoritative for writing and ordinary site content,
+but not for the curated photo wall.
 
 Before cutover, an authorized operator must:
 
@@ -221,7 +223,7 @@ No manual DNS move is expected, but current project ownership, production
 branch, aliases, certificate, and environment scopes must be verified first.
 
 Rollback must prefer promoting the last known-good Vercel production deployment
-or reverting the cutover merge. The nine additive database migrations should
+or reverting the cutover merge. The ten additive database migrations should
 remain in place during application rollback; destructive down migrations are
 not part of the procedure. Record the known-good deployment identifier and an
 operator before cutover.
@@ -235,14 +237,14 @@ The maintainer-operated commands for actions 1 through 4 are collected in
    legacy `DATABASE_URL` with the CRUD-only Neon runtime role and add the
    missing secrets, rate limits, capability switches, and complete Bunny and
    media configuration.
-2. Split the shared `RESEND_API_KEY` and `KV_*`/`REDIS_URL` credentials so
-   Preview and Production hold isolated values, and delete the dead
-   `AMA_ADMIN_ENABLED` variable from Preview.
+2. Split the shared `RESEND_API_KEY`, scope the `KV_*`/`REDIS_URL` integration
+   to Production only, remove every Redis variable from Preview, and delete the
+   dead `AMA_ADMIN_ENABLED` variable from Preview.
 3. Add `Quality` and `CodeQL` as required checks to both `v2` and `main`.
 4. In the Vercel dashboard, verify logs, drains, retention, firewall rules,
    the production-branch mapping, and the certificate.
 5. With two fresh confirmations, verify production runtime database grants
-   and migration state, then apply migrations `0001` through `0009` with the
+   and migration state, then apply migrations `0001` through `0010` with the
    separately supplied migration credential.
 6. Verify the production Bunny and Neon Media boundary, run the protected live
    storage contract, and publish the intended two-photo Published Photo
