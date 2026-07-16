@@ -1,5 +1,7 @@
 import '../globals.css'
 
+import { ClerkProvider } from '@clerk/nextjs'
+
 import { rootMetadata, SiteDocument } from '../_components/site-document'
 
 export const metadata = rootMetadata
@@ -11,7 +13,7 @@ export const prefetch = 'force-disabled'
 export default function AdminRootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <SiteDocument isAdmin locale="zh" restoreLocale>
-      {children}
+      <ClerkProvider dynamic>{children}</ClerkProvider>
     </SiteDocument>
   )
 }
