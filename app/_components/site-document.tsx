@@ -27,10 +27,12 @@ export const rootMetadata: Metadata = {
 
 export async function SiteDocument({
   children,
+  isAdmin = false,
   locale,
   restoreLocale = false,
 }: Readonly<{
   children: React.ReactNode
+  isAdmin?: boolean
   locale: Locale
   restoreLocale?: boolean
 }>) {
@@ -38,7 +40,7 @@ export async function SiteDocument({
   // shared chrome fresh without making any page request-bound.
   const [social, github] = await Promise.all([getSocial(), getGitHub()])
   const english = locale === 'en'
-  const isPublicSite = !restoreLocale
+  const isPublicSite = !isAdmin
 
   return (
     <html

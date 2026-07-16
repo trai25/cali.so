@@ -61,8 +61,8 @@ describe('SiteDocument analytics', () => {
     const html = renderToStaticMarkup(
       await SiteDocument({
         children: <p>Owner admin</p>,
+        isAdmin: true,
         locale: 'zh',
-        restoreLocale: true,
       }),
     )
 
