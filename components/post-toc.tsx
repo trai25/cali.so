@@ -380,7 +380,6 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
           <div className="post-minimap-utilities post-minimap-utilities-top">
             <Link
               href={localePath(locale, '/blog')}
-              transitionTypes={['page-back']}
               className="post-minimap-utility"
               aria-label={localize(locale, '返回写作', 'Back to writing')}
             >

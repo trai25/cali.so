@@ -1396,8 +1396,8 @@ html[data-visited] .enter-polaroid .polaroid {
   animation-delay: calc(var(--reveal-delay, 0ms) + 250ms);
 }
 
-/* Route transition: ambient guides and chrome stay fixed while the content
-   sheet lifts and settles. Shared covers/titles still own their morph. */
+/* Route transition: the origin defocuses while the destination rises.
+   Shared covers/titles morph via view-transition-name. */
 .post-loading-cover {
   view-transition-name: var(--post-cover-transition-name, none);
 }
@@ -1406,76 +1406,26 @@ html[data-visited] .enter-polaroid .polaroid {
   view-transition-name: var(--post-title-transition-name, none);
 }
 
-@keyframes page-sheet-out {
+@keyframes vt-defocus {
   to {
     opacity: 0;
-    transform: translate3d(-8px, 6px, 0) rotate(-0.2deg);
+    filter: blur(2px);
   }
 }
 
-@keyframes page-sheet-in {
+@keyframes vt-focus {
   from {
     opacity: 0;
-    transform: translate3d(14px, -10px, 0) rotate(0.45deg);
+    filter: blur(2px);
   }
 }
 
-@keyframes page-forward-out {
-  to {
-    opacity: 0;
-    transform: translate3d(-14px, 5px, 0) rotate(-0.25deg);
-  }
+::view-transition-old(root) {
+  animation: vt-defocus 250ms var(--ease-swift) both;
 }
 
-@keyframes page-forward-in {
-  from {
-    opacity: 0;
-    transform: translate3d(18px, -8px, 0) rotate(0.4deg);
-  }
-}
-
-@keyframes page-back-out {
-  to {
-    opacity: 0;
-    transform: translate3d(14px, 5px, 0) rotate(0.25deg);
-  }
-}
-
-@keyframes page-back-in {
-  from {
-    opacity: 0;
-    transform: translate3d(-18px, -8px, 0) rotate(-0.4deg);
-  }
-}
-
-::view-transition-old(.page-sheet) {
-  transform-origin: 50% 0;
-  animation: page-sheet-out 210ms var(--ease-swift) both;
-}
-
-::view-transition-new(.page-sheet) {
-  transform-origin: 50% 0;
-  animation: page-sheet-in 320ms var(--ease-swift) both;
-}
-
-::view-transition-old(.page-forward) {
-  transform-origin: 50% 0;
-  animation: page-forward-out 210ms var(--ease-swift) both;
-}
-
-::view-transition-new(.page-forward) {
-  transform-origin: 50% 0;
-  animation: page-forward-in 320ms var(--ease-swift) both;
-}
-
-::view-transition-old(.page-back) {
-  transform-origin: 50% 0;
-  animation: page-back-out 210ms var(--ease-swift) both;
-}
-
-::view-transition-new(.page-back) {
-  transform-origin: 50% 0;
-  animation: page-back-in 320ms var(--ease-swift) both;
+::view-transition-new(root) {
+  animation: vt-focus 300ms var(--ease-swift) both;
 }
 
 ::view-transition-group(*) {

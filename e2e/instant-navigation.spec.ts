@@ -3,7 +3,44 @@ import { expect, test } from '@playwright/test'
 
 const postSlug = '2023-year-in-review'
 
-test('the Chinese post is prefetched from the home page', async ({ page }) => {
+async function observeCoverMorph(
+  page: import('@playwright/test').Page,
+  name: string,
+) {
+  await page.evaluate((transitionName) => {
+    const state = window as typeof window & {
+      __postCoverMorphObserved?: boolean
+    }
+    state.__postCoverMorphObserved = false
+
+    let frame = 0
+    const sample = () => {
+      const animationName = getComputedStyle(
+        document.documentElement,
+        `::view-transition-group(${transitionName})`,
+      ).animationName
+      if (animationName !== 'none') state.__postCoverMorphObserved = true
+      frame += 1
+      if (frame < 120) requestAnimationFrame(sample)
+    }
+    requestAnimationFrame(sample)
+  }, name)
+}
+
+async function expectCoverMorph(page: import('@playwright/test').Page) {
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as typeof window & {
+            __postCoverMorphObserved?: boolean
+          }).__postCoverMorphObserved ?? false,
+      ),
+    )
+    .toBe(true)
+}
+
+test('the Chinese post shell is prefetched from the home page', async ({ page }) => {
   await page.goto('/')
   await page.waitForLoadState('networkidle')
 
@@ -14,13 +51,7 @@ test('the Chinese post is prefetched from the home page', async ({ page }) => {
       .click()
 
     await expect(page).toHaveURL(`/blog/${postSlug}`)
-    await expect(page.getByRole('status', { name: '正在加载文章' })).toHaveCount(0)
-    await expect(
-      page.getByRole('heading', {
-        level: 1,
-        name: '2023 年终总结，致我不同寻常的 28',
-      }),
-    ).toBeVisible()
+    await expect(page.getByRole('status', { name: '正在加载文章' })).toBeVisible()
     await expect(page.getByRole('navigation', { name: '主导航' })).toBeVisible()
   })
 
@@ -35,7 +66,7 @@ test('the Chinese post is prefetched from the home page', async ({ page }) => {
   ).toBeVisible()
 })
 
-test('the English post is prefetched from the home page', async ({ page }) => {
+test('the English post shell is prefetched from the home page', async ({ page }) => {
   await page.goto('/en')
   await page.waitForLoadState('networkidle')
 
@@ -46,13 +77,7 @@ test('the English post is prefetched from the home page', async ({ page }) => {
       .click()
 
     await expect(page).toHaveURL(`/en/blog/${postSlug}`)
-    await expect(page.getByRole('status', { name: 'Loading article' })).toHaveCount(0)
-    await expect(
-      page.getByRole('heading', {
-        level: 1,
-        name: '2023 Year in Review: My Unusual 28th Year',
-      }),
-    ).toBeVisible()
+    await expect(page.getByRole('status', { name: 'Loading article' })).toBeVisible()
     await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible()
   })
 
@@ -70,7 +95,7 @@ test('the English post is prefetched from the home page', async ({ page }) => {
   ).toBeVisible()
 })
 
-test('the Chinese post is prefetched from the blog index', async ({ page }) => {
+test('the Chinese post shell morphs from the blog index cover', async ({ page }) => {
   await page.goto('/blog')
   await page.waitForLoadState('networkidle')
 
@@ -92,11 +117,13 @@ test('the Chinese post is prefetched from the blog index', async ({ page }) => {
       ),
   ])
 
+  await observeCoverMorph(page, coverTransitionName)
+
   await instant(page, async () => {
     await postLink.click()
 
     await expect(page).toHaveURL(`/blog/${postSlug}`)
-    await expect(page.getByRole('status', { name: '正在加载文章' })).toHaveCount(0)
+    await expect(page.getByRole('status', { name: '正在加载文章' })).toBeVisible()
     await expect(page.locator('html')).toHaveCSS(
       '--post-cover-transition-name',
       coverTransitionName,
@@ -105,16 +132,18 @@ test('the Chinese post is prefetched from the blog index', async ({ page }) => {
       '--post-title-transition-name',
       titleTransitionName,
     )
-    await expect(
-      page.getByRole('heading', {
-        level: 1,
-        name: '2023 年终总结，致我不同寻常的 28',
-      }),
-    ).toBeVisible()
+    await expectCoverMorph(page)
   })
+
+  await expect(
+    page.getByRole('heading', {
+      level: 1,
+      name: '2023 年终总结，致我不同寻常的 28',
+    }),
+  ).toBeVisible()
 })
 
-test('the English post is prefetched from the blog index', async ({ page }) => {
+test('the English post shell morphs from the blog index cover', async ({ page }) => {
   await page.goto('/en/blog')
   await page.waitForLoadState('networkidle')
 
@@ -133,14 +162,16 @@ test('the English post is prefetched from the blog index', async ({ page }) => {
       .locator('.blog-row-title')
       .evaluate((element) =>
         getComputedStyle(element).getPropertyValue('view-transition-name'),
-      ),
+    ),
   ])
+
+  await observeCoverMorph(page, coverTransitionName)
 
   await instant(page, async () => {
     await postLink.click()
 
     await expect(page).toHaveURL(`/en/blog/${postSlug}`)
-    await expect(page.getByRole('status', { name: 'Loading article' })).toHaveCount(0)
+    await expect(page.getByRole('status', { name: 'Loading article' })).toBeVisible()
     await expect(page.locator('html')).toHaveCSS(
       '--post-cover-transition-name',
       coverTransitionName,
@@ -149,13 +180,15 @@ test('the English post is prefetched from the blog index', async ({ page }) => {
       '--post-title-transition-name',
       titleTransitionName,
     )
-    await expect(
-      page.getByRole('heading', {
-        level: 1,
-        name: '2023 Year in Review: My Unusual 28th Year',
-      }),
-    ).toBeVisible()
+    await expectCoverMorph(page)
   })
+
+  await expect(
+    page.getByRole('heading', {
+      level: 1,
+      name: '2023 Year in Review: My Unusual 28th Year',
+    }),
+  ).toBeVisible()
 })
 
 test('preferences preserve theme, locale, and reduced motion', async ({ page }) => {
@@ -386,31 +419,44 @@ test('administration stays outside public prefetching and requires login', async
   }
 })
 
-test('the home page prefetches visible post content beyond the shared route shell', async ({
+test('the blog index prefetches one shared post shell without runtime article payloads', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 900 })
-  const prefetches: Array<{ segment?: string; url: string }> = []
+  const prefetches: Array<{ kind?: string; segment?: string; url: string }> = []
   page.on('request', (request) => {
     const headers = request.headers()
-    if (headers['next-router-prefetch'] === '1') {
+    if (headers['next-router-prefetch']) {
       prefetches.push({
+        kind: headers['next-router-prefetch'],
         segment: headers['next-router-segment-prefetch'],
         url: request.url(),
       })
     }
   })
 
-  await page.goto('/')
+  await page.goto('/blog')
   await page.waitForLoadState('networkidle')
 
   expect(prefetches.length).toBeGreaterThan(0)
   expect(
     prefetches.some(
-      ({ segment, url }) =>
-        segment !== '/_tree' &&
-        new URL(url).pathname === `/blog/${postSlug}`,
+      ({ kind, segment, url }) =>
+        kind === '1' &&
+        segment === '/_tree' &&
+        new URL(url).pathname.startsWith('/blog/'),
     ),
   ).toBe(true)
-  expect(prefetches.some(({ segment }) => segment === '/_tree')).toBe(true)
+  expect(
+    prefetches.filter(
+      ({ kind, url }) =>
+        kind === '3' && new URL(url).pathname.startsWith('/blog/'),
+    ),
+  ).toHaveLength(1)
+  expect(
+    prefetches.some(
+      ({ kind, url }) =>
+        kind === '2' && new URL(url).pathname.startsWith('/blog/'),
+    ),
+  ).toBe(false)
 })

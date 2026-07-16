@@ -33,7 +33,7 @@ it on chrome.
 | Exit (any) | ~2/3 of its enter | `--ease-swift` |
 | Photo pick-up / settle | 300–350ms | `--ease-spring` |
 | Shared-element page transition | 300–350ms | `--ease-swift` |
-| Content-sheet page transition | 210ms exit / 320ms enter | `--ease-swift` |
+| Route defocus / focus | 250ms exit / 300ms enter | `--ease-swift` |
 
 Shadow scale (one alpha, growing throw — don't invent one-off shadows):
 
@@ -54,11 +54,11 @@ Hard rules:
 - Elements that move together share one duration and easing (card + its
   shadow, cover + its caption).
 - Route changes keep the ambient guides, dock, and other global chrome fixed.
-  Only the route content sheet moves: a small 8–18px translation, less than
-  half a degree of rotation, and opacity. Forward and explicitly tagged back
-  links reverse the horizontal direction. Browser history without a tag gets
-  the neutral sheet motion. Shared post covers and titles remain separate
-  morph elements. Reduced motion swaps every route instantly.
+  The route content defocuses by 2px while fading, then the destination focuses
+  into place. Shared post covers and titles remain separate morph elements.
+  Pointer-initiated post links prepare those identities before navigation;
+  keyboard navigation omits the shared morph. Reduced motion swaps every route
+  instantly.
 - Scroll reveals are allowed only as gentle arrivals: below-fold long-form
   blocks may sharpen in (blur 2px → 0 + fade, 300ms `--ease-swift`, ≤45ms
   stagger within a batch) as they enter the viewport. Never parallax, never
