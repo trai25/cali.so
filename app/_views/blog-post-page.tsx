@@ -81,14 +81,14 @@ function BlogPostLoadingShell({ locale }: { locale: Locale }) {
     >
       <div role="status" aria-label={label}>
         <span className="sr-only">{label}</span>
-        <div aria-hidden className="polaroid">
+        <div aria-hidden className="polaroid post-loading-cover">
           <div className="polaroid-photo aspect-video bg-muted/40" />
           <div className="polaroid-caption">
             <span className="h-2 w-24 bg-muted/50" />
           </div>
         </div>
         <div aria-hidden className="mt-10 h-24 space-y-3">
-          <div className="h-7 w-4/5 bg-muted/60" />
+          <div className="post-loading-title h-7 w-4/5 bg-muted/60" />
           <div className="h-3 w-32 bg-muted/45" />
         </div>
         <div aria-hidden className="mt-10 space-y-3">
