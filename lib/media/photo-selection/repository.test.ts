@@ -75,9 +75,10 @@ describe('Photo Selection repository', () => {
     await client.query(
       `INSERT INTO media_upload_intents
         (id, owner_user_id, idempotency_key, original_key, content_type,
-         byte_size, checksum_sha256, expires_at)
+         byte_size, checksum_sha256, expires_at, created_at)
        VALUES ($1, $2, $3, $4, 'image/jpeg', 1000, $5,
-               '2026-07-16T00:00:00.000Z')`,
+               '2026-07-16T00:00:00.000Z',
+               '2026-07-15T00:00:00.000Z')`,
       [
         uploadIntentId,
         ownerUserId,

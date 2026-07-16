@@ -38,9 +38,10 @@ describe('Media Asset Purge repository', () => {
     await client.query(
       `INSERT INTO media_upload_intents
         (id, owner_user_id, idempotency_key, original_key, content_type,
-         byte_size, checksum_sha256, expires_at)
+         byte_size, checksum_sha256, expires_at, created_at)
        VALUES ($1, 'owner_01', 'upload_01', 'originals/photo.jpg',
-               'image/jpeg', 1000, $2, '2026-07-16T00:00:00Z')`,
+               'image/jpeg', 1000, $2, '2026-07-16T00:00:00Z',
+               '2026-07-15T00:00:00Z')`,
       [intentId, 'a'.repeat(64)],
     )
     await client.query(
