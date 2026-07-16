@@ -1,7 +1,7 @@
 import Image from 'next/image'
-import Link from 'next/link'
 
 import { DitherVeil } from '~/components/dither-veil'
+import { PostTransitionLink } from '~/components/post-transition-link'
 import type { Post } from '~/lib/content'
 import { formatMonthDay, formatShortDate } from '~/lib/date'
 import { LocalDate, T } from '~/lib/i18n'
@@ -23,10 +23,13 @@ export function PostRow({
 }) {
   const Heading = headingLevel
   const safeSlug = encodeURIComponent(post.slug)
+  const coverTransitionName = postViewTransitionName('cover', post.slug)
+  const titleTransitionName = postViewTransitionName('title', post.slug)
   return (
-    <Link
+    <PostTransitionLink
       href={localePath(locale, `/blog/${safeSlug}`)}
-      prefetch={true}
+      coverTransitionName={coverTransitionName}
+      titleTransitionName={titleTransitionName}
       className="group blog-row hairline-top"
     >
       <span className="print-pile" aria-hidden>
@@ -35,7 +38,7 @@ export function PostRow({
         {post.cover ? (
           <span
             className="print-thumb"
-            style={{ viewTransitionName: postViewTransitionName('cover', post.slug) } as React.CSSProperties}
+            style={{ viewTransitionName: coverTransitionName } as React.CSSProperties}
           >
             <Image src={post.cover.src} alt="" width={64} height={44} sizes="64px" className="print-thumb-img" />
             <DitherVeil src={post.cover.src} />
@@ -46,7 +49,7 @@ export function PostRow({
       </span>
       <Heading
         className="blog-row-title"
-        style={{ viewTransitionName: postViewTransitionName('title', post.slug) } as React.CSSProperties}
+        style={{ viewTransitionName: titleTransitionName } as React.CSSProperties}
       >
         <T zh={post.title} en={post.titleEn} />
       </Heading>
@@ -59,6 +62,6 @@ export function PostRow({
         {dateStyle === 'short' && formatShortDate(post.publishedAt)}
         {dateStyle === 'full' && <LocalDate date={post.publishedAt} />}
       </time>
-    </Link>
+    </PostTransitionLink>
   )
 }

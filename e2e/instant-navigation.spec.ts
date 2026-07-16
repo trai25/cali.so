@@ -74,17 +74,85 @@ test('the Chinese post is prefetched from the blog index', async ({ page }) => {
   await page.goto('/blog')
   await page.waitForLoadState('networkidle')
 
+  const postLink = page
+    .getByRole('link', {
+      name: /2023 年终总结，致我不同寻常的 28/,
+    })
+    .first()
+  const [coverTransitionName, titleTransitionName] = await Promise.all([
+    postLink
+      .locator('.print-thumb')
+      .evaluate((element) =>
+        getComputedStyle(element).getPropertyValue('view-transition-name'),
+      ),
+    postLink
+      .locator('.blog-row-title')
+      .evaluate((element) =>
+        getComputedStyle(element).getPropertyValue('view-transition-name'),
+      ),
+  ])
+
   await instant(page, async () => {
-    await page
-      .getByRole('link', { name: /2023 年终总结，致我不同寻常的 28/ })
-      .click()
+    await postLink.click()
 
     await expect(page).toHaveURL(`/blog/${postSlug}`)
     await expect(page.getByRole('status', { name: '正在加载文章' })).toHaveCount(0)
+    await expect(page.locator('html')).toHaveCSS(
+      '--post-cover-transition-name',
+      coverTransitionName,
+    )
+    await expect(page.locator('html')).toHaveCSS(
+      '--post-title-transition-name',
+      titleTransitionName,
+    )
     await expect(
       page.getByRole('heading', {
         level: 1,
         name: '2023 年终总结，致我不同寻常的 28',
+      }),
+    ).toBeVisible()
+  })
+})
+
+test('the English post is prefetched from the blog index', async ({ page }) => {
+  await page.goto('/en/blog')
+  await page.waitForLoadState('networkidle')
+
+  const postLink = page
+    .getByRole('link', {
+      name: /2023 Year in Review: My Unusual 28th Year/,
+    })
+    .first()
+  const [coverTransitionName, titleTransitionName] = await Promise.all([
+    postLink
+      .locator('.print-thumb')
+      .evaluate((element) =>
+        getComputedStyle(element).getPropertyValue('view-transition-name'),
+      ),
+    postLink
+      .locator('.blog-row-title')
+      .evaluate((element) =>
+        getComputedStyle(element).getPropertyValue('view-transition-name'),
+      ),
+  ])
+
+  await instant(page, async () => {
+    await postLink.click()
+
+    await expect(page).toHaveURL(`/en/blog/${postSlug}`)
+    await expect(page.getByRole('status', { name: 'Loading article' })).toHaveCount(0)
+    await expect(page.locator('html')).toHaveCSS(
+      '--post-cover-transition-name',
+      coverTransitionName,
+    )
+    await expect(page.locator('html')).toHaveCSS(
+      '--post-title-transition-name',
+      titleTransitionName,
+    )
+    await expect(
+      page.getByRole('heading', {
+        level: 1,
+        name: '2023 Year in Review: My Unusual 28th Year',
       }),
     ).toBeVisible()
   })
