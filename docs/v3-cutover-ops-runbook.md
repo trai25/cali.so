@@ -79,6 +79,10 @@ JSON
 
   Verify the Preview runtime role can only select, insert, update, and delete
   `rate_limit_windows`; it must not own the table or receive DDL privileges.
+  Preview has no Redis fallback: if the table or grants are missing,
+  rate-limited admin mutations fail closed with 503. Because the Redis
+  variables are already absent, do not count Preview mutation checks as passed
+  until this migration and grant verification succeeds.
 
 - Add a Preview-only `CLERK_SECRET_KEY` from the non-production Clerk
   environment. Never copy the Production Clerk secret into Preview.
