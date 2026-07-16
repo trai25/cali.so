@@ -11,6 +11,7 @@ import {
   createOwnerAuthorizer,
   type OwnerPrincipal,
 } from './authorization'
+import { createOwnerReverifier } from './reverification'
 
 const authorizeOwner = createOwnerAuthorizer({
   getOwnerDataId() {
@@ -26,6 +27,13 @@ const authorizeOwner = createOwnerAuthorizer({
 })
 
 export const getOwnerAccess = cache(authorizeOwner)
+
+export const ownerHighImpactReverifier = createOwnerReverifier({
+  async hasFreshFirstFactor(requirement) {
+    const { has } = await auth()
+    return has({ reverification: requirement })
+  },
+})
 
 export async function requireOwnerPage(
   returnBackUrl: string,

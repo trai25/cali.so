@@ -79,6 +79,31 @@ describe('owner authorization', () => {
     await expect(authorize()).resolves.toEqual({ status: 'forbidden' })
   })
 
+  it('never authorizes through email or client-writable metadata', async () => {
+    const authorize = createOwnerAuthorizer({
+      getOwnerDataId() {
+        return 'owner@example.com'
+      },
+      async getAuthentication() {
+        return {
+          isAuthenticated: true,
+          sessionStatus: 'active',
+          userId: 'user_public_account',
+        }
+      },
+      async getUser() {
+        return {
+          id: 'user_public_account',
+          emailAddresses: [{ emailAddress: 'owner@example.com' }],
+          publicMetadata: {},
+          unsafeMetadata: { siteOwner: 'yes' },
+        }
+      },
+    })
+
+    await expect(authorize()).resolves.toEqual({ status: 'forbidden' })
+  })
+
   it('authorizes the Clerk user marked as the site owner', async () => {
     const authorize = createOwnerAuthorizer({
       getOwnerDataId() {

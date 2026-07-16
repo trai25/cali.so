@@ -2,6 +2,10 @@
 
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 
+import {
+  PasskeyVerificationError,
+  usePasskeyVerification,
+} from '~/lib/admin/passkey-client'
 import { T } from '~/lib/i18n'
 import { localize, useLocale } from '~/lib/locale-client'
 
@@ -154,6 +158,31 @@ function GoogleCalendarSection({
 }) {
   const locale = useLocale()
   const [pending, setPending] = useState<'connect' | 'disconnect' | null>(null)
+  const [passkeyCancelled, setPasskeyCancelled] = useState(false)
+  const verifyWithPasskey = usePasskeyVerification()
+
+  async function verifyAndSubmit(
+    form: HTMLFormElement,
+    action: 'connect' | 'disconnect',
+  ) {
+    if (pending !== null) return
+    setPasskeyCancelled(false)
+    setPending(action)
+    try {
+      await verifyWithPasskey()
+      form.submit()
+    } catch (error) {
+      setPending(null)
+      if (error instanceof PasskeyVerificationError) {
+        setPasskeyCancelled(true)
+      }
+    }
+  }
+
+  function connect(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    void verifyAndSubmit(event.currentTarget, 'connect')
+  }
 
   function disconnect(event: FormEvent<HTMLFormElement>) {
     if (
@@ -168,7 +197,8 @@ function GoogleCalendarSection({
       event.preventDefault()
       return
     }
-    setPending('disconnect')
+    event.preventDefault()
+    void verifyAndSubmit(event.currentTarget, 'disconnect')
   }
 
   const stateCopy = {
@@ -223,7 +253,7 @@ function GoogleCalendarSection({
             <form
               action="/api/admin/ama/google/connect"
               method="post"
-              onSubmit={() => setPending('connect')}
+              onSubmit={connect}
             >
               <button
                 type="submit"
@@ -264,6 +294,18 @@ function GoogleCalendarSection({
         notices={notice ? { calendar: notice } : undefined}
         restoreFocus={restoreNoticeFocus}
       />
+
+      {passkeyCancelled && (
+        <p
+          role="status"
+          className="mt-4 text-sm leading-6 text-muted-foreground"
+        >
+          <T
+            zh="未完成通行密钥验证，Google 日历没有变化。"
+            en="Passkey verification was not completed. Google Calendar was not changed."
+          />
+        </p>
+      )}
 
       {connection.identity && (
         <dl className="mt-4 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[7rem_minmax(0,1fr)]">

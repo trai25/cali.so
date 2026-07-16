@@ -2,6 +2,7 @@ import type {
   OwnerAccess,
   OwnerPrincipal,
 } from '~/lib/admin/authorization'
+import type { OwnerReverifier } from '~/lib/admin/reverification'
 
 import { securityDenialHeaders } from '../security/request-policy'
 import type { AmaFeature, AmaSecurity } from '../security/service'
@@ -46,6 +47,10 @@ type HandlerDependencies<T> = {
   baseUrl: URL
 }
 
+type HighImpactHandlerDependencies<T> = HandlerDependencies<T> & {
+  reverifier: OwnerReverifier
+}
+
 type AdminRequestMode = 'browser-mutation' | 'provider-callback'
 
 function redirect(baseUrl: URL, pathOrUrl: string | URL) {
@@ -65,6 +70,7 @@ async function enforceAdminRequestPolicy(
   request: Request,
   mode: AdminRequestMode,
   requiredFeatures?: readonly AmaFeature[],
+  reverifier?: OwnerReverifier,
 ) {
   const { authenticator, security } = dependencies
   const blocked = mode === 'browser-mutation'
@@ -95,7 +101,19 @@ async function enforceAdminRequestPolicy(
     request,
     access.principal.actorId,
   )
-  return limited ?? access.principal
+  if (limited) return limited
+  if (reverifier) {
+    try {
+      const required = await reverifier.verify(request)
+      if (required) return required
+    } catch {
+      return new Response(null, {
+        status: 503,
+        headers: securityDenialHeaders(),
+      })
+    }
+  }
+  return access.principal
 }
 
 function denied(result: Response | OwnerPrincipal): result is Response {
@@ -206,7 +224,7 @@ export function createAvailabilityMutationHandler(
 }
 
 export function createGoogleConnectHandler(
-  dependencies: HandlerDependencies<AdminGoogleService>,
+  dependencies: HighImpactHandlerDependencies<AdminGoogleService>,
 ) {
   const { service, baseUrl } = dependencies
   return async function POST(request: Request) {
@@ -215,6 +233,7 @@ export function createGoogleConnectHandler(
       request,
       'browser-mutation',
       ['google'],
+      dependencies.reverifier,
     )
     if (denied(access)) return access
     try {
@@ -232,7 +251,7 @@ export function createGoogleConnectHandler(
 }
 
 export function createGoogleCallbackHandler(
-  dependencies: HandlerDependencies<AdminGoogleService>,
+  dependencies: HighImpactHandlerDependencies<AdminGoogleService>,
 ) {
   const { service, baseUrl } = dependencies
   return async function GET(request: Request) {
@@ -241,6 +260,7 @@ export function createGoogleCallbackHandler(
       request,
       'provider-callback',
       ['google'],
+      dependencies.reverifier,
     )
     if (denied(access)) return access
     const params = new URL(request.url).searchParams
@@ -263,7 +283,7 @@ export function createGoogleCallbackHandler(
 }
 
 export function createGoogleDisconnectHandler(
-  dependencies: HandlerDependencies<AdminGoogleService>,
+  dependencies: HighImpactHandlerDependencies<AdminGoogleService>,
 ) {
   const { service, baseUrl } = dependencies
   return async function POST(request: Request) {
@@ -272,6 +292,7 @@ export function createGoogleDisconnectHandler(
       request,
       'browser-mutation',
       ['google'],
+      dependencies.reverifier,
     )
     if (denied(access)) return access
     try {
