@@ -8,12 +8,16 @@ contains a secret; commands that need one prompt for it interactively.
 ## Vercel CLI scope
 
 The team slug `cali` collides with the personal account, so slug-based scope
-resolution returns `Not authorized`. Always pass the team ID:
+resolution returns `Not authorized`. Always pass the team ID, read from the
+local link state so the ID itself stays out of the public repo:
 
 ```bash
-SCOPE=--scope=team_r1Mln12TRfgnkYJwXd62uJJ5
+SCOPE=--scope=$(jq -r .orgId .vercel/project.json)
 npx vercel project inspect cali-so $SCOPE
 ```
+
+If the repo is not yet linked, run `npx vercel link` once and pick the team
+and the `cali-so` project.
 
 ## 1. Require Quality and CodeQL on both branches
 
@@ -23,7 +27,7 @@ ruleset by round-tripping it:
 
 ```bash
 gh api repos/CaliCastle/cali.so/rulesets/18920686 > /tmp/ruleset.json
-jq '{name, target, enforcement, conditions, rules: (.rules + [{
+jq '{name, target, enforcement, conditions, bypass_actors, rules: (.rules + [{
   "type": "required_status_checks",
   "parameters": {
     "strict_required_status_checks_policy": false,
@@ -149,11 +153,20 @@ MIGRATION_DATABASE_URL=postgresql://... pnpm db:migrate
 
 ## 6. Rollback anchor
 
-The last known-good production deployment is
-`dpl_BV7cKxGmfTAa1tUr2SScR6p9Uco8` (2024-03-10, Ready). Rollback prefers
-promoting it or reverting the cutover merge; additive migrations stay in
-place:
+The last known-good production deployment is recorded in the readiness
+report's audit baseline (created 2024-03-10, status Ready at inventory time).
+Because a deployment that old can age out of plan retention, verify it still
+exists immediately before cutover and re-record a newer known-good ID if it
+does not:
 
 ```bash
-npx vercel promote dpl_BV7cKxGmfTAa1tUr2SScR6p9Uco8 $SCOPE
+DPL=$(npx vercel ls cali-so --prod $SCOPE 2>/dev/null | head -1)
+npx vercel inspect "$DPL" $SCOPE
+```
+
+Rollback prefers promoting that verified deployment or reverting the cutover
+merge; additive migrations stay in place:
+
+```bash
+npx vercel promote "$DPL" $SCOPE
 ```

@@ -23,8 +23,8 @@ running production migrations.
 | --- | --- |
 | Production branch | `main` at `8c258834af538dd501486a5fd319b3e96a2ff5bc` |
 | Integration branch | `v2` at `12fb6df` (post `#136` and `#138`) |
-| Vercel project | `cali-so` (`prj_oIl5MLjdm44QGv4v7ywZsPegtFoH`) on team `team_r1Mln12TRfgnkYJwXd62uJJ5` |
-| Production deployment | `dpl_BV7cKxGmfTAa1tUr2SScR6p9Uco8`, created 2024-03-10, status Ready |
+| Vercel project | `cali-so` (`prj_oIl5…`) on team `team_r1Mln…`; full IDs live in the local `.vercel/project.json` link state |
+| Production deployment | `dpl_BV7cK…`, created 2024-03-10, status Ready at inventory time |
 | Release issue | [#98](https://github.com/CaliCastle/cali.so/issues/98) |
 | Readiness issue | [#107](https://github.com/CaliCastle/cali.so/issues/107) |
 | Framework pin | `next@16.3.0-preview.6` |
@@ -50,7 +50,7 @@ Renditions. The retired static photo fallback has been removed.
 | Production-like PR Preview | AWAITING CONFIRMATION | The #107 PR is merged; review a current `v2` Preview across the full release matrix once Production provisioning lands, and record its URL here. |
 | GitHub security settings | PASS | Secret scanning, push protection, Dependabot security updates, read-only Actions defaults, and full-SHA action policy are enabled. |
 | Required GitHub checks | FAIL | Neither the `v2` ruleset nor `main` branch protection requires `Quality` and `CodeQL`. The maintainer-operated commands are in `docs/v3-cutover-ops-runbook.md`. |
-| Current Vercel project settings | PASS | Project inspection succeeds with the explicit team scope. The earlier `Not authorized` was a CLI quirk: the team slug `cali` resolves to the personal account, so commands must pass `--scope=team_r1Mln12TRfgnkYJwXd62uJJ5`. |
+| Current Vercel project settings | PASS | Project inspection succeeds with the explicit team scope. The earlier `Not authorized` was a CLI quirk: the team slug `cali` resolves to the personal account, so commands must pass the team ID as `--scope` (see the runbook). |
 | Production capability switches | PASS | All five optional `AMA_*_ENABLED` variables are absent from Production and therefore fail closed. Setting them explicitly `false` remains recommended during provisioning. `AMA_ADMIN_ENABLED` survives in Preview as dead configuration after ADR-0008 and should be removed. |
 | Preview and Production secret isolation | FAIL | `RESEND_API_KEY` is one variable targeting both Production and Preview, and the `KV_*`/`REDIS_URL` group added with the Preview provisioning also targets both environments. |
 | Production runtime environment | FAIL | Production `DATABASE_URL` predates the rewrite by over three years, and the v3 server-environment contract is otherwise unmet: no `SESSION_SECRET`, `AMA_ENCRYPTION_KEY`, `RATE_LIMIT_HASH_KEY`, `SITE_URL`, `RESEND_FROM_EMAIL`, rate-limit values, `CRON_SECRET`, or any `BUNNY_*`/`MEDIA_*` variable. The first v3 production build would fail environment validation. |
