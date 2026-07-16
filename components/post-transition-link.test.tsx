@@ -1,21 +1,21 @@
 /** @vitest-environment jsdom */
 
-import type { MouseEventHandler, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('next/link', () => ({
   default: ({
     children,
-    onClick,
+    onNavigate,
   }: {
     children: ReactNode
-    onClick?: MouseEventHandler<HTMLAnchorElement>
+    onNavigate?: () => void
   }) => (
     <a
       href="/blog/a-post"
       onClick={(event) => {
-        onClick?.(event)
+        if (!event.metaKey) onNavigate?.()
         event.preventDefault()
       }}
     >
@@ -62,7 +62,7 @@ describe('PostTransitionLink', () => {
     ).toBe('title-p01')
   })
 
-  it('leaves the current page unchanged for modified clicks', () => {
+  it('leaves the current page unchanged when Next does not navigate', () => {
     render(
       <PostTransitionLink
         href="/blog/a-post"

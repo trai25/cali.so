@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import type { MouseEvent, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 
 export function PostTransitionLink({
   href,
@@ -16,18 +16,7 @@ export function PostTransitionLink({
   className?: string
   children: ReactNode
 }) {
-  function prepareFallbackMorph(event: MouseEvent<HTMLAnchorElement>) {
-    if (
-      event.defaultPrevented ||
-      event.button !== 0 ||
-      event.metaKey ||
-      event.ctrlKey ||
-      event.shiftKey ||
-      event.altKey
-    ) {
-      return
-    }
-
+  function prepareFallbackMorph() {
     const root = document.documentElement
     root.style.setProperty('--post-cover-transition-name', coverTransitionName)
     root.style.setProperty('--post-title-transition-name', titleTransitionName)
@@ -38,7 +27,7 @@ export function PostTransitionLink({
       href={href}
       prefetch={true}
       className={className}
-      onClick={prepareFallbackMorph}
+      onNavigate={prepareFallbackMorph}
     >
       {children}
     </Link>
