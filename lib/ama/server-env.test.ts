@@ -12,6 +12,7 @@ const validEnvironment = {
   UPSTASH_REDIS_REST_URL: 'https://example.upstash.io',
   UPSTASH_REDIS_REST_TOKEN: 'redis-secret',
   SITE_URL: 'https://cali.so',
+  VERCEL_ENV: 'production',
 }
 
 describe('AMA server environment', () => {
@@ -36,6 +37,11 @@ describe('AMA server environment', () => {
 
     expect(environment.ADMIN_EMAIL).toBe('owner@example.com')
     expect(environment.ADMIN_MUTATION_RATE_LIMIT_MAX_REQUESTS).toBe(30)
+    expect(environment.rateLimitBackend).toEqual({
+      kind: 'upstash',
+      url: 'https://example.upstash.io',
+      token: 'redis-secret',
+    })
     expect(environment.features).toEqual({
       publicMutations: false,
       payments: false,
@@ -67,10 +73,13 @@ describe('AMA server environment', () => {
       KV_REST_API_TOKEN: 'marketplace-secret',
     })
 
-    expect(environment.UPSTASH_REDIS_REST_URL).toBe(
-      'https://marketplace.upstash.io',
-    )
-    expect(environment.UPSTASH_REDIS_REST_TOKEN).toBe('marketplace-secret')
+    expect(environment.rateLimitBackend).toEqual({
+      kind: 'upstash',
+      url: 'https://marketplace.upstash.io',
+      token: 'marketplace-secret',
+    })
+    expect(environment).not.toHaveProperty('UPSTASH_REDIS_REST_URL')
+    expect(environment).not.toHaveProperty('UPSTASH_REDIS_REST_TOKEN')
     expect(environment).not.toHaveProperty('KV_REST_API_URL')
     expect(environment).not.toHaveProperty('KV_REST_API_TOKEN')
   })
@@ -82,12 +91,70 @@ describe('AMA server environment', () => {
       KV_REST_API_TOKEN: 'marketplace-secret',
     })
 
-    expect(environment.UPSTASH_REDIS_REST_URL).toBe(
-      validEnvironment.UPSTASH_REDIS_REST_URL,
-    )
-    expect(environment.UPSTASH_REDIS_REST_TOKEN).toBe(
-      validEnvironment.UPSTASH_REDIS_REST_TOKEN,
-    )
+    expect(environment.rateLimitBackend).toEqual({
+      kind: 'upstash',
+      url: validEnvironment.UPSTASH_REDIS_REST_URL,
+      token: validEnvironment.UPSTASH_REDIS_REST_TOKEN,
+    })
+  })
+
+  it('uses the database rate limiter in Preview without Redis credentials', () => {
+    const {
+      UPSTASH_REDIS_REST_URL: _upstashUrl,
+      UPSTASH_REDIS_REST_TOKEN: _upstashToken,
+      ...withoutUpstash
+    } = validEnvironment
+
+    expect(
+      parseServerEnv({ ...withoutUpstash, VERCEL_ENV: 'preview' })
+        .rateLimitBackend,
+    ).toEqual({ kind: 'database' })
+  })
+
+  it('ignores transitional Redis credentials outside Production', () => {
+    const {
+      UPSTASH_REDIS_REST_URL: _upstashUrl,
+      UPSTASH_REDIS_REST_TOKEN: _upstashToken,
+      ...withoutUpstash
+    } = validEnvironment
+    const previewEnvironment = parseServerEnv({
+      ...withoutUpstash,
+      VERCEL_ENV: 'preview',
+      KV_REST_API_URL: 'https://marketplace.upstash.io',
+      KV_REST_API_TOKEN: 'marketplace-secret',
+      KV_REST_API_READ_ONLY_TOKEN: 'marketplace-read-only-secret',
+      KV_URL: 'redis://default:secret@example.upstash.io:6379',
+      REDIS_URL: 'redis://default:secret@example.upstash.io:6379',
+    })
+
+    expect(previewEnvironment.rateLimitBackend).toEqual({ kind: 'database' })
+    for (const field of [
+      'KV_REST_API_URL',
+      'KV_REST_API_TOKEN',
+      'KV_REST_API_READ_ONLY_TOKEN',
+      'KV_URL',
+      'REDIS_URL',
+    ]) {
+      expect(previewEnvironment).not.toHaveProperty(field)
+    }
+
+    expect(
+      parseServerEnv({ ...validEnvironment, VERCEL_ENV: 'development' })
+        .rateLimitBackend,
+    ).toEqual({ kind: 'memory' })
+  })
+
+  it('uses an in-memory rate limiter outside Vercel', () => {
+    const {
+      UPSTASH_REDIS_REST_URL: _upstashUrl,
+      UPSTASH_REDIS_REST_TOKEN: _upstashToken,
+      VERCEL_ENV: _vercelEnvironment,
+      ...localEnvironment
+    } = validEnvironment
+
+    expect(parseServerEnv(localEnvironment).rateLimitBackend).toEqual({
+      kind: 'memory',
+    })
   })
 
   it('rejects partial Redis credential pairs', () => {

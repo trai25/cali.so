@@ -6,7 +6,6 @@ import { openProductionServer } from './production-server.mjs'
 
 const privateMarkers = [
   'ci-google-secret',
-  'ci-redis-token',
   'sk_live_ci_secret_not_real',
   'owner@example.com',
   'security-boundary-callback-code',

@@ -1,7 +1,5 @@
 import 'server-only'
 
-import { Ratelimit } from '@upstash/ratelimit'
-import { Redis } from '@upstash/redis'
 import { revalidateTag } from 'next/cache'
 
 import { getDatabase } from '~/db'
@@ -10,6 +8,7 @@ import {
   ownerRequestAuthenticator,
 } from '~/lib/admin/server'
 import { getServerEnv } from '~/lib/ama/server-env'
+import { createRateLimiter } from '~/lib/rate-limit/server'
 
 import { parseMediaAltTextEnv } from '../alt-text/config'
 import { createMediaAltTextGenerator } from '../alt-text/gateway'
@@ -72,24 +71,16 @@ function createServices() {
   })
 
   const altTextConfig = parseMediaAltTextEnv(process.env)
-  const redis = new Redis({
-    url: environment.UPSTASH_REDIS_REST_URL,
-    token: environment.UPSTASH_REDIS_REST_TOKEN,
-  })
-  const altTextLimiter = new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(
-      altTextConfig.rateLimitMaxRequests,
-      `${altTextConfig.rateLimitWindowSeconds} s`,
-    ),
-    prefix: 'cali:media:alt-text',
-  })
   const altText = altTextConfig.enabled
     ? createMediaAltTextService({
         repository: createMediaAltTextRepository(database),
         storage,
         generator: createMediaAltTextGenerator(altTextConfig),
-        rateLimiter: altTextLimiter,
+        rateLimiter: createRateLimiter(environment.rateLimitBackend, {
+          prefix: 'cali:media:alt-text',
+          maxRequests: altTextConfig.rateLimitMaxRequests,
+          windowSeconds: altTextConfig.rateLimitWindowSeconds,
+        }),
       })
     : null
 

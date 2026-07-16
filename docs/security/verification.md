@@ -97,6 +97,10 @@ Project checks completed on 2026-07-14 and 2026-07-15 verified:
   the Clerk Dashboard with public metadata `{ "siteOwner": "yes" }` and verify
   a non-owner account receives HTTP 403 from admin APIs. No values are recorded
   here.
+- [ ] Apply migration `0010` to the Preview Neon branch, grant its runtime role
+  CRUD-only access to `rate_limit_windows`, and deploy the database-backed
+  limiter. Then remove every `KV_*`, `REDIS_URL`, and `UPSTASH_*` variable from
+  Preview and keep the storage integration scoped to Production only.
 - [ ] Rotate the Preview-only Google OAuth secret before enabling the Google
   capability; the integration remains disabled meanwhile.
 - [ ] Remove the obsolete `Admin Security` firewall rule for
