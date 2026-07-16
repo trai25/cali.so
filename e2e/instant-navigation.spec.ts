@@ -712,17 +712,30 @@ test('mobile article map animates its entrance and toggle states', async ({
   const articleMap = page.getByRole('button', { name: 'Open article map' })
   await expect(island).toHaveCSS('opacity', '0')
 
-  const entranceDurations = await page.evaluate(async () => {
-    window.scrollTo(0, 700)
-    await new Promise<void>((resolve) =>
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-    )
+  const entranceDurations = await island.evaluate(
+    (element) =>
+      new Promise<number[]>((resolve, reject) => {
+        const timeout = window.setTimeout(() => {
+          element.removeEventListener('transitionrun', captureTransition)
+          reject(new Error('Mobile article map entrance did not start'))
+        }, 5_000)
+        const captureTransition = (event: Event) => {
+          if (event.target !== element) return
+          const durations = element
+            .getAnimations()
+            .map((animation) => animation.effect?.getComputedTiming().duration)
+            .filter((duration): duration is number => typeof duration === 'number')
+          if (!durations.includes(180) || !durations.includes(200)) return
 
-    return document
-      .querySelector('.post-minimap-island')
-      ?.getAnimations()
-      .map((animation) => animation.effect?.getComputedTiming().duration)
-  })
+          window.clearTimeout(timeout)
+          element.removeEventListener('transitionrun', captureTransition)
+          resolve(durations)
+        }
+
+        element.addEventListener('transitionrun', captureTransition)
+        window.scrollTo(0, 700)
+      }),
+  )
   expect(entranceDurations).toEqual(expect.arrayContaining([180, 200]))
   await expect(articleMap).toBeVisible()
 
