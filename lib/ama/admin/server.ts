@@ -1,6 +1,9 @@
 import 'server-only'
 
-import { ownerRequestAuthenticator } from '~/lib/admin/server'
+import {
+  ownerHighImpactReverifier,
+  ownerRequestAuthenticator,
+} from '~/lib/admin/server'
 
 import { availabilityRepository } from '../availability/repository'
 import { createAvailabilityService } from '../availability/service'
@@ -83,4 +86,4 @@ export function getAmaAdminServices() {
   return services
 }
 
-export { ownerRequestAuthenticator }
+export { ownerHighImpactReverifier, ownerRequestAuthenticator }

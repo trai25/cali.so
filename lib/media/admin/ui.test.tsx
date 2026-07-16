@@ -4,6 +4,18 @@ import { cleanup, fireEvent, render, waitFor } from '@testing-library/react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+const clerk = vi.hoisted(() => ({
+  verifyWithPasskey: vi.fn(),
+}))
+
+vi.mock('@clerk/nextjs', () => ({
+  useSession: () => ({
+    isLoaded: true,
+    session: { id: 'sess_owner', verifyWithPasskey: clerk.verifyWithPasskey },
+  }),
+  useReverification: (fetcher: unknown) => fetcher,
+}))
+
 import { MediaLibrary } from '../../../app/admin/(protected)/media/MediaLibrary'
 import type { MediaAssetReviewRecord } from '../asset-review/service'
 
@@ -43,6 +55,7 @@ const activeAsset: MediaAssetReviewRecord = {
 }
 
 beforeEach(() => {
+  clerk.verifyWithPasskey.mockResolvedValue({ status: 'complete' })
   const entries = new Map<string, string>()
   vi.stubGlobal('localStorage', {
     get length() {
@@ -69,6 +82,7 @@ afterEach(() => {
   localStorage.clear()
   vi.unstubAllGlobals()
   delete document.documentElement.dataset.locale
+  clerk.verifyWithPasskey.mockReset()
 })
 
 describe('Media Library UI contract', () => {
@@ -105,6 +119,30 @@ describe('Media Library UI contract', () => {
         'button[aria-label="设置焦点"] span[style]',
       )?.style.left,
     ).toBe('45%')
+  })
+
+  it('does not purge when passkey verification is cancelled', async () => {
+    document.documentElement.dataset.locale = 'en'
+    const archivedAsset: MediaAssetReviewRecord = {
+      ...activeAsset,
+      catalogState: 'archived',
+      archivedAt: new Date('2026-07-15T13:00:00.000Z'),
+    }
+    vi.stubGlobal('prompt', vi.fn(() => 'PURGE'))
+    clerk.verifyWithPasskey.mockRejectedValueOnce(
+      new Error('passkey cancelled'),
+    )
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+    const { getByRole } = render(
+      <MediaLibrary initialActive={[]} initialArchived={[archivedAsset]} />,
+    )
+
+    fireEvent.click(getByRole('tab', { name: /Archived/ }))
+    fireEvent.click(getByRole('button', { name: /Purge permanently/ }))
+
+    await waitFor(() => expect(clerk.verifyWithPasskey).toHaveBeenCalledOnce())
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 
   it('retries a failed Original transfer before attempting completion', async () => {

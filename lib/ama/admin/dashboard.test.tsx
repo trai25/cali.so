@@ -1,17 +1,34 @@
 // @vitest-environment jsdom
 
-import { act, cleanup, fireEvent, render } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+const clerk = vi.hoisted(() => ({
+  verifyWithPasskey: vi.fn(),
+}))
+
+vi.mock('@clerk/nextjs', () => ({
+  useSession: () => ({
+    isLoaded: true,
+    session: { id: 'sess_owner', verifyWithPasskey: clerk.verifyWithPasskey },
+  }),
+  useReverification: (fetcher: unknown) => fetcher,
+}))
 
 import { AdminDashboard } from '../../../app/admin/(protected)/AdminDashboard'
 import { AvailabilityWindowForm } from '../../../app/admin/(protected)/AvailabilityWindowForm'
 import { LOCALE_CHANGE_EVENT } from '../../locale-client'
 
+beforeEach(() => {
+  clerk.verifyWithPasskey.mockResolvedValue({ status: 'complete' })
+})
+
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
   delete document.documentElement.dataset.locale
+  clerk.verifyWithPasskey.mockReset()
 })
 
 function renderDashboard(
@@ -74,6 +91,53 @@ describe('AMA admin dashboard UI contract', () => {
 
     expect(html).toContain('action="/api/admin/ama/google/connect"')
     expect(html).not.toContain('action="/api/admin/ama/google/disconnect"')
+  })
+
+  it('does not submit a Google integration change when passkey verification is cancelled', async () => {
+    clerk.verifyWithPasskey.mockRejectedValueOnce(
+      new Error('passkey cancelled'),
+    )
+    const nativeSubmit = vi
+      .spyOn(HTMLFormElement.prototype, 'submit')
+      .mockImplementation(() => undefined)
+    const { container } = render(
+      <AdminDashboard
+        windows={[]}
+        googleConnection={{ status: 'disconnected', identity: null }}
+        previewSlots={[]}
+      />,
+    )
+
+    fireEvent.submit(
+      container.querySelector<HTMLFormElement>(
+        'form[action="/api/admin/ama/google/connect"]',
+      )!,
+    )
+
+    await waitFor(() => expect(clerk.verifyWithPasskey).toHaveBeenCalledOnce())
+    expect(nativeSubmit).not.toHaveBeenCalled()
+  })
+
+  it('submits a Google integration change only after passkey verification', async () => {
+    const nativeSubmit = vi
+      .spyOn(HTMLFormElement.prototype, 'submit')
+      .mockImplementation(() => undefined)
+    const { container } = render(
+      <AdminDashboard
+        windows={[]}
+        googleConnection={{ status: 'disconnected', identity: null }}
+        previewSlots={[]}
+      />,
+    )
+    const form = container.querySelector<HTMLFormElement>(
+      'form[action="/api/admin/ama/google/connect"]',
+    )!
+
+    fireEvent.submit(form)
+
+    await waitFor(() => expect(nativeSubmit).toHaveBeenCalledOnce())
+    expect(clerk.verifyWithPasskey).toHaveBeenCalledOnce()
+    expect(nativeSubmit).toHaveBeenCalledWith()
   })
 
   it('preserves an edited weekday when the locale changes mid-form', () => {

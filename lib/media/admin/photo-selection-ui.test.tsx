@@ -2,7 +2,19 @@
 
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+const clerk = vi.hoisted(() => ({
+  verifyWithPasskey: vi.fn(),
+}))
+
+vi.mock('@clerk/nextjs', () => ({
+  useSession: () => ({
+    isLoaded: true,
+    session: { id: 'sess_owner', verifyWithPasskey: clerk.verifyWithPasskey },
+  }),
+  useReverification: (fetcher: unknown) => fetcher,
+}))
 
 import { PhotoSelectionEditor } from '../../../app/admin/(protected)/photos/PhotoSelectionEditor'
 import type { MediaAssetReviewRecord } from '../asset-review/service'
@@ -44,11 +56,16 @@ const second = asset('22222222-2222-4222-8222-222222222222', 'Second')
 const third = asset('33333333-3333-4333-8333-333333333333', 'Third')
 const fourth = asset('44444444-4444-4444-8444-444444444444', 'Fourth')
 
+beforeEach(() => {
+  clerk.verifyWithPasskey.mockResolvedValue({ status: 'complete' })
+})
+
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
   delete document.documentElement.dataset.locale
+  clerk.verifyWithPasskey.mockReset()
 })
 
 describe('Photo Selection admin UI contract', () => {
@@ -187,6 +204,28 @@ describe('Photo Selection admin UI contract', () => {
     expect(
       await findByText(/The Draft contains Media Assets that are no longer eligible/),
     ).toBeTruthy()
+  })
+
+  it('does not publish when passkey verification is cancelled', async () => {
+    document.documentElement.dataset.locale = 'en'
+    vi.stubGlobal('confirm', vi.fn(() => true))
+    vi.stubGlobal('crypto', { randomUUID: vi.fn(() => 'publish_01') })
+    clerk.verifyWithPasskey.mockRejectedValueOnce(
+      new Error('passkey cancelled'),
+    )
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+    const { getByRole } = render(
+      <PhotoSelectionEditor
+        initialDraft={{ revision: 2, mediaAssetIds: [first.id], updatedAt: null }}
+        initialAssets={[first]}
+      />,
+    )
+
+    fireEvent.click(getByRole('button', { name: /Publish/ }))
+
+    await waitFor(() => expect(clerk.verifyWithPasskey).toHaveBeenCalledOnce())
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 
   it('reuses the publish key when cache refresh needs a safe retry', async () => {

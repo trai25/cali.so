@@ -21,3 +21,19 @@ receive HTTP 401. The retired magic-link
 request and verification endpoints remain absent. Same-origin mutation checks,
 rate limits, privacy-safe audit events, strict admin CSP, and independent
 provider capability switches remain in force.
+
+Current high-impact actions require Clerk's first-factor verification age to be
+less than ten minutes. The browser initiates Clerk's passkey verification before
+submitting an action. It never automatically retries a server freshness denial;
+the owner must explicitly retry after the no-side-effect response. This applies
+to Google Calendar connection changes, Media Asset Purge, and Photo Selection
+publication. Refunds, exports, security settings, bulk operations, and
+destructive Booking actions must use the same boundary when they ship.
+
+Clerk 7.5.19 exposes only first- and second-factor ages to the server, not the
+strategy that produced the fresh factor. The server therefore proves fresh
+first-factor verification but cannot cryptographically prove it was a passkey;
+the owned client deliberately selects `verifyWithPasskey()`. Exact server-side
+passkey attestation would require app-owned WebAuthn credentials, challenges,
+counters, and recovery, which is not part of this Clerk-only decision. This
+limitation must remain explicit in reviews and operations evidence.

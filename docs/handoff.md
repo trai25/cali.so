@@ -138,9 +138,11 @@ The Vercel runtime receives only the CRUD-only `DATABASE_URL`. Never put
 
 ## Post-launch work
 
-- Complete the remaining passkey and recovery work in #93 without disabling
-  owner admin, then resume the public AMA product slices (#82 through #87)
-  behind their security and privacy gates.
+- Maintain #93's Clerk-native passkey-first high-impact boundary without
+  disabling owner admin. Hosted setup, session revocation, credential rotation,
+  and Clerk's server-side factor-strategy limitation are documented in
+  `docs/security/clerk-admin-operations.md`. Resume the public AMA product
+  slices (#82 through #87) only behind their security and privacy gates.
 - Revisit Bunny S3 preview constraints and provider capabilities before
   expanding the Media Library beyond the curated photo workflow.
 - Re-enable private capabilities only after their provider, retention,

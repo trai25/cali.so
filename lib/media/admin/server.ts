@@ -5,6 +5,7 @@ import { revalidateTag } from 'next/cache'
 import { getDatabase } from '~/db'
 import {
   getOwnerAdminSecurity,
+  ownerHighImpactReverifier,
   ownerRequestAuthenticator,
 } from '~/lib/admin/server'
 import { getServerEnv } from '~/lib/ama/server-env'
@@ -122,4 +123,4 @@ export function getMediaAdminServices() {
   return services
 }
 
-export { ownerRequestAuthenticator }
+export { ownerHighImpactReverifier, ownerRequestAuthenticator }

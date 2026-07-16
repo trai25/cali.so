@@ -11,6 +11,11 @@ import {
   type MouseEvent,
 } from 'react'
 
+import {
+  isReverificationResponse,
+  PasskeyVerificationError,
+  usePasskeyReverification,
+} from '~/lib/admin/passkey-client'
 import { T } from '~/lib/i18n'
 import { localize, useLocale } from '~/lib/locale-client'
 import type { MediaAssetReviewRecord } from '~/lib/media/asset-review/service'
@@ -348,6 +353,15 @@ function Inspector({
   const [pending, setPending] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const noticeRef = useRef<HTMLParagraphElement>(null)
+  const purgeAsset = usePasskeyReverification(async (confirmation: string) => {
+    const response = await fetch(`/api/admin/media/assets/${asset.id}/purge`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ confirmation }),
+    })
+    if (await isReverificationResponse(response)) return response
+    return responseJson(response)
+  })
 
   useEffect(() => {
     if (notice) noticeRef.current?.focus()
@@ -539,20 +553,21 @@ function Inspector({
     setPending('purge')
     setNotice(null)
     try {
-      const response = await fetch(`/api/admin/media/assets/${asset.id}/purge`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ confirmation }),
-      })
-      await responseJson(response)
+      await purgeAsset(confirmation)
       onUpdated(null)
-    } catch {
+    } catch (error) {
       setNotice(
-        localize(
-          locale,
-          '清除未完成。已确认的步骤已保存，可以安全重试。',
-          'Purge is incomplete. Confirmed progress was saved and can be retried safely.',
-        ),
+        error instanceof PasskeyVerificationError
+          ? localize(
+              locale,
+              '未能确认通行密钥验证，没有清除任何内容。请重试。',
+              'Passkey verification could not be confirmed. Nothing was purged. Try again.',
+            )
+          : localize(
+              locale,
+              '清除未完成。已确认的步骤已保存，可以安全重试。',
+              'Purge is incomplete. Confirmed progress was saved and can be retried safely.',
+            ),
       )
     } finally {
       setPending(null)

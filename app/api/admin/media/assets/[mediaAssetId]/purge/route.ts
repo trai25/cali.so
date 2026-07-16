@@ -1,6 +1,7 @@
 import { createMediaPurgeHandler } from '~/lib/media/admin/http'
 import {
   getMediaAdminServices,
+  ownerHighImpactReverifier,
   ownerRequestAuthenticator,
 } from '~/lib/media/admin/server'
 
@@ -10,6 +11,7 @@ function handler() {
     authenticator: ownerRequestAuthenticator,
     purge,
     security,
+    reverifier: ownerHighImpactReverifier,
   })
 }
 

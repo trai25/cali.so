@@ -8,6 +8,11 @@ import {
   type DragEvent,
 } from 'react'
 
+import {
+  isReverificationResponse,
+  PasskeyVerificationError,
+  usePasskeyReverification,
+} from '~/lib/admin/passkey-client'
 import { T } from '~/lib/i18n'
 import { localize, useLocale } from '~/lib/locale-client'
 import type { MediaAssetReviewRecord } from '~/lib/media/asset-review/service'
@@ -93,6 +98,20 @@ export function PhotoSelectionEditor({
   const [draggedId, setDraggedId] = useState<string | null>(null)
   const noticeRef = useRef<HTMLParagraphElement>(null)
   const publishKeyRef = useRef<string | null>(null)
+  const publishSelection = usePasskeyReverification(
+    async (expectedDraftRevision: number, idempotencyKey: string) => {
+      const response = await fetch(
+        '/api/admin/media/photo-selection/publish',
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ expectedDraftRevision, idempotencyKey }),
+        },
+      )
+      if (await isReverificationResponse(response)) return response
+      return responseJson(response)
+    },
+  )
 
   const assetById = useMemo(
     () => new Map(initialAssets.map((asset) => [asset.id, asset])),
@@ -195,15 +214,7 @@ export function PhotoSelectionEditor({
     const idempotencyKey = publishKeyRef.current ?? crypto.randomUUID()
     publishKeyRef.current = idempotencyKey
     try {
-      const response = await fetch('/api/admin/media/photo-selection/publish', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          expectedDraftRevision: revision,
-          idempotencyKey,
-        }),
-      })
-      await responseJson(response)
+      await publishSelection(revision, idempotencyKey)
       publishKeyRef.current = null
       setNotice(
         localize(
@@ -215,7 +226,13 @@ export function PhotoSelectionEditor({
     } catch (error) {
       const code = error instanceof Error ? error.message : ''
       setNotice(
-        code === 'ineligible_assets'
+        error instanceof PasskeyVerificationError
+          ? localize(
+              locale,
+              '未能确认通行密钥验证，没有发布任何更改。请重试。',
+              'Passkey verification could not be confirmed. Nothing was published. Try again.',
+            )
+          : code === 'ineligible_assets'
           ? localize(
               locale,
               '草稿中有不再符合发布条件的媒体素材。请移除或修复后重试。',

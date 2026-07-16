@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('server-only', () => ({}))
 
 import { createAmaSecurity, type SecurityAuditEvent } from '../../ama/security/service'
+import { createOwnerReverifier } from '../../admin/reverification'
 import { MediaAssetReviewError } from '../asset-review/service'
 import { MediaGeocodingError } from '../geocoding/service'
 import { PhotoSelectionError } from '../photo-selection/service'
@@ -13,6 +14,7 @@ import {
   createMediaAssetListHandler,
   createMediaLocationLabelHandler,
   createMediaOriginalUploadHandler,
+  createMediaPurgeHandler,
   createMediaResumeHandler,
   createMediaUploadCompletionHandler,
   createMediaUploadIntentHandler,
@@ -86,7 +88,15 @@ function fixture(rateLimitAllows = true) {
     },
     requestId: () => 'media-request-id',
   })
-  return { auditEvents, authenticator, calls, security }
+  return {
+    auditEvents,
+    authenticator,
+    calls,
+    security,
+    reverifier: createOwnerReverifier({
+      hasFreshFirstFactor: async () => true,
+    }),
+  }
 }
 
 describe('Media admin HTTP contract', () => {
@@ -404,6 +414,7 @@ describe('Media admin HTTP contract', () => {
     const handler = createPhotoSelectionPublishHandler({
       authenticator: f.authenticator,
       security: f.security,
+      reverifier: f.reverifier,
       selection: {
         async publish(input) {
           f.calls.push(input)
@@ -444,6 +455,7 @@ describe('Media admin HTTP contract', () => {
     const handler = createPhotoSelectionPublishHandler({
       authenticator: f.authenticator,
       security: f.security,
+      reverifier: f.reverifier,
       selection: {
         async publish() {
           throw new PhotoSelectionError('cache_invalidation_failed', {
@@ -466,6 +478,100 @@ describe('Media admin HTTP contract', () => {
     expect(f.auditEvents.at(-1)?.event).toBe(
       'media_photo_selection.published',
     )
+  })
+
+  it.each(['publish', 'purge'] as const)(
+    'requires recent first-factor verification before Media %s effects',
+    async (operation) => {
+      const f = fixture()
+      const reverifier = createOwnerReverifier({
+        hasFreshFirstFactor: async () => false,
+      })
+      const response =
+        operation === 'publish'
+          ? await createPhotoSelectionPublishHandler({
+              authenticator: f.authenticator,
+              security: f.security,
+              reverifier,
+              selection: {
+                async publish(input) {
+                  f.calls.push(input)
+                  return input
+                },
+              },
+            })(
+              request('/api/admin/media/photo-selection/publish', {
+                body: JSON.stringify({
+                  expectedDraftRevision: 4,
+                  idempotencyKey: 'publish_01',
+                }),
+              }),
+            )
+          : await createMediaPurgeHandler({
+              authenticator: f.authenticator,
+              security: f.security,
+              reverifier,
+              purge: {
+                async getStatus() {
+                  return null
+                },
+                async purge(input) {
+                  f.calls.push(input)
+                  return input
+                },
+              },
+            }).POST(
+              request(`/api/admin/media/assets/${mediaAssetId}/purge`, {
+                body: JSON.stringify({ confirmation: 'PURGE' }),
+              }),
+              mediaAssetId,
+            )
+
+      expect(response.status).toBe(403)
+      await expect(response.json()).resolves.toMatchObject({
+        clerk_error: {
+          reason: 'reverification-error',
+          metadata: {
+            reverification: { level: 'first_factor', afterMinutes: 10 },
+          },
+        },
+      })
+      expect(f.calls).toEqual([])
+    },
+  )
+
+  it('keeps non-owner denial ahead of high-impact reverification', async () => {
+    const f = fixture()
+    const hasFreshFirstFactor = vi.fn(async () => true)
+    const handler = createPhotoSelectionPublishHandler({
+      authenticator: {
+        async authenticate() {
+          return { status: 'forbidden' }
+        },
+      },
+      security: f.security,
+      reverifier: createOwnerReverifier({ hasFreshFirstFactor }),
+      selection: {
+        async publish(input) {
+          f.calls.push(input)
+          return input
+        },
+      },
+    })
+
+    const response = await handler(
+      request('/api/admin/media/photo-selection/publish', {
+        body: JSON.stringify({
+          expectedDraftRevision: 4,
+          idempotencyKey: 'publish_01',
+        }),
+      }),
+    )
+
+    expect(response.status).toBe(403)
+    await expect(response.json()).resolves.toEqual({ error: 'forbidden' })
+    expect(hasFreshFirstFactor).not.toHaveBeenCalled()
+    expect(f.calls).toEqual([])
   })
 
   it('rejects unauthenticated and cross-site Photo Selection writes', async () => {

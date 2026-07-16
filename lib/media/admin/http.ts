@@ -4,6 +4,7 @@ import type {
   OwnerAccess,
   OwnerPrincipal,
 } from '~/lib/admin/authorization'
+import type { OwnerReverifier } from '~/lib/admin/reverification'
 import type { AmaSecurity, PrivilegedAuditEvent } from '~/lib/ama/security/service'
 
 import { MediaAltTextError } from '../alt-text/service'
@@ -33,6 +34,10 @@ type Security = Pick<
 type BaseDependencies = {
   authenticator: Authenticator
   security: Security
+}
+
+type HighImpactDependencies = BaseDependencies & {
+  reverifier: OwnerReverifier
 }
 
 type AccessResult =
@@ -122,7 +127,7 @@ export function createPhotoSelectionDraftHandler(
 }
 
 export function createPhotoSelectionPublishHandler(
-  dependencies: BaseDependencies & {
+  dependencies: HighImpactDependencies & {
     selection: {
       publish(input: {
         ownerUserId: string
@@ -133,7 +138,12 @@ export function createPhotoSelectionPublishHandler(
   },
 ) {
   return async function POST(request: Request) {
-    const access = await authenticate(dependencies, request, true)
+    const access = await authenticate(
+      dependencies,
+      request,
+      true,
+      dependencies.reverifier,
+    )
     if ('response' in access) return access.response
     try {
       const body = await requestJson(request)
@@ -175,6 +185,7 @@ async function authenticate(
   dependencies: BaseDependencies,
   request: Request,
   mutation: boolean,
+  reverifier?: OwnerReverifier,
 ): Promise<AccessResult> {
   const blocked = mutation
     ? await dependencies.security.protectOwnerAdminMutation(request)
@@ -202,6 +213,14 @@ async function authenticate(
       access.principal.actorId,
     )
     if (limited) return { response: limited }
+  }
+  if (reverifier) {
+    try {
+      const required = await reverifier.verify(request)
+      if (required) return { response: required }
+    } catch {
+      return { response: json(503, { error: 'dependency_unavailable' }) }
+    }
   }
   return { principal: access.principal }
 }
@@ -443,7 +462,7 @@ export function createMediaResumeHandler(
 }
 
 export function createMediaPurgeHandler(
-  dependencies: BaseDependencies & {
+  dependencies: HighImpactDependencies & {
     purge: {
       getStatus(input: {
         ownerUserId: string
@@ -472,7 +491,12 @@ export function createMediaPurgeHandler(
       }
     },
     async POST(request: Request, mediaAssetId: string) {
-      const access = await authenticate(dependencies, request, true)
+      const access = await authenticate(
+        dependencies,
+        request,
+        true,
+        dependencies.reverifier,
+      )
       if ('response' in access) return access.response
       try {
         const body = await requestJson(request)
