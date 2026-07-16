@@ -7,6 +7,7 @@ const migrationUrls = {
   availability: new URL('../db/migrations/0002_ama_availability.sql', import.meta.url),
   googleCalendar: new URL('../db/migrations/0003_ama_google_calendar.sql', import.meta.url),
   googleOAuth: new URL('../db/migrations/0004_ama_google_oauth.sql', import.meta.url),
+  rateLimits: new URL('../db/migrations/0010_rate_limit_windows.sql', import.meta.url),
 }
 
 async function readMigration(url) {
@@ -56,6 +57,16 @@ test('AMA Google OAuth migration stores hashed state and encrypted PKCE material
   assert.match(sql, /"consumed_at" timestamp with time zone/)
   assert.doesNotMatch(sql, /"state"\s/)
   assert.doesNotMatch(sql, /"pkce_verifier"\s/)
+})
+
+test('rate-limit migration stores bounded windows without private request keys', async () => {
+  const sql = await readMigration(migrationUrls.rateLimits)
+
+  assert.match(sql, /create table "rate_limit_windows"/)
+  assert.match(sql, /primary key\("scope","key_hash"\)/)
+  assert.match(sql, /"request_count" > 0/)
+  assert.match(sql, /create index "rate_limit_windows_expiry_idx"/)
+  assert.doesNotMatch(sql, /"request_key"/)
 })
 
 test('AMA migrations never mutate legacy subscriber or newsletter tables', async () => {

@@ -76,6 +76,10 @@ const serverEnvironmentSchema = z
     UPSTASH_REDIS_REST_TOKEN: z.string().trim().min(1).optional(),
     KV_REST_API_URL: redisRestUrl.optional(),
     KV_REST_API_TOKEN: z.string().trim().min(1).optional(),
+    KV_REST_API_READ_ONLY_TOKEN: z.string().trim().min(1).optional(),
+    KV_URL: z.string().trim().min(1).optional(),
+    REDIS_URL: z.string().trim().min(1).optional(),
+    VERCEL_ENV: z.enum(['development', 'preview', 'production']).optional(),
     SITE_URL: z
       .url()
       .refine((value) => {
@@ -102,6 +106,10 @@ const serverEnvironmentSchema = z
         UPSTASH_REDIS_REST_TOKEN,
         KV_REST_API_URL,
         KV_REST_API_TOKEN,
+        KV_REST_API_READ_ONLY_TOKEN,
+        KV_URL,
+        REDIS_URL,
+        VERCEL_ENV,
         GOOGLE_CLIENT_ID,
         GOOGLE_CLIENT_SECRET,
         AMA_GOOGLE_INTEGRATION_ENABLED,
@@ -114,6 +122,15 @@ const serverEnvironmentSchema = z
       const marketplacePairComplete = Boolean(
         KV_REST_API_URL && KV_REST_API_TOKEN,
       )
+      const redisFields = {
+        UPSTASH_REDIS_REST_URL,
+        UPSTASH_REDIS_REST_TOKEN,
+        KV_REST_API_URL,
+        KV_REST_API_TOKEN,
+        KV_REST_API_READ_ONLY_TOKEN,
+        KV_URL,
+        REDIS_URL,
+      }
 
       if (
         Boolean(UPSTASH_REDIS_REST_URL) !== Boolean(UPSTASH_REDIS_REST_TOKEN)
@@ -139,7 +156,11 @@ const serverEnvironmentSchema = z
         })
       }
 
-      if (!upstashPairComplete && !marketplacePairComplete) {
+      if (
+        VERCEL_ENV === 'production' &&
+        !upstashPairComplete &&
+        !marketplacePairComplete
+      ) {
         if (!UPSTASH_REDIS_REST_URL) {
           context.addIssue({
             code: 'custom',
@@ -153,6 +174,18 @@ const serverEnvironmentSchema = z
             path: ['UPSTASH_REDIS_REST_TOKEN'],
             message: 'A complete Redis credential pair is required',
           })
+        }
+      }
+
+      if (VERCEL_ENV !== 'production') {
+        for (const [field, value] of Object.entries(redisFields)) {
+          if (value) {
+            context.addIssue({
+              code: 'custom',
+              path: [field],
+              message: 'Redis credentials are allowed only in Production',
+            })
+          }
         }
       }
 
@@ -179,6 +212,10 @@ const serverEnvironmentSchema = z
       UPSTASH_REDIS_REST_TOKEN,
       KV_REST_API_URL,
       KV_REST_API_TOKEN,
+      KV_REST_API_READ_ONLY_TOKEN: _kvReadOnlyToken,
+      KV_URL: _kvUrl,
+      REDIS_URL: _redisUrl,
+      VERCEL_ENV,
       AMA_PUBLIC_MUTATIONS_ENABLED,
       AMA_PAYMENTS_ENABLED,
       AMA_BOOKING_FINALIZATION_ENABLED,
@@ -187,8 +224,16 @@ const serverEnvironmentSchema = z
       ...environment
     }) => ({
       ...environment,
-      UPSTASH_REDIS_REST_URL: UPSTASH_REDIS_REST_URL ?? KV_REST_API_URL!,
-      UPSTASH_REDIS_REST_TOKEN: UPSTASH_REDIS_REST_TOKEN ?? KV_REST_API_TOKEN!,
+      rateLimitBackend:
+        VERCEL_ENV === 'production'
+          ? {
+              kind: 'upstash' as const,
+              url: UPSTASH_REDIS_REST_URL ?? KV_REST_API_URL!,
+              token: UPSTASH_REDIS_REST_TOKEN ?? KV_REST_API_TOKEN!,
+            }
+          : VERCEL_ENV === 'preview'
+            ? { kind: 'database' as const }
+            : { kind: 'memory' as const },
       features: featureFlags({
         AMA_PUBLIC_MUTATIONS_ENABLED,
         AMA_PAYMENTS_ENABLED,

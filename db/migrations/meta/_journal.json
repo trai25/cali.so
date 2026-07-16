@@ -64,6 +64,13 @@
       "when": 1784261629000,
       "tag": "0009_media_catalog_state",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784261629001,
+      "tag": "0010_rate_limit_windows",
+      "breakpoints": true
     }
   ]
 }

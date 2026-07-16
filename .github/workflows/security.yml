@@ -34,8 +34,6 @@ jobs:
       RATE_LIMIT_HASH_KEY: AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI=
       GOOGLE_CLIENT_ID: ci.apps.googleusercontent.com
       GOOGLE_CLIENT_SECRET: ci-google-secret
-      UPSTASH_REDIS_REST_URL: https://example.upstash.io
-      UPSTASH_REDIS_REST_TOKEN: ci-redis-token
       SITE_URL: https://cali.so
       BUNNY_MEDIA_REGION: ny
       BUNNY_ORIGINALS_ZONE: ci-media-originals

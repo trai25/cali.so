@@ -7,6 +7,7 @@ import {
   jsonb,
   numeric,
   pgTable,
+  primaryKey,
   serial,
   text,
   timestamp,
@@ -59,6 +60,26 @@ export const amaAdminSessions = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [index('ama_admin_sessions_expires_at_idx').on(table.expiresAt)],
+)
+
+export const rateLimitWindows = pgTable(
+  'rate_limit_windows',
+  {
+    scope: varchar('scope', { length: 128 }).notNull(),
+    keyHash: varchar('key_hash', { length: 64 }).notNull(),
+    requestCount: integer('request_count').notNull(),
+    windowExpiresAt: timestamp('window_expires_at', {
+      withTimezone: true,
+    }).notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.scope, table.keyHash] }),
+    index('rate_limit_windows_expiry_idx').on(table.windowExpiresAt),
+    check(
+      'rate_limit_windows_request_count_check',
+      sql`${table.requestCount} > 0`,
+    ),
+  ],
 )
 
 export const amaAvailabilityWindows = pgTable(
