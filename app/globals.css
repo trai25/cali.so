@@ -1861,7 +1861,11 @@ a:focus-visible .external-label .external-mark {
   height: 100%;
   object-fit: cover;
   filter: grayscale(1) contrast(1.05);
-  opacity: 0.85;
+  opacity: 1;
+}
+
+.halftone-source[data-theme='light'] {
+  filter: contrast(1.12) saturate(1.05);
 }
 
 .halftone-source[data-theme='dark'] {
@@ -1880,7 +1884,10 @@ a:focus-visible .external-label .external-mark {
   }
 }
 
-html.light .halftone-source[data-theme='light'],
+html.light .halftone-source[data-theme='light'] {
+  opacity: 1;
+}
+
 html.dark .halftone-source[data-theme='dark'] {
   opacity: 0.85;
 }
