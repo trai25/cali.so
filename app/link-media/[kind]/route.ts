@@ -20,8 +20,11 @@ async function fetchLinkMedia(upstream: string) {
   const contentType = res.headers.get('content-type') ?? ''
   if (!contentType.startsWith('image/')) throw new Error('unexpected content type')
 
-  // reject oversized declarations before buffering the body at all
-  if (Number(res.headers.get('content-length')) > MAX_MEDIA_BYTES) {
+  // reject an oversized *declared* length before buffering the body at
+  // all; an absent or non-numeric header falls through to the
+  // post-buffer check below
+  const declaredLength = Number(res.headers.get('content-length'))
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_MEDIA_BYTES) {
     throw new Error('unexpected content length')
   }
 
@@ -54,11 +57,11 @@ export async function GET(
       headers: {
         'Content-Type': contentType,
         // browsers keep a copy for a day, the CDN for a week (serving
-        // stale while it refreshes against the data cache)
+        // stale while it refreshes against the data cache). The strict
+        // media CSP (sandbox) comes from next.config.ts, which already
+        // sends the global security headers — setting it here as well
+        // would emit a duplicate Content-Security-Policy header.
         'Cache-Control': 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=604800',
-        // media only — never a document that could run in this origin
-        'Content-Security-Policy': "default-src 'none'; sandbox",
-        'X-Content-Type-Options': 'nosniff',
       },
     })
   } catch {
