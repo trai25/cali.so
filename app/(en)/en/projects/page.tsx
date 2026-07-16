@@ -1,11 +1,13 @@
 import { ProjectsPageView } from '../../../_views/projects-page'
 import { localeMetadata } from '~/lib/locale-metadata'
+import { publicPageMetadata } from '~/lib/public-page-metadata'
+
+const copy = publicPageMetadata.projects.en
 
 export const metadata = localeMetadata({
   locale: 'en',
   path: '/projects',
-  title: 'Projects',
-  description: 'Products, open-source tools, and small experiments Cali has made over the years',
+  ...copy,
 })
 
 export default function EnglishProjectsPage() {

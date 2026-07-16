@@ -1,9 +1,12 @@
-import { createSiteOgImage } from '~/lib/og-image'
+import { createSectionOgImage } from '~/lib/og-image'
+import { publicPageMetadata } from '~/lib/public-page-metadata'
+
+const copy = publicPageMetadata.blog.en
 
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
-export const alt = 'Cali Castle'
+export const alt = `${copy.title} · Cali Castle. ${copy.description}`
 
 export default async function OpengraphImage() {
-  return createSiteOgImage('en')
+  return createSectionOgImage('blog', 'en')
 }

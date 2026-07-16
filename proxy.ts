@@ -12,7 +12,11 @@ import { adminContentSecurityPolicy } from './lib/security/headers'
 
 function missingPublicContent(pathname: string) {
   const postMatch = pathname.match(/^\/(?:en\/)?blog\/([^/]+)\/?$/)
-  if (postMatch) return !isPublishedPostSlug(postMatch[1])
+  if (postMatch) {
+    const slug = postMatch[1]
+    if (/^(?:opengraph-image|twitter-image)-/.test(slug)) return false
+    return !isPublishedPostSlug(slug)
+  }
 
   const newsletterMatch = pathname.match(
     /^\/(?:en\/)?newsletters\/([^/]+)\/?$/,
