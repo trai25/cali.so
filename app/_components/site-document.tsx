@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Analytics } from '@vercel/analytics/next'
 // Experimental React channel export — available because next.config.ts sets
 // experimental.viewTransition (see docs/design-language.md, page transitions)
 import { Suspense, ViewTransition } from 'react'
@@ -37,13 +38,14 @@ export async function SiteDocument({
   // shared chrome fresh without making any page request-bound.
   const [social, github] = await Promise.all([getSocial(), getGitHub()])
   const english = locale === 'en'
+  const isPublicSite = !restoreLocale
 
   return (
     <html
       lang={english ? 'en' : 'zh-CN'}
       data-locale={english ? 'en' : undefined}
       suppressHydrationWarning
-      className={cn('font-sans', fontVariables, !restoreLocale && 'public-site')}
+      className={cn('font-sans', fontVariables, isPublicSite && 'public-site')}
     >
       <head>
         {/* Pre-paint handles the visited flag and theme. Locale restoration
@@ -67,6 +69,7 @@ export async function SiteDocument({
             <Dock />
           </Suspense>
         </ThemeProvider>
+        {isPublicSite && <Analytics />}
       </body>
     </html>
   )
