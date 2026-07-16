@@ -28,6 +28,18 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
 
+  // Posts and newsletters are read from the repository at render time. The
+  // slug is dynamic, so output tracing cannot discover these files from the
+  // readFile calls on its own when packaging serverless functions.
+  outputFileTracingIncludes: {
+    '/blog/\\[slug\\]': ['./content/blog/**/*'],
+    '/en/blog/\\[slug\\]': ['./content/blog/**/*'],
+    '/content/\\[\\.\\.\\.path\\]': [
+      './content/blog/**/*',
+      './content/newsletters/**/*',
+    ],
+  },
+
   // Pin the project root: when developing from a git worktree nested inside
   // another checkout, Next's lockfile-based root inference walks too far up.
   turbopack: { root: import.meta.dirname },

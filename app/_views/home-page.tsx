@@ -41,7 +41,7 @@ export async function HomePageView({ locale }: { locale: Locale }) {
     <div className="mx-auto w-full max-w-[37.5rem] px-6">
       <div className="flex flex-col-reverse justify-between gap-10 sm:flex-row sm:items-start">
         <div className="enter max-w-[19rem]">
-          <h1 className="text-sm font-semibold">Cali Castle</h1>
+          <h1 className="text-base font-semibold tracking-tight text-foreground">Cali Castle</h1>
           <div className="mt-4">
             <HomeIntroduction social={social.x} github={github} />
           </div>

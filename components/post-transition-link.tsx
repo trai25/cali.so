@@ -38,6 +38,7 @@ export function PostTransitionLink({
     <Link
       href={href}
       prefetch={true}
+      transitionTypes={['page-forward']}
       className={className}
       onClick={recordInputModality}
       onNavigate={prepareFallbackMorph}
