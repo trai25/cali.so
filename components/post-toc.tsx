@@ -280,6 +280,7 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
 
   function returnToTop() {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (!desktop) animateOpenState(false)
     window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' })
   }
 

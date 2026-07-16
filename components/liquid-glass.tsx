@@ -85,7 +85,7 @@ function makeDisplacementMap(w: number, h: number, radius: number): string {
 
 let generation = 0
 
-export function LiquidGlass({ blur = 2, saturate = 1.4 }: { blur?: number; saturate?: number }) {
+export function LiquidGlass({ blur = 4, saturate = 1.25 }: { blur?: number; saturate?: number }) {
   const ref = useRef<HTMLSpanElement>(null)
   const [glass, setGlass] = useState<{ id: string; w: number; h: number; map: string } | null>(null)
   // Safari/Firefox drop the whole declaration when it references an SVG

@@ -80,9 +80,10 @@ Hard rules:
 - **Chrome stays compact.** Navigation, footer, dates, section labels, and
   utility controls remain 14px with letter-spacing −0.011em. Compact chrome
   provides contrast against the editorial content instead of flattening it.
-- **Editorial scale.** List titles and project rows are 15px. Homepage and
-  introductory paragraphs are 16px/1.7. Post bodies are 16px/1.72, with CJK
-  at 1.9. Post titles scale from 28px to 32px; prose h2 is 20px/1.35 and h3 is
+- **Editorial scale.** The scale is based on 14px body copy. List titles and
+  project rows are 15px. Homepage and introductory paragraphs are 14px/1.7.
+  Post bodies are 14px/1.72, with CJK at 1.9. Post titles scale from 28px to
+  32px; prose h2 is 18px/1.35 and h3 is
   16px/1.45. Code remains 13px. Form inputs stay ≥16px to prevent iOS zoom.
   Headings use `text-wrap: balance` and tighter letter-spacing as size grows.
 - Content column is narrow: ~600px (`37.5rem`) plus padding.
@@ -491,7 +492,7 @@ The dock pill is real glass: a runtime-built displacement map (rounded-rect
 SDF, four-fold symmetric — one quadrant computed, mirrored into four; R/G
 channels encode the x/y bend, ramping outward through a 16px edge band,
 curve 1.6) drives an SVG `feDisplacementMap` applied as an inline-style
-`backdrop-filter: url(#…) blur(2px) saturate(1.4)` over a 55% paper
+`backdrop-filter: url(#…) blur(4px) saturate(1.25)` over a 68% paper
 background. Three displacement passes at staggered scales (44 ±10%) split
 the RGB channels for a faint chromatic fringe along the rim, recombined
 with screen blends; an inset top highlight (white 0.2 over, 0.06 under) plays the

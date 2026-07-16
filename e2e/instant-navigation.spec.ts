@@ -192,12 +192,19 @@ test('public motion and typography follow the design contract', async ({ page })
 
   await expect(page.locator('.home-introduction p').first()).toHaveCSS(
     'font-size',
-    '16px',
+    '14px',
   )
   await expect(page.locator('.home-contact-link').first()).toHaveCSS(
     'text-decoration-style',
     'dotted',
   )
+  await expect
+    .poll(() =>
+      page
+        .locator('.liquid-glass')
+        .evaluate((element) => getComputedStyle(element).backdropFilter),
+    )
+    .toContain('blur(4px)')
 
   const preferences = page.getByRole('button', { name: 'Preferences' })
   await preferences.click()
@@ -234,8 +241,8 @@ test('public motion and typography follow the design contract', async ({ page })
   await expect(focusRows.nth(1)).toHaveCSS('opacity', '0.44')
 
   await page.goto('/en/blog/do-buttons-need-pointer-cursors')
-  await expect(page.locator('.prose')).toHaveCSS('font-size', '16px')
-  await expect(page.locator('.prose h2').first()).toHaveCSS('font-size', '20px')
+  await expect(page.locator('.prose')).toHaveCSS('font-size', '14px')
+  await expect(page.locator('.prose h2').first()).toHaveCSS('font-size', '18px')
   await expect(page.getByRole('link', { name: 'Back to writing' })).toBeVisible()
   await expect(page.locator('.tweet-card-body')).toHaveCSS('font-size', '14px')
 
@@ -305,10 +312,28 @@ test('keyboard controls restore focus across public overlays', async ({ page }) 
   await page.keyboard.press('Enter')
   await expect(articleMap).toHaveAttribute('aria-expanded', 'true')
   await expect(page.getByRole('link', { name: 'Back to writing' })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: 'Back to top' })).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(articleMap).toHaveAttribute('aria-expanded', 'false')
   await expect(articleMap).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(articleMap).toHaveAttribute('aria-expanded', 'true')
+  await page.evaluate(() => {
+    const scrollTo = window.scrollTo.bind(window)
+    window.scrollTo = ((options: ScrollToOptions) => {
+      document.documentElement.dataset.articleMapOpenAtScroll =
+        document.querySelector('.post-minimap-toggle')?.getAttribute('aria-expanded') ??
+        'missing'
+      scrollTo(options)
+    }) as typeof window.scrollTo
+  })
+  const backToTop = page.getByRole('button', { name: 'Back to top' })
+  await expect(backToTop).toBeVisible()
+  await backToTop.click()
+  await expect(articleMap).toHaveAttribute('aria-expanded', 'false')
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-article-map-open-at-scroll',
+    'false',
+  )
 })
 
 test('administration stays outside public prefetching and requires login', async ({
