@@ -9,6 +9,7 @@ import {
   coverDataUri,
   ogColors,
   ogFonts,
+  ogRuntimeFonts,
   OgPolaroid,
   OgSheet,
   publicImageDataUri,
@@ -388,7 +389,7 @@ async function renderNewsletterOgImage(newsletter: NewsletterOgInput, locale: Lo
     ),
     {
       ...IMAGE_SIZE,
-      fonts: await ogFonts(archiveLabel + title + description),
+      fonts: await ogRuntimeFonts(),
     },
   ).arrayBuffer()
 }
@@ -482,7 +483,7 @@ async function renderPostOgImage(post: PostOgInput, locale: Locale) {
     ),
     {
       ...IMAGE_SIZE,
-      fonts: await ogFonts(title + date + NAME),
+      fonts: await ogRuntimeFonts(),
     },
   ).arrayBuffer()
 }

@@ -1,43 +1,15 @@
-import { readdir, readFile } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import path from 'node:path'
-import { pathToFileURL } from 'node:url'
 import { cacheLife } from 'next/cache'
 
 // Loaded outside the build graph: Turbopack chokes on harfbuzz's wasm when
 // subset-font gets bundled or traced (NftJsonAsset error), and
-// serverExternalPackages doesn't take here. Vercel flattens the traced pnpm
-// symlink, so fall back to its real package path when the top-level alias is
-// unavailable inside a dynamic metadata function.
+// serverExternalPackages doesn't take here. Static OG helpers call this only
+// during the build, where node_modules is present. Dynamic metadata functions
+// use the generated runtime subsets below.
 async function loadSubsetFont() {
-  try {
-    const mod = await import(/* turbopackIgnore: true */ 'subset-font')
-    return mod.default
-  } catch (error) {
-    if (
-      typeof error !== 'object' ||
-      error === null ||
-      !('code' in error) ||
-      error.code !== 'ERR_MODULE_NOT_FOUND'
-    ) {
-      throw error
-    }
-
-    const pnpmRoot = path.join(process.cwd(), 'node_modules/.pnpm')
-    const packageDirectory = (await readdir(pnpmRoot))
-      .sort()
-      .find((entry) => entry.startsWith('subset-font@'))
-    if (!packageDirectory) throw error
-
-    const packageUrl = pathToFileURL(
-      path.join(
-        pnpmRoot,
-        packageDirectory,
-        'node_modules/subset-font/index.js',
-      ),
-    ).href
-    const mod = await import(/* turbopackIgnore: true */ packageUrl)
-    return mod.default
-  }
+  const mod = await import(/* turbopackIgnore: true */ 'subset-font')
+  return mod.default
 }
 
 // Design-language tokens resolved to sRGB for satori (no oklch support).
@@ -69,6 +41,23 @@ export async function ogFonts(text: string) {
           targetFormat: 'sfnt',
         }),
       ).buffer,
+    ),
+  )
+  return [
+    { name: 'Frex Sans GB', data: regular, weight: 400 as const, style: 'normal' as const },
+    { name: 'Frex Sans GB', data: semibold, weight: 600 as const, style: 'normal' as const },
+  ]
+}
+
+export async function ogRuntimeFonts() {
+  'use cache'
+  cacheLife('max')
+
+  const [regular, semibold] = await Promise.all(
+    ['Regular', 'SemiBold'].map((weight) =>
+      readFile(path.join(FONTS_DIR, `FrexSansGB-OG-${weight}.ttf`)).then(
+        (font) => new Uint8Array(font).buffer,
+      ),
     ),
   )
   return [
