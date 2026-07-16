@@ -59,8 +59,9 @@ Repository API checks on 2026-07-16 verified:
   deletion, and limits the audited emergency bypass to repository
   administrators. It requires no approving review while the project has one
   maintainer.
-- [ ] Require the successful GitHub Actions checks named `Quality` and
-  `CodeQL` on both `v2` and `main`.
+- [x] The `v2` ruleset requires the successful GitHub Actions checks named
+  `Quality` and `CodeQL`.
+- [ ] Require `Quality` and `CodeQL` on `main` branch protection.
 - [x] CodeQL default setup is disabled so the committed advanced workflow is
   the single analysis source.
 - [ ] Non-provider secret patterns and validity checks are unavailable in the
@@ -84,19 +85,23 @@ Project API checks on 2026-07-16 verified:
 - [x] Production omits the five optional AMA capability switches, which is the
   schema's documented fail-closed state. Explicit `false` values are optional,
   not a launch requirement.
-- [ ] Add an isolated Preview `CLERK_SECRET_KEY`; never expose the Production
-  Clerk secret to Preview.
-- [ ] Remove the unused Resend key from Preview instead of provisioning a v3
-  replacement. Keep the legacy Production Resend key only until the historical
-  site is cut over.
-- [ ] Apply migration `0010` to the Preview Neon branch, grant its runtime role
-  CRUD-only access to `rate_limit_windows`, then remove every `KV_*`,
-  `REDIS_URL`, and `UPSTASH_*` variable from Preview. Redis is Production-only;
-  Preview rate limits use its isolated Neon database.
+- [x] Preview uses an isolated non-production Clerk instance. A normal-browser
+  request to `/admin` reaches its sign-in UI, while direct non-browser requests
+  remain fail closed.
+- [x] The unused `RESEND_API_KEY` is absent from Preview. Keep the legacy
+  Production Resend key only until the historical site is cut over.
+- [ ] Apply migration `0010` to the Preview Neon branch and grant its runtime
+  role CRUD-only access to `rate_limit_windows`. This remote database check
+  requires two fresh confirmations. Preview unconditionally selects the
+  database limiter and has no Redis fallback; if the table or grants are
+  missing, protected admin mutations fail closed with 503.
+- [x] Every `KV_*`, `REDIS_URL`, and `UPSTASH_*` variable is absent from
+  Preview. Redis is Production-only. The Preview runtime is configured to use
+  isolated Neon, but its migration and grants are not yet counted as verified.
 - [ ] Remove the obsolete `Admin Security` challenge for the removed
   `POST /api/admin/auth/request` route.
-- [ ] Remove the dead `AMA_ADMIN_ENABLED` Preview variable if it still exists;
-  the owner admin boundary is not environment-gated.
+- [x] The dead `AMA_ADMIN_ENABLED` Preview variable is absent; the owner admin
+  boundary is not environment-gated.
 - [x] Vercel reports no configured log drains for the workspace. A grouped,
   payload-free Preview query confirmed runtime-log access. The Pro workspace
   has Observability Plus enabled for this project, so Vercel's documented
