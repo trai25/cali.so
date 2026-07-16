@@ -1,15 +1,17 @@
 # v3 cutover readiness
 
-Last checked: 2026-07-16.
+Last checked: 2026-07-16 (hosted-control inventory refreshed the same day).
 
 ## Verdict
 
 **NOT READY.** The merged `v2` integration branch is green under the complete
-local release suite, and the browser and standards reviews found and fixed the
-remaining motion and typography regressions. The production cutover must still
-wait for current Vercel evidence, production credential and database-role
-confirmation, required GitHub checks, and a final review of this branch's
-Vercel Preview.
+local release suite, the Standards vocabulary breach is resolved, and the
+hosted-control inventory now has current evidence. The decisive blocker is
+that the Production environment is not yet provisioned for v3: its runtime
+database credential predates the rewrite and the v3 server-environment
+contract — including every media provider value — is unmet. Required GitHub
+checks, credential isolation, and the production database and media
+verifications also remain open.
 
 Unknown hosted state is not counted as passed. This report does not authorize
 merging to `main`, changing production settings, accessing production data, or
@@ -20,7 +22,9 @@ running production migrations.
 | Item | Value |
 | --- | --- |
 | Production branch | `main` at `8c258834af538dd501486a5fd319b3e96a2ff5bc` |
-| Integration branch | `v2` at `1fbaef5c4a8b7874786033a0538487c2b73fffe7` |
+| Integration branch | `v2` at `12fb6df` (post `#136` and `#138`) |
+| Vercel project | `cali-so` (`prj_oIl5MLjdm44QGv4v7ywZsPegtFoH`) on team `team_r1Mln12TRfgnkYJwXd62uJJ5` |
+| Production deployment | `dpl_BV7cKxGmfTAa1tUr2SScR6p9Uco8`, created 2024-03-10, status Ready |
 | Release issue | [#98](https://github.com/CaliCastle/cali.so/issues/98) |
 | Readiness issue | [#107](https://github.com/CaliCastle/cali.so/issues/107) |
 | Framework pin | `next@16.3.0-preview.6` |
@@ -41,22 +45,23 @@ Renditions. The retired static photo fallback has been removed.
 | Repository validation | PASS | Every command and count in the automated evidence section passed. |
 | Public browser behavior | PASS | Desktop, mobile, both locales, light and dark appearance, reduced motion, metadata, overflow, accessibility tree, and dock targets were reviewed locally. |
 | Owner admin boundary | PASS | Admin login remains reachable without a feature flag; protected pages and APIs enforce owner authentication, same-origin mutations, rate limits, audit events, and the strict admin CSP. |
-| Complete diff Standards review | FAIL | Portal layering and admin typography findings were fixed. The Media `lifecycle` vocabulary breach remains tracked in #134 and needs resolution or an explicit maintainer exception. |
+| Complete diff Standards review | PASS | Portal layering and admin typography findings were fixed. The Media `lifecycle` vocabulary breach was resolved by PR #138 (issue #134 closed): Catalog State is the glossary term, and additive migration `0009` renames the column. |
 | Complete diff Spec review | PASS | No scope creep, incorrect PASS treatment, or missing local evidence was found; the unresolved hosted and production requirements below correctly keep the verdict at NOT READY. |
-| Production-like PR Preview | AWAITING CONFIRMATION | Review the public Preview created by the #107 PR after Vercel finishes. |
+| Production-like PR Preview | AWAITING CONFIRMATION | The #107 PR is merged; review a current `v2` Preview across the full release matrix once Production provisioning lands, and record its URL here. |
 | GitHub security settings | PASS | Secret scanning, push protection, Dependabot security updates, read-only Actions defaults, and full-SHA action policy are enabled. |
-| Required GitHub checks | FAIL | Neither the `v2` ruleset nor `main` branch protection requires `Quality` and `CodeQL`. Changing protection requires separate maintainer authorization. |
-| Current Vercel project settings | UNKNOWN | The authenticated CLI user is `cali`, but project inspection returns `Not authorized`. Historical evidence cannot replace a current check. |
-| Production capability switches | UNKNOWN | Confirm all five optional `AMA_*_ENABLED` values are explicitly `false` in Production. Owner admin has no capability switch. |
-| Preview and Production secret isolation | UNKNOWN | The last verified state shared one Resend key across environments; current Vercel state is inaccessible. |
+| Required GitHub checks | FAIL | Neither the `v2` ruleset nor `main` branch protection requires `Quality` and `CodeQL`. The maintainer-operated commands are in `docs/v3-cutover-ops-runbook.md`. |
+| Current Vercel project settings | PASS | Project inspection succeeds with the explicit team scope. The earlier `Not authorized` was a CLI quirk: the team slug `cali` resolves to the personal account, so commands must pass `--scope=team_r1Mln12TRfgnkYJwXd62uJJ5`. |
+| Production capability switches | PASS | All five optional `AMA_*_ENABLED` variables are absent from Production and therefore fail closed. Setting them explicitly `false` remains recommended during provisioning. `AMA_ADMIN_ENABLED` survives in Preview as dead configuration after ADR-0008 and should be removed. |
+| Preview and Production secret isolation | FAIL | `RESEND_API_KEY` is one variable targeting both Production and Preview, and the `KV_*`/`REDIS_URL` group added with the Preview provisioning also targets both environments. |
+| Production runtime environment | FAIL | Production `DATABASE_URL` predates the rewrite by over three years, and the v3 server-environment contract is otherwise unmet: no `SESSION_SECRET`, `AMA_ENCRYPTION_KEY`, `RATE_LIMIT_HASH_KEY`, `SITE_URL`, `RESEND_FROM_EMAIL`, rate-limit values, `CRON_SECRET`, or any `BUNNY_*`/`MEDIA_*` variable. The first v3 production build would fail environment validation. |
 | Production runtime database grants | AWAITING CONFIRMATION | Requires two fresh confirmations before inspecting the production role or sensitive cloud state. |
-| Production migration credential | AWAITING CONFIRMATION | Confirm `MIGRATION_DATABASE_URL` is absent from Vercel and available only to the controlled migration operation. |
-| Production migrations | AWAITING CONFIRMATION | Eight additive migrations validate locally. Media migrations `0005` through `0008` are required for the v3 photo surface; execution and schema state require a separately authorized cutover step. |
-| Media provider and publication | AWAITING CONFIRMATION | Verify the production Bunny zones and CDN, private Original boundary, required Renditions, live storage contract evidence, and the active two-photo Published Photo Selection. |
-| Other external providers | UNKNOWN | Google, Tencent, payment, booking finalization, and public AMA mutation capabilities must remain disabled. Confirm production credentials are absent or isolated. |
-| Logs and drains | UNKNOWN | Verify access, retention, drains, and the privacy allowlist against the current Vercel project. |
-| Domain cutover | UNKNOWN | `cali.so` currently serves `main`; verify the current Vercel project, production-branch mapping, aliases, and certificate before merge. |
-| Rollback | AWAITING CONFIRMATION | Confirm an operator can promote the last known-good Vercel deployment or revert the cutover merge without reversing additive database migrations. |
+| Production migration credential | PASS (name level) | `MIGRATION_DATABASE_URL` is absent from every Vercel environment. Its availability to the controlled migration operation is confirmed at cutover time. |
+| Production migrations | AWAITING CONFIRMATION | Nine additive migrations validate locally. Media migrations `0005` through `0009` are required for the v3 photo surface; execution and schema state require a separately authorized cutover step. |
+| Media provider and publication | FAIL | Production has no Bunny or media configuration at all, so the provider boundary, live storage contract, and the two-photo Published Photo Selection cannot exist yet. Provisioning precedes verification. |
+| Other external providers | PASS (name level) | No Google, Tencent, payment, or booking-finalization credentials exist in Production. Legacy-era variables (Clerk, Sanity, Edge Config, a three-year-old Upstash pair) remain for the current `main` site and need pruning or rotation at cutover. |
+| Logs and drains | UNKNOWN | Not exposed through the CLI; verify access, retention, drains, and the privacy allowlist in the Vercel dashboard. |
+| Domain cutover | PASS (partial) | `cali.so` is assigned to the correct team with third-party DNS pointing at Vercel and the production alias intact. The production-branch mapping and certificate still need a dashboard check before merge. |
+| Rollback | AWAITING CONFIRMATION | The last known-good production deployment is recorded in the audit baseline. An operator must still confirm promotion or merge-revert works without reversing additive migrations. |
 
 ## Automated evidence
 
@@ -161,13 +166,13 @@ Final review artifacts after the accessibility corrections:
   photos and their code path were removed, so release evidence must verify the
   production catalog, provider boundary, and publication rather than relying
   on a repository fallback.
-- The merged Media schema's `lifecycle` column conflicts with the Media
-  glossary. Rewriting merged migration `0005` would be unsafe, so the additive
-  vocabulary correction is tracked as post-launch issue
-  [#134](https://github.com/CaliCastle/cali.so/issues/134). The implemented
-  state transitions and publication behavior are unchanged, but this remains
-  a documented Standards breach. The cutover cannot receive a READY verdict
-  until the issue is resolved or the maintainer records an explicit exception.
+- The merged Media schema's `lifecycle` column conflicted with the Media
+  glossary. Rewriting merged migration `0005` would have been unsafe, so PR
+  #138 resolved [#134](https://github.com/CaliCastle/cali.so/issues/134) with
+  additive migration `0009`, renaming the column and constraint to Catalog
+  State and aligning the schema, repositories, admin surfaces, tests, and
+  glossary. State transitions and publication behavior are unchanged, and the
+  Standards breach is closed.
 - The complete-diff Standards review also found arbitrary `z-50` portal layers
   and widened letter spacing in admin chrome. Those findings are fixed with
   the existing `--z-card` layer and the shared `-0.011em` chrome tracking.
@@ -186,9 +191,9 @@ Final review artifacts after the accessibility corrections:
 ## Migration and provider boundary
 
 Migrations `0001` through `0004` are additive AMA foundations. Migrations
-`0005` through `0008` define the Media catalog, Photo Selection publication,
-publication revisions, and durable Purge progress. Their checked-in snapshots
-and migration tests pass. Unlike the optional public AMA flows, the v3 public
+`0005` through `0009` define the Media catalog, Photo Selection publication,
+publication revisions, durable Purge progress, and the Catalog State rename.
+Their checked-in snapshots and migration tests pass. Unlike the optional public AMA flows, the v3 public
 photo surfaces require the Media migrations, production Bunny configuration,
 and an active Published Photo Selection. Git remains authoritative for writing
 and ordinary site content, but not for the curated photo wall.
@@ -216,32 +221,34 @@ No manual DNS move is expected, but current project ownership, production
 branch, aliases, certificate, and environment scopes must be verified first.
 
 Rollback must prefer promoting the last known-good Vercel production deployment
-or reverting the cutover merge. The eight additive database migrations should
+or reverting the cutover merge. The nine additive database migrations should
 remain in place during application rollback; destructive down migrations are
 not part of the procedure. Record the known-good deployment identifier and an
 operator before cutover.
 
 ## Remaining manual actions
 
-1. Restore authorized read access to the current Vercel project and re-run the
-   hosted-control inventory without printing secret values.
-2. Separate Preview and Production Resend credentials if the historical shared
-   assignment still exists.
-3. Confirm the five optional Production capability switches are explicitly
-   false and owner admin remains protected by authentication.
-4. With two fresh confirmations, verify production runtime database grants,
-   migration-credential isolation, and migration state.
-5. Verify the production Bunny and Neon Media boundary, run the protected live
-   storage contract, and confirm the intended Published Photo Selection.
-6. Resolve #134 or record an explicit maintainer exception for the Media
-   vocabulary breach.
-7. Verify Vercel logs, drains, access, retention, firewall rules, production
-   branch, domains, and rollback deployment.
-8. Add `Quality` and `CodeQL` as required checks to both `v2` and `main` after
-   separate authorization.
-9. Review the #107 Vercel Preview across the remaining browser matrix and
-   update this report with its URL and result.
-10. Wait for the #107 PR's Quality, CodeQL, Vercel, and Greptile checks and
-    resolve any new finding or merge conflict.
-11. Only after every blocker above is passed, approve the separately operated
-    merge to `main` and production cutover.
+The maintainer-operated commands for actions 1 through 4 are collected in
+`docs/v3-cutover-ops-runbook.md`.
+
+1. Provision the Production environment for the v3 contract: replace the
+   legacy `DATABASE_URL` with the CRUD-only Neon runtime role and add the
+   missing secrets, rate limits, capability switches, and complete Bunny and
+   media configuration.
+2. Split the shared `RESEND_API_KEY` and `KV_*`/`REDIS_URL` credentials so
+   Preview and Production hold isolated values, and delete the dead
+   `AMA_ADMIN_ENABLED` variable from Preview.
+3. Add `Quality` and `CodeQL` as required checks to both `v2` and `main`.
+4. In the Vercel dashboard, verify logs, drains, retention, firewall rules,
+   the production-branch mapping, and the certificate.
+5. With two fresh confirmations, verify production runtime database grants
+   and migration state, then apply migrations `0001` through `0009` with the
+   separately supplied migration credential.
+6. Verify the production Bunny and Neon Media boundary, run the protected live
+   storage contract, and publish the intended two-photo Published Photo
+   Selection through the owner admin.
+7. Review a production-like Vercel Preview across the remaining browser matrix
+   and update this report with its URL and result.
+8. Confirm the rollback procedure against the recorded known-good deployment.
+9. Only after every blocker above is passed, approve the separately operated
+   merge to `main` and production cutover.
