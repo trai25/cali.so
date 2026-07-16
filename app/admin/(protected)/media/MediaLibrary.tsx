@@ -560,8 +560,8 @@ function Inspector({
         error instanceof PasskeyVerificationError
           ? localize(
               locale,
-              '未完成通行密钥验证，没有清除任何内容。',
-              'Passkey verification was not completed. Nothing was purged.',
+              '未能确认通行密钥验证，没有清除任何内容。请重试。',
+              'Passkey verification could not be confirmed. Nothing was purged. Try again.',
             )
           : localize(
               locale,

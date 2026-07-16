@@ -1,7 +1,6 @@
 'use client'
 
-import { useReverification, useSession } from '@clerk/nextjs'
-import { isReverificationCancelledError } from '@clerk/nextjs/errors'
+import { useSession } from '@clerk/nextjs'
 import { useCallback } from 'react'
 
 type AsyncFetcher<Arguments extends unknown[], Result> = (
@@ -58,31 +57,18 @@ export function usePasskeyReverification<
   Result,
 >(fetcher: AsyncFetcher<Arguments, Result>) {
   const verifyWithPasskey = usePasskeyVerification()
-  const reverifyingFetcher = useReverification(fetcher, {
-    onNeedsReverification({ cancel, complete, level }) {
-      if (level !== 'first_factor') {
-        cancel()
-        return
-      }
-      void verifyWithPasskey().then(complete, () => cancel())
-    },
-  })
 
   return useCallback(
     async (...args: Arguments) => {
       await verifyWithPasskey()
-      let result: Awaited<Result>
-      try {
-        result = await reverifyingFetcher(...args)
-      } catch (error) {
-        if (isReverificationCancelledError(error)) {
-          throw new PasskeyVerificationError()
-        }
-        throw error
-      }
-      if (isReverificationHint(result)) throw new PasskeyVerificationError()
+      const result = await fetcher(...args)
+      const denied =
+        result instanceof Response
+          ? await isReverificationResponse(result)
+          : isReverificationHint(result)
+      if (denied) throw new PasskeyVerificationError()
       return result
     },
-    [reverifyingFetcher, verifyWithPasskey],
+    [fetcher, verifyWithPasskey],
   )
 }

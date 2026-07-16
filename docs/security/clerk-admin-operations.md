@@ -46,10 +46,11 @@ For each deployed environment:
 
 The browser runs Clerk's `verifyWithPasskey()` before Google Calendar
 connection changes, Media Asset Purge, and Photo Selection publication. It
-does not send the mutation when the passkey prompt is cancelled and retries a
-Clerk reverification denial only after another successful passkey assertion.
-The server independently requires a first-factor verification age below ten
-minutes before any of those effects run.
+does not send the mutation when the passkey prompt is cancelled. A server
+freshness denial is never retried automatically, avoiding a second prompt or
+an ambiguous duplicate mutation; the owner receives a no-side-effect message
+and explicitly retries the action. The server independently requires a
+first-factor verification age below ten minutes before any effect runs.
 
 Clerk 7.5.19 gives the server factor ages but not the factor strategy. The
 server can prove that the first factor is fresh, but it cannot prove that the

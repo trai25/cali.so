@@ -229,8 +229,8 @@ export function PhotoSelectionEditor({
         error instanceof PasskeyVerificationError
           ? localize(
               locale,
-              '未完成通行密钥验证，没有发布任何更改。',
-              'Passkey verification was not completed. Nothing was published.',
+              '未能确认通行密钥验证，没有发布任何更改。请重试。',
+              'Passkey verification could not be confirmed. Nothing was published. Try again.',
             )
           : code === 'ineligible_assets'
           ? localize(
