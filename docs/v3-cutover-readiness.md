@@ -24,7 +24,7 @@ running production migrations.
 | Production branch | `main` at `8c258834af538dd501486a5fd319b3e96a2ff5bc` |
 | Integration branch | `v2` at `12fb6df` (post `#136` and `#138`) |
 | Vercel project | `cali-so` (`prj_oIl5…`) on team `team_r1Mln…`; full IDs live in the local `.vercel/project.json` link state |
-| Production deployment | `dpl_BV7cK…`, created 2024-03-10, status Ready at inventory time |
+| Production deployment | `dpl_A29CV…`, created 2026-07-11, status Ready at inventory time |
 | Release issue | [#98](https://github.com/CaliCastle/cali.so/issues/98) |
 | Readiness issue | [#107](https://github.com/CaliCastle/cali.so/issues/107) |
 | Framework pin | `next@16.3.0-preview.6` |

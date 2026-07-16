@@ -154,13 +154,13 @@ MIGRATION_DATABASE_URL=postgresql://... pnpm db:migrate
 ## 6. Rollback anchor
 
 The last known-good production deployment is recorded in the readiness
-report's audit baseline (created 2024-03-10, status Ready at inventory time).
-Because a deployment that old can age out of plan retention, verify it still
-exists immediately before cutover and re-record a newer known-good ID if it
-does not:
+report's audit baseline. Deployments can age out of plan retention, so
+resolve and verify the current one immediately before cutover and re-record
+the ID:
 
 ```bash
-DPL=$(npx vercel ls cali-so --prod $SCOPE 2>/dev/null | head -1)
+DPL=$(npx vercel ls cali-so --prod $SCOPE 2>/dev/null \
+  | grep -m1 -oE 'https://[a-z0-9-]+\.vercel\.app')
 npx vercel inspect "$DPL" $SCOPE
 ```
 
