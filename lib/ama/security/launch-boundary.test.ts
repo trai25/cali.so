@@ -7,7 +7,6 @@ const disabledFeatures: AmaFeatureFlags = {
   publicMutations: false,
   payments: false,
   bookingFinalization: false,
-  admin: false,
   google: false,
   tencent: false,
 }
@@ -24,7 +23,7 @@ describe('AMA launch boundary', () => {
 
     const response = boundary.protect(
       new Request('https://cali.so/api/admin/auth/request'),
-      ['admin'],
+      ['google'],
     )
 
     expect(response?.status).toBe(503)
@@ -42,13 +41,13 @@ describe('AMA launch boundary', () => {
 
   it('allows an enabled surface to continue to its normal security policy', () => {
     const boundary = createAmaLaunchBoundary({
-      features: { ...disabledFeatures, admin: true },
+      features: { ...disabledFeatures, google: true },
       audit: { write() { throw new Error('enabled requests are not denials') } },
     })
 
     expect(
       boundary.protect(new Request('https://cali.so/api/admin/auth/request'), [
-        'admin',
+        'google',
       ]),
     ).toBeNull()
   })

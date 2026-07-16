@@ -88,9 +88,6 @@
     "description": "There's never been a better time to develop for Apple platforms.",
     "hasImage": true
   },
-  "https://diagram.com": {
-    "domain": "diagram.com"
-  },
   "https://discord.com": {
     "domain": "discord.com",
     "title": "Discord - Group Chat That’s All Fun & Games",
@@ -417,9 +414,6 @@
     "description": "design engineer",
     "hasImage": true
   },
-  "https://shop.zolplay.cn": {
-    "domain": "shop.zolplay.cn"
-  },
   "https://shud.in": {
     "domain": "shud.in",
     "title": "Shu Ding",
@@ -470,20 +464,12 @@
     "description": "Orchestrating ideas with Code & AI | All views are my own",
     "hasImage": true
   },
-  "https://twitter.com/_cuvii_": {
-    "domain": "twitter.com",
-    "description": "[X profile not independently verifiable: twitter.com redirects to x.com, which returns HTTP 402 to automated clients]"
-  },
   "https://twitter.com/bearbig/status/1657997853585997824?s=20": {
     "domain": "twitter.com",
     "title": "Bear Liu (@bearliu) on X",
     "description": "我和陈皓的交集只是在社交媒体，但他突然离世的消息冲击实在太大。我的一些个人感受（仅仅是自己的生活感悟，与他和别人的生活或观点无关）\n\n1 / 现在的时代，不要想着抓住所有机会，不错过风口。生活是一条大河，个人无法停住每一滴水，特别是在技术领域。",
     "descriptionEn": "My only connection with Chen Hao was through social media, but the news of his sudden passing still hit me incredibly hard... (tweet verified live via Twitter syndication API; direct x.com fetch is blocked)",
     "hasImage": true
-  },
-  "https://twitter.com/brotzky_": {
-    "domain": "twitter.com",
-    "description": "[X profile not independently verifiable: twitter.com redirects to x.com, which returns HTTP 402 to automated clients]"
   },
   "https://twitter.com/buaaxhm": {
     "domain": "twitter.com",
@@ -525,10 +511,6 @@
     "domain": "twitter.com",
     "description": "[X profile not independently verifiable: twitter.com redirects to x.com, which returns HTTP 402 to automated clients]"
   },
-  "https://twitter.com/hwangdevs": {
-    "domain": "twitter.com",
-    "description": "[X profile not independently verifiable: twitter.com redirects to x.com, which returns HTTP 402 to automated clients]"
-  },
   "https://twitter.com/jsngr": {
     "domain": "twitter.com",
     "title": "Jordan Singer (@jsngr) on X",
@@ -564,10 +546,6 @@
     "hasImage": true
   },
   "https://twitter.com/miableem": {
-    "domain": "twitter.com",
-    "description": "[X profile not independently verifiable: twitter.com redirects to x.com, which returns HTTP 402 to automated clients]"
-  },
-  "https://twitter.com/patak_dev": {
     "domain": "twitter.com",
     "description": "[X profile not independently verifiable: twitter.com redirects to x.com, which returns HTTP 402 to automated clients]"
   },
@@ -627,10 +605,6 @@
     "title": "Terry Fei (@theterryfei) on X",
     "description": "Building interesting things @zolplay 2AS5FRRZ",
     "hasImage": true
-  },
-  "https://twitter.com/uuoapp": {
-    "domain": "twitter.com",
-    "description": "[X profile not independently verifiable: twitter.com redirects to x.com, which returns HTTP 402 to automated clients]"
   },
   "https://twitter.com/wangjie000": {
     "domain": "twitter.com",
@@ -720,9 +694,6 @@
     "description": "Vue.js - The Progressive JavaScript Framework",
     "hasImage": true
   },
-  "https://vvspaceship.website": {
-    "domain": "vvspaceship.website"
-  },
   "https://workos.com/": {
     "domain": "workos.com",
     "title": "WorkOS - Your app, Enterprise Ready.",
@@ -777,9 +748,6 @@
     "domain": "www.w3.org",
     "title": "User interface",
     "description": "CSS 2.1 specification chapter covering user interface properties: cursors, system colors, fonts, outlines, and magnification."
-  },
-  "https://xlog.app/": {
-    "domain": "xlog.app"
   },
   "https://youtu.be/Ctr-kHrBHeU?si=NJfSrdI0BwOSsw18": {
     "domain": "youtu.be",

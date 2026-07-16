@@ -17,8 +17,12 @@ general-purpose blog template.
   English the matching `/en` route family
 - Static public pages with ISR-backed social data and committed fallback
   snapshots
-- Drizzle and Neon groundwork for AMA operations, kept disabled for the v3
-  production launch
+- An always-available owner admin for Media and AMA operations, protected by
+  server-side authentication, origin checks, and rate limits; public AMA
+  transactions remain disabled for the v3 production launch
+- A Bunny-backed Media Library with owner review and curation in admin; its
+  active Published Photo Selection powers `/photos` and the homepage preview
+  while private Originals remain server-only
 - CSP, same-origin mutation checks, rate limits, capability kill switches,
   security automation, and isolated Preview credentials
 
@@ -56,12 +60,29 @@ the full suite and production build must pass from a frozen-lockfile install.
 
 ```bash
 pnpm typecheck
+pnpm test:unit
 pnpm test:localization
 pnpm test:port-post
 pnpm test:ama
 pnpm test:security
+pnpm test:media:storage
+pnpm test:media:catalog
+pnpm test:media:processing
+pnpm test:media:ingestion
+pnpm test:media:geocoding
+pnpm test:media:alt-text
+pnpm test:media:admin
+pnpm test:media:asset-review
+pnpm test:media:photo-selection
+pnpm test:media:purge
+pnpm test:media:reconciliation
 pnpm build
-pnpm audit --prod
+pnpm test:navigation
+pnpm verify:legacy-urls
+pnpm verify:links
+pnpm verify:public-discovery
+pnpm verify:security-boundary
+pnpm audit:prod
 ```
 
 ## Deployment constraints
@@ -73,9 +94,13 @@ pnpm audit --prod
 - Preview and Production use separate credentials and data. Preview data must
   be disposable or irreversibly sanitized.
 - The Vercel runtime never receives migration credentials.
-- AMA, admin, payment, booking-finalization, Google, and Tencent capabilities
-  remain disabled in Production until their later product and security gates
-  are complete.
+- Owner admin remains available in every environment and relies on
+  authentication rather than an environment switch. Public AMA mutations,
+  payments, booking finalization, Google, and Tencent remain disabled in
+  Production until their later product and security gates are complete.
+- The public photo surfaces depend on migrations `0005` through `0008`, the
+  private Originals and public Renditions boundary, and an active Published
+  Photo Selection. The retired static photo fallback is not part of v3.
 - Production database or sensitive cloud-data access requires two fresh
   confirmations immediately before access.
 

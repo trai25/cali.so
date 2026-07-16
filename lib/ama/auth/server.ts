@@ -72,7 +72,6 @@ export function getOwnerAuth() {
 }
 
 export async function isOwnerAuthenticated() {
-  if (!getServerEnv().features.admin) return false
   const cookieStore = await cookies()
   return getOwnerAuth().authenticate(cookieStore.get(AUTH_SESSION_COOKIE)?.value)
 }

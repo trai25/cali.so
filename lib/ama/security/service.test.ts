@@ -12,7 +12,6 @@ const allFeatures: AmaFeatureFlags = {
   publicMutations: true,
   payments: true,
   bookingFinalization: true,
-  admin: true,
   google: true,
   tencent: true,
 }
@@ -54,7 +53,7 @@ describe('AMA security service', () => {
     const { security, events } = fixture()
 
     await expect(
-      security.protectBrowserMutation(browserMutation(), ['admin']),
+      security.protectOwnerAdminMutation(browserMutation()),
     ).resolves.toBeNull()
     expect(events).toEqual([])
   })
@@ -65,7 +64,6 @@ describe('AMA security service', () => {
     })
 
     const response = await security.protectBrowserMutation(browserMutation(), [
-      'admin',
       'google',
     ])
 
@@ -92,7 +90,7 @@ describe('AMA security service', () => {
       },
     })
 
-    const response = await security.protectBrowserMutation(request, ['admin'])
+    const response = await security.protectOwnerAdminMutation(request)
 
     expect(response?.status).toBe(403)
     expect(events[0]).toEqual({

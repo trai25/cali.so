@@ -86,55 +86,89 @@ async function verifyPublicPages(baseUrl) {
   assert.equal(new URL(ama.headers.get('location'), baseUrl).pathname, '/')
 }
 
-async function verifyDisabledPages(baseUrl) {
-  for (const path of ['/admin', '/admin/login']) {
-    const { response, body } = await fetchBoundary(baseUrl, path)
-    assert.equal(response.status, 404, `${path} disabled status`)
-    assert.match(body, /<meta name="robots" content="noindex"\/?>/)
-  }
+async function verifyAdminPages(baseUrl) {
+  const login = await fetchBoundary(baseUrl, '/admin/login')
+  assert.equal(login.response.status, 200, '/admin/login status')
+  assert.match(
+    login.body,
+    /<meta name="robots" content="noindex(?:, nofollow)?"\/?>/,
+  )
 }
 
-async function verifyDisabledApis(baseUrl) {
+async function verifyAdminApiSecurity(baseUrl) {
   const sameOriginHeaders = {
     origin: 'https://cali.so',
     'sec-fetch-site': 'same-origin',
   }
-  const requests = [
+
+  for (const request of [
     {
       path: '/api/admin/auth/request',
       init: {
         method: 'POST',
-        headers: sameOriginHeaders,
+        headers: {
+          origin: 'https://attacker.example',
+          'sec-fetch-site': 'cross-site',
+        },
         body: new URLSearchParams({ email: 'owner@example.com' }),
       },
-    },
-    {
-      path: '/api/admin/auth/verify?token=security-boundary-session',
-      init: { method: 'GET' },
     },
     {
       path: '/api/admin/auth/logout',
       init: {
         method: 'POST',
         headers: {
-          ...sameOriginHeaders,
+          origin: 'https://attacker.example',
+          'sec-fetch-site': 'cross-site',
           cookie: '__Host-ama_session=security-boundary-session',
         },
       },
     },
+  ]) {
+    const { response, body } = await fetchBoundary(
+      baseUrl,
+      request.path,
+      request.init,
+    )
+    assert.equal(response.status, 403, `${request.path} cross-site status`)
+    assert.equal(response.headers.get('cache-control'), 'no-store')
+    assert.equal(body, '')
+    assert.equal(response.headers.get('set-cookie'), null)
+  }
+
+  const availability = await fetchBoundary(
+    baseUrl,
+    '/api/admin/ama/availability',
     {
-      path: '/api/admin/ama/availability',
-      init: {
-        method: 'POST',
-        headers: sameOriginHeaders,
-        body: new URLSearchParams({
-          intent: 'create',
-          weekday: '1',
-          start: '09:00',
-          end: '10:00',
-        }),
-      },
+      method: 'POST',
+      headers: sameOriginHeaders,
+      body: new URLSearchParams({
+        intent: 'create',
+        weekday: '1',
+        start: '09:00',
+        end: '10:00',
+      }),
     },
+  )
+  assert.equal(availability.response.status, 303)
+  assert.equal(
+    new URL(availability.response.headers.get('location'), baseUrl).pathname,
+    '/admin/login',
+  )
+  assert.equal(availability.response.headers.get('set-cookie'), null)
+
+  const media = await fetchBoundary(baseUrl, '/api/admin/media/assets')
+  assert.equal(media.response.status, 401)
+  assert.deepEqual(JSON.parse(media.body), { error: 'unauthorized' })
+  assert.equal(media.response.headers.get('set-cookie'), null)
+}
+
+async function verifyDisabledProviderApis(baseUrl) {
+  const sameOriginHeaders = {
+    origin: 'https://cali.so',
+    'sec-fetch-site': 'same-origin',
+  }
+  const requests = [
     {
       path: '/api/admin/ama/google/connect',
       init: { method: 'POST', headers: sameOriginHeaders },
@@ -166,9 +200,10 @@ async function verifyDisabledApis(baseUrl) {
 const server = await openProductionServer(process.env.SECURITY_BOUNDARY_BASE_URL)
 try {
   await verifyPublicPages(server.baseUrl)
-  await verifyDisabledPages(server.baseUrl)
-  await verifyDisabledApis(server.baseUrl)
-  console.log(`Verified the disabled production security boundary at ${server.baseUrl}`)
+  await verifyAdminPages(server.baseUrl)
+  await verifyAdminApiSecurity(server.baseUrl)
+  await verifyDisabledProviderApis(server.baseUrl)
+  console.log(`Verified the production security boundary at ${server.baseUrl}`)
 } finally {
   await server.stop()
 }

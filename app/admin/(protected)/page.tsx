@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
+import { redirect } from 'next/navigation'
 
-import { requireAmaAdminEnabled } from '~/lib/ama/admin/launch-boundary-server'
 import { getAmaAdminServices } from '~/lib/ama/admin/server'
+import { isOwnerAuthenticated } from '~/lib/ama/auth/server'
 
 import {
   AdminDashboard,
@@ -66,7 +67,7 @@ export default async function AdminPage({
     calendar?: string | string[]
   }>
 }) {
-  requireAmaAdminEnabled()
+  if (!(await isOwnerAuthenticated())) redirect('/admin/login')
   const { availability, google } = getAmaAdminServices()
   const windowsPromise = availability.list()
   const connectionPromise = google.getConnection()

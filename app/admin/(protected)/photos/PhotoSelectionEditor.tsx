@@ -244,7 +244,7 @@ export function PhotoSelectionEditor({
     <main>
       <div className="flex flex-wrap items-end justify-between gap-5 border-b border-dashed border-border pb-7">
         <div className="max-w-2xl">
-          <p className="text-sm font-medium tracking-[0.12em] text-muted-foreground">
+          <p className="text-sm font-medium tracking-[-0.011em] text-muted-foreground">
             <T zh="照片选择" en="PHOTO SELECTION" />
           </p>
           <h1 className="mt-2 text-sm font-semibold">

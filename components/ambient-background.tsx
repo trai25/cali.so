@@ -15,8 +15,8 @@ export function AmbientBackground() {
       <div aria-hidden className="column-rulers">
         <ArcRulers />
       </div>
-      <div aria-hidden className="scroll-fade scroll-fade-top" />
-      <div aria-hidden className="scroll-fade scroll-fade-bottom" />
+      <div aria-hidden className="viewport-edge-fade viewport-edge-fade-top" />
+      <div aria-hidden className="viewport-edge-fade viewport-edge-fade-bottom" />
     </>
   )
 }

@@ -12,11 +12,8 @@ Current as of July 2026.
 - Release scope and evidence are tracked by
   [#98](https://github.com/CaliCastle/cali.so/issues/98). Do not merge to
   `main` until its complete dependency chain and final proof are green.
-- The release work is intentionally split into reviewable slices:
-  v3 identity and licensing (#99), bilingual routes and localized OG (#100),
-  legacy URLs (#101), discovery and failures (#102), production security
-  boundary (#103), Cache Components (#104), Instant Navigations (#105),
-  Partial Prefetching (#106), and cutover proof (#107).
+- Release slices #99 through #106 are merged into `v2`. Final cutover proof is
+  tracked by #107; its checked-in report is the current readiness authority.
 
 ## Current architecture
 
@@ -36,9 +33,10 @@ Current as of July 2026.
   failure.
 - The fixed bottom dock is the primary navigation. The visual contract lives
   in `docs/design-language.md`.
-- The AMA domain has owner-auth, availability, database, and security
-  groundwork, but all public, admin, payment, provider, and finalization
-  capabilities stay disabled for the v3 production launch.
+- The owner admin is always reachable for Media and AMA operations, with
+  server-side authentication, origin checks, rate limits, and audit events.
+  Public AMA mutations, payment, provider, and finalization capabilities stay
+  disabled for the v3 production launch.
 - Security baseline controls from PR #97 remain mandatory: CSP and security
   headers, same-origin mutation policy, rate limits, kill switches,
   privacy-safe audit events, isolated credentials, and security automation.
@@ -54,8 +52,8 @@ Current as of July 2026.
 2. Complete all three issue #91 stages: Cache Components baseline,
    route-by-route Instant Navigations, then Partial Prefetching and browser
    regression coverage.
-3. Keep unfinished AMA and admin surfaces disabled and prove the Production
-   boundary fails closed.
+3. Keep owner admin authenticated and reachable while unfinished public AMA,
+   payment, provider, and finalization capabilities fail closed.
 4. Validate from a frozen-lockfile install: types, all tests, migrations,
    localization, security, production build, dependency audit, links, HTTP
    contracts, and browser checks.
@@ -78,13 +76,30 @@ pnpm install --frozen-lockfile
 pnpm dev
 
 pnpm typecheck
+pnpm test:unit
 pnpm test:localization
 pnpm test:port-post
 pnpm test:ama
 pnpm test:security
+pnpm test:media:storage
+pnpm test:media:catalog
+pnpm test:media:processing
+pnpm test:media:ingestion
+pnpm test:media:geocoding
+pnpm test:media:alt-text
+pnpm test:media:admin
+pnpm test:media:asset-review
+pnpm test:media:photo-selection
+pnpm test:media:purge
+pnpm test:media:reconciliation
 pnpm db:validate
 pnpm build
-pnpm audit --prod
+pnpm test:navigation
+pnpm verify:legacy-urls
+pnpm verify:links
+pnpm verify:public-discovery
+pnpm verify:security-boundary
+pnpm audit:prod
 ```
 
 Run migrations only with an explicitly supplied migration credential:
@@ -111,16 +126,16 @@ The Vercel runtime receives only the CRUD-only `DATABASE_URL`. Never put
   utilities.
 - Preview and Production credentials and data are separate. Preview data must
   be disposable or irreversibly sanitized.
-- The six `AMA_*_ENABLED` variables fail closed. Leave every one `false` for
-  the v3 launch.
+- The five optional `AMA_*_ENABLED` variables fail closed. Leave every one
+  `false` for the v3 launch; owner admin has no capability switch.
 - Design references are private. Public code and documentation use only the
   vocabulary in `docs/design-language.md`.
 
 ## Post-launch work
 
-- Complete the Clerk-based admin authentication and recovery boundary in #93,
-  then resume the AMA product slices (#82 through #87) behind their security
-  and privacy gates.
+- Complete the Clerk-based admin authentication and recovery boundary in #93
+  without disabling owner admin, then resume the public AMA product slices
+  (#82 through #87) behind their security and privacy gates.
 - Revisit Bunny S3 preview constraints and provider capabilities before
   expanding the Media Library beyond the curated photo workflow.
 - Re-enable private capabilities only after their provider, retention,

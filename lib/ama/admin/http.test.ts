@@ -66,7 +66,6 @@ function fixture(rateLimitAllows = true) {
       publicMutations: false,
       payments: false,
       bookingFinalization: false,
-      admin: true,
       google: true,
       tencent: false,
     },

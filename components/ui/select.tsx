@@ -14,12 +14,10 @@ import {
   type ReactNode,
   type HTMLAttributes,
 } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Select as SelectPrimitive } from "@base-ui/react/select";
 import type { IconComponent } from "~/lib/icon-context";
 import { cn } from "~/lib/utils";
-import { spring, exitFallbackMs } from "~/lib/springs";
 import { useProximityHover } from "~/hooks/use-proximity-hover";
 import { useShape } from "~/lib/shape-context";
 import { Elevated } from "~/lib/elevated";
@@ -31,14 +29,12 @@ import { Elevated } from "~/lib/elevated";
 // flipping, anchor tracking), dismissal (outside press, focus-out, Escape
 // nesting inside dialogs), list keyboard navigation + typeahead, combobox
 // ARIA, and the hidden form input. The Fluid Functionalism layer keeps the
-// proximity-hover overlays, the spring open/close animation (via actionsRef
-// deferred unmount), and the animated checkmark.
+// proximity-hover overlays while selection and focus changes remain immediate.
 // ---------------------------------------------------------------------------
 
 interface SelectContextValue {
   value: string;
   open: boolean;
-  actionsRef: React.RefObject<{ unmount: () => void } | null>;
 }
 
 const SelectContext = createContext<SelectContextValue | null>(null);
@@ -111,7 +107,6 @@ function Select({
 }: SelectProps) {
   const [internalValue, setInternalValue] = useState(defaultValue ?? "");
   const [open, setOpen] = useState(false);
-  const actionsRef = useRef<{ unmount: () => void } | null>(null);
   const currentValue = value !== undefined ? value : internalValue;
 
   const items = useMemo(() => collectSelectItems(children), [children]);
@@ -126,7 +121,7 @@ function Select({
   );
 
   const ctx = useMemo(
-    () => ({ value: currentValue, open, actionsRef }),
+    () => ({ value: currentValue, open }),
     [currentValue, open]
   );
 
@@ -138,7 +133,6 @@ function Select({
         onValueChange={handleValueChange}
         open={open}
         onOpenChange={setOpen}
-        actionsRef={actionsRef}
         items={items}
         disabled={disabled}
         name={name}
@@ -162,8 +156,8 @@ Select.displayName = "Select";
 const triggerVariants = cva(
   [
     "group inline-flex items-center justify-between gap-2 outline-none cursor-pointer",
-    "text-[13px] h-7 px-2 min-w-24",
-    "transition-all duration-150",
+    "min-h-11 min-w-24 px-2 text-[14px]",
+    "transition-[background-color,color,border-color,box-shadow] duration-150",
     "disabled:opacity-50 disabled:pointer-events-none",
     "focus-visible:ring-1 focus-visible:ring-[color:var(--focus-ring)]",
   ],
@@ -215,7 +209,7 @@ const SelectTrigger = forwardRef<HTMLButtonElement, SelectTriggerProps>(
               <Icon
                 size={16}
                 strokeWidth={1.5}
-                className="shrink-0 text-muted-foreground transition-[color,stroke-width] duration-150 group-hover:text-foreground group-hover:stroke-[2]"
+                className="shrink-0 text-muted-foreground transition-colors duration-150 group-hover:text-foreground"
               />
             )}
             <SelectPrimitive.Value
@@ -243,7 +237,7 @@ const SelectTrigger = forwardRef<HTMLButtonElement, SelectTriggerProps>(
           </svg>
         </SelectPrimitive.Trigger>
         {error && (
-          <span className="text-[12px] text-destructive pl-3">{error}</span>
+          <span className="pl-3 text-[14px] text-destructive">{error}</span>
         )}
       </div>
     );
@@ -263,7 +257,7 @@ interface SelectContentProps {
 
 const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
   ({ className, children }, ref) => {
-    const { open, value, actionsRef } = useSelectContext();
+    const { open, value } = useSelectContext();
     const shape = useShape();
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -271,7 +265,6 @@ const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
       activeIndex,
       setActiveIndex,
       itemRects,
-      sessionRef,
       handlers,
       registerItem,
       measureItems,
@@ -281,20 +274,6 @@ const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
     const [checkedIndex, setCheckedIndex] = useState<number | undefined>(
       undefined
     );
-
-    // Release Base UI's deferred unmount once the exit tween has played.
-    // onAnimationComplete on the motion.div is the primary signal; this
-    // timeout is a fallback for throttled/background tabs where rAF-driven
-    // animation callbacks can stall. The popup exits with spring.fast, so the
-    // fallback tracks that tier's exit duration plus a safety buffer.
-    useEffect(() => {
-      if (open) return;
-      const id = setTimeout(
-        () => actionsRef.current?.unmount(),
-        exitFallbackMs(spring.fast)
-      );
-      return () => clearTimeout(id);
-    }, [open, actionsRef]);
 
     // Measure items + detect the checked row once the popup has mounted.
     useEffect(() => {
@@ -341,23 +320,9 @@ const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
           align="start"
           sideOffset={6}
           alignItemWithTrigger={false}
-          className="z-50 outline-none"
+          className="z-[var(--z-card)] outline-none"
         >
-          <motion.div
-            initial={{ opacity: 0, y: -4, scaleY: 0.96 }}
-            animate={
-              open
-                ? { opacity: 1, y: 0, scaleY: 1 }
-                : { opacity: 0, y: -4, scaleY: 0.96 }
-            }
-            transition={open ? spring.fast : spring.fast.exit}
-            style={{ transformOrigin: "top center" }}
-            // Base UI defers unmount while actionsRef is set; release it once
-            // the exit spring has finished so the close animation fully plays.
-            onAnimationComplete={() => {
-              if (!open) actionsRef.current?.unmount();
-            }}
-          >
+          <div>
             <SelectContentContext.Provider value={contentCtx}>
               <SelectPrimitive.Popup
                 render={
@@ -410,81 +375,49 @@ const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
                 )}
               >
                 {/* Selected background */}
-                <AnimatePresence>
-                  {checkedRect && (
-                    <motion.div
-                      className={`absolute ${shape.bg} bg-active pointer-events-none`}
-                      initial={false}
-                      animate={{
-                        top: checkedRect.top,
-                        left: checkedRect.left,
-                        width: checkedRect.width,
-                        height: checkedRect.height,
-                        opacity: isHoveringOther ? 0.8 : 1,
-                      }}
-                      exit={{ opacity: 0, transition: spring.moderate.exit }}
-                      transition={{
-                        ...spring.moderate,
-                        opacity: { duration: 0.08 },
-                      }}
-                    />
-                  )}
-                </AnimatePresence>
+                {checkedRect && (
+                  <div
+                    className={`absolute ${shape.bg} bg-active pointer-events-none`}
+                    style={{
+                      top: checkedRect.top,
+                      left: checkedRect.left,
+                      width: checkedRect.width,
+                      height: checkedRect.height,
+                      opacity: isHoveringOther ? 0.8 : 1,
+                    }}
+                  />
+                )}
 
                 {/* Hover background */}
-                <AnimatePresence>
-                  {activeRect && (
-                    <motion.div
-                      key={sessionRef.current}
-                      className={`absolute ${shape.bg} bg-hover pointer-events-none`}
-                      initial={{
-                        opacity: 0,
-                        top: checkedRect?.top ?? activeRect.top,
-                        left: checkedRect?.left ?? activeRect.left,
-                        width: checkedRect?.width ?? activeRect.width,
-                        height: checkedRect?.height ?? activeRect.height,
-                      }}
-                      animate={{
-                        opacity: 1,
-                        top: activeRect.top,
-                        left: activeRect.left,
-                        width: activeRect.width,
-                        height: activeRect.height,
-                      }}
-                      exit={{ opacity: 0, transition: spring.fast.exit }}
-                      transition={{
-                        ...spring.fast,
-                        opacity: { duration: 0.08 },
-                      }}
-                    />
-                  )}
-                </AnimatePresence>
+                {activeRect && (
+                  <div
+                    className={`absolute ${shape.bg} bg-hover pointer-events-none`}
+                    style={{
+                      top: activeRect.top,
+                      left: activeRect.left,
+                      width: activeRect.width,
+                      height: activeRect.height,
+                    }}
+                  />
+                )}
 
                 {/* Focus ring */}
-                <AnimatePresence>
-                  {focusRect && (
-                    <motion.div
-                      className={`absolute ${shape.focusRing} pointer-events-none z-20 border border-[color:var(--focus-ring)]`}
-                      initial={false}
-                      animate={{
-                        left: focusRect.left - 2,
-                        top: focusRect.top - 2,
-                        width: focusRect.width + 4,
-                        height: focusRect.height + 4,
-                      }}
-                      exit={{ opacity: 0, transition: spring.fast.exit }}
-                      transition={{
-                        ...spring.fast,
-                        opacity: { duration: 0.08 },
-                      }}
-                    />
-                  )}
-                </AnimatePresence>
+                {focusRect && (
+                  <div
+                    className={`absolute ${shape.focusRing} pointer-events-none z-20 border border-[color:var(--focus-ring)]`}
+                    style={{
+                      left: focusRect.left - 2,
+                      top: focusRect.top - 2,
+                      width: focusRect.width + 4,
+                      height: focusRect.height + 4,
+                    }}
+                  />
+                )}
 
                 {children}
               </SelectPrimitive.Popup>
             </SelectContentContext.Provider>
-          </motion.div>
+          </div>
         </SelectPrimitive.Positioner>
       </SelectPrimitive.Portal>
     );
@@ -521,11 +454,6 @@ const SelectItem = forwardRef<HTMLDivElement, SelectItemProps>(
     const contentCtx = useContext(SelectContentContext);
     const internalRef = useRef<HTMLDivElement>(null);
     const shape = useShape();
-    const hasMounted = useRef(false);
-
-    useEffect(() => {
-      hasMounted.current = true;
-    }, []);
 
     // Register with proximity hover
     useEffect(() => {
@@ -535,7 +463,6 @@ const SelectItem = forwardRef<HTMLDivElement, SelectItemProps>(
 
     const isActive = contentCtx?.activeIndex === index;
     const isChecked = selectCtx.value === value;
-    const skipAnimation = !hasMounted.current;
 
     return (
       <SelectPrimitive.Item
@@ -558,8 +485,7 @@ const SelectItem = forwardRef<HTMLDivElement, SelectItemProps>(
             className={cn(
               // Fixed height (was py-2 around a 19.5px line box ≈ 35.5px) so
               // the text-box trim on the item text doesn't shrink the row.
-              `relative z-10 flex h-8 items-center gap-2 ${shape.item} px-2 text-[13px] cursor-pointer outline-none select-none`,
-              "transition-[color] duration-150",
+              `relative z-10 flex h-11 items-center gap-2 ${shape.item} px-2 text-[14px] cursor-pointer outline-none select-none`,
               isActive || isChecked
                 ? "text-foreground"
                 : "text-muted-foreground",
@@ -573,8 +499,8 @@ const SelectItem = forwardRef<HTMLDivElement, SelectItemProps>(
         {Icon && (
           <Icon
             size={16}
-            strokeWidth={isActive || isChecked ? 2 : 1.5}
-            className="shrink-0 transition-[color,stroke-width] duration-150"
+            strokeWidth={1.5}
+            className="shrink-0"
           />
         )}
 
@@ -586,10 +512,8 @@ const SelectItem = forwardRef<HTMLDivElement, SelectItemProps>(
           {children}
         </SelectPrimitive.ItemText>
 
-        <AnimatePresence>
-          {isChecked && (
-            <motion.svg
-              key="check"
+        {isChecked && (
+            <svg
               width={16}
               height={16}
               viewBox="0 0 24 24"
@@ -599,25 +523,10 @@ const SelectItem = forwardRef<HTMLDivElement, SelectItemProps>(
               strokeLinecap="round"
               strokeLinejoin="round"
               className="shrink-0 text-foreground"
-              initial={{ opacity: 1 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 1 }}
             >
-              <motion.path
-                d="M4 12L9 17L20 6"
-                initial={{ pathLength: skipAnimation ? 1 : 0 }}
-                animate={{
-                  pathLength: 1,
-                  transition: { duration: 0.08, ease: "easeOut" },
-                }}
-                exit={{
-                  pathLength: 0,
-                  transition: { duration: 0.04, ease: "easeIn" },
-                }}
-              />
-            </motion.svg>
-          )}
-        </AnimatePresence>
+              <path d="M4 12L9 17L20 6" />
+            </svg>
+        )}
       </SelectPrimitive.Item>
     );
   }
@@ -648,7 +557,7 @@ const SelectLabel = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
     <div
       ref={ref}
       className={cn(
-        "px-2 py-1.5 text-[11px] text-muted-foreground",
+        "px-2 py-1.5 text-[14px] text-muted-foreground",
         className
       )}
       {...props}

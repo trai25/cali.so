@@ -7,6 +7,7 @@ import {
   useEffect,
   useState,
 } from 'react'
+import { MotionConfig } from 'framer-motion'
 
 type Theme = 'light' | 'system' | 'dark'
 
@@ -88,9 +89,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
-      {children}
-    </ThemeContext.Provider>
+    <MotionConfig reducedMotion="user">
+      <ThemeContext.Provider value={{ theme, setTheme }}>
+        {children}
+      </ThemeContext.Provider>
+    </MotionConfig>
   )
 }
 

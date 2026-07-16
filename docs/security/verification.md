@@ -10,21 +10,22 @@ file; use GitHub private vulnerability reporting.
   vulnerability reporting.
 - [x] `.github/dependabot.yml` covers pnpm/npm dependencies and GitHub Actions.
 - [x] `.github/workflows/security.yml` runs the build, typecheck, AMA,
-  migration, localization, disabled-boundary, and CodeQL checks on pull
-  requests targeting any branch and on pushes to integration or production;
-  CodeQL also runs on a schedule and manually.
+  migration, localization, public-link, navigation, production-boundary, and
+  CodeQL checks on pull requests targeting any branch and on pushes to
+  integration or production; CodeQL also runs on a schedule and manually.
 - [x] Workflow actions are pinned to full, verified commit SHAs with release
   tag comments.
 - [x] Workflow permissions default to read-only; only the CodeQL job adds the
   required `security-events: write` permission.
-- [x] Gitleaks 8.30.1 scanned all reachable refs and 302 commits on
-  2026-07-14 with redaction enabled; no findings were reported. Re-run before
+- [x] Gitleaks 8.30.1 scanned all reachable refs and 363 commits on
+  2026-07-15 with redaction enabled; no findings were reported. Re-run before
   launch and rotate any real credential before discussing cleanup publicly.
 
 Local recheck:
 
 ```sh
 pnpm typecheck
+pnpm test:unit
 pnpm test:ama
 pnpm test:security
 pnpm audit:prod
@@ -61,12 +62,24 @@ Repository API checks on 2026-07-15 verified:
   launch or after a plan change.
 - [ ] Confirm Dependabot can open an update without repository or production
   credentials after this configuration reaches the `v2` integration branch.
+- [x] The latest `v2` Security workflow for
+  `3097a4926582e884d080aa24a2c5347b7b7cdbc3` passed both `Quality` and
+  `CodeQL` in run
+  [29412753711](https://github.com/CaliCastle/cali.so/actions/runs/29412753711).
+- [ ] `main` branch protection also has no required status checks. Require
+  `Quality` and `CodeQL` on both `v2` and `main` before cutover.
 
 Recheck these settings through the GitHub Security and Actions settings pages
 or with read-only `gh api` calls. Keep sensitive evidence in private
 vulnerability reports rather than public issues or logs.
 
 ## Vercel
+
+Current inspection on 2026-07-15 is blocked: `vercel whoami` returns `cali`,
+but inspecting project `cali-so` returns `Not authorized`. The historical
+checks below remain useful context, but every unchecked item and every hosted
+state that may have changed is unknown until access is restored. Do not count
+historical evidence as current cutover proof.
 
 Project checks completed on 2026-07-14 and 2026-07-15 verified:
 
@@ -77,8 +90,8 @@ Project checks completed on 2026-07-14 and 2026-07-15 verified:
 - [x] Preview uses an isolated Neon branch and a pooled runtime credential. Its
   runtime role was exercised with CRUD-only access and no schema, database,
   role-management, RLS-bypass, replication, or Neon-admin privileges.
-- [x] The Preview environment explicitly sets all six AMA capability switches
-  to `false`.
+- [x] The Preview environment explicitly sets all five optional AMA capability
+  switches to `false`. Owner admin has no capability switch.
 - [x] The Preview-only configuration includes its database and Redis runtime
   credentials, Google OAuth credentials, admin allowlist, site origin, and
   independently generated session, encryption, and rate-limit hashing secrets.
@@ -98,5 +111,7 @@ Project checks completed on 2026-07-14 and 2026-07-15 verified:
   management, and keep `MIGRATION_DATABASE_URL` absent from Vercel.
 - [ ] Verify logs and drains follow the allowlist in `baseline.md`, with
   deliberate access and retention.
-- [ ] Configure the six kill switches explicitly in Development and Production;
-  keep them false until the corresponding capability is approved for release.
+- [ ] Configure the five optional kill switches explicitly in Development and
+  Production; keep them false until the corresponding capability is approved
+  for release. Verify owner admin remains reachable only through its
+  authentication boundary.

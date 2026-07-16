@@ -15,11 +15,8 @@ import {
   type ComponentPropsWithoutRef,
 } from "react";
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
-import { motion, AnimatePresence } from "framer-motion";
 import type { IconComponent } from "~/lib/icon-context";
 import { cn } from "~/lib/utils";
-import { spring } from "~/lib/springs";
-import { fontWeights } from "~/lib/font-weight";
 import { useShape } from "~/lib/shape-context";
 import { useSurface } from "~/lib/surface-context";
 import { surfaceClasses } from "~/lib/surface-classes";
@@ -286,96 +283,55 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
         >
           {/* Active segment indicator */}
           {selectedRect && (
-            <motion.div
+            <div
               data-tabs-indicator="selected"
               className={cn(
                 "absolute pointer-events-none",
                 surfaceClasses(indicatorLevel),
                 shape.bg
               )}
-              initial={false}
-              animate={{
+              style={{
                 left: selectedRect.left,
                 width: selectedRect.width,
                 top: selectedRect.top,
                 height: selectedRect.height,
                 opacity: isHovering ? 0.85 : 1,
               }}
-              transition={{
-                ...spring.moderate,
-                opacity: { duration: 0.08 },
-              }}
             />
           )}
 
           {/* Hover indicator */}
-          <AnimatePresence>
-            {hoverRect && !isHoveringSelected && selectedRect && (
-              <motion.div
-                className={cn(
-                  "absolute pointer-events-none bg-hover",
-                  shape.bg
-                )}
-                initial={{
-                  left: selectedRect.left,
-                  width: selectedRect.width,
-                  top: selectedRect.top,
-                  height: selectedRect.height,
-                  opacity: 0,
-                }}
-                animate={{
-                  left: hoverRect.left,
-                  width: hoverRect.width,
-                  top: hoverRect.top,
-                  height: hoverRect.height,
-                  opacity: 0.4,
-                }}
-                exit={
-                  !isMouseInside.current && selectedRect
-                    ? {
-                        left: selectedRect.left,
-                        width: selectedRect.width,
-                        top: selectedRect.top,
-                        height: selectedRect.height,
-                        opacity: 0,
-                        transition: {
-                          ...spring.moderate,
-                          opacity: { duration: 0.06 },
-                        },
-                      }
-                    : { opacity: 0, transition: spring.fast.exit }
-                }
-                transition={{
-                  ...spring.fast,
-                  opacity: { duration: 0.08 },
-                }}
-              />
-            )}
-          </AnimatePresence>
+          {hoverRect && !isHoveringSelected && selectedRect && (
+            <div
+              className={cn(
+                "absolute pointer-events-none bg-hover",
+                shape.bg
+              )}
+              style={{
+                left: hoverRect.left,
+                width: hoverRect.width,
+                top: hoverRect.top,
+                height: hoverRect.height,
+                opacity: 0.4,
+              }}
+            />
+          )}
 
           {/* Focus ring */}
-          <AnimatePresence>
-            {focusRect && (
-              <motion.div
-                className={cn(
-                  "absolute pointer-events-none z-20 border border-[color:var(--focus-ring)]",
-                  shape.focusRing
-                )}
-                initial={false}
-                animate={{
-                  left: focusRect.left - 2,
-                  top: focusRect.top - 2,
-                  width: focusRect.width + 4,
-                  height: focusRect.height + 4,
-                }}
-                exit={{ opacity: 0, transition: spring.fast.exit }}
-                transition={{
-                  ...spring.fast,
-                  opacity: { duration: 0.08 },
-                }}
-              />
-            )}
-          </AnimatePresence>
+          {focusRect && (
+            <div
+              className={cn(
+                "absolute pointer-events-none z-20 border border-[color:var(--focus-ring)]",
+                shape.focusRing
+              )}
+              style={{
+                left: focusRect.left - 2,
+                top: focusRect.top - 2,
+                width: focusRect.width + 4,
+                height: focusRect.height + 4,
+              }}
+            />
+          )}
 
           {indexedChildren}
         </TabsPrimitive.List>
@@ -428,7 +384,7 @@ const TabItem = forwardRef<HTMLButtonElement, TabItemProps>(
         className={cn(
           // Fixed height (not py) so the text-box trim below doesn't shrink
           // the tab — browsers without text-box support render identically.
-          "relative z-10 flex h-6 items-center gap-1.5 px-2 cursor-pointer bg-transparent border-none outline-none",
+          "relative z-10 flex h-11 min-w-11 items-center justify-center gap-1.5 px-2 cursor-pointer bg-transparent border-none outline-none",
           className
         )}
         {...props}
@@ -436,39 +392,24 @@ const TabItem = forwardRef<HTMLButtonElement, TabItemProps>(
         {Icon && (
           <Icon
             size={16}
-            strokeWidth={isActive ? 2 : 1.5}
+            strokeWidth={1.5}
             className={cn(
-              "transition-[color,stroke-width] duration-150",
               isActive ? "text-foreground" : "text-muted-foreground"
             )}
           />
         )}
-        {/* Both stacked spans carry the text-box trim so the invisible bold
-            sizer and the visible label keep identical boxes. Icon-only tabs
-            skip the span so flex gap doesn't leave a phantom trailing gap. */}
+        {/* Icon-only tabs skip the span so flex gap doesn't leave a phantom
+            trailing gap. Selection is communicated by color, never weight. */}
         {label !== "" && (
-        <span className="inline-grid text-[13px] whitespace-nowrap">
           <span
-            className="col-start-1 row-start-1 invisible [text-box:trim-both_cap_alphabetic]"
-            style={{ fontVariationSettings: fontWeights.semibold }}
-            aria-hidden="true"
-          >
-            {label}
-          </span>
-          <span
+            data-tab-label
             className={cn(
-              "col-start-1 row-start-1 transition-[color,font-variation-settings] duration-150 [text-box:trim-both_cap_alphabetic]",
+              "text-[14px] whitespace-nowrap [text-box:trim-both_cap_alphabetic]",
               isActive ? "text-foreground" : "text-muted-foreground"
             )}
-            style={{
-              fontVariationSettings: isSelected
-                ? fontWeights.semibold
-                : fontWeights.normal,
-            }}
           >
             {label}
           </span>
-        </span>
         )}
       </TabsPrimitive.Tab>
     );

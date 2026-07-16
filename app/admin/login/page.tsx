@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 
-import { requireAmaAdminEnabled } from '~/lib/ama/admin/launch-boundary-server'
 import { T } from '~/lib/i18n'
 import { isOwnerAuthenticated } from '~/lib/ama/auth/server'
 
@@ -20,7 +19,6 @@ export default async function AdminLoginPage({
 }: {
   searchParams: Promise<{ sent?: string; error?: string }>
 }) {
-  requireAmaAdminEnabled()
   if (await isOwnerAuthenticated()) redirect('/admin')
   const state = await searchParams
   const sent = state.sent === '1'

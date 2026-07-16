@@ -15,6 +15,7 @@
     "test:ama": "vitest run lib/ama && pnpm db:validate",
     "test:navigation": "NEXT_INSTANT_NAVIGATION_TEST=1 next build && playwright test",
     "test:security": "vitest run lib/security",
+    "test:unit": "vitest run app components lib --exclude='**/*.live.test.ts'",
     "test:localization": "node --test scripts/localization.test.mjs",
     "test:media:catalog": "vitest run lib/media/catalog",
     "test:media:geocoding": "vitest run lib/media/geocoding",
@@ -32,6 +33,7 @@
     "test:media:storage:live:browser": "vitest run lib/media/storage/bunny.browser.live.test.ts",
     "test:port-post": "node --test scripts/port-post.test.mjs",
     "verify:legacy-urls": "node scripts/verify-legacy-url-contract.mjs",
+    "verify:links": "node scripts/verify-public-links.mjs",
     "verify:public-discovery": "node scripts/verify-public-discovery.mjs",
     "verify:security-boundary": "node scripts/verify-production-security-boundary.mjs",
     "typecheck": "tsc --noEmit"

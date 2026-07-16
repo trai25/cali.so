@@ -57,13 +57,15 @@ function redirect(baseUrl: URL, pathOrUrl: string | URL) {
 async function enforceAdminRequestPolicy(
   dependencies: HandlerDependencies<unknown>,
   request: Request,
-  requiredFeatures: readonly AmaFeature[],
   mode: AdminRequestMode,
+  requiredFeatures?: readonly AmaFeature[],
 ) {
   const { authenticator, security, baseUrl } = dependencies
   const blocked = mode === 'browser-mutation'
-    ? await security.protectBrowserMutation(request, requiredFeatures)
-    : security.protectFeatures(request, requiredFeatures)
+    ? requiredFeatures
+      ? await security.protectBrowserMutation(request, requiredFeatures)
+      : await security.protectOwnerAdminMutation(request)
+    : security.protectFeatures(request, requiredFeatures ?? [])
   if (blocked) return blocked
 
   if (!(await authenticator.authenticate(request))) {
@@ -144,7 +146,6 @@ export function createAvailabilityMutationHandler(
     const blocked = await enforceAdminRequestPolicy(
       dependencies,
       request,
-      ['admin'],
       'browser-mutation',
     )
     if (blocked) return blocked
@@ -185,8 +186,8 @@ export function createGoogleConnectHandler(
     const blocked = await enforceAdminRequestPolicy(
       dependencies,
       request,
-      ['admin', 'google'],
       'browser-mutation',
+      ['google'],
     )
     if (blocked) return blocked
     try {
@@ -207,8 +208,8 @@ export function createGoogleCallbackHandler(
     const blocked = await enforceAdminRequestPolicy(
       dependencies,
       request,
-      ['admin', 'google'],
       'provider-callback',
+      ['google'],
     )
     if (blocked) return blocked
     const params = new URL(request.url).searchParams
@@ -237,8 +238,8 @@ export function createGoogleDisconnectHandler(
     const blocked = await enforceAdminRequestPolicy(
       dependencies,
       request,
-      ['admin', 'google'],
       'browser-mutation',
+      ['google'],
     )
     if (blocked) return blocked
     try {

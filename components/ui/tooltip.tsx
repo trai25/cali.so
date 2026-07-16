@@ -7,9 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
-import { motion } from "framer-motion";
 import { cn } from "~/lib/utils";
-import { spring } from "~/lib/springs";
 import { fontWeights } from "~/lib/font-weight";
 import { useShape } from "~/lib/shape-context";
 
@@ -97,23 +95,6 @@ interface TooltipProps {
 }
 
 // ---------------------------------------------------------------------------
-// Animation helpers
-// ---------------------------------------------------------------------------
-
-function getSlideOffset(side: TooltipSide) {
-  switch (side) {
-    case "top":
-      return { y: 4 };
-    case "bottom":
-      return { y: -4 };
-    case "left":
-      return { x: 4 };
-    case "right":
-      return { x: -4 };
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Tooltip
 // ---------------------------------------------------------------------------
 
@@ -133,8 +114,6 @@ function Tooltip({
   const portalContainer = useContext(TooltipPortalContainerContext);
   const hasAmbientProvider = useContext(TooltipGroupContext);
 
-  const slideOffset = getSlideOffset(side);
-
   const tooltip = (
     <TooltipPrimitive.Root
       open={open}
@@ -150,31 +129,20 @@ function Tooltip({
         <TooltipPrimitive.Positioner
           side={side}
           sideOffset={sideOffset}
-          className="z-50"
+          className="z-[var(--z-card)]"
         >
           <TooltipPrimitive.Popup
-            render={(props, state) => {
-              const exiting = state.transitionStatus === "ending";
-              const {
-                style: baseStyle,
-                // motion.div has incompatible drag/animation event signatures —
-                // strip the React-DOM versions so they don't fight motion's own.
-                onDrag: _onDrag,
-                onDragStart: _onDragStart,
-                onDragEnd: _onDragEnd,
-                onAnimationStart: _onAnimationStart,
-                onAnimationEnd: _onAnimationEnd,
-                onAnimationIteration: _onAnimationIteration,
-                ...rest
-              } = props as React.HTMLAttributes<HTMLDivElement>;
+            render={(props) => {
+              const { style: baseStyle, ...rest } =
+                props as React.HTMLAttributes<HTMLDivElement>;
               return (
-                <motion.div
+                <div
                   {...rest}
                   className={cn(
                     // Trim recenters the label; the padding bump only applies
                     // where text-box is supported, keeping the same overall
                     // height (~26px) as untrimmed browsers.
-                    "bg-foreground text-background text-[12px] px-2 py-1",
+                    "bg-foreground px-2 py-1 text-[14px] text-background",
                     "[text-box:trim-both_cap_alphabetic] supports-[text-box:trim-both]:py-2",
                     shape.bg,
                     className
@@ -183,13 +151,6 @@ function Tooltip({
                     ...(baseStyle as React.CSSProperties | undefined),
                     fontVariationSettings: fontWeights.medium,
                   }}
-                  initial={{ opacity: 0, ...slideOffset }}
-                  animate={
-                    exiting
-                      ? { opacity: 0, ...slideOffset }
-                      : { opacity: 1, x: 0, y: 0 }
-                  }
-                  transition={exiting ? spring.fast.exit : spring.fast}
                 />
               );
             }}

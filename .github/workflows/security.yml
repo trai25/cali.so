@@ -46,7 +46,6 @@ jobs:
       AMA_PUBLIC_MUTATIONS_ENABLED: "false"
       AMA_PAYMENTS_ENABLED: "false"
       AMA_BOOKING_FINALIZATION_ENABLED: "false"
-      AMA_ADMIN_ENABLED: "false"
       AMA_GOOGLE_INTEGRATION_ENABLED: "false"
       AMA_TENCENT_INTEGRATION_ENABLED: "false"
     steps:
@@ -67,6 +66,9 @@ jobs:
 
       - name: Typecheck
         run: pnpm typecheck
+
+      - name: Test unit and integration suites
+        run: pnpm test:unit
 
       - name: Test AMA and migrations
         run: pnpm test:ama
@@ -116,6 +118,13 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Verify public links
+        run: pnpm verify:links
+        env:
+          # Forks may validate external URL shape but must not turn the hosted
+          # runner into a network probe for contributor-controlled targets.
+          VERIFY_EXTERNAL_LINKS: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && '1' || '0' }}
+
       - name: Test instant navigations
         run: pnpm test:navigation
 
@@ -125,7 +134,7 @@ jobs:
       - name: Verify public discovery and failure handling
         run: pnpm verify:public-discovery
 
-      - name: Verify disabled production security boundary
+      - name: Verify production security boundary
         run: pnpm verify:security-boundary
 
   codeql:

@@ -229,7 +229,6 @@
 :root {
   --ease-swift: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-pop: cubic-bezier(0.34, 1.3, 0.64, 1);
   --duration-route-morph: 320ms;
   --duration-post-meta: 250ms;
   --delay-post-body: 520ms;
@@ -472,7 +471,7 @@
   color: var(--foreground);
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 0.875rem;
-  letter-spacing: 0.06em;
+  letter-spacing: -0.011em;
 }
 
 .error-proof-footer {
@@ -632,7 +631,7 @@
   margin-bottom: 0.5rem;
   color: var(--muted-foreground);
   font-size: 0.875rem;
-  letter-spacing: 0.06em;
+  letter-spacing: -0.011em;
 }
 
 .error-actions {
@@ -918,7 +917,7 @@
 .prose .post-figcaption {
   margin-top: 0.5rem;
   text-align: center;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   color: var(--muted-foreground);
 }
 
@@ -1080,7 +1079,7 @@ img.tweet-card-avatar {
 }
 
 .tweet-card-handle {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   color: var(--muted-foreground);
 }
 
@@ -1098,7 +1097,8 @@ img.tweet-card-avatar {
 .tweet-card-body {
   display: block;
   margin-top: 0.75rem;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
+  letter-spacing: -0.011em;
   line-height: 1.6;
   color: var(--foreground);
 }
@@ -1111,7 +1111,7 @@ img.tweet-card-avatar {
   display: flex;
   gap: 0.375rem;
   margin-top: 0.75rem;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   color: var(--muted-foreground);
   font-variant-numeric: tabular-nums;
 }
@@ -1302,7 +1302,7 @@ html[data-visited] .enter-polaroid .polaroid {
 }
 
 .reveal-in .zoom-trigger {
-  animation: img-develop 500ms var(--ease-pop) backwards;
+  animation: img-develop 300ms var(--ease-swift) backwards;
   animation-delay: calc(var(--reveal-delay, 0ms) + 250ms);
 }
 
@@ -1355,7 +1355,7 @@ html[data-visited] .enter-polaroid .polaroid {
 .prose ul.reveal-in > li,
 .prose ol.reveal-in > li {
   animation: reveal-develop 300ms var(--ease-swift) backwards;
-  animation-delay: calc(var(--reveal-delay, 0ms) + var(--li, 0) * 50ms);
+  animation-delay: calc(var(--reveal-delay, 0ms) + var(--li, 0) * 45ms);
 }
 
 .prose ul.reveal-in > li:nth-child(2),
@@ -1799,7 +1799,7 @@ a:focus-visible .external-label .external-mark {
   display: flex;
   align-items: center;
   gap: 0.375rem;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   color: var(--muted-foreground);
 }
 
@@ -1819,7 +1819,7 @@ a:focus-visible .external-label .external-mark {
 }
 
 .link-card-description {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   line-height: 1.5;
   color: var(--muted-foreground);
   display: -webkit-box;
@@ -2211,7 +2211,7 @@ a:focus-visible .external-label .external-mark {
 
 /* ── Viewport edge fades: subtle progressive blur top & bottom ────── */
 
-.scroll-fade {
+.viewport-edge-fade {
   position: fixed;
   left: 0;
   right: 0;
@@ -2221,7 +2221,7 @@ a:focus-visible .external-label .external-mark {
   user-select: none;
 }
 
-.scroll-fade-top {
+.viewport-edge-fade-top {
   top: 0;
   mask-image: linear-gradient(to bottom, black 15%, transparent);
   -webkit-mask-image: linear-gradient(to bottom, black 15%, transparent);
@@ -2232,7 +2232,7 @@ a:focus-visible .external-label .external-mark {
   );
 }
 
-.scroll-fade-bottom {
+.viewport-edge-fade-bottom {
   bottom: 0;
   mask-image: linear-gradient(to top, black 15%, transparent);
   -webkit-mask-image: linear-gradient(to top, black 15%, transparent);
@@ -2243,7 +2243,7 @@ a:focus-visible .external-label .external-mark {
   );
 }
 
-.scroll-fade-bottom::before {
+.viewport-edge-fade-bottom::before {
   mask-image: linear-gradient(to top, black, transparent 45%);
   -webkit-mask-image: linear-gradient(to top, black, transparent 45%);
 }
@@ -2743,9 +2743,9 @@ a:focus-visible .external-label .external-mark {
   gap: 0.5rem;
 }
 
-/* service cards pop open with a touch of overshoot */
+/* Service cards are UI chrome: quick and decisive, without overshoot. */
 .service-card[data-open] {
-  animation: service-pop 260ms var(--ease-pop);
+  animation: service-pop 200ms var(--ease-swift);
 }
 
 /* this rule sits after the reduced-motion block above, so it needs its
@@ -2801,12 +2801,12 @@ a:focus-visible .external-label .external-mark {
 }
 
 .service-card-sub {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   color: var(--muted-foreground);
 }
 
 .service-card-bio {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   line-height: 1.5;
   color: var(--foreground);
 }
@@ -2815,7 +2815,7 @@ a:focus-visible .external-label .external-mark {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   color: var(--muted-foreground);
   font-variant-numeric: tabular-nums;
 }
@@ -3025,7 +3025,7 @@ html[data-locale='en'] [data-en-block] {
 }
 
 .locale-toggle {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   color: var(--muted-foreground);
   transition: color 150ms ease;
   font-variant-numeric: tabular-nums;
@@ -3177,7 +3177,7 @@ html[data-locale='en'] [data-en-block] {
   min-width: 0;
   align-items: flex-start;
   gap: 0.5rem;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   line-height: 1rem;
   color: color-mix(in oklab, var(--muted-foreground) 76%, transparent);
   outline: none;
@@ -3467,7 +3467,7 @@ html[data-locale='en'] [data-en-block] {
     min-width: 0;
     flex: 1;
     overflow: hidden;
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-weight: var(--font-weight-medium);
     line-height: 1rem;
     text-align: left;
@@ -3574,9 +3574,9 @@ html[data-locale='en'] [data-en-block] {
 
 .footer-label {
   margin-bottom: 0.375rem;
-  font-size: 0.6875rem;
+  font-size: 0.875rem;
   font-weight: var(--font-weight-medium);
-  letter-spacing: 0.14em;
+  letter-spacing: -0.011em;
   text-transform: uppercase;
   color: color-mix(in oklab, var(--muted-foreground) 75%, transparent);
   user-select: none;
@@ -3646,8 +3646,8 @@ html[data-locale='en'] [data-en-block] {
   gap: 1.5rem;
   align-self: stretch;
   text-align: left;
-  font-size: 0.75rem;
-  letter-spacing: 0.02em;
+  font-size: 0.875rem;
+  letter-spacing: -0.011em;
   color: color-mix(in oklab, var(--muted-foreground) 85%, transparent);
   font-variant-numeric: tabular-nums;
   user-select: none;
@@ -3677,9 +3677,9 @@ html[data-locale='en'] [data-en-block] {
   align-items: center;
   gap: 0.5rem;
   color: color-mix(in oklab, var(--muted-foreground) 88%, transparent);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.01em;
+  letter-spacing: -0.011em;
   line-height: 1;
   text-align: left;
 }
@@ -3737,8 +3737,8 @@ html[data-locale='en'] [data-en-block] {
 
 .footer-time-readout > span {
   color: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
-  font-size: 0.625rem;
-  letter-spacing: 0.06em;
+  font-size: 0.875rem;
+  letter-spacing: -0.011em;
 }
 
 .footer-time-readout time {
@@ -3871,7 +3871,7 @@ html[data-locale='en'] [data-en-block] {
   border-radius: calc(var(--radius) * 0.6);
   background: var(--popover);
   box-shadow: 0 0 0 1px var(--border), var(--shadow-tooltip);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   white-space: nowrap;
   color: var(--foreground);
   opacity: 0;
@@ -3917,7 +3917,7 @@ html[data-locale='en'] [data-en-block] {
 }
 
 .prefs-row-label {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   color: var(--muted-foreground);
   user-select: none;
 }
@@ -3934,7 +3934,7 @@ html[data-locale='en'] [data-en-block] {
 }
 
 .prefs-panel [role='tab'][aria-selected='true'] svg,
-.prefs-panel [role='tab'][aria-selected='true'] > span > span:last-child {
+.prefs-panel [role='tab'][aria-selected='true'] [data-tab-label] {
   color: var(--background) !important;
 }
 
@@ -4133,7 +4133,7 @@ html[data-locale='en'] [data-en-block] {
 }
 
 .nc-sub {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   color: var(--muted-foreground);
   font-variant-numeric: tabular-nums;
 }
@@ -4150,5 +4150,17 @@ html[data-locale='en'] [data-en-block] {
 
   .nav-card:hover .nc-project-icon {
     transform: translate(-50%, -50%);
+  }
+}
+
+/* The final safety net covers shared component primitives as well as page
+   styles. JS-driven Motion components use MotionConfig in ThemeProvider. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation: none !important;
+    transition: none !important;
   }
 }

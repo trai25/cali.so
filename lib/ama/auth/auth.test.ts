@@ -92,7 +92,6 @@ function createFixture() {
       publicMutations: false,
       payments: false,
       bookingFinalization: false,
-      admin: true,
       google: true,
       tencent: false,
     },
@@ -204,13 +203,18 @@ describe('owner authentication HTTP contract', () => {
     const response = await createMagicLinkVerifyHandler(
       fixture.auth,
       fixture.security,
-    )(new Request(link))
+    )(
+      new Request(link),
+    )
 
     expect(response.status).toBe(303)
     expect(response.headers.get('location')).toBe(
       'https://cali.so/admin/login?error=invalid-link',
     )
     expect(response.headers.get('set-cookie')).toBeNull()
+    expect(fixture.securityEvents.at(-1)?.event).toBe(
+      'admin_authentication.denied',
+    )
   })
 
   it('consumes a magic link exactly once under concurrent requests', async () => {

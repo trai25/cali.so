@@ -11,9 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import type { IconComponent } from "~/lib/icon-context";
-import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "~/lib/utils";
-import { fontWeights } from "~/lib/font-weight";
 import { shapeMap } from "~/lib/shape-context";
 
 // MenuItem is only used inside Dropdown, which opts out of the global pill
@@ -109,7 +107,6 @@ const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(
     ref
   ) => {
     const internalRef = useRef<HTMLDivElement>(null);
-    const hasMounted = useRef(false);
     const { registerItem, activeIndex, checkedIndex, renderMenuItem } =
       useDropdown();
 
@@ -118,12 +115,7 @@ const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(
       return () => registerItem(index, null);
     }, [index, registerItem]);
 
-    useEffect(() => {
-      hasMounted.current = true;
-    }, []);
-
     const isActive = activeIndex === index;
-    const skipAnimation = !hasMounted.current;
 
     const mergeRef = (node: HTMLDivElement | null) => {
       (internalRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
@@ -141,7 +133,7 @@ const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(
     const itemClassName = cn(
       // Fixed height (was py-2 around a 19.5px line box ≈ 35.5px) so the
       // text-box trim on the label doesn't shrink the row.
-      `relative z-10 flex h-9 items-center gap-2 ${shape.item} px-2 cursor-pointer outline-none`,
+      `relative z-10 flex h-11 items-center gap-2 ${shape.item} px-2 cursor-pointer outline-none`,
       disabled && "opacity-50 pointer-events-none",
       className
     );
@@ -149,52 +141,31 @@ const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(
     const content = (
       <>
         {Icon && (
-          <span className="inline-grid">
-            <span className="col-start-1 row-start-1 invisible">
-              <Icon size={16} strokeWidth={2} />
-            </span>
-            <Icon
-              size={16}
-              strokeWidth={isActive || checked ? 2 : 1.5}
-              className={cn(
-                "col-start-1 row-start-1 transition-[color,stroke-width] duration-80",
-                isActive || checked
-                  ? "text-foreground"
-                  : "text-muted-foreground"
-              )}
-            />
-          </span>
-        )}
-        {/* Both stacked spans carry the text-box trim so the invisible bold
-            sizer and the visible label keep identical boxes. */}
-        <span className="inline-grid flex-1 text-[13px]">
-          <span
-            className="col-start-1 row-start-1 invisible [text-box:trim-both_cap_alphabetic]"
-            style={{ fontVariationSettings: fontWeights.semibold }}
-            aria-hidden="true"
-          >
-            {label}
-          </span>
-          <span
+          <Icon
+            size={16}
+            strokeWidth={1.5}
             className={cn(
-              "col-start-1 row-start-1 transition-[color,font-variation-settings] duration-80 [text-box:trim-both_cap_alphabetic]",
               isActive || checked
                 ? "text-foreground"
                 : "text-muted-foreground"
             )}
-            style={{
-              fontVariationSettings: checked
-                ? fontWeights.semibold
-                : fontWeights.normal,
-            }}
+          />
+        )}
+        {/* Selection is communicated by color, never a weight change. */}
+        <span className="flex-1 text-[14px]">
+          <span
+            className={cn(
+              "[text-box:trim-both_cap_alphabetic]",
+              isActive || checked
+                ? "text-foreground"
+                : "text-muted-foreground"
+            )}
           >
             {label}
           </span>
         </span>
-        <AnimatePresence>
-          {checked && (
-            <motion.svg
-              key="check"
+        {checked && (
+            <svg
               width={16}
               height={16}
               viewBox="0 0 24 24"
@@ -204,25 +175,10 @@ const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(
               strokeLinecap="round"
               strokeLinejoin="round"
               className="text-foreground shrink-0"
-              initial={{ opacity: 1 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 1 }}
             >
-              <motion.path
-                d="M4 12L9 17L20 6"
-                initial={{ pathLength: skipAnimation ? 1 : 0 }}
-                animate={{
-                  pathLength: 1,
-                  transition: { duration: 0.08, ease: "easeOut" },
-                }}
-                exit={{
-                  pathLength: 0,
-                  transition: { duration: 0.04, ease: "easeIn" },
-                }}
-              />
-            </motion.svg>
-          )}
-        </AnimatePresence>
+              <path d="M4 12L9 17L20 6" />
+            </svg>
+        )}
       </>
     );
 
