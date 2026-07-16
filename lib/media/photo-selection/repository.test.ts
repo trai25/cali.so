@@ -1,10 +1,10 @@
-import { readFile } from 'node:fs/promises'
-
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { drizzle } from 'drizzle-orm/pglite'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('server-only', () => ({}))
+
+import { usePGliteTestClient } from '~/db/testing/pglite'
 
 import {
   createPhotoSelectionRepository,
@@ -12,42 +12,27 @@ import {
   getHomepagePhotoPreview,
   type PhotoSelectionDatabase,
 } from './repository'
-
-const migrationUrls = [
-  new URL('../../../db/migrations/0005_media_catalog.sql', import.meta.url),
-  new URL('../../../db/migrations/0006_photo_selection.sql', import.meta.url),
-  new URL(
-    '../../../db/migrations/0007_photo_publication_revision.sql',
-    import.meta.url,
-  ),
-  new URL(
-    '../../../db/migrations/0009_media_catalog_state.sql',
-    import.meta.url,
-  ),
-]
 const checksum = 'a'.repeat(64)
 
 describe('Photo Selection repository', () => {
+  const getClient = usePGliteTestClient([
+    '0005_media_catalog.sql',
+    '0006_photo_selection.sql',
+    '0007_photo_publication_revision.sql',
+    '0009_media_catalog_state.sql',
+  ])
   let client: PGlite
   let repository: ReturnType<typeof createPhotoSelectionRepository>
   let publicRepository: ReturnType<typeof createPublicPhotoSelectionRepository>
 
-  beforeEach(async () => {
-    client = new PGlite()
-    for (const migrationUrl of migrationUrls) {
-      const migration = await readFile(migrationUrl, 'utf8')
-      await client.exec(migration.replaceAll('--> statement-breakpoint', ''))
-    }
+  beforeEach(() => {
+    client = getClient()
     const database = drizzle(client) as unknown as PhotoSelectionDatabase
     repository = createPhotoSelectionRepository(() => database)
     publicRepository = createPublicPhotoSelectionRepository(
       () => database,
       new URL('https://media.example.com/photos/'),
     )
-  })
-
-  afterEach(async () => {
-    await client.close()
   })
 
   async function createAsset(

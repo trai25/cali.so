@@ -1,23 +1,15 @@
-import { readFile } from 'node:fs/promises'
-
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { drizzle } from 'drizzle-orm/pglite'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('server-only', () => ({}))
+
+import { usePGliteTestClient } from '~/db/testing/pglite'
 
 import {
   createMediaGeocodingRepository,
   type MediaGeocodingDatabase,
 } from './repository'
-
-const migrations = [
-  new URL('../../../db/migrations/0005_media_catalog.sql', import.meta.url),
-  new URL(
-    '../../../db/migrations/0009_media_catalog_state.sql',
-    import.meta.url,
-  ),
-]
 const mediaAssetId = '11111111-1111-4111-8111-111111111111'
 const uploadIntentId = '22222222-2222-4222-8222-222222222222'
 const checksum = 'a'.repeat(64)
@@ -30,15 +22,15 @@ const envelope = {
 }
 
 describe('Media Geocoding repository', () => {
+  const getClient = usePGliteTestClient([
+    '0005_media_catalog.sql',
+    '0009_media_catalog_state.sql',
+  ])
   let client: PGlite
   let repository: ReturnType<typeof createMediaGeocodingRepository>
 
   beforeEach(async () => {
-    client = new PGlite()
-    for (const url of migrations) {
-      const migration = await readFile(url, 'utf8')
-      await client.exec(migration.replaceAll('--> statement-breakpoint', ''))
-    }
+    client = getClient()
     const database = drizzle(client)
     repository = createMediaGeocodingRepository(
       () => database as unknown as MediaGeocodingDatabase,
@@ -66,10 +58,6 @@ describe('Media Geocoding repository', () => {
         envelope,
       ],
     )
-  })
-
-  afterEach(async () => {
-    await client.close()
   })
 
   it('returns the encrypted Capture Location only to the owning principal', async () => {

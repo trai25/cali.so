@@ -1,23 +1,15 @@
-import { readFile } from 'node:fs/promises'
-
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { drizzle } from 'drizzle-orm/pglite'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('server-only', () => ({}))
+
+import { usePGliteTestClient } from '~/db/testing/pglite'
 
 import {
   createMediaReconciliationRepository,
   type MediaReconciliationDatabase,
 } from './repository'
-
-const migrations = [
-  new URL('../../../db/migrations/0005_media_catalog.sql', import.meta.url),
-  new URL(
-    '../../../db/migrations/0009_media_catalog_state.sql',
-    import.meta.url,
-  ),
-]
 const abandonedIntentId = '11111111-1111-4111-8111-111111111111'
 const retryIntentId = '22222222-2222-4222-8222-222222222222'
 const retryAssetId = '33333333-3333-4333-8333-333333333333'
@@ -28,15 +20,15 @@ const laterReadyAssetId = '77777777-7777-4777-8777-777777777777'
 const checksum = 'a'.repeat(64)
 
 describe('Media reconciliation repository', () => {
+  const getClient = usePGliteTestClient([
+    '0005_media_catalog.sql',
+    '0009_media_catalog_state.sql',
+  ])
   let client: PGlite
   let repository: ReturnType<typeof createMediaReconciliationRepository>
 
   beforeEach(async () => {
-    client = new PGlite()
-    for (const url of migrations) {
-      const migration = await readFile(url, 'utf8')
-      await client.exec(migration.replaceAll('--> statement-breakpoint', ''))
-    }
+    client = getClient()
     const database = drizzle(client)
     repository = createMediaReconciliationRepository(
       () => database as unknown as MediaReconciliationDatabase,
@@ -114,10 +106,6 @@ describe('Media reconciliation repository', () => {
         checksum,
       ],
     )
-  })
-
-  afterEach(async () => {
-    await client.close()
   })
 
   it('finds recoverable work, scopes owner resume, and deletes only abandoned intents', async () => {

@@ -1,42 +1,30 @@
-import { readFile } from 'node:fs/promises'
-
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { drizzle } from 'drizzle-orm/pglite'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('server-only', () => ({}))
+
+import { usePGliteTestClient } from '~/db/testing/pglite'
 
 import {
   createMediaAssetReviewRepository,
   type MediaAssetReviewDatabase,
 } from './repository'
-
-const migrations = [
-  new URL('../../../db/migrations/0005_media_catalog.sql', import.meta.url),
-  new URL('../../../db/migrations/0006_photo_selection.sql', import.meta.url),
-  new URL(
-    '../../../db/migrations/0007_photo_publication_revision.sql',
-    import.meta.url,
-  ),
-  new URL(
-    '../../../db/migrations/0009_media_catalog_state.sql',
-    import.meta.url,
-  ),
-]
 const assetId = '11111111-1111-4111-8111-111111111111'
 const intentId = '22222222-2222-4222-8222-222222222222'
 
 describe('Media Asset review repository', () => {
+  const getClient = usePGliteTestClient([
+    '0005_media_catalog.sql',
+    '0006_photo_selection.sql',
+    '0007_photo_publication_revision.sql',
+    '0009_media_catalog_state.sql',
+  ])
   let client: PGlite
   let repository: ReturnType<typeof createMediaAssetReviewRepository>
 
   beforeEach(async () => {
-    client = new PGlite()
-    for (const url of migrations) {
-      await client.exec(
-        (await readFile(url, 'utf8')).replaceAll('--> statement-breakpoint', ''),
-      )
-    }
+    client = getClient()
     await client.query(
       `INSERT INTO media_upload_intents
         (id, owner_user_id, idempotency_key, original_key, content_type,
@@ -69,8 +57,6 @@ describe('Media Asset review repository', () => {
       (key) => `https://media.example.com/${key}`,
     )
   })
-
-  afterEach(async () => client.close())
 
   it('lists only owned catalogState views with public 640-pixel previews', async () => {
     await expect(
