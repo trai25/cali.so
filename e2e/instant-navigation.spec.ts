@@ -251,6 +251,7 @@ test('keyboard controls restore focus across public overlays', async ({ page }) 
   await page.goto('/en')
 
   const preferences = page.getByRole('button', { name: 'Preferences' })
+  await expect(preferences).toBeEnabled()
   await preferences.focus()
   await page.keyboard.press('Enter')
   await expect(page.getByRole('tab', { name: 'English' })).toBeFocused()
@@ -269,6 +270,24 @@ test('keyboard controls restore focus across public overlays', async ({ page }) 
   await postLink.focus()
   await page.keyboard.press('Enter')
   await expect(page).toHaveURL(`/en/blog/${postSlug}`)
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        document.documentElement.style.getPropertyValue(
+          '--post-cover-transition-name',
+        ),
+      ),
+    )
+    .toBe('')
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        document.documentElement.style.getPropertyValue(
+          '--post-title-transition-name',
+        ),
+      ),
+    )
+    .toBe('')
 
   const zoom = page.getByRole('button', { name: /^Zoom image/ }).first()
   await zoom.focus()
