@@ -1,8 +1,11 @@
 'use client'
 
+import { useState } from 'react'
+
 import { PreviewCard } from '@base-ui/react/preview-card'
 
 import { ExternalLabel } from '~/components/external-mark'
+import { classifyFaviconTone } from '~/components/favicon-tone'
 import { ogImageUrl, type LinkPreview } from '~/lib/link-previews'
 import { useLocale } from '~/lib/locale-client'
 
@@ -17,9 +20,32 @@ function hideFailedImage(event: React.SyntheticEvent<HTMLImageElement>) {
   event.currentTarget.dataset.failed = 'true'
 }
 
+// The ref covers icons that settled before hydration attached onLoad/onError.
+function Favicon({ src, size }: { src: string; size: 14 | 16 }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      ref={(img) => {
+        if (!img?.complete) return
+        if (img.naturalWidth) classifyFaviconTone(img)
+        else img.dataset.failed = 'true'
+      }}
+      src={src}
+      alt=""
+      width={size}
+      height={size}
+      loading="lazy"
+      aria-hidden
+      onLoad={(event) => classifyFaviconTone(event.currentTarget)}
+      onError={hideFailedImage}
+    />
+  )
+}
+
 // External prose links: inline favicon prefix, and — with build-time
-// preview data and a fine pointer — a fixed-size hover card. On touch
-// the trigger is just a link; the card is an enhancement, never content.
+// preview data and a fine pointer — a fixed-width hover card whose
+// height adapts to its content. On touch the trigger is just a link;
+// the card is an enhancement, never content.
 export function ExternalLink({
   href,
   favicon,
@@ -38,19 +64,11 @@ export function ExternalLink({
       ? englishOrSource(preview?.descriptionEn, preview?.description)
       : preview?.description
   const domain = preview?.domain
-  const image = preview?.hasImage ? ogImageUrl(href) : null
-  const icon = (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={favicon}
-      alt=""
-      width={14}
-      height={14}
-      loading="lazy"
-      aria-hidden
-      onError={hideFailedImage}
-    />
-  )
+  // a failed Open Graph image degrades the card to its text form instead
+  // of holding an empty frame with no description
+  const [imageFailed, setImageFailed] = useState(false)
+  const image = preview?.hasImage && !imageFailed ? ogImageUrl(href) : null
+  const icon = <Favicon src={favicon} size={14} />
 
   if (!title || !domain) {
     return (
@@ -86,28 +104,23 @@ export function ExternalLink({
                   className="link-card-image"
                   src={image}
                   alt=""
-                  width={232}
-                  height={131}
+                  width={236}
+                  height={133}
                   loading="eager"
-                  onError={hideFailedImage}
+                  onError={() => setImageFailed(true)}
                 />
               </span>
             )}
             <span className="link-card-site">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={favicon}
-                alt=""
-                width={16}
-                height={16}
-                loading="lazy"
-                aria-hidden
-                onError={hideFailedImage}
-              />
+              <Favicon src={favicon} size={16} />
               {domain}
             </span>
             <span className="link-card-title">{title}</span>
-            {description && <span className="link-card-description">{description}</span>}
+            {/* the image already says what the page is — description text
+                only earns its rows on image-less cards */}
+            {!image && description && (
+              <span className="link-card-description">{description}</span>
+            )}
           </PreviewCard.Popup>
         </PreviewCard.Positioner>
       </PreviewCard.Portal>

@@ -1,41 +1,26 @@
-import { readFile } from 'node:fs/promises'
+import type { PGlite } from '@electric-sql/pglite'
+import { beforeEach, describe, expect, it } from 'vitest'
 
-import { PGlite } from '@electric-sql/pglite'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-
-const migrations = [
-  new URL('../../../db/migrations/0001_ama_owner_auth.sql', import.meta.url),
-  new URL('../../../db/migrations/0002_ama_availability.sql', import.meta.url),
-  new URL('../../../db/migrations/0003_ama_google_calendar.sql', import.meta.url),
-  new URL('../../../db/migrations/0004_ama_google_oauth.sql', import.meta.url),
-  new URL('../../../db/migrations/0005_media_catalog.sql', import.meta.url),
-  new URL('../../../db/migrations/0006_photo_selection.sql', import.meta.url),
-  new URL(
-    '../../../db/migrations/0007_photo_publication_revision.sql',
-    import.meta.url,
-  ),
-  new URL('../../../db/migrations/0008_media_purge_progress.sql', import.meta.url),
-  new URL(
-    '../../../db/migrations/0009_media_catalog_state.sql',
-    import.meta.url,
-  ),
-]
+import { usePGliteTestClient } from '~/db/testing/pglite'
 
 const checksum = 'a'.repeat(64)
 
 describe('Media Library catalog migration', () => {
+  const getClient = usePGliteTestClient([
+    '0001_ama_owner_auth.sql',
+    '0002_ama_availability.sql',
+    '0003_ama_google_calendar.sql',
+    '0004_ama_google_oauth.sql',
+    '0005_media_catalog.sql',
+    '0006_photo_selection.sql',
+    '0007_photo_publication_revision.sql',
+    '0008_media_purge_progress.sql',
+    '0009_media_catalog_state.sql',
+  ])
   let client: PGlite
 
-  beforeEach(async () => {
-    client = new PGlite()
-    for (const migrationUrl of migrations) {
-      const migration = await readFile(migrationUrl, 'utf8')
-      await client.exec(migration.replaceAll('--> statement-breakpoint', ''))
-    }
-  })
-
-  afterEach(async () => {
-    await client.close()
+  beforeEach(() => {
+    client = getClient()
   })
 
   async function createUploadIntent(overrides: Record<string, unknown> = {}) {

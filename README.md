@@ -93,6 +93,8 @@ pnpm audit:prod
   a lockfile update, and the complete validation suite.
 - Preview and Production use separate credentials and data. Preview data must
   be disposable or irreversibly sanitized.
+- Redis is Production-only. Preview rate limits use its isolated Neon database;
+  Local and CI use process-local limits.
 - The Vercel runtime never receives migration credentials.
 - Owner admin remains available in every environment and relies on
   Clerk authentication plus the server-checked

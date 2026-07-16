@@ -67,6 +67,19 @@ const nextConfig: NextConfig = {
       source: '/api/admin/:path*',
       headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }],
     },
+    {
+      // Proxied link media (favicons, Open Graph images) are never a
+      // document that may run in this origin. Same-key entries later in
+      // this list override the global policy above, so exactly one
+      // Content-Security-Policy header is sent.
+      source: '/link-media/:path*',
+      headers: [
+        {
+          key: 'Content-Security-Policy',
+          value: "default-src 'none'; sandbox",
+        },
+      ],
+    },
   ],
 
   // The checked-in manifest is the v3 cutover contract for every preserved,

@@ -62,10 +62,23 @@ JSON
   npx vercel env rm RESEND_API_KEY preview $SCOPE
   ```
 
-- The `KV_URL`, `KV_REST_API_*`, and `REDIS_URL` group comes from one storage
-  integration connected to both environments. Isolation happens in the
-  dashboard's Storage tab: connect a separate store (or database) for Preview
-  so Production traffic and Preview experiments never share data.
+- Redis is Production-only. In the dashboard's Storage tab, change the
+  existing Upstash integration to target Production only, or remove the
+  integration and reconnect it for Production only. Delete every `KV_*`,
+  `REDIS_URL`, and `UPSTASH_*` variable from Preview. Do not create a Preview
+  Redis store: Preview rate limits use its isolated Neon database.
+
+- Before deploying this runtime contract to Preview, apply migration `0010`
+  with the separately held Preview migration credential. This is sensitive
+  remote database access and requires two fresh explicit confirmations. Never
+  place the migration credential in Vercel:
+
+  ```bash
+  MIGRATION_DATABASE_URL=postgresql://... pnpm db:migrate
+  ```
+
+  Verify the Preview runtime role can only select, insert, update, and delete
+  `rate_limit_windows`; it must not own the table or receive DDL privileges.
 
 - Add a Preview-only `CLERK_SECRET_KEY` from the non-production Clerk
   environment. Never copy the Production Clerk secret into Preview.
@@ -106,6 +119,12 @@ add MEDIA_ENCRYPTION_KEY     # openssl rand -hex 32
 add ADMIN_MUTATION_RATE_LIMIT_MAX_REQUESTS
 add ADMIN_MUTATION_RATE_LIMIT_WINDOW_SECONDS
 
+# Redis rate-limit backend: Production only. A Vercel Marketplace integration
+# may inject KV_REST_API_URL and KV_REST_API_TOKEN instead; configure one
+# complete credential pair, never both pairs and never any pair in Preview.
+add UPSTASH_REDIS_REST_URL
+add UPSTASH_REDIS_REST_TOKEN
+
 # The five optional AMA capability switches default to false when absent.
 # If you set them for operational visibility, enter the literal value `false`.
 
@@ -139,7 +158,7 @@ results in the readiness report:
 ## 5. Production database and migrations
 
 Gated by two fresh explicit confirmations immediately before access. Verify
-the runtime role has only CRUD grants, then apply the nine additive
+the runtime role has only CRUD grants, then apply the ten additive
 migrations with the separately held credential:
 
 ```bash
