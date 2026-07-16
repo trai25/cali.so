@@ -153,7 +153,7 @@ export function createMediaPurgeRepository(
           ) {
             return { status: 'busy' }
           }
-          if (asset.lifecycle !== 'purging' || existingJob.originalKey === null) {
+          if (asset.catalogState !== 'purging' || existingJob.originalKey === null) {
             return { status: 'invalid_state' }
           }
           originalKey = existingJob.originalKey
@@ -167,7 +167,7 @@ export function createMediaPurgeRepository(
             })
             .where(eq(mediaAssetPurgeJobs.mediaAssetId, input.mediaAssetId))
         } else {
-          if (asset.lifecycle !== 'archived') return { status: 'invalid_state' }
+          if (asset.catalogState !== 'archived') return { status: 'invalid_state' }
           const [selection] = await transaction
             .select({ id: mediaAssets.id })
             .from(mediaAssets)
@@ -207,7 +207,7 @@ export function createMediaPurgeRepository(
           await transaction
             .update(mediaAssets)
             .set({
-              lifecycle: 'purging',
+              catalogState: 'purging',
               purgeStartedAt: input.claimedAt,
               updatedAt: input.claimedAt,
             })

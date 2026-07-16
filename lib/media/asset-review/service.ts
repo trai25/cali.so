@@ -3,7 +3,7 @@ import 'server-only'
 export type MediaAssetReviewRecord = {
   id: string
   createdAt: Date
-  lifecycle: 'active' | 'archived' | 'purging'
+  catalogState: 'active' | 'archived' | 'purging'
   processingState:
     | 'upload_initiated'
     | 'original_verified'
@@ -41,7 +41,7 @@ export type MediaAssetReviewRecord = {
   } | null
 }
 
-type LifecycleResult =
+type CatalogStateResult =
   | { status: 'updated'; asset: MediaAssetReviewRecord }
   | { status: 'invalid_state' }
   | { status: 'not_found' }
@@ -75,12 +75,12 @@ export interface MediaAssetReviewRepository {
     ownerUserId: string
     mediaAssetId: string
     archivedAt: Date
-  }): Promise<LifecycleResult>
+  }): Promise<CatalogStateResult>
   restore(input: {
     ownerUserId: string
     mediaAssetId: string
     restoredAt: Date
-  }): Promise<LifecycleResult>
+  }): Promise<CatalogStateResult>
 }
 
 export type MediaAssetReviewErrorCode =
@@ -134,7 +134,7 @@ function validFocalPoint(value: { x: number; y: number } | null) {
   )
 }
 
-function unwrapLifecycle(result: LifecycleResult) {
+function unwrapCatalogState(result: CatalogStateResult) {
   if (result.status === 'updated') return result.asset
   throw new MediaAssetReviewError(result.status)
 }
@@ -244,7 +244,7 @@ export function createMediaAssetReviewService({
         throw new MediaAssetReviewError('invalid_request')
       }
       try {
-        return unwrapLifecycle(
+        return unwrapCatalogState(
           await repository.archive({ ...input, archivedAt: clock.now() }),
         )
       } catch (error) {
@@ -258,7 +258,7 @@ export function createMediaAssetReviewService({
         throw new MediaAssetReviewError('invalid_request')
       }
       try {
-        return unwrapLifecycle(
+        return unwrapCatalogState(
           await repository.restore({ ...input, restoredAt: clock.now() }),
         )
       } catch (error) {

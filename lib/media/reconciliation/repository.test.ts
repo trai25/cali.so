@@ -11,10 +11,13 @@ import {
   type MediaReconciliationDatabase,
 } from './repository'
 
-const migrationUrl = new URL(
-  '../../../db/migrations/0005_media_catalog.sql',
-  import.meta.url,
-)
+const migrations = [
+  new URL('../../../db/migrations/0005_media_catalog.sql', import.meta.url),
+  new URL(
+    '../../../db/migrations/0009_media_catalog_state.sql',
+    import.meta.url,
+  ),
+]
 const abandonedIntentId = '11111111-1111-4111-8111-111111111111'
 const retryIntentId = '22222222-2222-4222-8222-222222222222'
 const retryAssetId = '33333333-3333-4333-8333-333333333333'
@@ -30,8 +33,10 @@ describe('Media reconciliation repository', () => {
 
   beforeEach(async () => {
     client = new PGlite()
-    const migration = await readFile(migrationUrl, 'utf8')
-    await client.exec(migration.replaceAll('--> statement-breakpoint', ''))
+    for (const url of migrations) {
+      const migration = await readFile(url, 'utf8')
+      await client.exec(migration.replaceAll('--> statement-breakpoint', ''))
+    }
     const database = drizzle(client)
     repository = createMediaReconciliationRepository(
       () => database as unknown as MediaReconciliationDatabase,
@@ -208,15 +213,15 @@ describe('Media reconciliation repository', () => {
 
   it.each(['archived', 'purging'] as const)(
     'does not recover %s assets',
-    async (lifecycle) => {
+    async (catalogState) => {
       await client.query(
         `UPDATE media_assets
-         SET lifecycle = $1, archived_at = $2, purge_started_at = $3
+         SET catalog_state = $1, archived_at = $2, purge_started_at = $3
          WHERE id = $4`,
         [
-          lifecycle,
+          catalogState,
           '2026-07-15T11:00:00.000Z',
-          lifecycle === 'purging' ? '2026-07-15T11:30:00.000Z' : null,
+          catalogState === 'purging' ? '2026-07-15T11:30:00.000Z' : null,
           retryAssetId,
         ],
       )

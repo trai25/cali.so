@@ -32,7 +32,7 @@ export const PUBLIC_PHOTO_SELECTION_CACHE_TAG = 'media:published-photo-selection
 
 type CandidateRow = {
   id: string
-  lifecycle: 'active' | 'archived' | 'purging'
+  catalogState: 'active' | 'archived' | 'purging'
   processingState:
     | 'upload_initiated'
     | 'original_verified'
@@ -121,7 +121,7 @@ function collectCandidates(rows: CandidateRow[]) {
 function candidateIsEligible(candidate: Candidate | undefined) {
   if (
     !candidate ||
-    candidate.lifecycle !== 'active' ||
+    candidate.catalogState !== 'active' ||
     candidate.processingState !== 'ready' ||
     candidate.width === null ||
     candidate.height === null ||
@@ -149,7 +149,7 @@ async function loadCandidates(
   const rows = await transaction
     .select({
       id: mediaAssets.id,
-      lifecycle: mediaAssets.lifecycle,
+      catalogState: mediaAssets.catalogState,
       processingState: mediaAssets.processingState,
       width: mediaAssets.width,
       height: mediaAssets.height,

@@ -62,11 +62,16 @@ The owner-approved Chinese and English visual descriptions required before a
 Media Asset may join a Published Photo Selection.
 _Avoid_: Caption, Alt Text Suggestion
 
+**Catalog State**:
+Whether a Media Asset is active, Archived, or being purged. It records the
+asset's standing in the catalog and is separate from Processing State, which
+tracks derivation progress.
+_Avoid_: Lifecycle, status
+
 **Processing State**:
 The durable progress of registering and deriving a Media Asset, including
 Original verification, Rendition processing, readiness, retryable failure, and
-repair required. It is separate from whether the Media Asset is active,
-Archived, or being purged.
+repair required. It is separate from Catalog State.
 _Avoid_: Lifecycle, upload status
 
 **Archived Media Asset**:
