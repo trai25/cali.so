@@ -106,9 +106,6 @@ const serverEnvironmentSchema = z
         UPSTASH_REDIS_REST_TOKEN,
         KV_REST_API_URL,
         KV_REST_API_TOKEN,
-        KV_REST_API_READ_ONLY_TOKEN,
-        KV_URL,
-        REDIS_URL,
         VERCEL_ENV,
         GOOGLE_CLIENT_ID,
         GOOGLE_CLIENT_SECRET,
@@ -122,17 +119,8 @@ const serverEnvironmentSchema = z
       const marketplacePairComplete = Boolean(
         KV_REST_API_URL && KV_REST_API_TOKEN,
       )
-      const redisFields = {
-        UPSTASH_REDIS_REST_URL,
-        UPSTASH_REDIS_REST_TOKEN,
-        KV_REST_API_URL,
-        KV_REST_API_TOKEN,
-        KV_REST_API_READ_ONLY_TOKEN,
-        KV_URL,
-        REDIS_URL,
-      }
-
       if (
+        VERCEL_ENV === 'production' &&
         Boolean(UPSTASH_REDIS_REST_URL) !== Boolean(UPSTASH_REDIS_REST_TOKEN)
       ) {
         context.addIssue({
@@ -147,7 +135,10 @@ const serverEnvironmentSchema = z
         })
       }
 
-      if (Boolean(KV_REST_API_URL) !== Boolean(KV_REST_API_TOKEN)) {
+      if (
+        VERCEL_ENV === 'production' &&
+        Boolean(KV_REST_API_URL) !== Boolean(KV_REST_API_TOKEN)
+      ) {
         context.addIssue({
           code: 'custom',
           path: [KV_REST_API_URL ? 'KV_REST_API_TOKEN' : 'KV_REST_API_URL'],
@@ -174,18 +165,6 @@ const serverEnvironmentSchema = z
             path: ['UPSTASH_REDIS_REST_TOKEN'],
             message: 'A complete Redis credential pair is required',
           })
-        }
-      }
-
-      if (VERCEL_ENV !== 'production') {
-        for (const [field, value] of Object.entries(redisFields)) {
-          if (value) {
-            context.addIssue({
-              code: 'custom',
-              path: [field],
-              message: 'Redis credentials are allowed only in Production',
-            })
-          }
         }
       }
 

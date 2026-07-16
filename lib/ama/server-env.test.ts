@@ -111,30 +111,37 @@ describe('AMA server environment', () => {
     ).toEqual({ kind: 'database' })
   })
 
-  it('rejects Redis credentials outside Production', () => {
-    expect(() =>
-      parseServerEnv({ ...validEnvironment, VERCEL_ENV: 'preview' }),
-    ).toThrowError(/UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN/)
-
+  it('ignores transitional Redis credentials outside Production', () => {
     const {
       UPSTASH_REDIS_REST_URL: _upstashUrl,
       UPSTASH_REDIS_REST_TOKEN: _upstashToken,
       ...withoutUpstash
     } = validEnvironment
-    expect(() =>
-      parseServerEnv({
-        ...withoutUpstash,
-        VERCEL_ENV: 'preview',
-        KV_REST_API_URL: 'https://marketplace.upstash.io',
-        KV_REST_API_TOKEN: 'marketplace-secret',
-        KV_URL: 'redis://default:secret@example.upstash.io:6379',
-        REDIS_URL: 'redis://default:secret@example.upstash.io:6379',
-      }),
-    ).toThrowError(/KV_REST_API_URL, KV_REST_API_TOKEN, KV_URL, REDIS_URL/)
+    const previewEnvironment = parseServerEnv({
+      ...withoutUpstash,
+      VERCEL_ENV: 'preview',
+      KV_REST_API_URL: 'https://marketplace.upstash.io',
+      KV_REST_API_TOKEN: 'marketplace-secret',
+      KV_REST_API_READ_ONLY_TOKEN: 'marketplace-read-only-secret',
+      KV_URL: 'redis://default:secret@example.upstash.io:6379',
+      REDIS_URL: 'redis://default:secret@example.upstash.io:6379',
+    })
 
-    expect(() =>
-      parseServerEnv({ ...validEnvironment, VERCEL_ENV: 'development' }),
-    ).toThrowError(/UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN/)
+    expect(previewEnvironment.rateLimitBackend).toEqual({ kind: 'database' })
+    for (const field of [
+      'KV_REST_API_URL',
+      'KV_REST_API_TOKEN',
+      'KV_REST_API_READ_ONLY_TOKEN',
+      'KV_URL',
+      'REDIS_URL',
+    ]) {
+      expect(previewEnvironment).not.toHaveProperty(field)
+    }
+
+    expect(
+      parseServerEnv({ ...validEnvironment, VERCEL_ENV: 'development' })
+        .rateLimitBackend,
+    ).toEqual({ kind: 'memory' })
   })
 
   it('uses an in-memory rate limiter outside Vercel', () => {
