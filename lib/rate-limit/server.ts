@@ -8,12 +8,7 @@ import type { ServerEnvironment } from '~/lib/ama/server-env-schema'
 
 import { createMemoryRateLimiter } from './memory'
 import { createDatabaseRateLimiter } from './repository'
-
-type RateLimitPolicy = {
-  prefix: string
-  maxRequests: number
-  windowSeconds: number
-}
+import type { RateLimitPolicy } from './types'
 
 export function createRateLimiter(
   backend: ServerEnvironment['rateLimitBackend'],

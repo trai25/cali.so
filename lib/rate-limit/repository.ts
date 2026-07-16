@@ -7,17 +7,9 @@ import { lte, sql } from 'drizzle-orm'
 import { getDatabase } from '~/db'
 import { rateLimitWindows } from '~/db/schema'
 
+import type { Clock, RateLimitPolicy } from './types'
+
 export type RateLimitDatabase = ReturnType<typeof getDatabase>
-
-type RateLimitPolicy = {
-  prefix: string
-  maxRequests: number
-  windowSeconds: number
-}
-
-type Clock = {
-  now(): Date
-}
 
 export function createDatabaseRateLimiter(
   database: () => RateLimitDatabase,

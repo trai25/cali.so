@@ -1,12 +1,4 @@
-type RateLimitPolicy = {
-  prefix: string
-  maxRequests: number
-  windowSeconds: number
-}
-
-type Clock = {
-  now(): Date
-}
+import type { Clock, RateLimitPolicy } from './types'
 
 type Window = {
   requestCount: number
