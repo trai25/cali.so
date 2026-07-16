@@ -8,6 +8,8 @@ const productionOrigin = 'https://cali.so'
 const representativePages = [
   { path: '/', locale: 'zh-CN', canonical: '/' },
   { path: '/en', locale: 'en', canonical: '/en' },
+  { path: '/ama', locale: 'zh-CN' },
+  { path: '/en/ama', locale: 'en' },
   { path: '/blog/how-to-add-rss-to-your-nextjs-app-router', locale: 'zh-CN' },
   { path: '/en/blog/how-to-add-rss-to-your-nextjs-app-router', locale: 'en' },
   { path: '/newsletters/1', locale: 'zh-CN' },
@@ -99,6 +101,8 @@ async function verifyDiscoveryFiles(baseUrl) {
     '/en/photos',
     '/projects',
     '/en/projects',
+    '/ama',
+    '/en/ama',
     '/newsletters/1',
     '/en/newsletters/1',
   ]) {

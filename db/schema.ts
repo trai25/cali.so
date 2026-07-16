@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm'
 import {
   boolean,
   check,
+  customType,
   index,
   integer,
   jsonb,
@@ -636,6 +637,351 @@ export const mediaPublishedPhotoSelectionRenditions = pgTable(
     check(
       'media_published_photo_selection_renditions_dimensions_check',
       sql`${table.width} BETWEEN 1 AND ${table.profileWidth} AND ${table.height} > 0 AND (${table.width}::bigint * ${table.height}::bigint) <= 100000000`,
+    ),
+  ],
+)
+
+// The half-open UTC instant range a claim blocks, including the policy
+// buffers on both sides. Postgres enforces non-overlap through an exclusion
+// constraint that lives in the migration SQL because Drizzle cannot express
+// EXCLUDE constraints.
+const tstzrange = customType<{ data: string }>({
+  dataType() {
+    return 'tstzrange'
+  },
+})
+
+export const amaSlotClaims = pgTable(
+  'ama_slot_claims',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    kind: varchar('kind', { length: 16 }).$type<'hold' | 'booking'>().notNull(),
+    status: varchar('status', { length: 16 })
+      .$type<'active' | 'released'>()
+      .default('active')
+      .notNull(),
+    startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
+    endsAt: timestamp('ends_at', { withTimezone: true }).notNull(),
+    blockedDuring: tstzrange('blocked_during').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    releasedAt: timestamp('released_at', { withTimezone: true }),
+    releaseReason: varchar('release_reason', { length: 32 }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('ama_slot_claims_active_idx').on(table.status, table.endsAt),
+    index('ama_slot_claims_expiry_idx').on(table.status, table.expiresAt),
+    check('ama_slot_claims_kind_check', sql`${table.kind} IN ('hold', 'booking')`),
+    check('ama_slot_claims_status_check', sql`${table.status} IN ('active', 'released')`),
+    check('ama_slot_claims_interval_check', sql`${table.startsAt} < ${table.endsAt}`),
+    check(
+      'ama_slot_claims_blocked_during_check',
+      sql`${table.blockedDuring} = tstzrange(${table.startsAt} - interval '15 minutes', ${table.endsAt} + interval '15 minutes', '[)')`,
+    ),
+    check(
+      'ama_slot_claims_hold_expiry_check',
+      sql`(${table.kind} = 'hold') = (${table.expiresAt} IS NOT NULL)`,
+    ),
+    check(
+      'ama_slot_claims_release_check',
+      sql`(${table.status} = 'active' AND ${table.releasedAt} IS NULL AND ${table.releaseReason} IS NULL) OR (${table.status} = 'released' AND ${table.releasedAt} IS NOT NULL AND ${table.releaseReason} IS NOT NULL)`,
+    ),
+  ],
+)
+
+export const amaBookingIntents = pgTable(
+  'ama_booking_intents',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    holdClaimId: uuid('hold_claim_id')
+      .notNull()
+      .references(() => amaSlotClaims.id, { onDelete: 'restrict' }),
+    guestName: varchar('guest_name', { length: 120 }).notNull(),
+    guestEmail: varchar('guest_email', { length: 320 }).notNull(),
+    locale: varchar('locale', { length: 2 }).$type<'zh' | 'en'>().notNull(),
+    guestTimeZone: varchar('guest_time_zone', { length: 64 }).notNull(),
+    topics: jsonb('topics').$type<string[]>().notNull(),
+    briefText: text('brief_text').notNull(),
+    briefUrls: jsonb('brief_urls').$type<string[]>().default(sql`'[]'::jsonb`).notNull(),
+    meetingProvider: varchar('meeting_provider', { length: 20 })
+      .$type<'google-meet' | 'tencent-meeting'>()
+      .notNull(),
+    stripeCheckoutSessionId: varchar('stripe_checkout_session_id', { length: 255 }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('ama_booking_intents_hold_claim_uidx').on(table.holdClaimId),
+    uniqueIndex('ama_booking_intents_checkout_session_uidx').on(
+      table.stripeCheckoutSessionId,
+    ),
+    check(
+      'ama_booking_intents_guest_check',
+      sql`length(btrim(${table.guestName})) > 0 AND length(btrim(${table.guestEmail})) > 0`,
+    ),
+    check('ama_booking_intents_locale_check', sql`${table.locale} IN ('zh', 'en')`),
+    check(
+      'ama_booking_intents_time_zone_check',
+      sql`length(btrim(${table.guestTimeZone})) > 0`,
+    ),
+    check(
+      'ama_booking_intents_topics_check',
+      sql`jsonb_typeof(${table.topics}) = 'array' AND jsonb_array_length(${table.topics}) BETWEEN 1 AND 8`,
+    ),
+    check(
+      'ama_booking_intents_brief_check',
+      sql`length(btrim(${table.briefText})) > 0 AND char_length(${table.briefText}) <= 2000`,
+    ),
+    check(
+      'ama_booking_intents_brief_urls_check',
+      sql`jsonb_typeof(${table.briefUrls}) = 'array' AND jsonb_array_length(${table.briefUrls}) <= 5`,
+    ),
+    check(
+      'ama_booking_intents_provider_check',
+      sql`${table.meetingProvider} IN ('google-meet', 'tencent-meeting')`,
+    ),
+  ],
+)
+
+export const amaBookings = pgTable(
+  'ama_bookings',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    intentId: uuid('intent_id')
+      .notNull()
+      .references(() => amaBookingIntents.id, { onDelete: 'restrict' }),
+    claimId: uuid('claim_id').references(() => amaSlotClaims.id, {
+      onDelete: 'restrict',
+    }),
+    status: varchar('status', { length: 20 })
+      .$type<'finalizing' | 'confirmed' | 'needs_reschedule' | 'cancelled'>()
+      .default('finalizing')
+      .notNull(),
+    guestName: varchar('guest_name', { length: 120 }).notNull(),
+    guestEmail: varchar('guest_email', { length: 320 }).notNull(),
+    locale: varchar('locale', { length: 2 }).$type<'zh' | 'en'>().notNull(),
+    guestTimeZone: varchar('guest_time_zone', { length: 64 }).notNull(),
+    topics: jsonb('topics').$type<string[]>().notNull(),
+    briefText: text('brief_text'),
+    briefUrls: jsonb('brief_urls').$type<string[]>(),
+    briefPurgedAt: timestamp('brief_purged_at', { withTimezone: true }),
+    meetingProvider: varchar('meeting_provider', { length: 20 })
+      .$type<'google-meet' | 'tencent-meeting'>()
+      .notNull(),
+    startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
+    endsAt: timestamp('ends_at', { withTimezone: true }).notNull(),
+    stripeCheckoutSessionId: varchar('stripe_checkout_session_id', {
+      length: 255,
+    }).notNull(),
+    stripePaymentIntentId: varchar('stripe_payment_intent_id', { length: 255 }),
+    amountTotal: integer('amount_total').notNull(),
+    currency: varchar('currency', { length: 8 }).notNull(),
+    refundStatus: varchar('refund_status', { length: 16 })
+      .$type<'none' | 'pending' | 'refunded' | 'failed'>()
+      .default('none')
+      .notNull(),
+    stripeRefundId: varchar('stripe_refund_id', { length: 255 }),
+    refundedAt: timestamp('refunded_at', { withTimezone: true }),
+    refundReason: varchar('refund_reason', { length: 32 }),
+    cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
+    cancelledBy: varchar('cancelled_by', { length: 16 }).$type<'guest' | 'owner'>(),
+    meetingUrl: text('meeting_url'),
+    googleCalendarEventId: varchar('google_calendar_event_id', { length: 255 }),
+    tencentMeetingId: varchar('tencent_meeting_id', { length: 255 }),
+    meetingCreatedAt: timestamp('meeting_created_at', { withTimezone: true }),
+    manageTokenHash: varchar('manage_token_hash', { length: 64 }),
+    manageTokenIssuedAt: timestamp('manage_token_issued_at', { withTimezone: true }),
+    manageTokenRevokedAt: timestamp('manage_token_revoked_at', {
+      withTimezone: true,
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('ama_bookings_intent_uidx').on(table.intentId),
+    uniqueIndex('ama_bookings_checkout_session_uidx').on(
+      table.stripeCheckoutSessionId,
+    ),
+    uniqueIndex('ama_bookings_manage_token_uidx').on(table.manageTokenHash),
+    index('ama_bookings_schedule_idx').on(table.status, table.startsAt),
+    index('ama_bookings_claim_idx').on(table.claimId),
+    check(
+      'ama_bookings_status_check',
+      sql`${table.status} IN ('finalizing', 'confirmed', 'needs_reschedule', 'cancelled')`,
+    ),
+    check('ama_bookings_locale_check', sql`${table.locale} IN ('zh', 'en')`),
+    check(
+      'ama_bookings_provider_check',
+      sql`${table.meetingProvider} IN ('google-meet', 'tencent-meeting')`,
+    ),
+    check('ama_bookings_interval_check', sql`${table.startsAt} < ${table.endsAt}`),
+    check(
+      'ama_bookings_claim_presence_check',
+      sql`${table.status} IN ('needs_reschedule', 'cancelled') OR ${table.claimId} IS NOT NULL`,
+    ),
+    check(
+      'ama_bookings_refund_status_check',
+      sql`${table.refundStatus} IN ('none', 'pending', 'refunded', 'failed')`,
+    ),
+    check(
+      'ama_bookings_refund_reason_check',
+      sql`${table.refundReason} IS NULL OR ${table.refundReason} IN ('guest_cancellation', 'owner_cancellation', 'owner_exception')`,
+    ),
+    check(
+      'ama_bookings_cancellation_check',
+      sql`(${table.status} = 'cancelled') = (${table.cancelledAt} IS NOT NULL AND ${table.cancelledBy} IS NOT NULL)`,
+    ),
+    check(
+      'ama_bookings_cancelled_by_check',
+      sql`${table.cancelledBy} IS NULL OR ${table.cancelledBy} IN ('guest', 'owner')`,
+    ),
+    check(
+      'ama_bookings_brief_purge_check',
+      sql`(${table.briefPurgedAt} IS NULL AND ${table.briefText} IS NOT NULL AND ${table.briefUrls} IS NOT NULL) OR (${table.briefPurgedAt} IS NOT NULL AND ${table.briefText} IS NULL AND ${table.briefUrls} IS NULL)`,
+    ),
+    check(
+      'ama_bookings_manage_token_check',
+      sql`(${table.manageTokenHash} IS NULL) = (${table.manageTokenIssuedAt} IS NULL)`,
+    ),
+    check('ama_bookings_amount_check', sql`${table.amountTotal} > 0`),
+  ],
+)
+
+export const amaBookingEvents = pgTable(
+  'ama_booking_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    bookingId: uuid('booking_id')
+      .notNull()
+      .references(() => amaBookings.id, { onDelete: 'restrict' }),
+    event: varchar('event', { length: 48 }).notNull(),
+    actor: varchar('actor', { length: 16 })
+      .$type<'guest' | 'owner' | 'system' | 'provider'>()
+      .notNull(),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
+    detail: jsonb('detail').default(sql`'{}'::jsonb`).notNull(),
+  },
+  (table) => [
+    index('ama_booking_events_booking_idx').on(table.bookingId, table.occurredAt),
+    check('ama_booking_events_event_check', sql`length(btrim(${table.event})) > 0`),
+    check(
+      'ama_booking_events_actor_check',
+      sql`${table.actor} IN ('guest', 'owner', 'system', 'provider')`,
+    ),
+  ],
+)
+
+export const amaProviderEvents = pgTable(
+  'ama_provider_events',
+  {
+    provider: varchar('provider', { length: 16 }).notNull(),
+    eventId: varchar('event_id', { length: 255 }).notNull(),
+    eventType: varchar('event_type', { length: 64 }).notNull(),
+    receivedAt: timestamp('received_at', { withTimezone: true }).notNull(),
+    processedAt: timestamp('processed_at', { withTimezone: true }),
+    outcome: varchar('outcome', { length: 32 }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.provider, table.eventId] }),
+    check('ama_provider_events_provider_check', sql`${table.provider} = 'stripe'`),
+    check(
+      'ama_provider_events_identity_check',
+      sql`length(btrim(${table.eventId})) > 0 AND length(btrim(${table.eventType})) > 0`,
+    ),
+  ],
+)
+
+export const amaDurableOperations = pgTable(
+  'ama_durable_operations',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    kind: varchar('kind', { length: 48 }).notNull(),
+    dedupeKey: varchar('dedupe_key', { length: 255 }).notNull(),
+    bookingId: uuid('booking_id').references(() => amaBookings.id, {
+      onDelete: 'restrict',
+    }),
+    payload: jsonb('payload').default(sql`'{}'::jsonb`).notNull(),
+    status: varchar('status', { length: 16 })
+      .$type<'pending' | 'running' | 'succeeded' | 'failed' | 'cancelled' | 'resolved'>()
+      .default('pending')
+      .notNull(),
+    attemptCount: integer('attempt_count').default(0).notNull(),
+    maxAttempts: integer('max_attempts').default(8).notNull(),
+    nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull(),
+    leaseToken: uuid('lease_token'),
+    leaseExpiresAt: timestamp('lease_expires_at', { withTimezone: true }),
+    lastErrorCode: varchar('last_error_code', { length: 64 }),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('ama_durable_operations_dedupe_uidx').on(table.dedupeKey),
+    index('ama_durable_operations_due_idx').on(table.status, table.nextAttemptAt),
+    index('ama_durable_operations_booking_idx').on(table.bookingId),
+    check('ama_durable_operations_kind_check', sql`length(btrim(${table.kind})) > 0`),
+    check(
+      'ama_durable_operations_status_check',
+      sql`${table.status} IN ('pending', 'running', 'succeeded', 'failed', 'cancelled', 'resolved')`,
+    ),
+    check(
+      'ama_durable_operations_attempts_check',
+      sql`${table.attemptCount} >= 0 AND ${table.maxAttempts} > 0`,
+    ),
+    check(
+      'ama_durable_operations_lease_check',
+      sql`num_nonnulls(${table.leaseToken}, ${table.leaseExpiresAt}) IN (0, 2)`,
+    ),
+    check(
+      'ama_durable_operations_completion_check',
+      sql`(${table.status} IN ('succeeded', 'failed', 'cancelled', 'resolved')) = (${table.completedAt} IS NOT NULL)`,
+    ),
+  ],
+)
+
+export const amaAlternateTimeRequests = pgTable(
+  'ama_alternate_time_requests',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    guestName: varchar('guest_name', { length: 120 }).notNull(),
+    guestEmail: varchar('guest_email', { length: 320 }).notNull(),
+    locale: varchar('locale', { length: 2 }).$type<'zh' | 'en'>().notNull(),
+    guestTimeZone: varchar('guest_time_zone', { length: 64 }).notNull(),
+    preferredWindows: text('preferred_windows').notNull(),
+    note: text('note'),
+    status: varchar('status', { length: 16 })
+      .$type<'new' | 'resolved' | 'dismissed'>()
+      .default('new')
+      .notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+  },
+  (table) => [
+    index('ama_alternate_time_requests_status_idx').on(table.status, table.createdAt),
+    check(
+      'ama_alternate_time_requests_guest_check',
+      sql`length(btrim(${table.guestName})) > 0 AND length(btrim(${table.guestEmail})) > 0`,
+    ),
+    check(
+      'ama_alternate_time_requests_locale_check',
+      sql`${table.locale} IN ('zh', 'en')`,
+    ),
+    check(
+      'ama_alternate_time_requests_windows_check',
+      sql`length(btrim(${table.preferredWindows})) > 0 AND char_length(${table.preferredWindows}) <= 1000`,
+    ),
+    check(
+      'ama_alternate_time_requests_note_check',
+      sql`${table.note} IS NULL OR char_length(${table.note}) <= 1000`,
+    ),
+    check(
+      'ama_alternate_time_requests_status_check',
+      sql`${table.status} IN ('new', 'resolved', 'dismissed')`,
+    ),
+    check(
+      'ama_alternate_time_requests_resolution_check',
+      sql`(${table.status} = 'new') = (${table.resolvedAt} IS NULL)`,
     ),
   ],
 )

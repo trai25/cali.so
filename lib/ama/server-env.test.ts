@@ -263,6 +263,12 @@ describe('AMA server environment', () => {
       AMA_BOOKING_FINALIZATION_ENABLED: 'true',
       AMA_GOOGLE_INTEGRATION_ENABLED: 'true',
       AMA_TENCENT_INTEGRATION_ENABLED: 'true',
+      STRIPE_SECRET_KEY: 'sk_test_secret',
+      STRIPE_WEBHOOK_SECRET: 'whsec_secret',
+      RESEND_API_KEY: 're_secret',
+      AMA_EMAIL_FROM: 'Cali Castle <ama@cali.so>',
+      TENCENT_MEETING_MCP_URL: 'https://mcp.example.com/tencent',
+      TENCENT_MEETING_MCP_TOKEN: 'tencent-token',
     })
 
     expect(environment.features).toEqual({
@@ -328,5 +334,99 @@ describe('AMA server environment', () => {
     } catch (error) {
       expect(String(error)).not.toContain('google-client-secret')
     }
+  })
+
+  it('requires Stripe credentials only while payments are enabled', () => {
+    expect(parseServerEnv(validEnvironment).STRIPE_SECRET_KEY).toBeUndefined()
+
+    expect(() =>
+      parseServerEnv({ ...validEnvironment, AMA_PAYMENTS_ENABLED: 'true' }),
+    ).toThrowError(/STRIPE_SECRET_KEY.*STRIPE_WEBHOOK_SECRET|STRIPE_WEBHOOK_SECRET.*STRIPE_SECRET_KEY/)
+
+    const environment = parseServerEnv({
+      ...validEnvironment,
+      AMA_PAYMENTS_ENABLED: 'true',
+      STRIPE_SECRET_KEY: 'sk_test_secret',
+      STRIPE_WEBHOOK_SECRET: 'whsec_secret',
+    })
+    expect(environment.features.payments).toBe(true)
+
+    try {
+      parseServerEnv({ ...validEnvironment, AMA_PAYMENTS_ENABLED: 'true' })
+    } catch (error) {
+      expect(String(error)).not.toContain('sk_test')
+    }
+  })
+
+  it('requires Resend delivery configuration only while finalization is enabled', () => {
+    expect(() =>
+      parseServerEnv({
+        ...validEnvironment,
+        AMA_BOOKING_FINALIZATION_ENABLED: 'true',
+      }),
+    ).toThrowError(/RESEND_API_KEY/)
+
+    const environment = parseServerEnv({
+      ...validEnvironment,
+      AMA_BOOKING_FINALIZATION_ENABLED: 'true',
+      RESEND_API_KEY: 're_secret',
+      AMA_EMAIL_FROM: 'Cali Castle <ama@cali.so>',
+    })
+    expect(environment.features.bookingFinalization).toBe(true)
+    expect(environment.AMA_EMAIL_FROM).toBe('Cali Castle <ama@cali.so>')
+  })
+
+  it('requires the Tencent MCP bridge only while Tencent is enabled', () => {
+    expect(() =>
+      parseServerEnv({
+        ...validEnvironment,
+        AMA_TENCENT_INTEGRATION_ENABLED: 'true',
+      }),
+    ).toThrowError(/TENCENT_MEETING_MCP_URL/)
+
+    expect(() =>
+      parseServerEnv({
+        ...validEnvironment,
+        AMA_TENCENT_INTEGRATION_ENABLED: 'true',
+        TENCENT_MEETING_MCP_URL: 'http://insecure.example.com/mcp',
+        TENCENT_MEETING_MCP_TOKEN: 'tencent-token',
+      }),
+    ).toThrowError(/TENCENT_MEETING_MCP_URL/)
+
+    const environment = parseServerEnv({
+      ...validEnvironment,
+      AMA_TENCENT_INTEGRATION_ENABLED: 'true',
+      TENCENT_MEETING_MCP_URL: 'https://mcp.example.com/tencent',
+      TENCENT_MEETING_MCP_TOKEN: 'tencent-token',
+    })
+    expect(environment.features.tencent).toBe(true)
+  })
+
+  it('treats blank provider placeholders like absent configuration', () => {
+    const environment = parseServerEnv({
+      ...validEnvironment,
+      STRIPE_SECRET_KEY: '',
+      STRIPE_WEBHOOK_SECRET: '  ',
+      RESEND_API_KEY: '',
+      AMA_EMAIL_FROM: '',
+      TENCENT_MEETING_MCP_URL: '',
+      TENCENT_MEETING_MCP_TOKEN: '',
+    })
+    expect(environment.STRIPE_SECRET_KEY).toBeUndefined()
+    expect(environment.RESEND_API_KEY).toBeUndefined()
+    expect(environment.TENCENT_MEETING_MCP_URL).toBeUndefined()
+  })
+
+  it('reads public booking rate limits with safe defaults', () => {
+    const environment = parseServerEnv(validEnvironment)
+    expect(environment.AMA_PUBLIC_RATE_LIMIT_MAX_REQUESTS).toBe(10)
+    expect(environment.AMA_PUBLIC_RATE_LIMIT_WINDOW_SECONDS).toBe(60)
+
+    expect(() =>
+      parseServerEnv({
+        ...validEnvironment,
+        AMA_PUBLIC_RATE_LIMIT_MAX_REQUESTS: '0',
+      }),
+    ).toThrowError(/AMA_PUBLIC_RATE_LIMIT_MAX_REQUESTS/)
   })
 })

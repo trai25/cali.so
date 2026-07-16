@@ -63,6 +63,15 @@ function invalidEnvironmentError(error: z.ZodError) {
 
 const redisRestUrl = z.url().refine(isHttpsUrl)
 
+// A blank placeholder line in an env file means "not configured", not an
+// invalid credential, so empty values behave exactly like absent ones.
+function blankAsUndefined<Schema extends z.ZodType>(schema: Schema) {
+  return z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+    schema,
+  )
+}
+
 const serverEnvironmentSchema = z
   .object({
     DATABASE_URL: z.string().refine(isPostgresUrl),
@@ -72,6 +81,19 @@ const serverEnvironmentSchema = z
     RATE_LIMIT_HASH_KEY: z.string().refine(isBase64Key),
     GOOGLE_CLIENT_ID: z.string().trim().min(1).optional(),
     GOOGLE_CLIENT_SECRET: z.string().trim().min(1).optional(),
+    STRIPE_SECRET_KEY: blankAsUndefined(z.string().trim().min(1).optional()),
+    STRIPE_WEBHOOK_SECRET: blankAsUndefined(z.string().trim().min(1).optional()),
+    RESEND_API_KEY: blankAsUndefined(z.string().trim().min(1).optional()),
+    AMA_EMAIL_FROM: blankAsUndefined(
+      z
+        .string()
+        .trim()
+        .min(3)
+        .refine((value) => value.includes('@'))
+        .optional(),
+    ),
+    TENCENT_MEETING_MCP_URL: blankAsUndefined(z.url().refine(isHttpsUrl).optional()),
+    TENCENT_MEETING_MCP_TOKEN: blankAsUndefined(z.string().trim().min(1).optional()),
     UPSTASH_REDIS_REST_URL: redisRestUrl.optional(),
     UPSTASH_REDIS_REST_TOKEN: z.string().trim().min(1).optional(),
     KV_REST_API_URL: redisRestUrl.optional(),
@@ -97,6 +119,16 @@ const serverEnvironmentSchema = z
       .int()
       .positive()
       .default(60),
+    AMA_PUBLIC_RATE_LIMIT_MAX_REQUESTS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(10),
+    AMA_PUBLIC_RATE_LIMIT_WINDOW_SECONDS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(60),
     ...amaFeatureEnvironmentSchema.shape,
   })
   .superRefine(
@@ -110,6 +142,15 @@ const serverEnvironmentSchema = z
         GOOGLE_CLIENT_ID,
         GOOGLE_CLIENT_SECRET,
         AMA_GOOGLE_INTEGRATION_ENABLED,
+        STRIPE_SECRET_KEY,
+        STRIPE_WEBHOOK_SECRET,
+        AMA_PAYMENTS_ENABLED,
+        RESEND_API_KEY,
+        AMA_EMAIL_FROM,
+        AMA_BOOKING_FINALIZATION_ENABLED,
+        TENCENT_MEETING_MCP_URL,
+        TENCENT_MEETING_MCP_TOKEN,
+        AMA_TENCENT_INTEGRATION_ENABLED,
       },
       context,
     ) => {
@@ -181,6 +222,54 @@ const serverEnvironmentSchema = z
           path: ['GOOGLE_CLIENT_SECRET'],
           message:
             'Google OAuth client secret is required when Google is enabled',
+        })
+      }
+
+      if (AMA_PAYMENTS_ENABLED && !STRIPE_SECRET_KEY) {
+        context.addIssue({
+          code: 'custom',
+          path: ['STRIPE_SECRET_KEY'],
+          message: 'Stripe secret key is required when payments are enabled',
+        })
+      }
+      if (AMA_PAYMENTS_ENABLED && !STRIPE_WEBHOOK_SECRET) {
+        context.addIssue({
+          code: 'custom',
+          path: ['STRIPE_WEBHOOK_SECRET'],
+          message:
+            'Stripe webhook signing secret is required when payments are enabled',
+        })
+      }
+      if (AMA_BOOKING_FINALIZATION_ENABLED && !RESEND_API_KEY) {
+        context.addIssue({
+          code: 'custom',
+          path: ['RESEND_API_KEY'],
+          message:
+            'Resend API key is required when booking finalization is enabled',
+        })
+      }
+      if (AMA_BOOKING_FINALIZATION_ENABLED && !AMA_EMAIL_FROM) {
+        context.addIssue({
+          code: 'custom',
+          path: ['AMA_EMAIL_FROM'],
+          message:
+            'AMA sender address is required when booking finalization is enabled',
+        })
+      }
+      if (AMA_TENCENT_INTEGRATION_ENABLED && !TENCENT_MEETING_MCP_URL) {
+        context.addIssue({
+          code: 'custom',
+          path: ['TENCENT_MEETING_MCP_URL'],
+          message:
+            'Tencent Meeting MCP URL is required when Tencent is enabled',
+        })
+      }
+      if (AMA_TENCENT_INTEGRATION_ENABLED && !TENCENT_MEETING_MCP_TOKEN) {
+        context.addIssue({
+          code: 'custom',
+          path: ['TENCENT_MEETING_MCP_TOKEN'],
+          message:
+            'Tencent Meeting MCP token is required when Tencent is enabled',
         })
       }
     },

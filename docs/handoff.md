@@ -42,6 +42,14 @@ Current as of July 2026.
   limits, audit events, and the strict admin CSP remain in force. Public AMA
   mutations, payment, provider, and finalization capabilities stay disabled for
   the v3 production launch.
+- The complete paid AMA booking system (#79, slices #82 through #87) is
+  implemented behind those switches: public `/ama` and `/ama/book`, Slot Holds
+  with a Postgres exclusion guarantee, Stripe-hosted Checkout with an
+  authoritative signed webhook, durable finalization (Google Meet, Tencent
+  Meeting over MCP, Resend email, Manage Links), guest rescheduling and
+  refunds, owner operations in `/admin/ama`, reminders, and 90-day Booking
+  Brief retention. `docs/ama-booking-operations.md` is the environment and
+  operations reference.
 - Rate limits use Upstash only in Production. Preview persists its limits in
   the isolated Neon database, while Local and CI use process-local limits.
 - Security baseline controls from PR #97 remain mandatory: CSP and security
@@ -138,14 +146,20 @@ The Vercel runtime receives only the CRUD-only `DATABASE_URL`. Never put
   `false` for the v3 launch; owner admin has no capability switch.
 - Design references are private. Public code and documentation use only the
   vocabulary in `docs/design-language.md`.
+- Local builds validate the full server environment. Keep `.env.local`
+  aligned with `.env.example`; blank provider placeholders are fine, but the
+  always-required values (`ADMIN_EMAIL`, `AMA_ENCRYPTION_KEY`,
+  `RATE_LIMIT_HASH_KEY`, `SITE_URL`, Bunny media) must be present.
 
 ## Post-launch work
 
 - Maintain #93's Clerk-native passkey-first high-impact boundary without
   disabling owner admin. Hosted setup, session revocation, credential rotation,
   and Clerk's server-side factor-strategy limitation are documented in
-  `docs/security/clerk-admin-operations.md`. Resume the public AMA product
-  slices (#82 through #87) only behind their security and privacy gates.
+  `docs/security/clerk-admin-operations.md`. The public AMA product slices
+  (#82 through #87) are implemented and fail closed; enabling them in
+  production requires the provider credentials and hosted checks in
+  `docs/ama-booking-operations.md`.
 - Revisit Bunny S3 preview constraints and provider capabilities before
   expanding the Media Library beyond the curated photo workflow.
 - Re-enable private capabilities only after their provider, retention,
