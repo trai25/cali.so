@@ -1,23 +1,15 @@
-import { readFile } from 'node:fs/promises'
-
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { drizzle } from 'drizzle-orm/pglite'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('server-only', () => ({}))
+
+import { usePGliteTestClient } from '~/db/testing/pglite'
 
 import {
   createMediaIngestionRepository,
   type MediaIngestionDatabase,
 } from './repository'
-
-const migrations = [
-  new URL('../../../db/migrations/0005_media_catalog.sql', import.meta.url),
-  new URL(
-    '../../../db/migrations/0009_media_catalog_state.sql',
-    import.meta.url,
-  ),
-]
 const intentInput = {
   id: '11111111-1111-4111-8111-111111111111',
   ownerUserId: 'owner_01',
@@ -32,23 +24,19 @@ const intentInput = {
 }
 
 describe('Media Library ingestion repository', () => {
+  const getClient = usePGliteTestClient([
+    '0005_media_catalog.sql',
+    '0009_media_catalog_state.sql',
+  ])
   let client: PGlite
   let repository: ReturnType<typeof createMediaIngestionRepository>
 
-  beforeEach(async () => {
-    client = new PGlite()
-    for (const url of migrations) {
-      const migration = await readFile(url, 'utf8')
-      await client.exec(migration.replaceAll('--> statement-breakpoint', ''))
-    }
+  beforeEach(() => {
+    client = getClient()
     const database = drizzle(client)
     repository = createMediaIngestionRepository(
       () => database as unknown as MediaIngestionDatabase,
     )
-  })
-
-  afterEach(async () => {
-    await client.close()
   })
 
   it('returns the first Upload Intent for an idempotency replay', async () => {

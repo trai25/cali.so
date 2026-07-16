@@ -1,44 +1,33 @@
-import { readFile } from 'node:fs/promises'
-
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { drizzle } from 'drizzle-orm/pglite'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('server-only', () => ({}))
+
+import { usePGliteTestClient } from '~/db/testing/pglite'
 
 import {
   createMediaPurgeRepository,
   type MediaPurgeDatabase,
 } from './repository'
-
-const migrations = [
-  new URL('../../../db/migrations/0005_media_catalog.sql', import.meta.url),
-  new URL('../../../db/migrations/0006_photo_selection.sql', import.meta.url),
-  new URL(
-    '../../../db/migrations/0007_photo_publication_revision.sql',
-    import.meta.url,
-  ),
-  new URL('../../../db/migrations/0008_media_purge_progress.sql', import.meta.url),
-  new URL(
-    '../../../db/migrations/0009_media_catalog_state.sql',
-    import.meta.url,
-  ),
-]
 const assetId = '11111111-1111-4111-8111-111111111111'
 const intentId = '22222222-2222-4222-8222-222222222222'
 const firstClaimToken = '33333333-3333-4333-8333-333333333333'
 const secondClaimToken = '44444444-4444-4444-8444-444444444444'
 
 describe('Media Asset Purge repository', () => {
+  const getClient = usePGliteTestClient([
+    '0005_media_catalog.sql',
+    '0006_photo_selection.sql',
+    '0007_photo_publication_revision.sql',
+    '0008_media_purge_progress.sql',
+    '0009_media_catalog_state.sql',
+  ])
   let client: PGlite
   let repository: ReturnType<typeof createMediaPurgeRepository>
 
   beforeEach(async () => {
-    client = new PGlite()
-    for (const migrationUrl of migrations) {
-      const migration = await readFile(migrationUrl, 'utf8')
-      await client.exec(migration.replaceAll('--> statement-breakpoint', ''))
-    }
+    client = getClient()
     await client.query(
       `INSERT INTO media_upload_intents
         (id, owner_user_id, idempotency_key, original_key, content_type,
@@ -74,8 +63,6 @@ describe('Media Asset Purge repository', () => {
     const database = drizzle(client) as unknown as MediaPurgeDatabase
     repository = createMediaPurgeRepository(() => database)
   })
-
-  afterEach(async () => client.close())
 
   function claimInput(overrides: Record<string, unknown> = {}) {
     return {
