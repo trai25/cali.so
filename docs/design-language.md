@@ -33,6 +33,7 @@ it on chrome.
 | Exit (any) | ~2/3 of its enter | `--ease-swift` |
 | Photo pick-up / settle | 300–350ms | `--ease-spring` |
 | Shared-element page transition | 300–350ms | `--ease-swift` |
+| Content-sheet page transition | 210ms exit / 320ms enter | `--ease-swift` |
 
 Shadow scale (one alpha, growing throw — don't invent one-off shadows):
 
@@ -52,6 +53,12 @@ Hard rules:
   animated.
 - Elements that move together share one duration and easing (card + its
   shadow, cover + its caption).
+- Route changes keep the ambient guides, dock, and other global chrome fixed.
+  Only the route content sheet moves: a small 8–18px translation, less than
+  half a degree of rotation, and opacity. Forward and explicitly tagged back
+  links reverse the horizontal direction. Browser history without a tag gets
+  the neutral sheet motion. Shared post covers and titles remain separate
+  morph elements. Reduced motion swaps every route instantly.
 - Scroll reveals are allowed only as gentle arrivals: below-fold long-form
   blocks may sharpen in (blur 2px → 0 + fade, 300ms `--ease-swift`, ≤45ms
   stagger within a batch) as they enter the viewport. Never parallax, never
@@ -70,15 +77,14 @@ Hard rules:
   Weights 400/500/600 only, as `--font-weight-{normal,medium,semibold}`
   variables. Weight never changes on hover or selection — state is shown with
   color, never with weight or size.
-- **One size for chrome.** Site chrome — header, nav, footer, list rows,
-  dates, section labels, even page-level headings outside post bodies — is a
-  single size (14px, letter-spacing −0.011em); hierarchy comes from weight
-  and color only. Resist adding a size before exhausting weight + color.
-- **One base size: 14px.** Post bodies match the chrome at 14px/1.7 (CJK
-  line-height 1.85) — density is part of the print voice. Post titles may
-  still be large; prose h2 is 18px, h3 16px, code 13px. Form inputs are the
-  one exception: they stay ≥16px to prevent iOS zoom. Headings use
-  `text-wrap: balance` and tighter letter-spacing as size grows.
+- **Chrome stays compact.** Navigation, footer, dates, section labels, and
+  utility controls remain 14px with letter-spacing −0.011em. Compact chrome
+  provides contrast against the editorial content instead of flattening it.
+- **Editorial scale.** List titles and project rows are 15px. Homepage and
+  introductory paragraphs are 16px/1.7. Post bodies are 16px/1.72, with CJK
+  at 1.9. Post titles scale from 28px to 32px; prose h2 is 20px/1.35 and h3 is
+  16px/1.45. Code remains 13px. Form inputs stay ≥16px to prevent iOS zoom.
+  Headings use `text-wrap: balance` and tighter letter-spacing as size grows.
 - Content column is narrow: ~600px (`37.5rem`) plus padding.
 - `font-variant-numeric: tabular-nums` on anything that counts: dates in
   lists, reading time, subscriber counts.
@@ -88,8 +94,14 @@ Hard rules:
 ## Color, borders, dark mode
 
 - Grays are a numbered scale (`--gray-1` … `--gray-12`) that flips wholesale
-  in dark mode. Components reference scale variables, never Tailwind `dark:`
-  overrides — if a component needs a `dark:` modifier, the token is wrong.
+  in dark mode. The public scale carries a slight warm-paper hue; admin keeps
+  its neutral product palette. Headings use the strongest ink, body copy steps
+  down two levels, and metadata steps down again. Components reference scale
+  variables, never Tailwind `dark:` overrides — if a component needs a
+  `dark:` modifier, the token is wrong.
+- Text selection uses a translucent yellow-green highlighter token and never
+  changes the selected text color. The dark token lowers opacity so it reads
+  as marker on dark paper rather than a luminous block.
 - 1px borders are the exception: prefer `box-shadow: 0 0 0 1px` for card
   edges (blends with any background) and hairline dividers via
   `--border-hairline` (0.5px on retina, 1px otherwise).
@@ -222,6 +234,10 @@ open rich hover cards. The contract:
   own contrast), and un-proxied fallback icons stay untouched. Refresh the metadata
   from the same first-party service with
   `node scripts/refresh-link-previews.mjs`.
+- **Link texture.** Inline prose and homepage contact links use a fine dotted
+  underline at 38% current ink. Hover and keyboard focus deepen both text and
+  decoration to full ink. Dots reuse the catalog-leader and drafting
+  vocabulary; list rows, cards, shelves, and navigation remain undecorated.
 - **External-link mark.** Text links that leave the site carry the shared
   northeast arrow inline; internal links, RSS, and Email do not. Shelf covers
   are selection controls only. Each shelf instead keeps one plain-text
@@ -352,17 +368,16 @@ and chrome develop without rotation.
 
 ## Selective focus
 
-The governing attention grammar: **only the thing being attended to is
-sharp.** Applications:
+The governing attention grammar: **the thing being attended to keeps full
+ink.** Applications:
 
-- **List rows (writing index, home list)**: hovering a row blurs (~1–2px) and
-  dims everything else on the page over ~200ms `--ease-swift`; mouse-out
-  restores instantly. The hovered row itself does not move.
+- **List rows (writing index, home list)**: hovering a row dims its siblings to
+  44% opacity over 180ms `--ease-swift`; mouse-out restores instantly. Rows
+  remain sharp and the hovered row itself does not move.
 - **Media loading**: images/video in card grids sit as blur-up placeholders
   and resolve to sharp when loaded or attended.
-- Focus-pull requires `@media (hover: hover) and (pointer: fine)` and is
-  fully disabled under `prefers-reduced-motion` (no blur transitions —
-  content stays sharp).
+- Focus-pull requires `@media (hover: hover) and (pointer: fine)` and is fully
+  disabled under `prefers-reduced-motion`.
 
 ## Post marginalia
 
@@ -380,13 +395,16 @@ and reveals in place over the left gutter without moving itself or the article
 on the x-axis. Across that compact range, opening the rail also develops a
 masked 8px backdrop blur that fades into the page and leaves when the rail
 closes, keeping overlapping prose quiet without shifting it. The rail itself
-has no panel background, border, or back link: compact 1px ticks and
+has no panel background or border: compact 1px ticks and
 two-line-clamped labels sit directly in the margin. Fine-pointer layouts use a
 9px vertical step; coarse-pointer layouts use an 11px step so the four steps
 between landmarks provide non-overlapping 44px hit regions. Labels overlay that
 fixed track so wrapping never changes its cadence.
 Active, hovered, and keyboard-focused labels shift right to clear the longer
-lead tick.
+lead tick. A localized 44px back link sits above the map and returns to the
+Writing index with a backward page transition. Back to top sits below the map
+and becomes available after 75% of one viewport. Reduced motion makes the top
+jump instant.
 
 Below 40rem the same map becomes a top-center reading island. Its collapsed
 44px surface is a true pill showing circular document progress, the
@@ -395,7 +413,8 @@ title card clears the reading line, then retreats when the reader returns to the
 post hero. Opening reveals one continuous translucent surface around the tick
 map using opacity and transform only. The expanded list starts at the first
 heading because the article title already remains in the island header. The
-post stays in place underneath.
+post stays in place underneath. Writing remains above the map and Top remains
+in the expanded island footer so the collapsed 44px surface stays quiet.
 Landmark jumps collapse the compact map after selection; tapping outside or
 pressing Escape also closes it. It keeps bottom-dock and safe-area
 clearance, and the map scrolls internally when its fixed rhythm exceeds the

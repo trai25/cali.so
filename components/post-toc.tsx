@@ -1,11 +1,13 @@
 'use client'
 
 import { animate, stagger } from 'motion'
+import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 
 import type { PostRailNode } from '~/lib/content'
 import { localize, useLocale } from '~/lib/locale-client'
+import { localePath } from '~/lib/locale-route'
 
 const DESKTOP_QUERY = '(min-width: 64rem)'
 const DESKTOP_EXIT_DURATION = 0.2
@@ -23,6 +25,21 @@ function getReadingTop(target: HTMLElement) {
   // RevealScope gives unread prose a temporary 5px translate. Navigation and
   // scroll-spy should use the heading's settled layout position instead.
   return rectTop - new DOMMatrixReadOnly(transform).m42
+}
+
+function WayfindingArrow({ direction }: { direction: 'back' | 'top' }) {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden>
+      <path
+        d={direction === 'back' ? 'M10 6H2M5 3 2 6l3 3' : 'M6 10V2M3 5l3-3 3 3'}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
 }
 
 export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: PostRailNode[] }) {
@@ -46,6 +63,7 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
   const [phone, setPhone] = useState(false)
   const [phoneQueryReady, setPhoneQueryReady] = useState(false)
   const [phoneIslandVisible, setPhoneIslandVisible] = useState(false)
+  const [backToTopVisible, setBackToTopVisible] = useState(false)
   const [active, setActive] = useState(landmarks[0]?.id)
   const activeRef = useRef(active)
   const progressCircleRef = useRef<SVGCircleElement>(null)
@@ -141,6 +159,12 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
       setDesktop(query.matches)
 
       if (query.matches && !desktopEntrancePlayedRef.current) {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          desktopEntrancePlayedRef.current = true
+          setOpen(true)
+          return
+        }
+
         if (frame) window.cancelAnimationFrame(frame)
         frame = window.requestAnimationFrame(() => {
           frame = 0
@@ -207,6 +231,7 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
       const scrollable = document.documentElement.scrollHeight - window.innerHeight
       const progress = scrollable > 0 ? Math.min(1, Math.max(0, window.scrollY / scrollable)) : 0
       progressCircleRef.current?.setAttribute('stroke-dasharray', `${progress} 1`)
+      setBackToTopVisible(window.scrollY >= window.innerHeight * 0.75)
       const titleCard = document.querySelector('.post-title-card')
       setPhoneIslandVisible(
         titleCard ? titleCard.getBoundingClientRect().bottom <= TARGET_OFFSET : window.scrollY > 1,
@@ -251,6 +276,11 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
       window.scrollTo({ top: window.scrollY + getReadingTop(target) - TARGET_OFFSET })
       history.replaceState(null, '', `#${id}`)
     })
+  }
+
+  function returnToTop() {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' })
   }
 
   if (landmarks.length < 2) return null
@@ -346,6 +376,17 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
           inert={open ? undefined : true}
         >
           <div className="post-minimap-phone-surface backdrop-blur-[12px]" aria-hidden />
+          <div className="post-minimap-utilities post-minimap-utilities-top">
+            <Link
+              href={localePath(locale, '/blog')}
+              transitionTypes={['page-back']}
+              className="post-minimap-utility"
+              aria-label={localize(locale, '返回写作', 'Back to writing')}
+            >
+              <WayfindingArrow direction="back" />
+              <span>{localize(locale, '写作', 'Writing')}</span>
+            </Link>
+          </div>
           <div className="post-minimap-clip">
             <div className="post-minimap-nodes">
               {displayedNodes.map((node) => (
@@ -368,6 +409,20 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
                 </div>
               ))}
             </div>
+          </div>
+          <div className="post-minimap-utilities post-minimap-utilities-bottom">
+            <button
+              type="button"
+              className="post-minimap-utility post-minimap-back-to-top"
+              aria-label={localize(locale, '返回顶部', 'Back to top')}
+              aria-hidden={!backToTopVisible}
+              tabIndex={backToTopVisible ? 0 : -1}
+              data-visible={backToTopVisible || undefined}
+              onClick={returnToTop}
+            >
+              <WayfindingArrow direction="top" />
+              <span>{localize(locale, '顶部', 'Top')}</span>
+            </button>
           </div>
         </nav>
       </div>

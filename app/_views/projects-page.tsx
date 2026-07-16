@@ -14,7 +14,7 @@ export function ProjectsPageView() {
           <T zh="项目" en="Projects" />
         </h1>
         <p
-          className="enter mt-4 text-balance text-sm leading-relaxed text-foreground"
+          className="page-introduction enter mt-4 text-balance"
           style={{ '--enter-delay': '70ms' } as React.CSSProperties}
         >
           <T

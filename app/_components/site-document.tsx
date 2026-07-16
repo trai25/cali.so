@@ -43,7 +43,7 @@ export async function SiteDocument({
       lang={english ? 'en' : 'zh-CN'}
       data-locale={english ? 'en' : undefined}
       suppressHydrationWarning
-      className={cn('font-sans', fontVariables)}
+      className={cn('font-sans', fontVariables, !restoreLocale && 'public-site')}
     >
       <head>
         {/* Pre-paint handles the visited flag and theme. Locale restoration
@@ -56,7 +56,21 @@ export async function SiteDocument({
           <AmbientBackground />
           <div className="flex min-h-screen flex-col pb-20">
             <main className="flex-1 pt-14">
-              <ViewTransition>{children}</ViewTransition>
+              <ViewTransition
+                enter={{
+                  'page-forward': 'page-forward',
+                  'page-back': 'page-back',
+                  default: 'page-sheet',
+                }}
+                exit={{
+                  'page-forward': 'page-forward',
+                  'page-back': 'page-back',
+                  default: 'page-sheet',
+                }}
+                default="none"
+              >
+                {children}
+              </ViewTransition>
             </main>
             <SiteFooter social={social} github={github} locale={locale} />
           </div>
