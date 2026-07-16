@@ -17,7 +17,7 @@ export type AltTextRendition = {
 
 export type AltTextGenerationTarget = {
   mediaAssetId: string
-  lifecycle: 'active' | 'archived' | 'purging'
+  catalogState: 'active' | 'archived' | 'purging'
   processingState:
     | 'upload_initiated'
     | 'original_verified'
@@ -101,7 +101,7 @@ function validSuggestion(value: string) {
 function assertEligible(target: AltTextGenerationTarget) {
   const rendition = target.rendition
   if (
-    target.lifecycle !== 'active' ||
+    target.catalogState !== 'active' ||
     target.processingState !== 'ready' ||
     !rendition
   ) {

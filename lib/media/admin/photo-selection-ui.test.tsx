@@ -11,7 +11,7 @@ function asset(id: string, name: string): MediaAssetReviewRecord {
   return {
     id,
     createdAt: new Date('2026-07-15T12:00:00.000Z'),
-    lifecycle: 'active',
+    catalogState: 'active',
     processingState: 'ready',
     width: 1600,
     height: 1200,

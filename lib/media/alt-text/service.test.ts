@@ -18,7 +18,7 @@ const now = new Date('2026-07-15T10:00:00.000Z')
 
 const eligibleTarget: AltTextGenerationTarget = {
   mediaAssetId,
-  lifecycle: 'active',
+  catalogState: 'active',
   processingState: 'ready',
   rendition: {
     objectKey: `renditions/${mediaAssetId}/640-${checksumSha256}.jpg`,
@@ -122,7 +122,7 @@ describe('Media Library Alt Text Suggestion service', () => {
 
   it('rejects a non-ready or Archived Media Asset', async () => {
     const harness = createHarness({
-      target: { ...eligibleTarget, lifecycle: 'archived' },
+      target: { ...eligibleTarget, catalogState: 'archived' },
     })
 
     await expect(

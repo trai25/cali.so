@@ -18,6 +18,10 @@ const migrations = [
     '../../../db/migrations/0007_photo_publication_revision.sql',
     import.meta.url,
   ),
+  new URL(
+    '../../../db/migrations/0009_media_catalog_state.sql',
+    import.meta.url,
+  ),
 ]
 const assetId = '11111111-1111-4111-8111-111111111111'
 const intentId = '22222222-2222-4222-8222-222222222222'
@@ -38,8 +42,7 @@ describe('Media Asset review repository', () => {
         (id, owner_user_id, idempotency_key, original_key, content_type,
          byte_size, checksum_sha256, expires_at, created_at)
        VALUES ($1, 'owner_01', 'upload_01', 'originals/photo.jpg',
-               'image/jpeg', 1000, $2, '2026-07-16T00:00:00Z',
-               '2026-07-15T09:00:00Z')`,
+               'image/jpeg', 1000, $2, '2026-07-16T00:00:00Z', '2026-07-15T00:00:00Z')`,
       [intentId, 'a'.repeat(64)],
     )
     await client.query(
@@ -69,7 +72,7 @@ describe('Media Asset review repository', () => {
 
   afterEach(async () => client.close())
 
-  it('lists only owned lifecycle views with public 640-pixel previews', async () => {
+  it('lists only owned catalogState views with public 640-pixel previews', async () => {
     await expect(
       repository.listOwnedAssets({ ownerUserId: 'owner_02', view: 'active' }),
     ).resolves.toEqual([])
@@ -78,7 +81,7 @@ describe('Media Asset review repository', () => {
     ).resolves.toMatchObject([
       {
         id: assetId,
-        lifecycle: 'active',
+        catalogState: 'active',
         previewRendition: {
           src: 'https://media.example.com/renditions/photo-640.jpg',
           width: 640,
@@ -88,7 +91,7 @@ describe('Media Asset review repository', () => {
     ])
 
     await client.query(
-      `UPDATE media_assets SET lifecycle = 'archived', archived_at = now()
+      `UPDATE media_assets SET catalog_state = 'archived', archived_at = now()
        WHERE id = $1`,
       [assetId],
     )
@@ -267,7 +270,7 @@ describe('Media Asset review repository', () => {
     expect(archived).toMatchObject({
       status: 'updated',
       asset: {
-        lifecycle: 'archived',
+        catalogState: 'archived',
         previewRendition: {
           src: 'https://media.example.com/renditions/photo-640.jpg',
         },
@@ -276,7 +279,7 @@ describe('Media Asset review repository', () => {
     expect(restored).toMatchObject({
       status: 'updated',
       asset: {
-        lifecycle: 'active',
+        catalogState: 'active',
         archivedAt: null,
         previewRendition: {
           src: 'https://media.example.com/renditions/photo-640.jpg',
