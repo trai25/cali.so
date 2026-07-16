@@ -236,6 +236,7 @@ test('public motion and typography follow the design contract', async ({ page })
   await page.goto('/en/blog/do-buttons-need-pointer-cursors')
   await expect(page.locator('.prose')).toHaveCSS('font-size', '16px')
   await expect(page.locator('.prose h2').first()).toHaveCSS('font-size', '20px')
+  await expect(page.getByRole('link', { name: 'Back to writing' })).toBeVisible()
   await expect(page.locator('.tweet-card-body')).toHaveCSS('font-size', '14px')
 
   const zoom = page.locator('.zoom-trigger').last()
@@ -303,10 +304,7 @@ test('keyboard controls restore focus across public overlays', async ({ page }) 
   await articleMap.focus()
   await page.keyboard.press('Enter')
   await expect(articleMap).toHaveAttribute('aria-expanded', 'true')
-  await expect(page.getByRole('link', { name: 'Back to writing' })).toHaveAttribute(
-    'href',
-    '/en/blog',
-  )
+  await expect(page.getByRole('link', { name: 'Back to writing' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Back to top' })).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(articleMap).toHaveAttribute('aria-expanded', 'false')

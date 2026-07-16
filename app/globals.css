@@ -3739,7 +3739,7 @@ html[data-locale='en'] [data-en-block] {
   }
 
   .post-minimap-utilities-top {
-    padding-block: 0.25rem 0.5rem;
+    display: none;
   }
 
   .post-minimap-utilities-bottom {

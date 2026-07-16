@@ -413,8 +413,9 @@ title card clears the reading line, then retreats when the reader returns to the
 post hero. Opening reveals one continuous translucent surface around the tick
 map using opacity and transform only. The expanded list starts at the first
 heading because the article title already remains in the island header. The
-post stays in place underneath. Writing remains above the map and Top remains
-in the expanded island footer so the collapsed 44px surface stays quiet.
+post stays in place underneath. The phone layout omits the Writing return link;
+Top remains in the expanded island footer so the collapsed 44px surface stays
+quiet.
 Landmark jumps collapse the compact map after selection; tapping outside or
 pressing Escape also closes it. It keeps bottom-dock and safe-area
 clearance, and the map scrolls internally when its fixed rhythm exceeds the
