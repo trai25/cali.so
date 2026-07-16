@@ -4,16 +4,23 @@ import type { Metadata } from 'next'
 import { T } from '~/lib/i18n'
 import { localeRoutePair } from '~/lib/locale-metadata'
 import { localePath, type Locale } from '~/lib/locale-route'
+import { nonPublicRobots } from '~/lib/non-public-metadata'
+
+const retiredCopy = {
+  zh: {
+    title: 'Newsletter 确认链接已停用',
+    description:
+      '这个旧链接不会再读取或更新任何订阅信息。Newsletter 服务已经停止，你仍然可以通过 RSS 阅读网站更新。',
+  },
+  en: {
+    title: 'Newsletter confirmation is retired',
+    description:
+      'This old link no longer reads or updates subscriber information. The newsletter service has ended, but site updates remain available through RSS.',
+  },
+} as const
 
 export function newsletterRetiredMetadata(locale: Locale): Metadata {
-  const title =
-    locale === 'en'
-      ? 'Newsletter confirmation retired'
-      : 'Newsletter 确认链接已停用'
-  const description =
-    locale === 'en'
-      ? 'Legacy newsletter confirmation links no longer process subscriber information.'
-      : '旧 Newsletter 确认链接不再处理订阅信息。'
+  const { title, description } = retiredCopy[locale]
   const pair = localeRoutePair('/confirm/retired')
 
   return {
@@ -29,7 +36,7 @@ export function newsletterRetiredMetadata(locale: Locale): Metadata {
       url: locale === 'en' ? pair.en : pair.zh,
     },
     twitter: { card: 'summary_large_image', title, description },
-    robots: { index: false, follow: false },
+    robots: nonPublicRobots,
   }
 }
 
@@ -50,14 +57,14 @@ export function NewsletterRetiredPageView({ locale }: { locale: Locale }) {
           className="mt-4 text-sm font-semibold tracking-[-0.011em]"
         >
           <T
-            zh="Newsletter 确认链接已停用"
-            en="Newsletter confirmation is retired"
+            zh={retiredCopy.zh.title}
+            en={retiredCopy.en.title}
           />
         </h1>
         <p className="mt-3 max-w-[32rem] text-sm leading-relaxed text-muted-foreground">
           <T
-            zh="这个旧链接不会再读取或更新任何订阅信息。Newsletter 服务已经停止，你仍然可以通过 RSS 阅读网站更新。"
-            en="This old link no longer reads or updates subscriber information. The newsletter service has ended, but site updates remain available through RSS."
+            zh={retiredCopy.zh.description}
+            en={retiredCopy.en.description}
           />
         </p>
         <nav

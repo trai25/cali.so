@@ -2,6 +2,7 @@ import Image from 'next/image'
 
 import { ExternalLabel } from '~/components/external-mark'
 import { T } from '~/lib/i18n'
+import { publicPageMetadata } from '~/lib/public-page-metadata'
 import { projects } from '~/lib/projects'
 
 export function ProjectsPageView() {
@@ -18,8 +19,8 @@ export function ProjectsPageView() {
           style={{ '--enter-delay': '70ms' } as React.CSSProperties}
         >
           <T
-            zh="这些年做过的一些产品、开源工具和小实验。有些实用，有些只是好玩，但每一个我都认真做过。"
-            en="A collection of products, open-source tools, and small experiments I’ve made over the years. Some useful, some playful, all made with care."
+            zh={publicPageMetadata.projects.zh.description}
+            en={publicPageMetadata.projects.en.description}
           />
         </p>
       </header>

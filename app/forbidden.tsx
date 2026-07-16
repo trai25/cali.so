@@ -1,10 +1,15 @@
 import type { Metadata } from 'next'
+import {
+  nonPublicDescriptions,
+  nonPublicRobots,
+} from '~/lib/non-public-metadata'
 
 import { ForbiddenPageView } from './_views/forbidden-page'
 
 export const metadata: Metadata = {
   title: 'Forbidden',
-  robots: { index: false, follow: false },
+  description: nonPublicDescriptions.forbidden,
+  robots: nonPublicRobots,
 }
 
 export default function Forbidden() {

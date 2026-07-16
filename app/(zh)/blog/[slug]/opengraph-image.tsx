@@ -2,14 +2,16 @@ import { notFound } from 'next/navigation'
 
 import { getAllPosts, getPost, isPostSlug } from '~/lib/content'
 import { createPostOgImage } from '~/lib/og-image'
+import { postOgImageMetadata } from '~/lib/og-image-metadata'
 
 export function generateStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }))
 }
 
-export const size = { width: 1200, height: 630 }
-export const contentType = 'image/png'
-export const alt = 'Cali Castle'
+export function generateImageMetadata({ params }: { params: { slug: string } }) {
+  if (!isPostSlug(params.slug)) return []
+  return postOgImageMetadata(getPost(params.slug), 'zh')
+}
 
 export default async function OpengraphImage({
   params,

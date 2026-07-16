@@ -2,12 +2,13 @@ import type { Metadata } from 'next'
 
 import { requireOwnerPage } from '~/lib/admin/server'
 import { getMediaAdminServices } from '~/lib/media/admin/server'
+import { nonPublicRobots } from '~/lib/non-public-metadata'
 
 import { PhotoSelectionEditor } from './PhotoSelectionEditor'
 
 export const metadata: Metadata = {
   title: 'Photo Selection',
-  robots: { index: false, follow: false },
+  robots: nonPublicRobots,
 }
 
 export default async function AdminPhotosPage() {

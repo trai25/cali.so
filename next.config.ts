@@ -24,6 +24,12 @@ const legacyRewrites = legacyUrlManifest.entries.flatMap((entry) =>
 const exposeNavigationTestingApi =
   process.env.NEXT_INSTANT_NAVIGATION_TEST === '1'
 
+const ogRuntimeAssets = [
+  './app/_fonts/*.woff2',
+  './node_modules/harfbuzzjs/**/*',
+  './node_modules/subset-font/**/*',
+]
+
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
@@ -32,8 +38,13 @@ const nextConfig: NextConfig = {
   // slug is dynamic, so output tracing cannot discover these files from the
   // readFile calls on its own when packaging serverless functions.
   outputFileTracingIncludes: {
-    '/blog/\\[slug\\]': ['./content/blog/**/*'],
-    '/en/blog/\\[slug\\]': ['./content/blog/**/*'],
+    '/blog/**': ['./content/blog/**/*', ...ogRuntimeAssets],
+    '/en/blog/**': ['./content/blog/**/*', ...ogRuntimeAssets],
+    '/newsletters/**': ['./content/newsletters/**/*', ...ogRuntimeAssets],
+    '/en/newsletters/**': [
+      './content/newsletters/**/*',
+      ...ogRuntimeAssets,
+    ],
     '/content/\\[\\.\\.\\.path\\]': [
       './content/blog/**/*',
       './content/newsletters/**/*',

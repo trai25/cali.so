@@ -5,16 +5,15 @@ import { AMA_TOPIC_LABELS, AMA_TOPICS } from '~/lib/ama/booking/topics'
 import { T } from '~/lib/i18n'
 import { localeMetadata } from '~/lib/locale-metadata'
 import { localePath, type Locale } from '~/lib/locale-route'
+import { publicPageMetadata } from '~/lib/public-page-metadata'
 
 export function amaPageMetadata(locale: Locale): Metadata {
+  const copy = publicPageMetadata.ama[locale]
   return localeMetadata({
     locale,
     path: '/ama',
-    title: locale === 'en' ? 'AMA' : '一对一',
-    description:
-      locale === 'en'
-        ? 'A focused hour with Cali. One 60 minute one-to-one AMA Session about engineering, design, career, or building products.'
-        : '与 Cali 的专注一小时。一场 60 分钟的一对一 AMA，聊工程、设计、职业或做产品。',
+    title: copy.title,
+    description: copy.description,
   })
 }
 

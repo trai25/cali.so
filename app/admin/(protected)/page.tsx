@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 
 import { requireOwnerPage } from '~/lib/admin/server'
 import { getAmaAdminServices } from '~/lib/ama/admin/server'
+import { nonPublicRobots } from '~/lib/non-public-metadata'
 
 import {
   AdminDashboard,
@@ -11,7 +12,7 @@ import {
 
 export const metadata: Metadata = {
   title: 'AMA Admin',
-  robots: { index: false, follow: false },
+  robots: nonPublicRobots,
 }
 
 // Admin account data intentionally renders per request.
