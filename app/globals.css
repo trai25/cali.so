@@ -3936,6 +3936,16 @@ html[data-locale='en'] [data-en-block] {
   display: none;
 }
 
+/* The shared tab item carries a 44px touch target; inside this pointer
+   chrome that balloons every row, so fine pointers get compact 32px
+   pills. Touch keeps the full target. */
+@media (hover: hover) and (pointer: fine) {
+  .prefs-panel [role='tab'] {
+    height: 2rem;
+    min-width: 2.5rem;
+  }
+}
+
 .prefs-panel [role='tab'][aria-selected='true'] {
   border-radius: 999px;
   background: var(--foreground);
