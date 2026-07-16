@@ -57,6 +57,13 @@
       "when": 1784104946550,
       "tag": "0008_media_purge_progress",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1784261629000,
+      "tag": "0009_media_catalog_state",
+      "breakpoints": true
     }
   ]
 }

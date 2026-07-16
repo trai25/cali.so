@@ -25,7 +25,7 @@ async function responseJson(response: Response) {
 
 function eligible(asset: MediaAssetReviewRecord) {
   return (
-    asset.lifecycle === 'active' &&
+    asset.catalogState === 'active' &&
     asset.processingState === 'ready' &&
     asset.previewRendition !== null &&
     asset.altTextApprovedAt !== null &&

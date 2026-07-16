@@ -187,7 +187,7 @@ export const mediaAssets = pgTable(
       .notNull()
       .references(() => mediaUploadIntents.id, { onDelete: 'restrict' }),
     kind: varchar('kind', { length: 16 }).default('image').notNull(),
-    lifecycle: varchar('lifecycle', { length: 16 })
+    catalogState: varchar('catalog_state', { length: 16 })
       .$type<'active' | 'archived' | 'purging'>()
       .default('active')
       .notNull(),
@@ -246,14 +246,14 @@ export const mediaAssets = pgTable(
     uniqueIndex('media_assets_upload_intent_uidx').on(table.uploadIntentId),
     uniqueIndex('media_assets_original_key_uidx').on(table.originalKey),
     index('media_assets_library_idx').on(
-      table.lifecycle,
+      table.catalogState,
       table.processingState,
       table.createdAt,
     ),
     check('media_assets_kind_check', sql`${table.kind} = 'image'`),
     check(
-      'media_assets_lifecycle_check',
-      sql`${table.lifecycle} IN ('active', 'archived', 'purging')`,
+      'media_assets_catalog_state_check',
+      sql`${table.catalogState} IN ('active', 'archived', 'purging')`,
     ),
     check(
       'media_assets_processing_state_check',
@@ -301,7 +301,7 @@ export const mediaAssets = pgTable(
     ),
     check(
       'media_assets_archive_check',
-      sql`(${table.lifecycle} = 'active' AND ${table.archivedAt} IS NULL AND ${table.purgeStartedAt} IS NULL) OR (${table.lifecycle} = 'archived' AND ${table.archivedAt} IS NOT NULL AND ${table.purgeStartedAt} IS NULL) OR (${table.lifecycle} = 'purging' AND ${table.archivedAt} IS NOT NULL AND ${table.purgeStartedAt} IS NOT NULL)`,
+      sql`(${table.catalogState} = 'active' AND ${table.archivedAt} IS NULL AND ${table.purgeStartedAt} IS NULL) OR (${table.catalogState} = 'archived' AND ${table.archivedAt} IS NOT NULL AND ${table.purgeStartedAt} IS NULL) OR (${table.catalogState} = 'purging' AND ${table.archivedAt} IS NOT NULL AND ${table.purgeStartedAt} IS NOT NULL)`,
     ),
   ],
 )

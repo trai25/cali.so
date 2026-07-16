@@ -11,10 +11,13 @@ import {
   type MediaAltTextDatabase,
 } from './repository'
 
-const migrationUrl = new URL(
-  '../../../db/migrations/0005_media_catalog.sql',
-  import.meta.url,
-)
+const migrations = [
+  new URL('../../../db/migrations/0005_media_catalog.sql', import.meta.url),
+  new URL(
+    '../../../db/migrations/0009_media_catalog_state.sql',
+    import.meta.url,
+  ),
+]
 const mediaAssetId = '11111111-1111-4111-8111-111111111111'
 const uploadIntentId = '22222222-2222-4222-8222-222222222222'
 const checksum = 'a'.repeat(64)
@@ -26,8 +29,10 @@ describe('Media Library Alt Text Suggestion repository', () => {
 
   beforeEach(async () => {
     client = new PGlite()
-    const migration = await readFile(migrationUrl, 'utf8')
-    await client.exec(migration.replaceAll('--> statement-breakpoint', ''))
+    for (const url of migrations) {
+      const migration = await readFile(url, 'utf8')
+      await client.exec(migration.replaceAll('--> statement-breakpoint', ''))
+    }
     const database = drizzle(client)
     repository = createMediaAltTextRepository(
       () => database as unknown as MediaAltTextDatabase,
@@ -79,7 +84,7 @@ describe('Media Library Alt Text Suggestion repository', () => {
       }),
     ).resolves.toEqual({
       mediaAssetId,
-      lifecycle: 'active',
+      catalogState: 'active',
       processingState: 'ready',
       rendition: {
         objectKey: `renditions/${mediaAssetId}/640-${checksum}.jpg`,
@@ -144,7 +149,7 @@ describe('Media Library Alt Text Suggestion repository', () => {
     await repository.saveSuggestion(first)
     await client.query(
       `UPDATE media_assets
-       SET lifecycle = 'archived', archived_at = now()
+       SET catalog_state = 'archived', archived_at = now()
        WHERE id = $1`,
       [mediaAssetId],
     )

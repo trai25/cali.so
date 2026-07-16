@@ -15,6 +15,10 @@ const migrations = [
     import.meta.url,
   ),
   new URL('../../../db/migrations/0008_media_purge_progress.sql', import.meta.url),
+  new URL(
+    '../../../db/migrations/0009_media_catalog_state.sql',
+    import.meta.url,
+  ),
 ]
 
 const checksum = 'a'.repeat(64)
@@ -270,14 +274,14 @@ describe('Media Library catalog migration', () => {
     ).rejects.toThrow()
   })
 
-  it('enforces lifecycle timestamps and retryable processing failures', async () => {
+  it('enforces catalog state timestamps and retryable processing failures', async () => {
     const intent = await createUploadIntent()
     const asset = await createMediaAsset(intent.id, {
       originalKey: intent.originalKey,
     })
 
     await expect(
-      client.query(`UPDATE media_assets SET lifecycle = 'archived' WHERE id = $1`, [
+      client.query(`UPDATE media_assets SET catalog_state = 'archived' WHERE id = $1`, [
         asset.id,
       ]),
     ).rejects.toThrow()
@@ -292,7 +296,7 @@ describe('Media Library catalog migration', () => {
     await expect(
       client.query(
         `UPDATE media_assets
-         SET lifecycle = 'archived', archived_at = now()
+         SET catalog_state = 'archived', archived_at = now()
          WHERE id = $1`,
         [asset.id],
       ),

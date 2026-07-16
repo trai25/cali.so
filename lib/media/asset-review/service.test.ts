@@ -15,7 +15,7 @@ function fixture() {
   let record: MediaAssetReviewRecord = {
     id: mediaAssetId,
     createdAt: new Date('2025-05-08T00:31:34.000Z'),
-    lifecycle: 'active',
+    catalogState: 'active',
     processingState: 'ready',
     width: 4032,
     height: 3024,
@@ -50,7 +50,7 @@ function fixture() {
       return id === record.id ? record : null
     },
     async updateDisplayMetadata(input) {
-      if (record.lifecycle !== 'active') return null
+      if (record.catalogState !== 'active') return null
       record = {
         ...record,
         locationLabelZhHans: input.locationLabelZhHans,
@@ -60,7 +60,7 @@ function fixture() {
       return record
     },
     async approveAltText(input) {
-      if (record.lifecycle !== 'active') return null
+      if (record.catalogState !== 'active') return null
       record = {
         ...record,
         altTextZhHans: input.zhHans,
@@ -71,17 +71,17 @@ function fixture() {
     },
     async archive(input) {
       if (selectionConflict) return { status: 'selection_conflict' }
-      if (record.lifecycle !== 'active') return { status: 'invalid_state' }
+      if (record.catalogState !== 'active') return { status: 'invalid_state' }
       record = {
         ...record,
-        lifecycle: 'archived',
+        catalogState: 'archived',
         archivedAt: input.archivedAt,
       }
       return { status: 'updated', asset: record }
     },
     async restore() {
-      if (record.lifecycle !== 'archived') return { status: 'invalid_state' }
-      record = { ...record, lifecycle: 'active', archivedAt: null }
+      if (record.catalogState !== 'archived') return { status: 'invalid_state' }
+      record = { ...record, catalogState: 'active', archivedAt: null }
       return { status: 'updated', asset: record }
     },
   }
@@ -173,14 +173,14 @@ describe('Media Asset review service', () => {
     await expect(
       service.archive({ ownerUserId: 'owner_01', mediaAssetId }),
     ).resolves.toMatchObject({
-      lifecycle: 'archived',
+      catalogState: 'archived',
       altTextEn: 'A cable car.',
       archivedAt: new Date('2026-07-15T12:00:00.000Z'),
     })
     await expect(
       service.restore({ ownerUserId: 'owner_01', mediaAssetId }),
     ).resolves.toMatchObject({
-      lifecycle: 'active',
+      catalogState: 'active',
       altTextEn: 'A cable car.',
       archivedAt: null,
     })

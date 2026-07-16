@@ -11,10 +11,13 @@ import {
   type MediaGeocodingDatabase,
 } from './repository'
 
-const migrationUrl = new URL(
-  '../../../db/migrations/0005_media_catalog.sql',
-  import.meta.url,
-)
+const migrations = [
+  new URL('../../../db/migrations/0005_media_catalog.sql', import.meta.url),
+  new URL(
+    '../../../db/migrations/0009_media_catalog_state.sql',
+    import.meta.url,
+  ),
+]
 const mediaAssetId = '11111111-1111-4111-8111-111111111111'
 const uploadIntentId = '22222222-2222-4222-8222-222222222222'
 const checksum = 'a'.repeat(64)
@@ -32,8 +35,10 @@ describe('Media Geocoding repository', () => {
 
   beforeEach(async () => {
     client = new PGlite()
-    const migration = await readFile(migrationUrl, 'utf8')
-    await client.exec(migration.replaceAll('--> statement-breakpoint', ''))
+    for (const url of migrations) {
+      const migration = await readFile(url, 'utf8')
+      await client.exec(migration.replaceAll('--> statement-breakpoint', ''))
+    }
     const database = drizzle(client)
     repository = createMediaGeocodingRepository(
       () => database as unknown as MediaGeocodingDatabase,

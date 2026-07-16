@@ -22,7 +22,7 @@ export function createMediaAltTextRepository(
       const [row] = await database()
         .select({
           mediaAssetId: mediaAssets.id,
-          lifecycle: mediaAssets.lifecycle,
+          catalogState: mediaAssets.catalogState,
           processingState: mediaAssets.processingState,
           renditionObjectKey: mediaRenditions.objectKey,
           renditionProfileWidth: mediaRenditions.profileWidth,
@@ -55,7 +55,7 @@ export function createMediaAltTextRepository(
 
       return {
         mediaAssetId: row.mediaAssetId,
-        lifecycle: row.lifecycle,
+        catalogState: row.catalogState,
         processingState: row.processingState,
         rendition:
           row.renditionObjectKey === null
@@ -84,7 +84,7 @@ export function createMediaAltTextRepository(
         .where(
           and(
             eq(mediaAssets.id, input.mediaAssetId),
-            eq(mediaAssets.lifecycle, 'active'),
+            eq(mediaAssets.catalogState, 'active'),
             eq(mediaAssets.processingState, 'ready'),
             sql`EXISTS (
               SELECT 1
