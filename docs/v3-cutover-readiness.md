@@ -10,10 +10,10 @@ hosted-control inventory now has current evidence. The decisive blocker is
 that the Production environment is not yet provisioned for v3: its runtime
 database credential predates the rewrite and the v3 server-environment
 contract — including every media provider value — is unmet. Required GitHub
-checks, credential isolation, and the production database and media
-verifications also remain open. Vercel Web Analytics has been restored to the
-public v3 route families, but final Preview injection and dashboard-ingestion
-proof still remain.
+checks on `main`, the Preview database gate, and the production database and
+media verifications also remain open. Vercel Web Analytics has been restored
+and verified on the final Preview candidate; only dashboard-ingestion proof
+remains for that gate.
 
 Unknown hosted state is not counted as passed. This report does not authorize
 merging to `main`, changing production settings, accessing production data, or
@@ -24,7 +24,7 @@ running production migrations.
 | Item | Value |
 | --- | --- |
 | Production branch | `main` at `8c258834af538dd501486a5fd319b3e96a2ff5bc` |
-| Integration branch | `v2` at `f184977` (post `#151`; this report's Web Analytics restoration is on top) |
+| Integration branch | `v2` at `f647fdb` (post `#153`, including the Web Analytics restoration) |
 | Vercel project | `cali-so` (`prj_oIl5…`) on team `team_r1Mln…`; full IDs live in the local `.vercel/project.json` link state |
 | Production deployment | `dpl_A29CV…`, created 2026-07-11, status Ready at inventory time |
 | Release issue | [#98](https://github.com/CaliCastle/cali.so/issues/98) |
@@ -46,16 +46,16 @@ Renditions. The retired static photo fallback has been removed.
 | Frozen install | PASS | `pnpm install --frozen-lockfile` completed from the audited commit. |
 | Repository validation | PASS | Every command and count in the automated evidence section passed. |
 | Public browser behavior | PASS | Desktop, mobile, both locales, light and dark appearance, reduced motion, metadata, overflow, accessibility tree, and dock targets were reviewed locally. |
-| Owner admin boundary | AWAITING CONFIRMATION | Local and CI checks prove direct Clerk sign-in redirects plus exact `publicMetadata.siteOwner = "yes"` authorization, same-origin mutations, rate limits, audit events, and strict admin CSP. Confirm the Clerk keys and owner metadata in the deployed environments. |
+| Owner admin boundary | PASS (Preview) / AWAITING PRODUCTION | The final Preview redirects `/admin` to the isolated non-production Clerk sign-in UI in a normal browser. Local and CI checks prove exact `publicMetadata.siteOwner = "yes"` authorization, same-origin mutations, rate limits, audit events, and strict admin CSP. Confirm the Production Clerk keys and owner metadata at cutover. |
 | Complete diff Standards review | PASS | Portal layering and admin typography findings were fixed. The Media `lifecycle` vocabulary breach was resolved by PR #138 (issue #134 closed): Catalog State is the glossary term, and additive migration `0009` renames the column. |
 | Complete diff Spec review | PASS | No scope creep, incorrect PASS treatment, or missing local evidence was found; the unresolved hosted and production requirements below correctly keep the verdict at NOT READY. |
-| Production-like PR Preview | AWAITING CONFIRMATION | The #107 PR is merged; review a current `v2` Preview across the full release matrix once Production provisioning lands, and record its URL here. |
-| Vercel Web Analytics | AWAITING CONFIRMATION | The public site document mounts `@vercel/analytics` for both route families and excludes owner-admin routes. Deploy the final candidate, confirm the first-party Insights script loads, and record a fresh pageview in the existing `cali-so` Analytics dashboard. |
+| Production-like PR Preview | PARTIAL | Targeted verification passed on `https://cali-so-git-cali-restore-vercel-analytics-cali.vercel.app`: Chinese and English public routes render without browser errors, and `/admin` reaches Clerk sign-in. Repeat the complete release matrix after Production provisioning. |
+| Vercel Web Analytics | AWAITING DASHBOARD CONFIRMATION | On the final Preview, Chinese and English public routes each loaded the injected `@vercel/analytics/next` 2.0.1 first-party script and received HTTP 200 from the first-party pageview endpoint. Owner-admin navigation loaded no Analytics script or request. Confirm the fresh Preview pageviews are visible in the existing `cali-so` Analytics dashboard. |
 | GitHub security settings | PASS | Secret scanning, push protection, Dependabot security updates, read-only Actions defaults, and full-SHA action policy are enabled. |
-| Required GitHub checks | FAIL | Neither the `v2` ruleset nor `main` branch protection requires `Quality` and `CodeQL`. The maintainer-operated commands are in `docs/v3-cutover-ops-runbook.md`. |
+| Required GitHub checks | PARTIAL | The `v2` ruleset now requires `Quality` and `CodeQL`; `main` branch protection still requires neither. The maintainer-operated command is in `docs/v3-cutover-ops-runbook.md`. |
 | Current Vercel project settings | PASS | Project inspection succeeds with the explicit team scope. The earlier `Not authorized` was a CLI quirk: the team slug `cali` resolves to the personal account, so commands must pass the team ID as `--scope` (see the runbook). |
-| Production capability switches | PASS | All five optional `AMA_*_ENABLED` variables are absent from Production and therefore fail closed. Owner admin has no capability switch. `AMA_ADMIN_ENABLED` survives in Preview as dead configuration after ADR-0008 and should be removed. |
-| Preview and Production secret isolation | FAIL | The v3 app no longer uses Resend, so Preview should not receive the legacy Production key. Redis is Production-only, but the `KV_*`/`REDIS_URL` group still targets Preview and must be removed after migration `0010`; Preview also needs its own Clerk secret. |
+| Production capability switches | PASS | All five optional `AMA_*_ENABLED` variables are absent from Production and therefore fail closed. Owner admin has no capability switch. |
+| Preview and Production secret isolation | AWAITING DATABASE CONFIRMATION | Preview now has its own working non-production Clerk instance. `RESEND_API_KEY`, `AMA_ADMIN_ENABLED`, and every `KV_*`, `REDIS_URL`, and `UPSTASH_*` variable are absent from Preview. Migration `0010` and the Preview runtime role's CRUD-only grants for `rate_limit_windows` still require two fresh confirmations before remote database inspection. |
 | Production runtime environment | FAIL | Production `DATABASE_URL` predates the rewrite by over three years, and the v3 server-environment contract is otherwise unmet: the environment-specific Clerk keys, `AMA_ENCRYPTION_KEY`, `RATE_LIMIT_HASH_KEY`, `SITE_URL`, admin rate-limit values, `CRON_SECRET`, and required `BUNNY_*`/`MEDIA_*` variables are not fully provisioned. The first v3 production build would fail environment validation. |
 | Production runtime database grants | AWAITING CONFIRMATION | Requires two fresh confirmations before inspecting the production role or sensitive cloud state. |
 | Production migration credential | PASS (name level) | `MIGRATION_DATABASE_URL` is absent from every Vercel environment. Its availability to the controlled migration operation is confirmed at cutover time. |
@@ -240,11 +240,10 @@ The maintainer-operated commands for actions 1 through 4 are collected in
    legacy `DATABASE_URL` with the CRUD-only Neon runtime role and add the
    missing secrets, rate limits, capability switches, and complete Bunny and
    media configuration.
-2. Remove the unused `RESEND_API_KEY` from Preview, scope the
-   `KV_*`/`REDIS_URL` integration to Production only after migration `0010`,
-   add an isolated Preview Clerk secret, and delete the dead
-   `AMA_ADMIN_ENABLED` variable from Preview.
-3. Add `Quality` and `CodeQL` as required checks to both `v2` and `main`.
+2. With two fresh confirmations, verify migration `0010` on Preview and the
+   runtime role's CRUD-only grants for `rate_limit_windows`.
+3. Add `Quality` and `CodeQL` as required checks to `main`; the `v2` ruleset is
+   already complete.
 4. In the Vercel dashboard, verify logs, drains, retention, firewall rules,
    the production-branch mapping, and the certificate.
 5. With two fresh confirmations, verify production runtime database grants
@@ -253,10 +252,9 @@ The maintainer-operated commands for actions 1 through 4 are collected in
 6. Verify the production Bunny and Neon Media boundary, run the protected live
    storage contract, and publish the intended two-photo Published Photo
    Selection through the owner admin.
-7. Review a production-like Vercel Preview across the remaining browser matrix,
-   confirm public routes load the first-party Insights script while owner-admin
-   routes do not, record a fresh pageview in the existing `cali-so` Analytics
-   dashboard, and update this report with the Preview URL and result.
+7. Review the recorded production-like Vercel Preview across the remaining
+   browser matrix and confirm the fresh Chinese and English Preview pageviews
+   are visible in the existing `cali-so` Analytics dashboard.
 8. Confirm the rollback procedure against the recorded known-good deployment.
 9. Only after every blocker above is passed, approve the separately operated
    merge to `main` and production cutover.
