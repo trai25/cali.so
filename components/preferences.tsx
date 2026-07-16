@@ -83,6 +83,7 @@ export function Preferences() {
             type="button"
             className="dock-item"
             aria-label={localize(activeLocale, '偏好设置', 'Preferences')}
+            disabled={!mounted}
           >
             <PreferencesIcon />
             <span className="dock-tip" aria-hidden>
