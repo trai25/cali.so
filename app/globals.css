@@ -269,18 +269,18 @@
 /* Public pages use warm paper and ink. Admin keeps the neutral product
    palette above so editorial refinements cannot change operational UI. */
 .public-site {
-  --gray-1: oklch(0.99 0.004 95);
-  --gray-2: oklch(0.975 0.005 95);
-  --gray-3: oklch(0.95 0.006 95);
-  --gray-4: oklch(0.91 0.007 92);
-  --gray-5: oklch(0.85 0.008 88);
-  --gray-6: oklch(0.77 0.009 84);
-  --gray-7: oklch(0.67 0.01 80);
-  --gray-8: oklch(0.56 0.011 78);
-  --gray-9: oklch(0.47 0.012 76);
-  --gray-10: oklch(0.39 0.012 74);
-  --gray-11: oklch(0.31 0.012 72);
-  --gray-12: oklch(0.23 0.012 70);
+  --gray-1: oklch(0.99 0.001 95);
+  --gray-2: oklch(0.975 0.0015 95);
+  --gray-3: oklch(0.95 0.002 95);
+  --gray-4: oklch(0.91 0.0025 92);
+  --gray-5: oklch(0.85 0.003 88);
+  --gray-6: oklch(0.77 0.0035 84);
+  --gray-7: oklch(0.67 0.004 80);
+  --gray-8: oklch(0.56 0.004 78);
+  --gray-9: oklch(0.47 0.0045 76);
+  --gray-10: oklch(0.39 0.0045 74);
+  --gray-11: oklch(0.31 0.0045 72);
+  --gray-12: oklch(0.23 0.0045 70);
   --selection-highlight: oklch(0.9 0.17 105 / 0.58);
 
   --background: var(--gray-1);
