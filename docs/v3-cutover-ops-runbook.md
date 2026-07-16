@@ -159,10 +159,17 @@ resolve and verify the current one immediately before cutover and re-record
 the ID:
 
 ```bash
-DPL=$(npx vercel ls cali-so --prod $SCOPE 2>/dev/null \
+DPL=$(npx vercel ls cali-so --prod $SCOPE \
   | grep -m1 -oE 'https://[a-z0-9-]+\.vercel\.app')
-npx vercel inspect "$DPL" $SCOPE
+if [ -z "$DPL" ]; then
+  echo 'ERROR: no production deployment resolved — STOP; do not run inspect or promote' >&2
+else
+  npx vercel inspect "$DPL" $SCOPE
+fi
 ```
+
+Only continue past this point when the inspect output shows the expected
+deployment with `target production` and `status Ready`.
 
 Rollback prefers promoting that verified deployment or reverting the cutover
 merge; additive migrations stay in place:
