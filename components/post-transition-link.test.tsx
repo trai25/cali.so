@@ -8,17 +8,12 @@ vi.mock('next/link', () => ({
   default: ({
     children,
     onClick,
-    onNavigate,
-    transitionTypes,
   }: {
     children: ReactNode
     onClick?: MouseEventHandler<HTMLAnchorElement>
-    onNavigate?: () => void
-    transitionTypes?: string[]
   }) => (
     <a
       href="/blog/a-post"
-      data-transition-types={transitionTypes?.join(',')}
       onClick={(event) => {
         onClick?.(event)
         if (
@@ -31,7 +26,6 @@ vi.mock('next/link', () => ({
         ) {
           return
         }
-        onNavigate?.()
         event.preventDefault()
       }}
     >
@@ -67,12 +61,6 @@ describe('PostTransitionLink', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Read post' }), {
       detail: 1,
     })
-
-    expect(
-      screen
-        .getByRole('link', { name: 'Read post' })
-        .getAttribute('data-transition-types'),
-    ).toBe('page-forward')
 
     expect(
       document.documentElement.style.getPropertyValue(

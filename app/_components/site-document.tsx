@@ -56,21 +56,10 @@ export async function SiteDocument({
           <AmbientBackground />
           <div className="flex min-h-screen flex-col pb-20">
             <main className="flex-1 pt-14">
-              <ViewTransition
-                enter={{
-                  'page-forward': 'page-forward',
-                  'page-back': 'page-back',
-                  default: 'page-sheet',
-                }}
-                exit={{
-                  'page-forward': 'page-forward',
-                  'page-back': 'page-back',
-                  default: 'page-sheet',
-                }}
-                default="none"
-              >
-                {children}
-              </ViewTransition>
+              {/* Intentionally untyped: post covers and titles morph through
+                  list → loading shell → article. default="none" suppresses
+                  those CSS-named groups in this React/Next version. */}
+              <ViewTransition>{children}</ViewTransition>
             </main>
             <SiteFooter social={social} github={github} locale={locale} />
           </div>
