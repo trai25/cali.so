@@ -11,7 +11,9 @@ that the Production environment is not yet provisioned for v3: its runtime
 database credential predates the rewrite and the v3 server-environment
 contract — including every media provider value — is unmet. Required GitHub
 checks, credential isolation, and the production database and media
-verifications also remain open.
+verifications also remain open. Vercel Web Analytics has been restored to the
+public v3 route families, but final Preview injection and dashboard-ingestion
+proof still remain.
 
 Unknown hosted state is not counted as passed. This report does not authorize
 merging to `main`, changing production settings, accessing production data, or
@@ -22,7 +24,7 @@ running production migrations.
 | Item | Value |
 | --- | --- |
 | Production branch | `main` at `8c258834af538dd501486a5fd319b3e96a2ff5bc` |
-| Integration branch | `v2` at `12fb6df` (post `#136` and `#138`) |
+| Integration branch | `v2` at `f184977` (post `#151`; this report's Web Analytics restoration is on top) |
 | Vercel project | `cali-so` (`prj_oIl5…`) on team `team_r1Mln…`; full IDs live in the local `.vercel/project.json` link state |
 | Production deployment | `dpl_A29CV…`, created 2026-07-11, status Ready at inventory time |
 | Release issue | [#98](https://github.com/CaliCastle/cali.so/issues/98) |
@@ -48,6 +50,7 @@ Renditions. The retired static photo fallback has been removed.
 | Complete diff Standards review | PASS | Portal layering and admin typography findings were fixed. The Media `lifecycle` vocabulary breach was resolved by PR #138 (issue #134 closed): Catalog State is the glossary term, and additive migration `0009` renames the column. |
 | Complete diff Spec review | PASS | No scope creep, incorrect PASS treatment, or missing local evidence was found; the unresolved hosted and production requirements below correctly keep the verdict at NOT READY. |
 | Production-like PR Preview | AWAITING CONFIRMATION | The #107 PR is merged; review a current `v2` Preview across the full release matrix once Production provisioning lands, and record its URL here. |
+| Vercel Web Analytics | AWAITING CONFIRMATION | The public site document mounts `@vercel/analytics` for both route families and excludes owner-admin routes. Deploy the final candidate, confirm the first-party Insights script loads, and record a fresh pageview in the existing `cali-so` Analytics dashboard. |
 | GitHub security settings | PASS | Secret scanning, push protection, Dependabot security updates, read-only Actions defaults, and full-SHA action policy are enabled. |
 | Required GitHub checks | FAIL | Neither the `v2` ruleset nor `main` branch protection requires `Quality` and `CodeQL`. The maintainer-operated commands are in `docs/v3-cutover-ops-runbook.md`. |
 | Current Vercel project settings | PASS | Project inspection succeeds with the explicit team scope. The earlier `Not authorized` was a CLI quirk: the team slug `cali` resolves to the personal account, so commands must pass the team ID as `--scope` (see the runbook). |
@@ -250,8 +253,10 @@ The maintainer-operated commands for actions 1 through 4 are collected in
 6. Verify the production Bunny and Neon Media boundary, run the protected live
    storage contract, and publish the intended two-photo Published Photo
    Selection through the owner admin.
-7. Review a production-like Vercel Preview across the remaining browser matrix
-   and update this report with its URL and result.
+7. Review a production-like Vercel Preview across the remaining browser matrix,
+   confirm public routes load the first-party Insights script while owner-admin
+   routes do not, record a fresh pageview in the existing `cali-so` Analytics
+   dashboard, and update this report with the Preview URL and result.
 8. Confirm the rollback procedure against the recorded known-good deployment.
 9. Only after every blocker above is passed, approve the separately operated
    merge to `main` and production cutover.

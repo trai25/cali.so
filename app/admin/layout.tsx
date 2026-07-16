@@ -10,7 +10,7 @@ export const prefetch = 'force-disabled'
 
 export default function AdminRootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <SiteDocument locale="zh" restoreLocale>
+    <SiteDocument isAdmin locale="zh" restoreLocale>
       {children}
     </SiteDocument>
   )

@@ -27,6 +27,9 @@ Current as of July 2026.
   route, not browser-local state.
 - Public pages are static where possible. GitHub and YouTube social values use
   ISR-backed fetches with committed JSON snapshots as outage fallbacks.
+- Vercel Web Analytics is instrumented to collect first-party page views
+  across the public Chinese and English route families. Owner-admin routes
+  stay excluded from public analytics.
 - External-link cards keep metadata in a committed snapshot refreshed through
   `og.zolplay.com`; the same first-party service proxies fixed-slot favicons and
   Open Graph images, and missing media remains a non-blocking presentation
