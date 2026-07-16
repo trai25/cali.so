@@ -91,7 +91,7 @@ describe('operations runner', () => {
       { operationId: 'op_1', leaseToken: 'lease-a', now: NOW },
     ])
     expect(f.fails).toEqual([])
-    expect(result).toEqual({ claimed: 1, succeeded: 1, retried: 0, failed: 0 })
+    expect(result).toEqual({ claimed: 1, succeeded: 1, retried: 0, failed: 0, deferred: 0 })
   })
 
   it.each([
@@ -178,7 +178,7 @@ describe('operations runner', () => {
       errorCode: 'unexpected_error',
       terminal: false,
     })
-    expect(result).toEqual({ claimed: 1, succeeded: 0, retried: 1, failed: 0 })
+    expect(result).toEqual({ claimed: 1, succeeded: 0, retried: 1, failed: 0, deferred: 0 })
   })
 
   it('counts claimed, succeeded, retried, and failed operations per run', async () => {
@@ -201,7 +201,7 @@ describe('operations runner', () => {
 
     const result = await f.runner.run()
 
-    expect(result).toEqual({ claimed: 3, succeeded: 1, retried: 1, failed: 1 })
+    expect(result).toEqual({ claimed: 3, succeeded: 1, retried: 1, failed: 1, deferred: 0 })
   })
 
   it('keeps draining the batch after one operation fails', async () => {
@@ -233,6 +233,52 @@ describe('operations runner', () => {
     const result = await f.runner.run()
 
     expect(f.handled).toEqual([])
-    expect(result).toEqual({ claimed: 1, succeeded: 0, retried: 0, failed: 0 })
+    expect(result).toEqual({ claimed: 1, succeeded: 0, retried: 0, failed: 0, deferred: 0 })
+  })
+
+  it('defers work beyond the time budget so the run fits its function deadline', async () => {
+    const batch = [
+      makeOperation({ id: 'op_first', leaseToken: 'lease-1' }),
+      makeOperation({ id: 'op_second', leaseToken: 'lease-2' }),
+      makeOperation({ id: 'op_third', leaseToken: 'lease-3' }),
+    ]
+    const completes: string[] = []
+    const handled: string[] = []
+    let nowMs = NOW.getTime()
+    const operations = {
+      async claimDue() {
+        return batch
+      },
+      async complete(operationId: string) {
+        completes.push(operationId)
+        return makeOperation({ id: operationId, status: 'succeeded' })
+      },
+      async fail() {
+        throw new Error('unexpected fail call')
+      },
+    } as unknown as DurableOperationsRepository
+
+    const runner = createOperationsRunner({
+      operations,
+      handler: async (operation) => {
+        handled.push(operation.id)
+        // Each operation consumes 20 seconds of wall clock.
+        nowMs += 20_000
+      },
+      clock: { now: () => new Date(nowMs) },
+      timeBudgetMs: 30_000,
+    })
+
+    const result = await runner.run()
+
+    expect(handled).toEqual(['op_first', 'op_second'])
+    expect(completes).toEqual(['op_first', 'op_second'])
+    expect(result).toEqual({
+      claimed: 3,
+      succeeded: 2,
+      retried: 0,
+      failed: 0,
+      deferred: 1,
+    })
   })
 })

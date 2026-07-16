@@ -374,6 +374,16 @@ describe('AMA server environment', () => {
     })
     expect(environment.features.bookingFinalization).toBe(true)
     expect(environment.AMA_EMAIL_FROM).toBe('Cali Castle <ama@cali.so>')
+
+    for (const malformed of ['@', '@cali.so', 'ama@', 'Cali <not-an-address>']) {
+      expect(() =>
+        parseServerEnv({ ...validEnvironment, AMA_EMAIL_FROM: malformed }),
+      ).toThrowError(/AMA_EMAIL_FROM/)
+    }
+    expect(
+      parseServerEnv({ ...validEnvironment, AMA_EMAIL_FROM: 'ama@cali.so' })
+        .AMA_EMAIL_FROM,
+    ).toBe('ama@cali.so')
   })
 
   it('requires the Tencent MCP bridge only while Tencent is enabled', () => {

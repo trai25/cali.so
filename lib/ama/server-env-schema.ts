@@ -61,6 +61,13 @@ function invalidEnvironmentError(error: z.ZodError) {
   return new Error(`Invalid server environment: ${fields.join(', ')}`)
 }
 
+// Accepts a bare address or the display form `Name <address@domain>`.
+function isSenderAddress(value: string) {
+  const display = /^[^<>]*<([^<>]+)>$/.exec(value)
+  const address = (display?.[1] ?? value).trim()
+  return /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(address)
+}
+
 const redisRestUrl = z.url().refine(isHttpsUrl)
 
 // A blank placeholder line in an env file means "not configured", not an
@@ -89,7 +96,7 @@ const serverEnvironmentSchema = z
         .string()
         .trim()
         .min(3)
-        .refine((value) => value.includes('@'))
+        .refine(isSenderAddress)
         .optional(),
     ),
     TENCENT_MEETING_MCP_URL: blankAsUndefined(z.url().refine(isHttpsUrl).optional()),

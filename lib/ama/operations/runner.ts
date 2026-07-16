@@ -15,6 +15,7 @@ export type OperationsRunResult = {
   succeeded: number
   retried: number
   failed: number
+  deferred: number
 }
 
 type OperationsRunnerDependencies = {
@@ -23,6 +24,13 @@ type OperationsRunnerDependencies = {
   clock?: { now(): Date }
   leaseSeconds?: number
   batchSize?: number
+  /**
+   * Soft wall-clock budget for one run. Every provider call can take up to
+   * its own timeout, so an unbounded batch could outlive the hosting
+   * function's maxDuration; work not started before the budget is spent
+   * stays leased and is reclaimed by the next run once the lease expires.
+   */
+  timeBudgetMs?: number
 }
 
 function backoffAt(attemptCount: number, now: Date) {
@@ -46,10 +54,12 @@ export function createOperationsRunner(dependencies: OperationsRunnerDependencie
     clock = { now: () => new Date() },
     leaseSeconds = 120,
     batchSize = 10,
+    timeBudgetMs = 45_000,
   } = dependencies
 
   return {
     async run(): Promise<OperationsRunResult> {
+      const startedAtMs = clock.now().getTime()
       const claimed = await operations.claimDue({
         now: clock.now(),
         leaseSeconds,
@@ -60,9 +70,14 @@ export function createOperationsRunner(dependencies: OperationsRunnerDependencie
         succeeded: 0,
         retried: 0,
         failed: 0,
+        deferred: 0,
       }
       for (const operation of claimed) {
         if (!operation.leaseToken) continue
+        if (clock.now().getTime() - startedAtMs >= timeBudgetMs) {
+          result.deferred += 1
+          continue
+        }
         try {
           await handler(operation)
           await operations.complete(operation.id, operation.leaseToken, clock.now())

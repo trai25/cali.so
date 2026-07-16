@@ -4,7 +4,7 @@ vi.mock('server-only', () => ({}))
 
 import { createAmaWorkHandler } from './http'
 
-const RUN_RESULT = { claimed: 2, succeeded: 1, retried: 1, failed: 0 }
+const RUN_RESULT = { claimed: 2, succeeded: 1, retried: 1, failed: 0, deferred: 0 }
 
 function fixture(options: { cronSecret?: string; throws?: boolean } = {}) {
   const releaseExpiredHolds = vi.fn(async () => {
