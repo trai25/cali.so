@@ -24,12 +24,12 @@ vi.mock('next/font/local', () => ({
 afterEach(cleanup)
 
 describe('public error recovery', () => {
-  it('renders a deliberate bilingual owner-denied surface', () => {
+  it('renders a deliberate bilingual forbidden surface', () => {
     render(<ForbiddenPageView />)
 
-    expect(screen.getByText('ADMIN / 403')).toBeTruthy()
-    expect(screen.getByText('这个账户没有管理员权限。')).toBeTruthy()
-    expect(screen.getByText('This account is not the site owner.')).toBeTruthy()
+    expect(screen.getByText('ERROR / 403')).toBeTruthy()
+    expect(screen.getByText('你没有访问这个页面的权限。')).toBeTruthy()
+    expect(screen.getByText('You do not have access to this page.')).toBeTruthy()
     expect(
       screen.getByRole('link', { name: /返回首页|Go home/ }).getAttribute('href'),
     ).toBe('/')

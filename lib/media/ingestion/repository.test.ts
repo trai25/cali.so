@@ -11,10 +11,13 @@ import {
   type MediaIngestionDatabase,
 } from './repository'
 
-const migrationUrl = new URL(
-  '../../../db/migrations/0005_media_catalog.sql',
-  import.meta.url,
-)
+const migrations = [
+  new URL('../../../db/migrations/0005_media_catalog.sql', import.meta.url),
+  new URL(
+    '../../../db/migrations/0009_media_catalog_state.sql',
+    import.meta.url,
+  ),
+]
 const intentInput = {
   id: '11111111-1111-4111-8111-111111111111',
   ownerUserId: 'owner_01',
@@ -34,8 +37,10 @@ describe('Media Library ingestion repository', () => {
 
   beforeEach(async () => {
     client = new PGlite()
-    const migration = await readFile(migrationUrl, 'utf8')
-    await client.exec(migration.replaceAll('--> statement-breakpoint', ''))
+    for (const url of migrations) {
+      const migration = await readFile(url, 'utf8')
+      await client.exec(migration.replaceAll('--> statement-breakpoint', ''))
+    }
     const database = drizzle(client)
     repository = createMediaIngestionRepository(
       () => database as unknown as MediaIngestionDatabase,

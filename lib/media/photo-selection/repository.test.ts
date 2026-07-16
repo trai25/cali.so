@@ -20,6 +20,10 @@ const migrationUrls = [
     '../../../db/migrations/0007_photo_publication_revision.sql',
     import.meta.url,
   ),
+  new URL(
+    '../../../db/migrations/0009_media_catalog_state.sql',
+    import.meta.url,
+  ),
 ]
 const checksum = 'a'.repeat(64)
 
@@ -50,7 +54,7 @@ describe('Photo Selection repository', () => {
     ownerUserId: string,
     overrides: {
       id?: string
-      lifecycle?: 'active' | 'archived'
+      catalogState?: 'active' | 'archived'
       processingState?: 'ready' | 'retryable_failure'
       altTextZhHans?: string | null
       altTextEn?: string | null
@@ -59,9 +63,9 @@ describe('Photo Selection repository', () => {
   ) {
     const id = overrides.id ?? crypto.randomUUID()
     const uploadIntentId = crypto.randomUUID()
-    const lifecycle = overrides.lifecycle ?? 'active'
+    const catalogState = overrides.catalogState ?? 'active'
     const processingState = overrides.processingState ?? 'ready'
-    const archivedAt = lifecycle === 'archived' ? '2026-07-15T01:00:00.000Z' : null
+    const archivedAt = catalogState === 'archived' ? '2026-07-15T01:00:00.000Z' : null
     const processingErrorCode =
       processingState === 'retryable_failure' ? 'processing_failed' : null
     const altTextZhHans =
@@ -77,8 +81,7 @@ describe('Photo Selection repository', () => {
         (id, owner_user_id, idempotency_key, original_key, content_type,
          byte_size, checksum_sha256, expires_at, created_at)
        VALUES ($1, $2, $3, $4, 'image/jpeg', 1000, $5,
-               '2026-07-16T00:00:00.000Z',
-               '2026-07-15T00:00:00.000Z')`,
+               '2026-07-16T00:00:00.000Z', '2026-07-15T00:00:00.000Z')`,
       [
         uploadIntentId,
         ownerUserId,
@@ -89,7 +92,7 @@ describe('Photo Selection repository', () => {
     )
     await client.query(
       `INSERT INTO media_assets
-        (id, upload_intent_id, lifecycle, processing_state,
+        (id, upload_intent_id, catalog_state, processing_state,
          processing_error_code, original_key, original_content_type,
          original_byte_size, original_checksum_sha256, width, height,
          captured_at, camera_make, camera_model, lens,
@@ -105,7 +108,7 @@ describe('Photo Selection repository', () => {
       [
         id,
         uploadIntentId,
-        lifecycle,
+        catalogState,
         processingState,
         processingErrorCode,
         `originals/${id}/photo.jpg`,
@@ -175,7 +178,7 @@ describe('Photo Selection repository', () => {
   it('requires owned, active, ready Media Assets with Alt Text and all Renditions', async () => {
     const eligible = await createAsset('owner_01')
     const wrongOwner = await createAsset('owner_02')
-    const archived = await createAsset('owner_01', { lifecycle: 'archived' })
+    const archived = await createAsset('owner_01', { catalogState: 'archived' })
     const failed = await createAsset('owner_01', {
       processingState: 'retryable_failure',
     })
@@ -318,11 +321,11 @@ describe('Photo Selection repository', () => {
     )
     await expect(
       client.query(
-        `SELECT lifecycle, processing_state FROM media_assets WHERE id = $1`,
+        `SELECT catalog_state, processing_state FROM media_assets WHERE id = $1`,
         [unrelated],
       ),
     ).resolves.toMatchObject({
-      rows: [{ lifecycle: 'active', processing_state: 'ready' }],
+      rows: [{ catalog_state: 'active', processing_state: 'ready' }],
     })
   })
 

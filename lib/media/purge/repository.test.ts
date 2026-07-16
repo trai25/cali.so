@@ -19,6 +19,10 @@ const migrations = [
     import.meta.url,
   ),
   new URL('../../../db/migrations/0008_media_purge_progress.sql', import.meta.url),
+  new URL(
+    '../../../db/migrations/0009_media_catalog_state.sql',
+    import.meta.url,
+  ),
 ]
 const assetId = '11111111-1111-4111-8111-111111111111'
 const intentId = '22222222-2222-4222-8222-222222222222'
@@ -40,13 +44,12 @@ describe('Media Asset Purge repository', () => {
         (id, owner_user_id, idempotency_key, original_key, content_type,
          byte_size, checksum_sha256, expires_at, created_at)
        VALUES ($1, 'owner_01', 'upload_01', 'originals/photo.jpg',
-               'image/jpeg', 1000, $2, '2026-07-16T00:00:00Z',
-               '2026-07-15T00:00:00Z')`,
+               'image/jpeg', 1000, $2, '2026-07-16T00:00:00Z', '2026-07-15T00:00:00Z')`,
       [intentId, 'a'.repeat(64)],
     )
     await client.query(
       `INSERT INTO media_assets
-        (id, upload_intent_id, lifecycle, archived_at, processing_state,
+        (id, upload_intent_id, catalog_state, archived_at, processing_state,
          original_key, original_content_type, original_byte_size,
          original_checksum_sha256, width, height)
        VALUES ($1, $2, 'archived', '2026-07-15T10:00:00Z', 'ready',
@@ -117,12 +120,12 @@ describe('Media Asset Purge repository', () => {
       lastErrorCode: null,
     })
     const asset = await client.query<{
-      lifecycle: string
+      catalog_state: string
       purge_started_at: Date
-    }>('SELECT lifecycle, purge_started_at FROM media_assets WHERE id = $1', [
+    }>('SELECT catalog_state, purge_started_at FROM media_assets WHERE id = $1', [
       assetId,
     ])
-    expect(asset.rows[0]).toMatchObject({ lifecycle: 'purging' })
+    expect(asset.rows[0]).toMatchObject({ catalog_state: 'purging' })
   })
 
   it('enforces ownership, Archived state, selection safety, and claim leases', async () => {
@@ -132,7 +135,7 @@ describe('Media Asset Purge repository', () => {
 
     await client.query(
       `UPDATE media_assets
-       SET lifecycle = 'active', archived_at = NULL
+       SET catalog_state = 'active', archived_at = NULL
        WHERE id = $1`,
       [assetId],
     )
@@ -141,7 +144,7 @@ describe('Media Asset Purge repository', () => {
     })
     await client.query(
       `UPDATE media_assets
-       SET lifecycle = 'archived', archived_at = '2026-07-15T10:00:00Z'
+       SET catalog_state = 'archived', archived_at = '2026-07-15T10:00:00Z'
        WHERE id = $1`,
       [assetId],
     )

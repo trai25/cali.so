@@ -7,7 +7,10 @@ import { cache } from 'react'
 import { getAmaSecurity } from '~/lib/ama/security/server'
 import { getServerEnv } from '~/lib/ama/server-env'
 
-import { createOwnerAuthorizer } from './authorization'
+import {
+  createOwnerAuthorizer,
+  type OwnerPrincipal,
+} from './authorization'
 
 const authorizeOwner = createOwnerAuthorizer({
   getOwnerDataId() {
@@ -24,17 +27,21 @@ const authorizeOwner = createOwnerAuthorizer({
 
 export const getOwnerAccess = cache(authorizeOwner)
 
-export async function requireOwnerPage(returnBackUrl: string) {
+export async function requireOwnerPage(
+  returnBackUrl: string,
+): Promise<OwnerPrincipal> {
   const access = await getOwnerAccess()
   if (access.status === 'authorized') return access.principal
   if (access.status === 'forbidden') forbidden()
 
   const { redirectToSignIn } = await auth()
-  return redirectToSignIn({ returnBackUrl })
+  await redirectToSignIn({ returnBackUrl })
+  throw new Error('Clerk sign-in redirect did not terminate the request')
 }
 
 export const ownerRequestAuthenticator = {
-  authenticate() {
+  // Clerk resolves auth from the active Next.js request context, not this object.
+  authenticate(_request: Request) {
     return getOwnerAccess()
   },
 }

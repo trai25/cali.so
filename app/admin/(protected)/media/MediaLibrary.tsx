@@ -105,8 +105,8 @@ async function responseJson(response: Response) {
 }
 
 function processingLabel(asset: MediaAssetReviewRecord) {
-  if (asset.lifecycle === 'purging') return { zh: '正在永久清除', en: 'Purging' }
-  if (asset.lifecycle === 'archived') return { zh: '已归档', en: 'Archived' }
+  if (asset.catalogState === 'purging') return { zh: '正在永久清除', en: 'Purging' }
+  if (asset.catalogState === 'archived') return { zh: '已归档', en: 'Archived' }
   const labels = {
     upload_initiated: { zh: '等待上传', en: 'Upload initiated' },
     original_verified: { zh: '原片已验证', en: 'Original verified' },
@@ -496,7 +496,7 @@ function Inspector({
     }
   }
 
-  async function changeLifecycle(intent: 'archive' | 'restore') {
+  async function changeCatalogState(intent: 'archive' | 'restore') {
     if (
       intent === 'archive' &&
       !globalThis.confirm(
@@ -634,7 +634,7 @@ function Inspector({
       ) && (
         <button
           type="button"
-          disabled={pending !== null || asset.lifecycle !== 'active'}
+          disabled={pending !== null || asset.catalogState !== 'active'}
           onClick={resumeProcessing}
           className="mt-4 min-h-11 rounded-md border border-border px-4 text-sm font-medium outline-none disabled:opacity-50 focus-visible:border-foreground"
         >
@@ -649,7 +649,7 @@ function Inspector({
       {asset.previewRendition && (
         <button
           type="button"
-          disabled={asset.lifecycle !== 'active'}
+          disabled={asset.catalogState !== 'active'}
           onClick={chooseFocalPoint}
           onKeyDown={moveFocalPoint}
           aria-label={localize(locale, '设置焦点', 'Set Focal Point')}
@@ -691,7 +691,7 @@ function Inspector({
           </h3>
           <button
             type="button"
-            disabled={pending !== null || asset.lifecycle !== 'active'}
+            disabled={pending !== null || asset.catalogState !== 'active'}
             onClick={suggestLocationLabel}
             className="min-h-11 px-2 text-sm font-medium text-muted-foreground outline-none disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
           >
@@ -714,7 +714,7 @@ function Inspector({
         />
         <button
           type="button"
-          disabled={pending !== null || asset.lifecycle !== 'active'}
+          disabled={pending !== null || asset.catalogState !== 'active'}
           onClick={saveMetadata}
           className="min-h-11 rounded-md border border-border px-4 text-sm font-medium outline-none disabled:opacity-50 focus-visible:border-foreground"
         >
@@ -729,7 +729,7 @@ function Inspector({
           </h3>
           <button
             type="button"
-            disabled={pending !== null || asset.lifecycle !== 'active'}
+            disabled={pending !== null || asset.catalogState !== 'active'}
             onClick={regenerate}
             className="min-h-11 px-2 text-sm font-medium text-muted-foreground outline-none disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
           >
@@ -755,7 +755,7 @@ function Inspector({
           />
           <button
             type="button"
-            disabled={pending !== null || asset.lifecycle !== 'active'}
+            disabled={pending !== null || asset.catalogState !== 'active'}
             onClick={approveAltText}
             className="min-h-11 rounded-md bg-foreground px-4 text-sm font-medium text-background outline-none disabled:opacity-50 focus-visible:ring-1 focus-visible:ring-foreground focus-visible:ring-offset-2"
           >
@@ -776,21 +776,21 @@ function Inspector({
       )}
 
       <div className="mt-7 flex flex-wrap gap-2 border-t border-dashed border-border pt-5">
-        {asset.lifecycle === 'active' ? (
+        {asset.catalogState === 'active' ? (
           <button
             type="button"
             disabled={pending !== null}
-            onClick={() => changeLifecycle('archive')}
+            onClick={() => changeCatalogState('archive')}
             className="min-h-11 px-3 text-sm text-muted-foreground outline-none disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
           >
             <T zh="归档" en="Archive" />
           </button>
-        ) : asset.lifecycle === 'archived' ? (
+        ) : asset.catalogState === 'archived' ? (
           <>
             <button
               type="button"
               disabled={pending !== null}
-              onClick={() => changeLifecycle('restore')}
+              onClick={() => changeCatalogState('restore')}
               className="min-h-11 rounded-md border border-border px-4 text-sm font-medium outline-none disabled:opacity-50 focus-visible:border-foreground"
             >
               <T zh="恢复" en="Restore" />
@@ -815,7 +815,7 @@ function Inspector({
           </button>
         )}
       </div>
-      {asset.lifecycle !== 'active' && (
+      {asset.catalogState !== 'active' && (
         <p className="mt-3 text-sm leading-5 text-muted-foreground">
           <T
             zh="归档不会撤销已经知道的成品 URL；只有永久清除完成后才会删除文件和 CDN 缓存。"
@@ -992,14 +992,14 @@ export function MediaLibrary({
     }
     setActive((items) => {
       const without = items.filter((item) => item.id !== asset.id)
-      return asset.lifecycle === 'active' ? [asset, ...without] : without
+      return asset.catalogState === 'active' ? [asset, ...without] : without
     })
     setArchived((items) => {
       const without = items.filter((item) => item.id !== asset.id)
-      return asset.lifecycle === 'active' ? without : [asset, ...without]
+      return asset.catalogState === 'active' ? without : [asset, ...without]
     })
-    if (asset.lifecycle === 'active' && view === 'archived') setSelectedId(null)
-    if (asset.lifecycle !== 'active' && view === 'active') setSelectedId(null)
+    if (asset.catalogState === 'active' && view === 'archived') setSelectedId(null)
+    if (asset.catalogState !== 'active' && view === 'active') setSelectedId(null)
   }
 
   function chooseView(next: LibraryView) {

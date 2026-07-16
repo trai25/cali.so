@@ -6,14 +6,14 @@ export function ForbiddenPageView() {
   return (
     <div className="mx-auto w-full max-w-[37.5rem] px-6">
       <section aria-labelledby="forbidden-title" className="mx-auto max-w-sm">
-        <p className="text-sm text-muted-foreground">ADMIN / 403</p>
+        <p className="text-sm text-muted-foreground">ERROR / 403</p>
         <h1 id="forbidden-title" className="mt-3 text-sm font-semibold">
-          <T zh="这个账户没有管理员权限。" en="This account is not the site owner." />
+          <T zh="你没有访问这个页面的权限。" en="You do not have access to this page." />
         </h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
           <T
-            zh="请使用标记为网站所有者的 Clerk 账户登录。管理员数据未被加载。"
-            en="Sign in with the Clerk account marked as the site owner. No admin data was loaded."
+            zh="请使用有权限的账户登录，或返回首页。"
+            en="Sign in with an account that has access, or return home."
           />
         </p>
         <Link

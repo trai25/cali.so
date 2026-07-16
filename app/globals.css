@@ -1308,6 +1308,14 @@ html[data-visited] .enter-polaroid .polaroid {
 
 /* Route transition: the origin defocuses while the destination rises.
    Shared covers/titles morph via view-transition-name. */
+.post-loading-cover {
+  view-transition-name: var(--post-cover-transition-name, none);
+}
+
+.post-loading-title {
+  view-transition-name: var(--post-title-transition-name, none);
+}
+
 @keyframes vt-defocus {
   to {
     opacity: 0;

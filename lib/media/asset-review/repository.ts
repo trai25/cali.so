@@ -23,7 +23,7 @@ export type MediaAssetReviewDatabase = ReturnType<typeof getDatabase>
 const reviewAssetColumns = {
   id: mediaAssets.id,
   createdAt: mediaAssets.createdAt,
-  lifecycle: mediaAssets.lifecycle,
+  catalogState: mediaAssets.catalogState,
   processingState: mediaAssets.processingState,
   width: mediaAssets.width,
   height: mediaAssets.height,
@@ -76,7 +76,7 @@ function record(
   return {
     id: row.id,
     createdAt: row.createdAt,
-    lifecycle: row.lifecycle,
+    catalogState: row.catalogState,
     processingState: row.processingState,
     width: row.width,
     height: row.height,
@@ -190,8 +190,8 @@ export function createMediaAssetReviewRepository(
         )
         .where(
           input.view === 'active'
-            ? eq(mediaAssets.lifecycle, 'active')
-            : inArray(mediaAssets.lifecycle, ['archived', 'purging']),
+            ? eq(mediaAssets.catalogState, 'active')
+            : inArray(mediaAssets.catalogState, ['archived', 'purging']),
         )
         .orderBy(desc(mediaAssets.createdAt))
       return rows.map(
@@ -228,7 +228,7 @@ export function createMediaAssetReviewRepository(
         .where(
           and(
             ownedAssetCondition(input.ownerUserId, input.mediaAssetId),
-            eq(mediaAssets.lifecycle, 'active'),
+            eq(mediaAssets.catalogState, 'active'),
             eq(mediaAssets.processingState, 'ready'),
           ),
         )
@@ -251,7 +251,7 @@ export function createMediaAssetReviewRepository(
         .where(
           and(
             ownedAssetCondition(input.ownerUserId, input.mediaAssetId),
-            eq(mediaAssets.lifecycle, 'active'),
+            eq(mediaAssets.catalogState, 'active'),
             eq(mediaAssets.processingState, 'ready'),
           ),
         )
@@ -264,13 +264,13 @@ export function createMediaAssetReviewRepository(
     async archive(input) {
       return database().transaction(async (transaction) => {
         const [current] = await transaction
-          .select({ id: mediaAssets.id, lifecycle: mediaAssets.lifecycle })
+          .select({ id: mediaAssets.id, catalogState: mediaAssets.catalogState })
           .from(mediaAssets)
           .where(ownedAssetCondition(input.ownerUserId, input.mediaAssetId))
           .limit(1)
           .for('update')
         if (!current) return { status: 'not_found' }
-        if (current.lifecycle !== 'active') return { status: 'invalid_state' }
+        if (current.catalogState !== 'active') return { status: 'invalid_state' }
 
         const [selection] = await transaction
           .select({ id: mediaAssets.id })
@@ -305,14 +305,14 @@ export function createMediaAssetReviewRepository(
         const [asset] = await transaction
           .update(mediaAssets)
           .set({
-            lifecycle: 'archived',
+            catalogState: 'archived',
             archivedAt: input.archivedAt,
             updatedAt: input.archivedAt,
           })
           .where(
             and(
               eq(mediaAssets.id, current.id),
-              eq(mediaAssets.lifecycle, 'active'),
+              eq(mediaAssets.catalogState, 'active'),
             ),
           )
           .returning(reviewAssetColumns)
@@ -333,14 +333,14 @@ export function createMediaAssetReviewRepository(
       const [asset] = await client
         .update(mediaAssets)
         .set({
-          lifecycle: 'active',
+          catalogState: 'active',
           archivedAt: null,
           updatedAt: input.restoredAt,
         })
         .where(
           and(
             ownedAssetCondition(input.ownerUserId, input.mediaAssetId),
-            eq(mediaAssets.lifecycle, 'archived'),
+            eq(mediaAssets.catalogState, 'archived'),
           ),
         )
         .returning(reviewAssetColumns)
