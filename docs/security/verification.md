@@ -4,6 +4,12 @@ Last checked: 2026-07-16. This note separates repository evidence from hosted
 settings. Do not paste credentials, scan findings, or exploit details here;
 use GitHub private vulnerability reporting.
 
+Owner admin is an always-available control plane for Media and AMA operations.
+It has no environment kill switch: Clerk authentication plus the exact
+server-checked `publicMetadata.siteOwner = "yes"` marker protects access. The
+five AMA switches cover only public mutations, payments, booking finalization,
+Google, and Tencent; an absent switch is deliberately equivalent to `false`.
+
 ## Local repository
 
 - [x] `SECURITY.md` directs coordinated disclosure to GitHub private
@@ -75,14 +81,19 @@ Project API checks on 2026-07-16 verified:
 - [x] Preview explicitly sets all five optional AMA capability switches to
   `false`. Owner admin has no capability switch and remains protected by Clerk
   authentication plus the exact server-side `siteOwner: "yes"` marker.
-- [ ] Add the five explicit false AMA capability switches to Production before
-  the v3 cutover.
+- [x] Production omits the five optional AMA capability switches, which is the
+  schema's documented fail-closed state. Explicit `false` values are optional,
+  not a launch requirement.
 - [ ] Add an isolated Preview `CLERK_SECRET_KEY`; never expose the Production
   Clerk secret to Preview.
-- [ ] Split the shared Resend and Marketplace KV credentials so Preview and
-  Production never receive the same provider secret.
+- [ ] Remove the unused Resend key from Preview instead of provisioning a v3
+  replacement, and split the Marketplace KV credentials so Preview and
+  Production never receive the same datastore secret. Keep the legacy
+  Production Resend key only until the historical site is cut over.
 - [ ] Remove the obsolete `Admin Security` challenge for the removed
   `POST /api/admin/auth/request` route.
+- [ ] Remove the dead `AMA_ADMIN_ENABLED` Preview variable if it still exists;
+  the owner admin boundary is not environment-gated.
 - [x] Vercel reports no configured log drains for the workspace. A grouped,
   payload-free Preview query confirmed runtime-log access. The Pro workspace
   has Observability Plus enabled for this project, so Vercel's documented

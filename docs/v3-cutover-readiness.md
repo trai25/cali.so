@@ -51,9 +51,9 @@ Renditions. The retired static photo fallback has been removed.
 | GitHub security settings | PASS | Secret scanning, push protection, Dependabot security updates, read-only Actions defaults, and full-SHA action policy are enabled. |
 | Required GitHub checks | FAIL | Neither the `v2` ruleset nor `main` branch protection requires `Quality` and `CodeQL`. The maintainer-operated commands are in `docs/v3-cutover-ops-runbook.md`. |
 | Current Vercel project settings | PASS | Project inspection succeeds with the explicit team scope. The earlier `Not authorized` was a CLI quirk: the team slug `cali` resolves to the personal account, so commands must pass the team ID as `--scope` (see the runbook). |
-| Production capability switches | PASS | All five optional `AMA_*_ENABLED` variables are absent from Production and therefore fail closed. Setting them explicitly `false` remains recommended during provisioning. `AMA_ADMIN_ENABLED` survives in Preview as dead configuration after ADR-0008 and should be removed. |
-| Preview and Production secret isolation | FAIL | `RESEND_API_KEY` is one variable targeting both Production and Preview, and the `KV_*`/`REDIS_URL` group added with the Preview provisioning also targets both environments. |
-| Production runtime environment | FAIL | Production `DATABASE_URL` predates the rewrite by over three years, and the v3 server-environment contract is otherwise unmet: no `SESSION_SECRET`, `AMA_ENCRYPTION_KEY`, `RATE_LIMIT_HASH_KEY`, `SITE_URL`, `RESEND_FROM_EMAIL`, rate-limit values, `CRON_SECRET`, or any `BUNNY_*`/`MEDIA_*` variable. The first v3 production build would fail environment validation. |
+| Production capability switches | PASS | All five optional `AMA_*_ENABLED` variables are absent from Production and therefore fail closed. Owner admin has no capability switch. `AMA_ADMIN_ENABLED` survives in Preview as dead configuration after ADR-0008 and should be removed. |
+| Preview and Production secret isolation | FAIL | The v3 app no longer uses Resend, so Preview should not receive the legacy Production key. The `KV_*`/`REDIS_URL` group still targets both environments, and Preview needs its own Clerk secret. |
+| Production runtime environment | FAIL | Production `DATABASE_URL` predates the rewrite by over three years, and the v3 server-environment contract is otherwise unmet: the environment-specific Clerk keys, `AMA_ENCRYPTION_KEY`, `RATE_LIMIT_HASH_KEY`, `SITE_URL`, admin rate-limit values, `CRON_SECRET`, and required `BUNNY_*`/`MEDIA_*` variables are not fully provisioned. The first v3 production build would fail environment validation. |
 | Production runtime database grants | AWAITING CONFIRMATION | Requires two fresh confirmations before inspecting the production role or sensitive cloud state. |
 | Production migration credential | PASS (name level) | `MIGRATION_DATABASE_URL` is absent from every Vercel environment. Its availability to the controlled migration operation is confirmed at cutover time. |
 | Production migrations | AWAITING CONFIRMATION | Nine additive migrations validate locally. Media migrations `0005` through `0009` are required for the v3 photo surface; execution and schema state require a separately authorized cutover step. |
@@ -206,7 +206,7 @@ Before cutover, an authorized operator must:
    role, preserving the additive migration history;
 4. verify private Originals, public Renditions, and the active Published Photo
    Selection against the production Bunny and Neon boundary;
-5. leave all five optional AMA capability switches explicitly false; and
+5. leave all five optional AMA capability switches absent or `false`; and
 6. smoke-test the public site without exercising disabled AMA provider
    workflows.
 
@@ -235,9 +235,9 @@ The maintainer-operated commands for actions 1 through 4 are collected in
    legacy `DATABASE_URL` with the CRUD-only Neon runtime role and add the
    missing secrets, rate limits, capability switches, and complete Bunny and
    media configuration.
-2. Split the shared `RESEND_API_KEY` and `KV_*`/`REDIS_URL` credentials so
-   Preview and Production hold isolated values, and delete the dead
-   `AMA_ADMIN_ENABLED` variable from Preview.
+2. Remove the unused `RESEND_API_KEY` from Preview, split the shared
+   `KV_*`/`REDIS_URL` credentials, add an isolated Preview Clerk secret, and
+   delete the dead `AMA_ADMIN_ENABLED` variable from Preview.
 3. Add `Quality` and `CodeQL` as required checks to both `v2` and `main`.
 4. In the Vercel dashboard, verify logs, drains, retention, firewall rules,
    the production-branch mapping, and the certificate.

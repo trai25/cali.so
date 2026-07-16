@@ -54,20 +54,21 @@ JSON
 
 ## 2. Isolate Preview and Production credentials
 
-- `RESEND_API_KEY` is a single variable targeting both environments. Create a
-  second Resend key for Preview, then rescope: in the dashboard, edit the
-  existing variable to Production only and add a Preview-only variable with
-  the new key. CLI equivalent (each `env add` prompts for the value):
+- The v3 app no longer uses Resend. Remove the legacy key from Preview rather
+  than creating another key. Keep its Production assignment only while the
+  historical site is live, then remove it after cutover:
 
   ```bash
   npx vercel env rm RESEND_API_KEY preview $SCOPE
-  npx vercel env add RESEND_API_KEY preview $SCOPE
   ```
 
 - The `KV_URL`, `KV_REST_API_*`, and `REDIS_URL` group comes from one storage
   integration connected to both environments. Isolation happens in the
   dashboard's Storage tab: connect a separate store (or database) for Preview
   so Production traffic and Preview experiments never share data.
+
+- Add a Preview-only `CLERK_SECRET_KEY` from the non-production Clerk
+  environment. Never copy the Production Clerk secret into Preview.
 
 - Remove the dead capability switch left behind by ADR-0008:
 
@@ -89,30 +90,24 @@ add() { npx vercel env add "$1" production $SCOPE; }
 npx vercel env rm DATABASE_URL production $SCOPE
 add DATABASE_URL
 
-# Identity and delivery.
+# Identity and runtime ownership.
 add SITE_URL                 # https://cali.so
 add ADMIN_EMAIL
-add RESEND_FROM_EMAIL
+add NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+add CLERK_SECRET_KEY
 add CRON_SECRET              # openssl rand -hex 32
 
 # Server-only key material — generate per environment, never reuse Preview's.
-add SESSION_SECRET           # openssl rand -hex 32
 add AMA_ENCRYPTION_KEY       # openssl rand -hex 32
 add RATE_LIMIT_HASH_KEY      # openssl rand -hex 32
 add MEDIA_ENCRYPTION_KEY     # openssl rand -hex 32
 
 # Rate limits (values from .env.example defaults unless tuned).
-add AUTH_RATE_LIMIT_MAX_REQUESTS
-add AUTH_RATE_LIMIT_WINDOW_SECONDS
 add ADMIN_MUTATION_RATE_LIMIT_MAX_REQUESTS
 add ADMIN_MUTATION_RATE_LIMIT_WINDOW_SECONDS
 
-# Capability switches — explicitly false for launch.
-add AMA_PUBLIC_MUTATIONS_ENABLED
-add AMA_PAYMENTS_ENABLED
-add AMA_BOOKING_FINALIZATION_ENABLED
-add AMA_GOOGLE_INTEGRATION_ENABLED
-add AMA_TENCENT_INTEGRATION_ENABLED
+# The five optional AMA capability switches default to false when absent.
+# If you set them for operational visibility, enter the literal value `false`.
 
 # Bunny media storage (production zones, not the preview zones).
 add BUNNY_MEDIA_REGION
