@@ -1849,6 +1849,7 @@ a:focus-visible .external-label .external-mark {
 [data-halftone] {
   display: block;
   position: relative;
+  aspect-ratio: 1;
   user-select: none;
 }
 
@@ -1857,12 +1858,39 @@ a:focus-visible .external-label .external-mark {
 .halftone-source {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
   filter: grayscale(1) contrast(1.05);
   opacity: 0.85;
 }
 
-[data-halftone][data-ready] .halftone-source {
+.halftone-source[data-theme='dark'] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .halftone-source[data-theme='light'] {
+    opacity: 0;
+  }
+
+  .halftone-source[data-theme='dark'] {
+    opacity: 0.85;
+  }
+}
+
+html.light .halftone-source[data-theme='light'],
+html.dark .halftone-source[data-theme='dark'] {
+  opacity: 0.85;
+}
+
+html.light .halftone-source[data-theme='dark'],
+html.dark .halftone-source[data-theme='light'] {
+  opacity: 0;
+}
+
+[data-halftone][data-ready] .halftone-source[data-theme] {
   opacity: 0;
 }
 

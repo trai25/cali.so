@@ -267,6 +267,19 @@ export function HalftonePortrait({
 
   return (
     <span ref={wrapperRef} className={className} data-halftone>
+      {/* Keep both no-JS fallbacks in the document so CSS can select the
+          pre-paint-resolved theme before the canvas is ready. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={srcLight}
+        alt=""
+        width={1000}
+        height={1000}
+        crossOrigin="anonymous"
+        className="halftone-source"
+        data-theme="light"
+        aria-hidden
+      />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={srcDark}
@@ -275,6 +288,7 @@ export function HalftonePortrait({
         height={1000}
         crossOrigin="anonymous"
         className="halftone-source"
+        data-theme="dark"
         aria-hidden
       />
       <canvas
