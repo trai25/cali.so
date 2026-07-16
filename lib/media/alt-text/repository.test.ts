@@ -1,38 +1,30 @@
-import { readFile } from 'node:fs/promises'
-
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { drizzle } from 'drizzle-orm/pglite'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('server-only', () => ({}))
+
+import { usePGliteTestClient } from '~/db/testing/pglite'
 
 import {
   createMediaAltTextRepository,
   type MediaAltTextDatabase,
 } from './repository'
-
-const migrations = [
-  new URL('../../../db/migrations/0005_media_catalog.sql', import.meta.url),
-  new URL(
-    '../../../db/migrations/0009_media_catalog_state.sql',
-    import.meta.url,
-  ),
-]
 const mediaAssetId = '11111111-1111-4111-8111-111111111111'
 const uploadIntentId = '22222222-2222-4222-8222-222222222222'
 const checksum = 'a'.repeat(64)
 const now = new Date('2026-07-15T10:00:00.000Z')
 
 describe('Media Library Alt Text Suggestion repository', () => {
+  const getClient = usePGliteTestClient([
+    '0005_media_catalog.sql',
+    '0009_media_catalog_state.sql',
+  ])
   let client: PGlite
   let repository: ReturnType<typeof createMediaAltTextRepository>
 
   beforeEach(async () => {
-    client = new PGlite()
-    for (const url of migrations) {
-      const migration = await readFile(url, 'utf8')
-      await client.exec(migration.replaceAll('--> statement-breakpoint', ''))
-    }
+    client = getClient()
     const database = drizzle(client)
     repository = createMediaAltTextRepository(
       () => database as unknown as MediaAltTextDatabase,
@@ -70,10 +62,6 @@ describe('Media Library Alt Text Suggestion repository', () => {
         checksum,
       ],
     )
-  })
-
-  afterEach(async () => {
-    await client.close()
   })
 
   it('reads only the bounded sanitized Rendition projection', async () => {

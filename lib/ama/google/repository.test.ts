@@ -1,10 +1,9 @@
-import { readFile } from 'node:fs/promises'
-
-import { PGlite } from '@electric-sql/pglite'
 import { drizzle } from 'drizzle-orm/pglite'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('server-only', () => ({}))
+
+import { usePGliteTestClient } from '~/db/testing/pglite'
 
 import { createSecretBox } from '../secrets'
 import {
@@ -13,33 +12,22 @@ import {
 } from '../availability/repository'
 import { createGoogleRepository, type GoogleDatabase } from './repository'
 
-const migrations = [
-  new URL('../../../db/migrations/0001_ama_owner_auth.sql', import.meta.url),
-  new URL('../../../db/migrations/0002_ama_availability.sql', import.meta.url),
-  new URL('../../../db/migrations/0003_ama_google_calendar.sql', import.meta.url),
-  new URL('../../../db/migrations/0004_ama_google_oauth.sql', import.meta.url),
-]
-
 describe('Google Calendar persistence', () => {
-  let client: PGlite
+  const getClient = usePGliteTestClient([
+    '0001_ama_owner_auth.sql',
+    '0002_ama_availability.sql',
+    '0003_ama_google_calendar.sql',
+    '0004_ama_google_oauth.sql',
+  ])
   let repository: ReturnType<typeof createGoogleRepository>
   let availability: ReturnType<typeof createAvailabilityRepository>
 
-  beforeEach(async () => {
-    client = new PGlite()
-    for (const migrationUrl of migrations) {
-      const migration = await readFile(migrationUrl, 'utf8')
-      await client.exec(migration.replaceAll('--> statement-breakpoint', ''))
-    }
-    const database = drizzle(client)
+  beforeEach(() => {
+    const database = drizzle(getClient())
     repository = createGoogleRepository(() => database as unknown as GoogleDatabase)
     availability = createAvailabilityRepository(
       () => database as unknown as AvailabilityDatabase,
     )
-  })
-
-  afterEach(async () => {
-    await client.close()
   })
 
   it('persists one connected calendar with an encrypted refresh-token envelope', async () => {
@@ -85,7 +73,7 @@ describe('Google Calendar persistence', () => {
       createdAt: now,
     })
 
-    const stored = await client.query<{
+    const stored = await getClient().query<{
       state_hash: string
       pkce_verifier_envelope: unknown
     }>('select state_hash, pkce_verifier_envelope from ama_google_oauth_attempts')

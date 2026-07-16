@@ -87,9 +87,12 @@ Project API checks on 2026-07-16 verified:
 - [ ] Add an isolated Preview `CLERK_SECRET_KEY`; never expose the Production
   Clerk secret to Preview.
 - [ ] Remove the unused Resend key from Preview instead of provisioning a v3
-  replacement, and split the Marketplace KV credentials so Preview and
-  Production never receive the same datastore secret. Keep the legacy
-  Production Resend key only until the historical site is cut over.
+  replacement. Keep the legacy Production Resend key only until the historical
+  site is cut over.
+- [ ] Apply migration `0010` to the Preview Neon branch, grant its runtime role
+  CRUD-only access to `rate_limit_windows`, then remove every `KV_*`,
+  `REDIS_URL`, and `UPSTASH_*` variable from Preview. Redis is Production-only;
+  Preview rate limits use its isolated Neon database.
 - [ ] Remove the obsolete `Admin Security` challenge for the removed
   `POST /api/admin/auth/request` route.
 - [ ] Remove the dead `AMA_ADMIN_ENABLED` Preview variable if it still exists;

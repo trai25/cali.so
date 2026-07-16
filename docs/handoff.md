@@ -39,6 +39,8 @@ Current as of July 2026.
   limits, audit events, and the strict admin CSP remain in force. Public AMA
   mutations, payment, provider, and finalization capabilities stay disabled for
   the v3 production launch.
+- Rate limits use Upstash only in Production. Preview persists its limits in
+  the isolated Neon database, while Local and CI use process-local limits.
 - Security baseline controls from PR #97 remain mandatory: CSP and security
   headers, same-origin mutation policy, rate limits, kill switches,
   privacy-safe audit events, isolated credentials, and security automation.
@@ -127,7 +129,8 @@ The Vercel runtime receives only the CRUD-only `DATABASE_URL`. Never put
   dock owns its SVG filter as an inline style; ordinary blur uses Tailwind
   utilities.
 - Preview and Production credentials and data are separate. Preview data must
-  be disposable or irreversibly sanitized.
+  be disposable or irreversibly sanitized. Never attach Redis credentials to
+  Preview; its rate-limit windows live in the Preview Neon database.
 - The five optional `AMA_*_ENABLED` variables fail closed. Leave every one
   `false` for the v3 launch; owner admin has no capability switch.
 - Design references are private. Public code and documentation use only the
