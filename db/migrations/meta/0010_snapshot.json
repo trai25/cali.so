@@ -1,5 +1,5 @@
 {
-  "id": "16090278-e2a7-479e-8ae1-a24cbd22d2d6",
+  "id": "fda4f8b0-5f95-4cce-b927-a3581d6449ef",
   "prevId": "255192c2-5fad-453b-9433-9ee567ec62fe",
   "version": "7",
   "dialect": "postgresql",
@@ -2080,9 +2080,9 @@
           "primaryKey": false,
           "notNull": true
         },
-        "request_count": {
-          "name": "request_count",
-          "type": "integer",
+        "request_times": {
+          "name": "request_times",
+          "type": "timestamp with time zone[]",
           "primaryKey": false,
           "notNull": true
         },
@@ -2123,9 +2123,9 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {
-        "rate_limit_windows_request_count_check": {
-          "name": "rate_limit_windows_request_count_check",
-          "value": "\"rate_limit_windows\".\"request_count\" > 0"
+        "rate_limit_windows_request_times_check": {
+          "name": "rate_limit_windows_request_times_check",
+          "value": "cardinality(\"rate_limit_windows\".\"request_times\") > 0"
         }
       },
       "isRLSEnabled": false

@@ -64,7 +64,8 @@ test('rate-limit migration stores bounded windows without private request keys',
 
   assert.match(sql, /create table "rate_limit_windows"/)
   assert.match(sql, /primary key\("scope","key_hash"\)/)
-  assert.match(sql, /"request_count" > 0/)
+  assert.match(sql, /"request_times" timestamp with time zone\[\] not null/)
+  assert.match(sql, /cardinality\("rate_limit_windows"\."request_times"\) > 0/)
   assert.match(sql, /create index "rate_limit_windows_expiry_idx"/)
   assert.doesNotMatch(sql, /"request_key"/)
 })

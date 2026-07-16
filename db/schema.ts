@@ -67,7 +67,9 @@ export const rateLimitWindows = pgTable(
   {
     scope: varchar('scope', { length: 128 }).notNull(),
     keyHash: varchar('key_hash', { length: 64 }).notNull(),
-    requestCount: integer('request_count').notNull(),
+    requestTimes: timestamp('request_times', { withTimezone: true })
+      .array()
+      .notNull(),
     windowExpiresAt: timestamp('window_expires_at', {
       withTimezone: true,
     }).notNull(),
@@ -76,8 +78,8 @@ export const rateLimitWindows = pgTable(
     primaryKey({ columns: [table.scope, table.keyHash] }),
     index('rate_limit_windows_expiry_idx').on(table.windowExpiresAt),
     check(
-      'rate_limit_windows_request_count_check',
-      sql`${table.requestCount} > 0`,
+      'rate_limit_windows_request_times_check',
+      sql`cardinality(${table.requestTimes}) > 0`,
     ),
   ],
 )

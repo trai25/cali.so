@@ -75,4 +75,36 @@ describe('database rate limiter', () => {
       success: true,
     })
   })
+
+  it('does not allow a burst across the first request boundary', async () => {
+    const limiter = createDatabaseRateLimiter(
+      () => drizzle(client) as unknown as RateLimitDatabase,
+      {
+        prefix: 'cali:ama:admin-mutation',
+        maxRequests: 3,
+        windowSeconds: 60,
+      },
+      { now: () => now },
+    )
+
+    await expect(limiter.limit('private-owner-key')).resolves.toEqual({
+      success: true,
+    })
+
+    now = new Date('2026-07-16T06:00:59.000Z')
+    await expect(
+      Promise.all([
+        limiter.limit('private-owner-key'),
+        limiter.limit('private-owner-key'),
+      ]),
+    ).resolves.toEqual([{ success: true }, { success: true }])
+
+    now = new Date('2026-07-16T06:01:00.000Z')
+    await expect(
+      Promise.all([
+        limiter.limit('private-owner-key'),
+        limiter.limit('private-owner-key'),
+      ]),
+    ).resolves.toEqual([{ success: true }, { success: false }])
+  })
 })
