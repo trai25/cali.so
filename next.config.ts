@@ -34,6 +34,14 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     '/blog/\\[slug\\]': ['./content/blog/**/*'],
     '/en/blog/\\[slug\\]': ['./content/blog/**/*'],
+    '/blog/\\[slug\\]/opengraph-image': ['./content/blog/**/*'],
+    '/en/blog/\\[slug\\]/opengraph-image': ['./content/blog/**/*'],
+    '/newsletters/\\[id\\]/opengraph-image': [
+      './content/newsletters/**/*',
+    ],
+    '/en/newsletters/\\[id\\]/opengraph-image': [
+      './content/newsletters/**/*',
+    ],
     '/content/\\[\\.\\.\\.path\\]': [
       './content/blog/**/*',
       './content/newsletters/**/*',
