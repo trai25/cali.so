@@ -4,6 +4,7 @@ import { ImageResponse } from 'next/og'
 import type { Post } from './content'
 import { formatDate, formatDateEn } from './date'
 import type { Locale } from './locale-route'
+import type { ArchivedNewsletter } from './newsletters'
 import {
   coverDataUri,
   ogColors,
@@ -13,17 +14,15 @@ import {
   publicImageDataUri,
 } from './og'
 import { tiltFromSlug } from './polaroid'
-import { seo, seoEn } from './seo'
+import {
+  publicPageMetadata,
+  type PublicSection,
+} from './public-page-metadata'
 
 const NAME = 'Cali Castle'
-const TAGLINES: Record<Locale, string> = {
-  zh: '开发者、设计师、细节控、创始人',
-  en: 'Developer, designer, and founder',
-}
-
 const HOME_INTRODUCTIONS: Record<Locale, string> = {
-  zh: seo.description,
-  en: seoEn.description,
+  zh: publicPageMetadata.home.zh.ogDescription,
+  en: publicPageMetadata.home.en.ogDescription,
 }
 
 const IMAGE_SIZE = { width: 1200, height: 630 } as const
@@ -111,11 +110,56 @@ export async function createHomeOgImage(locale: Locale) {
   })
 }
 
-async function renderSiteOgImage(locale: Locale) {
+function OgSectionMark({ section }: { section: PublicSection }) {
+  const stroke = ogColors.paperInk
+  const fill = ogColors.paper
+  const faint = ogColors.border
+
+  if (section === 'blog') {
+    return (
+      <svg width="232" height="232" viewBox="0 0 232 232" fill="none">
+        <rect x="54" y="26" width="126" height="168" rx="4" fill={fill} stroke={faint} transform="rotate(5 54 26)" />
+        <rect x="42" y="34" width="126" height="168" rx="4" fill={fill} stroke={faint} transform="rotate(-4 42 34)" />
+        <rect x="52" y="31" width="126" height="168" rx="4" fill="white" stroke={stroke} />
+        <path d="M77 70H151M77 92H151M77 114H137M77 157H118" stroke={stroke} strokeWidth="3" strokeLinecap="round" />
+      </svg>
+    )
+  }
+
+  if (section === 'photos') {
+    return (
+      <svg width="232" height="232" viewBox="0 0 232 232" fill="none">
+        <g transform="rotate(-7 116 116)">
+          <rect x="41" y="39" width="150" height="164" fill={fill} stroke={faint} />
+          <rect x="51" y="49" width="130" height="112" fill={faint} />
+        </g>
+        <g transform="rotate(5 116 116)">
+          <rect x="41" y="32" width="150" height="164" fill={fill} stroke={stroke} />
+          <rect x="51" y="42" width="130" height="112" fill="white" stroke={stroke} />
+          <circle cx="148" cy="72" r="14" fill={faint} />
+          <path d="M52 154L87 112L112 137L132 115L181 154" fill={faint} stroke={stroke} strokeWidth="2" strokeLinejoin="round" />
+        </g>
+      </svg>
+    )
+  }
+
+  return (
+    <svg width="232" height="232" viewBox="0 0 232 232" fill="none">
+      <circle cx="116" cy="116" r="76" stroke={faint} strokeWidth="2" strokeDasharray="6 7" />
+      <path d="M116 20V212M20 116H212M48 48L184 184M184 48L48 184" stroke={faint} strokeWidth="2" />
+      <circle cx="116" cy="116" r="50" fill={fill} stroke={stroke} strokeWidth="2" />
+      <path d="M88 139L101 100L140 87L127 126L88 139Z" fill="white" stroke={stroke} strokeWidth="3" strokeLinejoin="round" />
+      <circle cx="116" cy="113" r="7" fill={stroke} />
+    </svg>
+  )
+}
+
+async function renderSectionOgImage(section: PublicSection, locale: Locale) {
   'use cache'
   cacheLife('max')
 
-  const tagline = TAGLINES[locale]
+  const copy = publicPageMetadata[section][locale]
+  const signature = 'Cali Castle'
 
   return new ImageResponse(
     (
@@ -123,35 +167,170 @@ async function renderSiteOgImage(locale: Locale) {
         <div
           style={{
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
-            gap: 24,
+            justifyContent: 'space-between',
+            gap: 64,
+            padding: '0 104px',
             width: '100%',
           }}
         >
           <div
             style={{
               display: 'flex',
-              fontSize: 72,
-              fontWeight: 600,
-              letterSpacing: '-0.02em',
-              color: ogColors.foreground,
+              flexDirection: 'column',
+              width: 720,
             }}
           >
-            {NAME}
+            <div
+              style={{
+                display: 'flex',
+                fontSize: 22,
+                color: ogColors.paperInk,
+              }}
+            >
+              {signature}
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                marginTop: 28,
+                fontSize: 70,
+                fontWeight: 600,
+                letterSpacing: '-0.02em',
+                color: ogColors.foreground,
+              }}
+            >
+              {copy.title}
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                marginTop: 24,
+                fontSize: 29,
+                lineHeight: 1.48,
+                color: ogColors.mutedForeground,
+              }}
+            >
+              {copy.description}
+            </div>
           </div>
-          <div style={{ display: 'flex', fontSize: 30, color: ogColors.mutedForeground }}>
-            {tagline}
+          <div style={{ display: 'flex', flexShrink: 0 }}>
+            <OgSectionMark section={section} />
           </div>
         </div>
       </OgSheet>
     ),
-    { ...IMAGE_SIZE, fonts: await ogFonts(NAME + tagline) },
+    {
+      ...IMAGE_SIZE,
+      fonts: await ogFonts(signature + copy.title + copy.description),
+    },
   ).arrayBuffer()
 }
 
-export async function createSiteOgImage(locale: Locale) {
-  return new Response(await renderSiteOgImage(locale), {
+export async function createSectionOgImage(section: PublicSection, locale: Locale) {
+  return new Response(await renderSectionOgImage(section, locale), {
+    headers: { 'content-type': 'image/png' },
+  })
+}
+
+type NewsletterOgInput = Pick<
+  ArchivedNewsletter,
+  'id' | 'title' | 'titleEn' | 'description' | 'descriptionEn'
+>
+
+async function renderNewsletterOgImage(newsletter: NewsletterOgInput, locale: Locale) {
+  'use cache'
+  cacheLife('max')
+
+  const title = locale === 'en' ? newsletter.titleEn : newsletter.title
+  const description =
+    locale === 'en' ? newsletter.descriptionEn : newsletter.description
+  const archiveLabel =
+    locale === 'en'
+      ? `Cali Castle · Archive ${newsletter.id.padStart(3, '0')}`
+      : `Cali Castle · 存档 ${newsletter.id.padStart(3, '0')}`
+  const cover = await coverDataUri(
+    `/content/newsletters/${newsletter.id}/cover.png`,
+  )
+
+  return new ImageResponse(
+    (
+      <OgSheet>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 64,
+            padding: '0 96px',
+            width: '100%',
+          }}
+        >
+          <OgPolaroid src={cover} tilt={-2} width={432} />
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              flexShrink: 0,
+              width: 512,
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                fontSize: 21,
+                color: ogColors.paperInk,
+              }}
+            >
+              {archiveLabel}
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                marginTop: 24,
+                fontSize: 48,
+                fontWeight: 600,
+                lineHeight: 1.25,
+                letterSpacing: '-0.02em',
+                color: ogColors.foreground,
+              }}
+            >
+              {title}
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                marginTop: 24,
+                fontSize: 24,
+                lineHeight: 1.5,
+                color: ogColors.mutedForeground,
+              }}
+            >
+              {description}
+            </div>
+          </div>
+        </div>
+      </OgSheet>
+    ),
+    {
+      ...IMAGE_SIZE,
+      fonts: await ogFonts(archiveLabel + title + description),
+    },
+  ).arrayBuffer()
+}
+
+export async function createNewsletterOgImage(
+  newsletter: ArchivedNewsletter,
+  locale: Locale,
+) {
+  const input: NewsletterOgInput = {
+    id: newsletter.id,
+    title: newsletter.title,
+    titleEn: newsletter.titleEn,
+    description: newsletter.description,
+    descriptionEn: newsletter.descriptionEn,
+  }
+
+  return new Response(await renderNewsletterOgImage(input, locale), {
     headers: { 'content-type': 'image/png' },
   })
 }

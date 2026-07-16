@@ -1,8 +1,13 @@
 import '../globals.css'
+import type { Metadata } from 'next'
 
 import { rootMetadata, SiteDocument } from '../_components/site-document'
+import { nonPublicRobots } from '~/lib/non-public-metadata'
 
-export const metadata = rootMetadata
+export const metadata: Metadata = {
+  ...rootMetadata,
+  robots: nonPublicRobots,
+}
 
 // Admin authentication and account data intentionally render per request.
 export const instant = false

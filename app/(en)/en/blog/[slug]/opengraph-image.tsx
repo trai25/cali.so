@@ -7,9 +7,20 @@ export function generateStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }))
 }
 
-export const size = { width: 1200, height: 630 }
-export const contentType = 'image/png'
-export const alt = 'Cali Castle'
+const size = { width: 1200, height: 630 }
+
+export function generateImageMetadata({ params }: { params: { slug: string } }) {
+  if (!isPostSlug(params.slug)) return []
+  const post = getPost(params.slug)
+  return [
+    {
+      id: params.slug,
+      alt: `${post.titleEn} · Cali Castle`,
+      size,
+      contentType: 'image/png',
+    },
+  ]
+}
 
 export default async function OpengraphImage({
   params,
