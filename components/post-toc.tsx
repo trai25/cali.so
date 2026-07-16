@@ -13,6 +13,10 @@ const DESKTOP_QUERY = '(min-width: 64rem)'
 const DESKTOP_EXIT_DURATION = 0.2
 const DESKTOP_EXIT_STAGGER_WINDOW = 0.06
 const EASE_SWIFT = [0.2, 0.8, 0.2, 1] as const
+const PHONE_ENTER_DURATION = 0.2
+const PHONE_ENTER_STAGGER_WINDOW = 0.06
+const PHONE_EXIT_DURATION = 0.16
+const PHONE_EXIT_STAGGER_WINDOW = 0.04
 const PHONE_QUERY = '(max-width: 39.99rem)'
 const TARGET_OFFSET = 100
 const RAIL_ID = 'post-document-minimap'
@@ -82,7 +86,7 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
     setActive(first)
   }, [landmarks])
 
-  function animateOpenState(nextOpen: boolean, pinRenderedState = false) {
+  function animateOpenState(nextOpen: boolean) {
     if (nextOpen === open) return
 
     const items = rootRef.current?.querySelectorAll<HTMLElement>('.post-minimap-node')
@@ -108,13 +112,21 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
       furthestCenterIndex > 0
         ? Math.min(0.01, DESKTOP_EXIT_STAGGER_WINDOW / furthestCenterIndex)
         : 0
+    const phoneStaggerWindow = nextOpen
+      ? PHONE_ENTER_STAGGER_WINDOW
+      : PHONE_EXIT_STAGGER_WINDOW
+    const phoneStagger =
+      furthestCenterIndex > 0
+        ? Math.min(0.01, phoneStaggerWindow / furthestCenterIndex)
+        : 0
 
-    if (closingDesktop || pinRenderedState) {
-      for (const item of items) {
-        const style = window.getComputedStyle(item)
-        item.style.opacity = style.opacity
-        item.style.transform = style.transform
-      }
+    // Motion otherwise resolves the first open against the incoming React
+    // state, so phone items jump directly to their final styles. Pinning the
+    // rendered frame also keeps rapid direction changes interruptible.
+    for (const item of items) {
+      const style = window.getComputedStyle(item)
+      item.style.opacity = style.opacity
+      item.style.transform = style.transform
     }
 
     const animation = animate(
@@ -126,11 +138,20 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
           : 'translateY(-8px) rotate(2deg)',
       },
       {
-        duration: closingDesktop ? DESKTOP_EXIT_DURATION : nextOpen ? 0.26 : 0.2,
-        delay: stagger(closingDesktop ? desktopExitStagger : nextOpen ? 0.012 : 0.01, {
-          from: 'center',
-        }),
-        ease: closingDesktop ? EASE_SWIFT : [0.23, 0.88, 0.26, 0.92],
+        duration: closingDesktop
+          ? DESKTOP_EXIT_DURATION
+          : phone
+            ? nextOpen
+              ? PHONE_ENTER_DURATION
+              : PHONE_EXIT_DURATION
+            : nextOpen
+              ? 0.26
+              : 0.2,
+        delay: stagger(
+          closingDesktop ? desktopExitStagger : phone ? phoneStagger : nextOpen ? 0.012 : 0.01,
+          { from: 'center' },
+        ),
+        ease: EASE_SWIFT,
       },
     )
     nodeAnimationRef.current = animation
@@ -169,7 +190,7 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
         frame = window.requestAnimationFrame(() => {
           frame = 0
           desktopEntrancePlayedRef.current = true
-          animateOpenState(true, true)
+          animateOpenState(true)
         })
         return
       }
