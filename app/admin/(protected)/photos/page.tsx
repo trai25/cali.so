@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 import { requireOwnerPage } from '~/lib/admin/server'
-import { getMediaAdminServices } from '~/lib/media/admin/server'
+import { getMediaAdminPageServices } from '~/lib/media/admin/server'
 import { nonPublicRobots } from '~/lib/non-public-metadata'
 
 import { PhotoSelectionEditor } from './PhotoSelectionEditor'
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default async function AdminPhotosPage() {
   const owner = await requireOwnerPage('/admin/photos')
 
-  const { review, selection } = getMediaAdminServices()
+  const { review, selection } = getMediaAdminPageServices()
   const [draft, assets] = await Promise.all([
     selection.getDraft(owner.id),
     review.listAssets({ ownerUserId: owner.id, view: 'active' }),
