@@ -702,6 +702,96 @@ test('keyboard controls restore focus across public overlays', async ({ page }) 
   )
 })
 
+test('mobile article map animates its entrance and toggle states', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto(`/en/blog/${postSlug}`)
+
+  const island = page.locator('.post-minimap-island')
+  const articleMap = page.getByRole('button', { name: 'Open article map' })
+  await expect(island).toHaveCSS('opacity', '0')
+
+  const entranceDurations = await island.evaluate(
+    (element) =>
+      new Promise<number[]>((resolve, reject) => {
+        const timeout = window.setTimeout(() => {
+          element.removeEventListener('transitionrun', captureTransition)
+          reject(new Error('Mobile article map entrance did not start'))
+        }, 5_000)
+        const captureTransition = (event: Event) => {
+          if (event.target !== element) return
+          const durations = element
+            .getAnimations()
+            .map((animation) => animation.effect?.getComputedTiming().duration)
+            .filter((duration): duration is number => typeof duration === 'number')
+          if (!durations.includes(180) || !durations.includes(200)) return
+
+          window.clearTimeout(timeout)
+          element.removeEventListener('transitionrun', captureTransition)
+          resolve(durations)
+        }
+
+        element.addEventListener('transitionrun', captureTransition)
+        window.scrollTo(0, 700)
+      }),
+  )
+  expect(entranceDurations).toEqual(expect.arrayContaining([180, 200]))
+  await expect(articleMap).toBeVisible()
+
+  const opening = await articleMap.evaluate(async (button) => {
+    if (!(button instanceof HTMLButtonElement)) {
+      throw new Error('Article map toggle is not a button')
+    }
+    button.click()
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+
+    const map = document.querySelector('.post-minimap')
+    const nodes = [...document.querySelectorAll('.post-minimap-node')]
+    return {
+      expanded: button.getAttribute('aria-expanded'),
+      mapAnimations: map?.getAnimations().length ?? 0,
+      nodeAnimations: nodes.reduce(
+        (count, node) => count + node.getAnimations().length,
+        0,
+      ),
+    }
+  })
+  expect(opening.expanded).toBe('true')
+  expect(opening.mapAnimations).toBeGreaterThan(0)
+  expect(opening.nodeAnimations).toBeGreaterThan(0)
+
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll('.post-minimap-node')].every(
+      (node) => node.getAnimations().length === 0,
+    ),
+  )
+
+  const closing = await page
+    .getByRole('button', { name: 'Close article map' })
+    .evaluate(async (button) => {
+      if (!(button instanceof HTMLButtonElement)) {
+        throw new Error('Article map toggle is not a button')
+      }
+      button.click()
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+
+      const map = document.querySelector('.post-minimap')
+      const nodes = [...document.querySelectorAll('.post-minimap-node')]
+      return {
+        expanded: button.getAttribute('aria-expanded'),
+        mapAnimations: map?.getAnimations().length ?? 0,
+        nodeAnimations: nodes.reduce(
+          (count, node) => count + node.getAnimations().length,
+          0,
+        ),
+      }
+    })
+  expect(closing.expanded).toBe('false')
+  expect(closing.mapAnimations).toBeGreaterThan(0)
+  expect(closing.nodeAnimations).toBeGreaterThan(0)
+})
+
 test('administration stays outside public prefetching and requires login', async ({
   page,
 }) => {
