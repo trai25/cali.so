@@ -171,17 +171,30 @@ export function HalftonePortrait({
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       ctx.clearRect(0, 0, cssW, cssH)
       const active: 'light' | 'dark' = isDark() ? 'dark' : 'light'
+      let painted = false
       if (fade) {
         const t = Math.min(1, (performance.now() - fade.start) / FADE_MS)
         const ease = t * t * (3 - 2 * t)
         const fromField = fields[fade.from]
         const toField = fields[fade.to]
-        if (fromField) drawField(fromField, 1 - ease)
-        if (toField) drawField(toField, ease)
+        if (fromField) {
+          drawField(fromField, 1 - ease)
+          painted = true
+        }
+        if (toField) {
+          drawField(toField, ease)
+          painted = true
+        }
         if (t >= 1) fade = null
       } else {
         const field = fields[active]
-        if (field) drawField(field, 1)
+        if (field) {
+          drawField(field, 1)
+          painted = true
+        }
+      }
+      if (painted && !wrapper.hasAttribute('data-ready')) {
+        wrapper.dataset.ready = ''
       }
     }
 
@@ -208,7 +221,6 @@ export function HalftonePortrait({
       canvas.height = Math.round(cssH * dpr)
       buildField('light')
       buildField('dark')
-      wrapper.dataset.ready = ''
       draw()
     }
 
@@ -267,8 +279,8 @@ export function HalftonePortrait({
 
   return (
     <span ref={wrapperRef} className={className} data-halftone>
-      {/* Keep both no-JS fallbacks in the document so CSS can select the
-          pre-paint-resolved theme before the canvas is ready. */}
+      {/* Warm both source images from the server HTML without exposing a
+          raw-photo frame before the client paints the halftone field. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={srcLight}
@@ -276,8 +288,7 @@ export function HalftonePortrait({
         width={1000}
         height={1000}
         crossOrigin="anonymous"
-        className="halftone-source"
-        data-theme="light"
+        hidden
         aria-hidden
       />
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -287,8 +298,7 @@ export function HalftonePortrait({
         width={1000}
         height={1000}
         crossOrigin="anonymous"
-        className="halftone-source"
-        data-theme="dark"
+        hidden
         aria-hidden
       />
       <canvas
