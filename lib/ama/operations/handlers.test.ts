@@ -219,10 +219,12 @@ function fixture(bookingOverrides: Partial<BookingRecord> = {}) {
     nextCreateResults: [] as CalendarEventResult[],
     moveResult: { status: 'done' } as CalendarMutationResult,
     deleteResult: { status: 'done' } as CalendarMutationResult,
+    onCreate: undefined as (() => void) | undefined,
   }
   const calendar: BookingCalendar = {
     async createEvent(input) {
       createEventCalls.push(input)
+      calendarState.onCreate?.()
       return (
         calendarState.nextCreateResults.shift() ?? {
           status: 'created',
@@ -527,6 +529,26 @@ describe('finalize_booking', () => {
       code: 'tencent_disabled',
     })
   })
+
+  it('removes artifacts it created when a cancellation landed mid-flight', async () => {
+    const f = fixture()
+    // The guest cancels exactly while this leased operation is creating the
+    // meeting; the cancel path saw no artifacts, so finalize cleans up.
+    f.calendarState.onCreate = () => {
+      f.booking.status = 'cancelled'
+      f.booking.cancelledAt = NOW
+      f.booking.cancelledBy = 'guest'
+    }
+
+    await f.handle(finalizeOp())
+
+    expect(f.setMeetingArtifactsCalls).toHaveLength(1)
+    expect(f.deleteEventCalls).toEqual([deriveCalendarEventId('bk_1', STARTS_AT)])
+    expect(f.enqueued).toEqual([])
+    expect(f.transitions).toEqual([])
+    expect(f.events.map((event) => event.event)).toContain('artifacts_removed')
+    expect(f.events.map((event) => event.event)).not.toContain('finalized')
+  })
 })
 
 describe('update_booking_artifacts', () => {
@@ -557,6 +579,49 @@ describe('update_booking_artifacts', () => {
     ])
     expect(f.booking.status).toBe('confirmed')
     expect(f.events.map((event) => event.event)).toContain('artifacts_updated')
+  })
+
+  it('cancels and recreates the Tencent room instead of moving it', async () => {
+    const f = fixture({
+      meetingProvider: 'tencent-meeting',
+      meetingUrl: 'https://meeting.tencent.com/dm/old',
+      googleCalendarEventId: 'evt-old',
+      tencentMeetingId: 'tm_old',
+      meetingCreatedAt: NOW,
+    })
+
+    await f.handle(updateOp())
+
+    expect(f.moveEventCalls).toEqual([])
+    expect(f.tencentCancelCalls).toEqual(['tm_old'])
+    expect(f.deleteEventCalls).toEqual(['evt-old'])
+    expect(f.tencentCreateCalls).toHaveLength(1)
+    expect(f.createEventCalls).toHaveLength(1)
+    expect(f.createEventCalls[0]?.withMeetConference).toBe(false)
+    expect(f.booking.meetingUrl).toBe('https://meeting.tencent.com/dm/fake')
+    expect(f.booking.googleCalendarEventId).toBe(
+      deriveCalendarEventId('bk_1', STARTS_AT),
+    )
+    expect(f.booking.tencentMeetingId).toBe('tm_1')
+    expect(f.booking.status).toBe('confirmed')
+  })
+
+  it('keeps the reschedule working when the old Tencent room cannot be cancelled', async () => {
+    const f = fixture({
+      meetingProvider: 'tencent-meeting',
+      meetingUrl: 'https://meeting.tencent.com/dm/old',
+      googleCalendarEventId: 'evt-old',
+      tencentMeetingId: 'tm_old',
+      meetingCreatedAt: NOW,
+    })
+    f.tencentState.cancelResult = 'unsupported'
+
+    await f.handle(updateOp())
+
+    expect(f.tencentCancelCalls).toEqual(['tm_old'])
+    expect(f.tencentCreateCalls).toHaveLength(1)
+    expect(f.booking.meetingUrl).toBe('https://meeting.tencent.com/dm/fake')
+    expect(f.booking.status).toBe('confirmed')
   })
 
   it('re-creates the event with the derived id when the original went missing', async () => {

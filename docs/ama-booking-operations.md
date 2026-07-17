@@ -75,9 +75,11 @@ next run reclaims the work, so no step depends on a healthy previous run.
 - Refund failures park as `refund_status=failed` with a terminal operation;
   admin can retry or grant the refund manually in Stripe and mark the
   operation resolved.
-- Tencent Meeting exposes no guaranteed room deletion. Cancellation removes
-  the Google Calendar event and attempts Tencent cleanup when the bridge
-  offers a cancel tool; the limitation is recorded on the lifecycle event.
+- Tencent Meeting exposes no guaranteed room deletion or rescheduling.
+  Cancellation removes the Google Calendar event and attempts Tencent
+  cleanup when the bridge offers a cancel tool; rescheduling cancels the old
+  room best-effort and recreates the room and invitation for the new time.
+  The limitation is recorded on the lifecycle event.
 
 ## Privacy
 

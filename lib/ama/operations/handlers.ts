@@ -237,6 +237,54 @@ export function createOperationHandlers(dependencies: OperationHandlerDependenci
     }
   }
 
+  /**
+   * Deletes the calendar event and best-effort cancels the Tencent room.
+   * Shared by the removal operation, the Tencent reschedule path, and the
+   * late-cancellation guard; every step tolerates already-removed artifacts.
+   */
+  async function removeArtifacts(booking: BookingRecord) {
+    if (booking.googleCalendarEventId) {
+      const deleted = await calendar.deleteEvent(booking.googleCalendarEventId)
+      if (deleted.status !== 'done' && deleted.status !== 'missing') {
+        throw new RetryableOperationError(`calendar_${deleted.status}`)
+      }
+    }
+    let tencentCleanup: 'cancelled' | 'unsupported' | null = null
+    if (booking.tencentMeetingId && tencent) {
+      try {
+        tencentCleanup = await tencent.cancelMeeting(booking.tencentMeetingId)
+      } catch (error) {
+        if (error instanceof MeetingProviderError) {
+          throw new RetryableOperationError(`tencent_${error.code}`)
+        }
+        throw error
+      }
+    }
+    return tencentCleanup
+  }
+
+  /**
+   * Closes the race with a concurrent cancellation: a cancel that committed
+   * before this operation stored artifacts saw nothing to clean up, so the
+   * operation that created them removes them again. When the cancel landed
+   * after the store it enqueued its own removal, and both paths tolerate
+   * each other.
+   */
+  async function removeArtifactsWhenCancelled(bookingId: string) {
+    const latest = await repository.getBooking(bookingId)
+    if (!latest) throw new TerminalOperationError('booking_missing')
+    if (latest.status !== 'cancelled') return false
+    const tencentCleanup = await removeArtifacts(latest)
+    await repository.appendEvent({
+      bookingId: latest.id,
+      event: 'artifacts_removed',
+      actor: 'system',
+      occurredAt: clock.now(),
+      detail: tencentCleanup ? { tencentCleanup } : {},
+    })
+    return true
+  }
+
   async function finalizeBooking(operation: DurableOperationRecord) {
     const booking = await requireBooking(operation)
     const now = clock.now()
@@ -266,6 +314,7 @@ export function createOperationHandlers(dependencies: OperationHandlerDependenci
       const stored = await createArtifacts(current)
       if (!stored) throw new TerminalOperationError('booking_missing')
       current = stored
+      if (await removeArtifactsWhenCancelled(current.id)) return
     }
 
     const emailKind =
@@ -295,29 +344,46 @@ export function createOperationHandlers(dependencies: OperationHandlerDependenci
 
     let current = booking
     if (current.googleCalendarEventId) {
-      const moved = await calendar.moveEvent({
-        eventId: current.googleCalendarEventId,
-        startsAt: current.startsAt,
-        endsAt: current.endsAt,
-      })
-      if (moved.status === 'missing') {
+      if (current.meetingProvider === 'tencent-meeting') {
+        // Tencent rooms cannot be moved to a new time, so a reschedule
+        // cancels the old room best-effort, drops the old invitation, and
+        // recreates both for the new time.
+        await removeArtifacts(current)
         const cleared = await repository.replaceMeetingArtifacts({
           bookingId: current.id,
           meetingUrl: null,
           googleCalendarEventId: null,
-          tencentMeetingId: current.tencentMeetingId,
+          tencentMeetingId: null,
           now,
         })
         if (!cleared) throw new TerminalOperationError('booking_missing')
         current = cleared
-      } else if (moved.status !== 'done') {
-        throw new RetryableOperationError(`calendar_${moved.status}`)
+      } else {
+        const moved = await calendar.moveEvent({
+          eventId: current.googleCalendarEventId,
+          startsAt: current.startsAt,
+          endsAt: current.endsAt,
+        })
+        if (moved.status === 'missing') {
+          const cleared = await repository.replaceMeetingArtifacts({
+            bookingId: current.id,
+            meetingUrl: null,
+            googleCalendarEventId: null,
+            tencentMeetingId: current.tencentMeetingId,
+            now,
+          })
+          if (!cleared) throw new TerminalOperationError('booking_missing')
+          current = cleared
+        } else if (moved.status !== 'done') {
+          throw new RetryableOperationError(`calendar_${moved.status}`)
+        }
       }
     }
     if (!current.googleCalendarEventId) {
       const stored = await createArtifacts(current)
       if (!stored) throw new TerminalOperationError('booking_missing')
       current = stored
+      if (await removeArtifactsWhenCancelled(current.id)) return
     }
 
     await enqueueDeliveries({ booking: current, emailKind: 'rescheduled', now })
@@ -338,23 +404,7 @@ export function createOperationHandlers(dependencies: OperationHandlerDependenci
   async function removeBookingArtifacts(operation: DurableOperationRecord) {
     const booking = await requireBooking(operation)
     const now = clock.now()
-    if (booking.googleCalendarEventId) {
-      const deleted = await calendar.deleteEvent(booking.googleCalendarEventId)
-      if (deleted.status !== 'done' && deleted.status !== 'missing') {
-        throw new RetryableOperationError(`calendar_${deleted.status}`)
-      }
-    }
-    let tencentCleanup: 'cancelled' | 'unsupported' | null = null
-    if (booking.tencentMeetingId && tencent) {
-      try {
-        tencentCleanup = await tencent.cancelMeeting(booking.tencentMeetingId)
-      } catch (error) {
-        if (error instanceof MeetingProviderError) {
-          throw new RetryableOperationError(`tencent_${error.code}`)
-        }
-        throw error
-      }
-    }
+    const tencentCleanup = await removeArtifacts(booking)
     await repository.appendEvent({
       bookingId: booking.id,
       event: 'artifacts_removed',
