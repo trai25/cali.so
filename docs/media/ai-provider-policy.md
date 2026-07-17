@@ -1,6 +1,7 @@
 # Media Alt Text Suggestion provider policy
 
-Status: pending owner approval for production use.
+Status: approved for Staging on 2026-07-17; pending owner approval for
+Production use.
 
 This policy covers only Alt Text Suggestion generation for the Media Library.
 It does not authorize other image analysis, captions, tagging, search, or
@@ -8,12 +9,14 @@ generative editing.
 
 ## Selected routing
 
-- Primary model: `google/gemini-3.1-flash-lite`
-- Cross-provider fallback: `anthropic/claude-haiku-4.5`
+- Primary model: `openai/gpt-5.6-luna`
+- Model fallback: `openai/gpt-5.4-mini`
 - Model availability and vision support were checked against the public AI
-  Gateway model catalog on 2026-07-15.
+  Gateway model catalog on 2026-07-17.
 - Both model identifiers are server configuration and can be replaced without
   changing the application service.
+- This routing preserves model-level fallback but not provider-level outage
+  isolation; that tradeoff is accepted for the owner-only Staging feature.
 
 ## Data boundary
 
@@ -38,8 +41,8 @@ provider credential or Gateway credential may enter a client bundle, log,
 database row, or repository file.
 
 Generation is non-streaming and structured. Each language is limited to 280
-characters. Calls have a 12-second timeout, one SDK retry, cross-provider
-fallback, an owner-scoped limit of 10 requests per hour, and Gateway cost
+characters. Calls have a 12-second timeout, one SDK retry, model fallback, an
+owner-scoped limit of 10 requests per hour, and Gateway cost
 attribution. Provider failure never clears an existing Alt Text Suggestion or
 owner-approved Alt Text, and manual Alt Text remains available without AI.
 
@@ -47,5 +50,10 @@ owner-approved Alt Text, and manual Alt Text remains available without AI.
 
 AI generation in every environment stays disabled until this policy is
 reviewed and `MEDIA_ALT_TEXT_PROVIDER_POLICY_APPROVED=true` is set together
-with `MEDIA_ALT_TEXT_ENABLED=true`. Approval should record the review date and
-any required regional or contractual restrictions in this document.
+with `MEDIA_ALT_TEXT_ENABLED=true`.
+
+The owner approved Staging use on 2026-07-17 with these restrictions: Vercel
+AI Gateway OIDC only, no static Gateway or provider credentials, Gateway
+content logging off, Zero Data Retention and prompt-training prohibition
+requested on every generation, the existing owner limit of 10 requests per
+hour, and no Production enablement without a separate approval.

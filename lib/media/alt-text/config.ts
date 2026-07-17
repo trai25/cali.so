@@ -3,9 +3,9 @@ import { z } from 'zod'
 import type { MediaAltTextGatewayConfig } from './gateway'
 
 export const DEFAULT_MEDIA_ALT_TEXT_PRIMARY_MODEL =
-  'google/gemini-3.1-flash-lite'
+  'openai/gpt-5.6-luna'
 export const DEFAULT_MEDIA_ALT_TEXT_FALLBACK_MODEL =
-  'anthropic/claude-haiku-4.5'
+  'openai/gpt-5.4-mini'
 
 const featureSwitch = z
   .enum(['true', 'false'])
@@ -62,17 +62,6 @@ const schema = z
     VERCEL_ENV: z.enum(['development', 'preview', 'production']).optional(),
   })
   .superRefine((environment, context) => {
-    const primaryProvider =
-      environment.MEDIA_ALT_TEXT_PRIMARY_MODEL.split('/')[0]
-    const fallbackProvider =
-      environment.MEDIA_ALT_TEXT_FALLBACK_MODEL.split('/')[0]
-    if (primaryProvider === fallbackProvider) {
-      context.addIssue({
-        code: 'custom',
-        path: ['MEDIA_ALT_TEXT_FALLBACK_MODEL'],
-        message: 'Alt Text Suggestion fallback must use another provider',
-      })
-    }
     if (
       environment.MEDIA_ALT_TEXT_ENABLED &&
       !environment.MEDIA_ALT_TEXT_PROVIDER_POLICY_APPROVED

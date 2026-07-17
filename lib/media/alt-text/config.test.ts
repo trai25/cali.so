@@ -20,13 +20,16 @@ describe('Media Library Alt Text environment', () => {
     })
   })
 
-  it('requires a cross-provider fallback', () => {
-    expect(() =>
+  it('allows a same-provider model fallback', () => {
+    expect(
       parseMediaAltTextEnv({
-        MEDIA_ALT_TEXT_PRIMARY_MODEL: 'google/gemini-3.1-flash-lite',
-        MEDIA_ALT_TEXT_FALLBACK_MODEL: 'google/gemini-3-flash',
+        MEDIA_ALT_TEXT_PRIMARY_MODEL: 'openai/gpt-5.6-luna',
+        MEDIA_ALT_TEXT_FALLBACK_MODEL: 'openai/gpt-5.4-mini',
       }),
-    ).toThrow('MEDIA_ALT_TEXT_FALLBACK_MODEL')
+    ).toMatchObject({
+      primaryModel: 'openai/gpt-5.6-luna',
+      fallbackModel: 'openai/gpt-5.4-mini',
+    })
   })
 
   it('keeps every environment disabled until provider policy approval', () => {
