@@ -30,9 +30,9 @@ Upload Intent instead of registering another asset.
 4. Review orientation, capture date, camera details, editable Location Labels,
    and Focal Points. Generate or edit both Alt Text languages, then explicitly
    approve the pair for each Media Asset.
-5. In `/admin/photos`, add only these two assets in the table order above and
-   verify the homepage preview. Publish once; a retry must use the same
-   idempotency key and Published Photo Selection revision.
+5. In `/admin/media#publish`, add only these two assets in the table order
+   above and verify the homepage preview. Publish once; a retry must use the
+   same idempotency key and Published Photo Selection revision.
 
 ## Public delivery gate
 

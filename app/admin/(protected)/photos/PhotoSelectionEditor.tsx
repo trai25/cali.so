@@ -1,7 +1,9 @@
 'use client'
 
 import {
+  forwardRef,
   useEffect,
+  useImperativeHandle,
   useMemo,
   useRef,
   useState,
@@ -28,7 +30,7 @@ async function responseJson(response: Response) {
   return body
 }
 
-function eligible(asset: MediaAssetReviewRecord) {
+export function isMediaAssetEligible(asset: MediaAssetReviewRecord) {
   return (
     asset.catalogState === 'active' &&
     asset.processingState === 'ready' &&
@@ -82,13 +84,21 @@ function PreviewImage({
   )
 }
 
-export function PhotoSelectionEditor({
-  initialDraft,
-  initialAssets,
-}: {
-  initialDraft: DraftPhotoSelection
-  initialAssets: MediaAssetReviewRecord[]
-}) {
+export type PhotoSelectionEditorHandle = {
+  addToDraft(mediaAssetId: string): void
+}
+
+export const PhotoSelectionEditor = forwardRef<
+  PhotoSelectionEditorHandle,
+  {
+    initialDraft: DraftPhotoSelection
+    initialAssets: MediaAssetReviewRecord[]
+    onDraftChange?(mediaAssetIds: string[]): void
+  }
+>(function PhotoSelectionEditor(
+  { initialDraft, initialAssets, onDraftChange },
+  ref,
+) {
   const locale = useLocale()
   const [mediaAssetIds, setMediaAssetIds] = useState(initialDraft.mediaAssetIds)
   const [revision, setRevision] = useState(initialDraft.revision)
@@ -98,6 +108,7 @@ export function PhotoSelectionEditor({
   const [draggedId, setDraggedId] = useState<string | null>(null)
   const noticeRef = useRef<HTMLParagraphElement>(null)
   const publishKeyRef = useRef<string | null>(null)
+  const saveInFlightRef = useRef(false)
   const publishSelection = usePasskeyReverification(
     async (expectedDraftRevision: number, idempotencyKey: string) => {
       const response = await fetch(
@@ -117,20 +128,22 @@ export function PhotoSelectionEditor({
     () => new Map(initialAssets.map((asset) => [asset.id, asset])),
     [initialAssets],
   )
-  const availableAssets = initialAssets.filter(
-    (asset) => eligible(asset) && !mediaAssetIds.includes(asset.id),
-  )
   const invalidIds = mediaAssetIds.filter((id) => {
     const asset = assetById.get(id)
-    return !asset || !eligible(asset)
+    return !asset || !isMediaAssetEligible(asset)
   })
 
   useEffect(() => {
     if (notice) noticeRef.current?.focus()
   }, [notice])
 
+  useEffect(() => {
+    onDraftChange?.(mediaAssetIds)
+  }, [mediaAssetIds, onDraftChange])
+
   async function save(nextIds: string[]) {
-    if (saveState === 'saving' || publishing) return
+    if (saveInFlightRef.current || publishing) return
+    saveInFlightRef.current = true
     const previousIds = mediaAssetIds
     setMediaAssetIds(nextIds)
     setSaveState('saving')
@@ -163,8 +176,27 @@ export function PhotoSelectionEditor({
               'The Draft could not be saved. Published photos are unchanged.',
             ),
       )
+    } finally {
+      saveInFlightRef.current = false
     }
   }
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      addToDraft(mediaAssetId) {
+        const asset = assetById.get(mediaAssetId)
+        if (
+          !asset ||
+          !isMediaAssetEligible(asset) ||
+          mediaAssetIds.includes(mediaAssetId)
+        ) {
+          return
+        }
+        void save([...mediaAssetIds, mediaAssetId])
+      },
+    }),
+  )
 
   function move(mediaAssetId: string, direction: -1 | 1) {
     const index = mediaAssetIds.indexOf(mediaAssetId)
@@ -258,14 +290,17 @@ export function PhotoSelectionEditor({
   const disabled = saveState === 'saving' || publishing
 
   return (
-    <main>
+    <section
+      id="publish"
+      className="scroll-mt-6 border-t border-dashed border-border pt-8"
+    >
       <div className="flex flex-wrap items-end justify-between gap-5 border-b border-dashed border-border pb-7">
         <div className="max-w-2xl">
           <p className="text-sm font-medium tracking-[-0.011em] text-muted-foreground">
-            <T zh="照片选择" en="PHOTO SELECTION" />
+            <T zh="03 / 发布" en="03 / PUBLISH" />
           </p>
           <h1 className="mt-2 text-sm font-semibold">
-            <T zh="编排下一次发布" en="Curate the next publication" />
+            <T zh="编排并发布照片" en="Arrange and publish photos" />
           </h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
             <T
@@ -318,7 +353,7 @@ export function PhotoSelectionEditor({
         </p>
       )}
 
-      <div className="mt-8 grid gap-12 xl:grid-cols-[minmax(0,1.25fr)_minmax(20rem,0.75fr)]">
+      <div className="mt-8 grid gap-10 xl:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.65fr)]">
         <section aria-labelledby="draft-heading">
           <div className="flex items-baseline justify-between gap-4">
             <h2 id="draft-heading" className="text-sm font-semibold">
@@ -340,7 +375,7 @@ export function PhotoSelectionEditor({
             <ol className="mt-4 divide-y divide-border/70 border-y border-dashed border-border">
               {mediaAssetIds.map((mediaAssetId, index) => {
                 const asset = assetById.get(mediaAssetId)
-                const isInvalid = !asset || !eligible(asset)
+                const isInvalid = !asset || !isMediaAssetEligible(asset)
                 return (
                   <li
                     key={mediaAssetId}
@@ -466,43 +501,14 @@ export function PhotoSelectionEditor({
             </ol>
           </section>
 
-          <section aria-labelledby="eligible-heading" className="mt-10 border-t border-dashed border-border pt-7">
-            <h2 id="eligible-heading" className="text-sm font-medium">
-              <T zh="可用媒体素材" en="Eligible Media Assets" />
-            </h2>
-            <p className="mt-2 text-sm leading-5 text-muted-foreground">
-              <T
-                zh="仅显示已处理完成且中英文替代文本都已审核的素材。"
-                en="Only ready Media Assets with approved Chinese and English Alt Text appear here."
-              />
-            </p>
-            {availableAssets.length === 0 ? (
-              <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                <T zh="没有其他可用素材。" en="No other eligible Media Assets." />
-              </p>
-            ) : (
-              <ul className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 xl:grid-cols-2">
-                {availableAssets.map((asset) => (
-                  <li key={asset.id}>
-                    <span className="block aspect-[4/3] overflow-hidden rounded-md bg-surface-1">
-                      <PreviewImage asset={asset} />
-                    </span>
-                    <p className="mt-2 truncate text-sm font-medium">{assetName(asset)}</p>
-                    <button
-                      type="button"
-                      onClick={() => void save([...mediaAssetIds, asset.id])}
-                      disabled={disabled}
-                      className="mt-1 min-h-11 px-1 text-sm text-muted-foreground outline-none disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
-                    >
-                      <T zh="添加到草稿" en="Add to Draft" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+          <p className="mt-8 border-t border-dashed border-border pt-5 text-sm leading-6 text-muted-foreground">
+            <T
+              zh="要添加更多照片，请在上方审核区使用“添加到草稿”。只有处理完成且中英文替代文本都已审核的素材才能加入。"
+              en="To add more photos, use Add to Draft in Review above. Only ready Media Assets with approved Chinese and English Alt Text can be added."
+            />
+          </p>
         </aside>
       </div>
-    </main>
+    </section>
   )
-}
+})

@@ -9,7 +9,6 @@ const navigation = [
   { href: '/admin', zh: '控制台', en: 'Dashboard' },
   { href: '/admin/ama', zh: 'AMA', en: 'AMA' },
   { href: '/admin/media', zh: '媒体', en: 'Media' },
-  { href: '/admin/photos', zh: '照片', en: 'Photos' },
 ] as const
 
 export function AdminShell({ children }: { children: React.ReactNode }) {

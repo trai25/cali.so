@@ -124,7 +124,30 @@ describe('Media Asset review repository', () => {
       mediaAssetId: assetId,
     })
     expect(JSON.stringify(stored)).not.toMatch(
-      /captureLocation|originalKey|originalChecksum/i,
+      /captureLocationEnvelope|latitude|longitude|originalKey|originalChecksum/i,
+    )
+  })
+
+  it('reports Capture Location availability without exposing coordinates', async () => {
+    await expect(
+      repository.findOwnedAsset({
+        ownerUserId: 'owner_01',
+        mediaAssetId: assetId,
+      }),
+    ).resolves.toMatchObject({ hasCaptureLocation: false })
+
+    await client.query(
+      `UPDATE media_assets SET capture_location_envelope = $2 WHERE id = $1`,
+      [assetId, JSON.stringify({ ciphertext: 'private-envelope' })],
+    )
+
+    const stored = await repository.findOwnedAsset({
+      ownerUserId: 'owner_01',
+      mediaAssetId: assetId,
+    })
+    expect(stored).toMatchObject({ hasCaptureLocation: true })
+    expect(JSON.stringify(stored)).not.toMatch(
+      /private-envelope|latitude|longitude|captureLocationEnvelope/i,
     )
   })
 

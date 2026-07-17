@@ -62,7 +62,8 @@ first Staging workflow run and applies all pending migrations, including
 activation; the manual Staging dispatch becomes available after the workflow
 reaches the default branch.
 
-Verify `/admin/media` and `/admin/photos` on Staging after the workflow is green.
+Verify the unified `/admin/media` workflow on Staging after the workflow is
+green, including that `/admin/photos` redirects to `/admin/media#publish`.
 Feature pushes should create `preview/<git-branch>` once, preserve it across
 subsequent pushes, and delete both Neon and Vercel Preview resources when the
 Git branch is deleted. `Refresh Preview` is the explicit destructive reset path.

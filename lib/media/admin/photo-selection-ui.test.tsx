@@ -35,6 +35,7 @@ function asset(id: string, name: string): MediaAssetReviewRecord {
     aperture: null,
     shutterSpeedSeconds: null,
     iso: null,
+    hasCaptureLocation: false,
     locationLabelZhHans: null,
     locationLabelEn: name,
     focalPoint: { x: 0.4, y: 0.6 },

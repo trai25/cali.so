@@ -36,10 +36,11 @@ describe('AdminShell', () => {
       'grid-cols-[repeat(var(--admin-nav-columns),minmax(0,1fr))]',
     )
     expect(nav?.props.className).toContain('lg:grid-cols-1')
-    expect(nav?.props.style).toMatchObject({ '--admin-nav-columns': 4 })
+    expect(nav?.props.style).toMatchObject({ '--admin-nav-columns': 3 })
     expect(main?.props.className).toContain('min-w-0')
     expect(main?.props.children).toEqual(<section>Media content</section>)
-    expect(links).toHaveLength(4)
+    expect(links).toHaveLength(3)
+    expect(links.some((link) => link.props.href === '/admin/photos')).toBe(false)
     expect(links.every((link) => link.props.prefetch === false)).toBe(true)
     expect(
       links

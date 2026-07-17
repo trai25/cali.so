@@ -27,6 +27,7 @@ function fixture() {
     aperture: 1.7,
     shutterSpeedSeconds: 0.01,
     iso: 80,
+    hasCaptureLocation: false,
     locationLabelZhHans: null,
     locationLabelEn: null,
     focalPoint: null,
@@ -116,7 +117,7 @@ describe('Media Asset review service', () => {
     ).rejects.toEqual(new MediaAssetReviewError('invalid_request'))
   })
 
-  it('updates editable Display Metadata without exposing Capture Location', async () => {
+  it('updates Display Metadata without exposing raw Capture Location', async () => {
     const { service } = fixture()
 
     const asset = await service.updateDisplayMetadata({
@@ -132,7 +133,8 @@ describe('Media Asset review service', () => {
       locationLabelEn: 'San Francisco',
       focalPoint: { x: 0.4, y: 0.6 },
     })
-    expect(JSON.stringify(asset)).not.toContain('captureLocation')
+    expect(asset.hasCaptureLocation).toBe(false)
+    expect(JSON.stringify(asset)).not.toMatch(/latitude|longitude|envelope/i)
   })
 
   it('approves a human-reviewed bilingual Alt Text pair', async () => {

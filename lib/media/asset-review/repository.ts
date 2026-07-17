@@ -35,6 +35,7 @@ const reviewAssetColumns = {
   aperture: mediaAssets.aperture,
   shutterSpeedSeconds: mediaAssets.shutterSpeedSeconds,
   iso: mediaAssets.iso,
+  hasCaptureLocation: sql<boolean>`${mediaAssets.captureLocationEnvelope} IS NOT NULL`,
   locationLabelZhHans: mediaAssets.locationLabelZhHans,
   locationLabelEn: mediaAssets.locationLabelEn,
   focalPointX: mediaAssets.focalPointX,
@@ -51,8 +52,8 @@ const reviewAssetColumns = {
 
 type ReviewAssetRow = Pick<
   typeof mediaAssets.$inferSelect,
-  keyof typeof reviewAssetColumns
->
+  Exclude<keyof typeof reviewAssetColumns, 'hasCaptureLocation'>
+> & { hasCaptureLocation: boolean }
 
 function record(
   row: ReviewAssetRow,
@@ -92,6 +93,7 @@ function record(
     shutterSpeedSeconds:
       row.shutterSpeedSeconds === null ? null : Number(row.shutterSpeedSeconds),
     iso: row.iso,
+    hasCaptureLocation: row.hasCaptureLocation,
     locationLabelZhHans: row.locationLabelZhHans,
     locationLabelEn: row.locationLabelEn,
     focalPoint:

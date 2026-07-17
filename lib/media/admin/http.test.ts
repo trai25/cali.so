@@ -660,6 +660,32 @@ describe('Media admin HTTP contract', () => {
     })
   })
 
+  it.each(['no_capture_location', 'no_results'] as const)(
+    'returns an actionable Location Label outcome for %s',
+    async (code) => {
+      const f = fixture()
+      const handler = createMediaLocationLabelHandler({
+        authenticator: f.authenticator,
+        security: f.security,
+        geocoding: {
+          async suggestLocationLabel() {
+            throw new MediaGeocodingError(code)
+          },
+        },
+      })
+
+      const response = await handler(
+        request(`/api/admin/media/assets/${mediaAssetId}/location-label`, {
+          method: 'POST',
+        }),
+        mediaAssetId,
+      )
+
+      expect(response.status).toBe(422)
+      await expect(response.json()).resolves.toEqual({ error: code })
+    },
+  )
+
   it('resumes durable processing through the owner mutation boundary', async () => {
     const f = fixture()
     const handler = createMediaResumeHandler({
