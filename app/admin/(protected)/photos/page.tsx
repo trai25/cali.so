@@ -14,10 +14,10 @@ export const metadata: Metadata = {
 export default async function AdminPhotosPage() {
   const owner = await requireOwnerPage('/admin/photos')
 
-  const { review, selection } = getMediaAdminPageServices()
+  const { getDraft, listAssets } = getMediaAdminPageServices()
   const [draft, assets] = await Promise.all([
-    selection.getDraft(owner.id),
-    review.listAssets({ ownerUserId: owner.id, view: 'active' }),
+    getDraft(owner.id),
+    listAssets({ ownerUserId: owner.id, view: 'active' }),
   ])
 
   return <PhotoSelectionEditor initialDraft={draft} initialAssets={assets} />

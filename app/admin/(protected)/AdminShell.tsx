@@ -34,7 +34,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       </header>
       <nav
         aria-label="Admin"
-        className="grid grid-cols-3 gap-1 border-b border-dashed border-border py-3 lg:grid-cols-1 lg:content-start lg:border-b-0 lg:border-r lg:py-6 lg:pr-4"
+        style={
+          {
+            '--admin-nav-columns': navigation.length,
+          } as React.CSSProperties
+        }
+        className="grid grid-cols-[repeat(var(--admin-nav-columns),minmax(0,1fr))] gap-1 border-b border-dashed border-border py-3 lg:grid-cols-1 lg:content-start lg:border-b-0 lg:border-r lg:py-6 lg:pr-4"
       >
         {navigation.map((item) => {
           const selected =

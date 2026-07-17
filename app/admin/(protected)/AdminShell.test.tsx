@@ -14,7 +14,11 @@ describe('AdminShell', () => {
     })
     const sections = Children.toArray(shell.props.children).filter(
       isValidElement,
-    ) as ReactElement<{ className: string; children?: React.ReactNode }>[]
+    ) as ReactElement<{
+      className: string
+      children?: React.ReactNode
+      style?: React.CSSProperties
+    }>[]
     const nav = sections.find((section) => section.type === 'nav')
     const main = sections.find((section) => section.type === 'main')
     const links = Children.toArray(nav?.props.children).filter(
@@ -28,7 +32,11 @@ describe('AdminShell', () => {
     expect(shell.props.className).toContain('grid')
     expect(shell.props.className).toContain('lg:grid-cols-[11rem_minmax(0,1fr)]')
     expect(nav?.props.className).toContain('grid')
+    expect(nav?.props.className).toContain(
+      'grid-cols-[repeat(var(--admin-nav-columns),minmax(0,1fr))]',
+    )
     expect(nav?.props.className).toContain('lg:grid-cols-1')
+    expect(nav?.props.style).toMatchObject({ '--admin-nav-columns': 3 })
     expect(main?.props.className).toContain('min-w-0')
     expect(main?.props.children).toEqual(<section>Media content</section>)
     expect(links).toHaveLength(3)

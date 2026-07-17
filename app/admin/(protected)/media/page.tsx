@@ -13,10 +13,10 @@ export const metadata: Metadata = {
 
 export default async function AdminMediaPage() {
   const owner = await requireOwnerPage('/admin/media')
-  const { review } = getMediaAdminPageServices()
+  const { listAssets } = getMediaAdminPageServices()
   const [active, archived] = await Promise.all([
-    review.listAssets({ ownerUserId: owner.id, view: 'active' }),
-    review.listAssets({ ownerUserId: owner.id, view: 'archived' }),
+    listAssets({ ownerUserId: owner.id, view: 'active' }),
+    listAssets({ ownerUserId: owner.id, view: 'archived' }),
   ])
   return <MediaLibrary initialActive={active} initialArchived={archived} />
 }

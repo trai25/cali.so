@@ -32,6 +32,13 @@ describe('Media admin page services', () => {
     for (const name of mediaEnvironmentNames) delete process.env[name]
     process.env.BUNNY_RENDITIONS_CDN_URL = 'https://media.cali.so'
 
-    expect(() => getMediaAdminPageServices()).not.toThrow()
+    const services = getMediaAdminPageServices()
+
+    expect(services).toEqual({
+      getDraft: expect.any(Function),
+      listAssets: expect.any(Function),
+    })
+    expect(services).not.toHaveProperty('review')
+    expect(services).not.toHaveProperty('selection')
   })
 })

@@ -62,7 +62,10 @@ function createPageServices() {
   const { review, selection } = createCatalogServices(
     createPublicRenditionUrl(cdnBaseUrl),
   )
-  return { review, selection }
+  return {
+    getDraft: selection.getDraft,
+    listAssets: review.listAssets,
+  }
 }
 
 function createServices() {
