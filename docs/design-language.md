@@ -175,7 +175,7 @@ open rich hover cards. The contract:
     ~180 days; the stat below still counts the past year, hairline 0.5px
     cell borders) whose cells **cascade in individually** — each cell rises
     from `translateY(4px) scale(0.92)` over ~0.48s with a per-cell stagger.
-  - Social card: avatar, name + verified mark, bio, follower stats in
+  - Social card: avatar, name + verified mark, bio, follower and following stats in
     `tabular-nums`.
   - Music card: current/last track with artwork.
 - **Behavior.** ~256px fixed-width card, 300ms open intent delay (0ms when
@@ -195,7 +195,7 @@ open rich hover cards. The contract:
   or ISR, never on hover; an open card never shows a network spinner.
 - All content animations inside cards respect `prefers-reduced-motion`.
 - **Implemented service cards** (`components/social-cards.tsx`, chrome
-  social links): the X card (avatar, name/@handle, bio, follower stat) and
+  social links): the X card (avatar, name/@handle, bio, follower and following stats) and
   the code card: a recent 26×7 contribution grid, 4px cells on 1px gaps,
   ink = foreground alpha ramp (7/30/52/74/100%), each cell cascading in
   (`translateY(4px) scale(0.92)`, 480ms, ~1.1ms/cell stagger). GitHub data

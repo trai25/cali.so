@@ -1,10 +1,11 @@
 import Link from 'next/link'
+import { Suspense } from 'react'
 
 import { Bookshelf } from '~/components/bookshelf'
 import { ExternalLabel } from '~/components/external-mark'
 import { HalftonePortrait } from '~/components/halftone-portrait'
 import { HomeIntroduction } from '~/components/home-introduction'
-import { NavCards } from '~/components/nav-cards'
+import { NavCards, PhotoNavCard } from '~/components/nav-cards'
 import { PostRow } from '~/components/post-row'
 import { VinylShelf } from '~/components/vinyl-shelf'
 import { getAllPosts } from '~/lib/content'
@@ -28,11 +29,7 @@ function SectionTitle({ children, delay }: { children: React.ReactNode; delay: n
 }
 
 export async function HomePageView({ locale }: { locale: Locale }) {
-  const [social, github, photoSelection] = await Promise.all([
-    getSocial(),
-    getGitHub(),
-    getPublishedPhotoSelection(),
-  ])
+  const [social, github] = await Promise.all([getSocial(), getGitHub()])
   const posts = getAllPosts()
   const latest = posts.slice(0, 5)
   const center = (latest.length - 1) / 2
@@ -60,7 +57,19 @@ export async function HomePageView({ locale }: { locale: Locale }) {
         postCount={posts.length}
         projectCount={projects.length}
         locale={locale}
-        photoPreview={getHomepagePhotoPreview(photoSelection)}
+        photoCard={
+          <Suspense
+            fallback={
+              <PhotoNavCard
+                photoPreview={null}
+                locale={locale}
+                pending
+              />
+            }
+          >
+            <PublishedPhotoNavCard locale={locale} />
+          </Suspense>
+        }
       />
 
       <section className="mt-16">
@@ -155,5 +164,15 @@ export async function HomePageView({ locale }: { locale: Locale }) {
         </section>
       )}
     </div>
+  )
+}
+
+async function PublishedPhotoNavCard({ locale }: { locale: Locale }) {
+  const photoSelection = await getPublishedPhotoSelection()
+  return (
+    <PhotoNavCard
+      photoPreview={getHomepagePhotoPreview(photoSelection)}
+      locale={locale}
+    />
   )
 }

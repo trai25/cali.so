@@ -3004,6 +3004,7 @@ a:focus-visible .external-label .external-mark {
   font-size: 0.875rem;
   line-height: 1.5;
   color: var(--foreground);
+  white-space: pre-line;
 }
 
 .service-card-stat {
@@ -4325,6 +4326,14 @@ html[data-locale='en'] [data-en-block] {
   width: 2.25rem;
   height: 1.875rem;
   object-fit: cover;
+}
+
+.nc-polaroid-placeholder::before {
+  display: block;
+  width: 2.25rem;
+  height: 1.875rem;
+  background: color-mix(in oklab, var(--foreground) 8%, var(--paper));
+  content: '';
 }
 
 /* standalone construction icon + the crossed project mark */

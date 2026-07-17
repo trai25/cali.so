@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('server-only', () => ({}))
 
-import { NavCards } from '../../../components/nav-cards'
+import { NavCards, PhotoNavCard } from '../../../components/nav-cards'
 import { PublishedPhotoWall } from '../../../components/published-photo-wall'
 import {
   getHomepagePhotoPreview,
@@ -103,7 +103,9 @@ describe('Published Photo Selection UI', () => {
       <NavCards
         postCount={9}
         projectCount={6}
-        photoPreview={getHomepagePhotoPreview(published)}
+        photoCard={
+          <PhotoNavCard photoPreview={getHomepagePhotoPreview(published)} />
+        }
       />,
     )
 
@@ -113,6 +115,20 @@ describe('Published Photo Selection UI', () => {
     expect(html).toContain('https://media.example.com/3/640.jpg')
     expect(html).not.toContain('https://media.example.com/4/640.jpg')
     expect(html).toContain('object-position:30% 60%')
+  })
+
+  it('reserves the homepage photo card while its selection streams', () => {
+    const html = renderToStaticMarkup(
+      <NavCards
+        postCount={9}
+        projectCount={6}
+        photoCard={<PhotoNavCard photoPreview={null} pending />}
+      />,
+    )
+
+    expect(html).toContain('aria-busy="true"')
+    expect(html.match(/nc-polaroid-placeholder/g)).toHaveLength(3)
+    expect(html).not.toContain('0 photos')
   })
 
   it('renders a calm empty state without a static fallback', () => {

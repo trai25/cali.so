@@ -4,9 +4,8 @@ import { HomePageView } from '../_views/home-page'
 import { localeMetadata } from '~/lib/locale-metadata'
 import { seo } from '~/lib/seo'
 
-// The active photo publication is request-time data and must not block
-// navigation validation.
-export const instant = false
+// The active photo publication streams into a prefetched homepage shell.
+export const instant = true
 
 export const metadata: Metadata = {
   ...localeMetadata({
