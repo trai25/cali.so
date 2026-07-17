@@ -39,17 +39,20 @@ Current as of July 2026.
 - The owner admin is always reachable for Media and AMA operations, with
   Clerk authentication and an exact server-checked
   `publicMetadata.siteOwner = "yes"` authorization marker. Origin checks, rate
-  limits, audit events, and the strict admin CSP remain in force. Public AMA
-  mutations, payment, provider, and finalization capabilities stay disabled for
-  the v3 production launch.
+  limits, audit events, and the strict admin CSP remain in force.
 - The complete paid AMA booking system (#79, slices #82 through #87) is
-  implemented behind those switches: public `/ama` and `/ama/book`, Slot Holds
+  implemented and enabled by default (maintainer decision, July 2026; the
+  former `AMA_*_ENABLED` switches are removed): public `/ama` and
+  `/ama/book`, Slot Holds
   with a Postgres exclusion guarantee, Stripe-hosted Checkout with an
   authoritative signed webhook, durable finalization (Google Meet, Tencent
   Meeting over MCP, Resend email, Manage Links), guest rescheduling and
   refunds, owner operations in `/admin/ama`, reminders, and 90-day Booking
-  Brief retention. `docs/ama-booking-operations.md` is the environment and
-  operations reference.
+  Brief retention. Provider-backed capabilities (payments, finalization,
+  Google, Tencent) turn on when their credential pairs are configured and
+  fail closed with 503 while they are not.
+  `docs/ama-booking-operations.md` is the environment and operations
+  reference.
 - Rate limits use Upstash only in Production. Preview persists its limits in
   the isolated Neon database, while Local and CI use process-local limits.
 - Security baseline controls from PR #97 remain mandatory: CSP and security
@@ -67,8 +70,8 @@ Current as of July 2026.
 2. Complete all three issue #91 stages: Cache Components baseline,
    route-by-route Instant Navigations, then Partial Prefetching and browser
    regression coverage.
-3. Keep owner admin authenticated and reachable while unfinished public AMA,
-   payment, provider, and finalization capabilities fail closed.
+3. Keep owner admin authenticated and reachable, and keep AMA capabilities
+   whose provider credentials are absent failing closed with 503.
 4. Validate from a frozen-lockfile install: types, all tests, migrations,
    localization, security, production build, dependency audit, links, HTTP
    contracts, and browser checks.
@@ -142,8 +145,9 @@ The Vercel runtime receives only the CRUD-only `DATABASE_URL`. Never put
 - Preview and Production credentials and data are separate. Preview data must
   be disposable or irreversibly sanitized. Never attach Redis credentials to
   Preview; its rate-limit windows live in the Preview Neon database.
-- The five optional `AMA_*_ENABLED` variables fail closed. Leave every one
-  `false` for the v3 launch; owner admin has no capability switch.
+- AMA has no capability switches: capabilities are on by default, and each
+  provider capability follows its credential pair (complete or absent; a
+  half pair fails startup). Owner admin has no capability switch either.
 - Design references are private. Public code and documentation use only the
   vocabulary in `docs/design-language.md`.
 - Local builds validate the full server environment. Keep `.env.local`
@@ -157,8 +161,8 @@ The Vercel runtime receives only the CRUD-only `DATABASE_URL`. Never put
   disabling owner admin. Hosted setup, session revocation, credential rotation,
   and Clerk's server-side factor-strategy limitation are documented in
   `docs/security/clerk-admin-operations.md`. The public AMA product slices
-  (#82 through #87) are implemented and fail closed; enabling them in
-  production requires the provider credentials and hosted checks in
+  (#82 through #87) are implemented and enabled by default; going live end
+  to end only needs the provider credential pairs and hosted checks in
   `docs/ama-booking-operations.md`.
 - Revisit Bunny S3 preview constraints and provider capabilities before
   expanding the Media Library beyond the curated photo workflow.

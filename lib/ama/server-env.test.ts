@@ -16,20 +16,27 @@ const validEnvironment = {
 }
 
 describe('AMA server environment', () => {
-  it('reads disabled launch switches without private configuration', () => {
+  it('enables public mutations by default and derives providers from configuration', () => {
     expect(parseAmaFeatures({})).toEqual({
-      publicMutations: false,
+      publicMutations: true,
       payments: false,
       bookingFinalization: false,
       google: false,
       tencent: false,
     })
-  })
-
-  it('rejects ambiguous launch switches before private services initialize', () => {
-    expect(() =>
-      parseAmaFeatures({ AMA_GOOGLE_INTEGRATION_ENABLED: 'yes' }),
-    ).toThrowError(/AMA_GOOGLE_INTEGRATION_ENABLED/)
+    expect(
+      parseAmaFeatures({
+        GOOGLE_CLIENT_ID: 'client-id',
+        GOOGLE_CLIENT_SECRET: 'client-secret',
+        STRIPE_SECRET_KEY: '   ',
+      }),
+    ).toEqual({
+      publicMutations: true,
+      payments: false,
+      bookingFinalization: false,
+      google: true,
+      tencent: false,
+    })
   })
 
   it('accepts the complete server-only configuration', () => {
@@ -43,15 +50,15 @@ describe('AMA server environment', () => {
       token: 'redis-secret',
     })
     expect(environment.features).toEqual({
-      publicMutations: false,
+      publicMutations: true,
       payments: false,
       bookingFinalization: false,
-      google: false,
+      google: true,
       tencent: false,
     })
   })
 
-  it('does not require Google credentials while Google is disabled', () => {
+  it('treats Google as unconfigured without its credential pair', () => {
     const {
       GOOGLE_CLIENT_ID: _clientId,
       GOOGLE_CLIENT_SECRET: _clientSecret,
@@ -59,6 +66,9 @@ describe('AMA server environment', () => {
     } = validEnvironment
 
     expect(parseServerEnv(withoutGoogle).features.google).toBe(false)
+    expect(() =>
+      parseServerEnv({ ...withoutGoogle, GOOGLE_CLIENT_ID: 'client-id-only' }),
+    ).toThrowError(/GOOGLE_CLIENT_SECRET/)
   })
 
   it('accepts Vercel Marketplace Redis aliases', () => {
@@ -255,14 +265,9 @@ describe('AMA server environment', () => {
     }
   })
 
-  it('enables each sensitive feature only through an explicit switch', () => {
+  it('enables every capability once its provider credentials are configured', () => {
     const environment = parseServerEnv({
       ...validEnvironment,
-      AMA_PUBLIC_MUTATIONS_ENABLED: 'true',
-      AMA_PAYMENTS_ENABLED: 'true',
-      AMA_BOOKING_FINALIZATION_ENABLED: 'true',
-      AMA_GOOGLE_INTEGRATION_ENABLED: 'true',
-      AMA_TENCENT_INTEGRATION_ENABLED: 'true',
       STRIPE_SECRET_KEY: 'sk_test_secret',
       STRIPE_WEBHOOK_SECRET: 'whsec_secret',
       RESEND_API_KEY: 're_secret',
@@ -278,15 +283,6 @@ describe('AMA server environment', () => {
       google: true,
       tencent: true,
     })
-  })
-
-  it('rejects ambiguous feature-switch values', () => {
-    expect(() =>
-      parseServerEnv({
-        ...validEnvironment,
-        AMA_GOOGLE_INTEGRATION_ENABLED: 'yes',
-      }),
-    ).toThrowError(/AMA_GOOGLE_INTEGRATION_ENABLED/)
   })
 
   it('rejects migration credentials in the runtime environment', () => {
@@ -316,59 +312,47 @@ describe('AMA server environment', () => {
     }
   })
 
-  it('requires Google OAuth credentials without exposing their values', () => {
+  it('rejects a half configured Google pair without exposing secret values', () => {
     const { GOOGLE_CLIENT_SECRET: _missing, ...missingSecret } = validEnvironment
-    expect(() =>
-      parseServerEnv({
-        ...missingSecret,
-        AMA_GOOGLE_INTEGRATION_ENABLED: 'true',
-      }),
-    ).toThrowError(/GOOGLE_CLIENT_SECRET/)
+    expect(() => parseServerEnv(missingSecret)).toThrowError(/GOOGLE_CLIENT_SECRET/)
 
     try {
-      parseServerEnv({
-        ...validEnvironment,
-        GOOGLE_CLIENT_SECRET: '',
-        AMA_GOOGLE_INTEGRATION_ENABLED: 'true',
-      })
+      parseServerEnv({ ...validEnvironment, GOOGLE_CLIENT_SECRET: '' })
     } catch (error) {
       expect(String(error)).not.toContain('google-client-secret')
     }
   })
 
-  it('requires Stripe credentials only while payments are enabled', () => {
+  it('requires the Stripe credential pair to be complete', () => {
     expect(parseServerEnv(validEnvironment).STRIPE_SECRET_KEY).toBeUndefined()
+    expect(parseServerEnv(validEnvironment).features.payments).toBe(false)
 
     expect(() =>
-      parseServerEnv({ ...validEnvironment, AMA_PAYMENTS_ENABLED: 'true' }),
-    ).toThrowError(/STRIPE_SECRET_KEY.*STRIPE_WEBHOOK_SECRET|STRIPE_WEBHOOK_SECRET.*STRIPE_SECRET_KEY/)
+      parseServerEnv({ ...validEnvironment, STRIPE_SECRET_KEY: 'sk_test_secret' }),
+    ).toThrowError(/STRIPE_WEBHOOK_SECRET/)
 
     const environment = parseServerEnv({
       ...validEnvironment,
-      AMA_PAYMENTS_ENABLED: 'true',
       STRIPE_SECRET_KEY: 'sk_test_secret',
       STRIPE_WEBHOOK_SECRET: 'whsec_secret',
     })
     expect(environment.features.payments).toBe(true)
 
     try {
-      parseServerEnv({ ...validEnvironment, AMA_PAYMENTS_ENABLED: 'true' })
+      parseServerEnv({ ...validEnvironment, STRIPE_SECRET_KEY: 'sk_test_secret' })
     } catch (error) {
       expect(String(error)).not.toContain('sk_test')
     }
   })
 
-  it('requires Resend delivery configuration only while finalization is enabled', () => {
+  it('requires the Resend delivery pair to be complete', () => {
+    expect(parseServerEnv(validEnvironment).features.bookingFinalization).toBe(false)
     expect(() =>
-      parseServerEnv({
-        ...validEnvironment,
-        AMA_BOOKING_FINALIZATION_ENABLED: 'true',
-      }),
-    ).toThrowError(/RESEND_API_KEY/)
+      parseServerEnv({ ...validEnvironment, RESEND_API_KEY: 're_secret' }),
+    ).toThrowError(/AMA_EMAIL_FROM/)
 
     const environment = parseServerEnv({
       ...validEnvironment,
-      AMA_BOOKING_FINALIZATION_ENABLED: 'true',
       RESEND_API_KEY: 're_secret',
       AMA_EMAIL_FROM: 'Cali Castle <ama@cali.so>',
     })
@@ -377,27 +361,34 @@ describe('AMA server environment', () => {
 
     for (const malformed of ['@', '@cali.so', 'ama@', 'Cali <not-an-address>']) {
       expect(() =>
-        parseServerEnv({ ...validEnvironment, AMA_EMAIL_FROM: malformed }),
+        parseServerEnv({
+          ...validEnvironment,
+          RESEND_API_KEY: 're_secret',
+          AMA_EMAIL_FROM: malformed,
+        }),
       ).toThrowError(/AMA_EMAIL_FROM/)
     }
     expect(
-      parseServerEnv({ ...validEnvironment, AMA_EMAIL_FROM: 'ama@cali.so' })
-        .AMA_EMAIL_FROM,
+      parseServerEnv({
+        ...validEnvironment,
+        RESEND_API_KEY: 're_secret',
+        AMA_EMAIL_FROM: 'ama@cali.so',
+      }).AMA_EMAIL_FROM,
     ).toBe('ama@cali.so')
   })
 
-  it('requires the Tencent MCP bridge only while Tencent is enabled', () => {
+  it('requires a complete secure Tencent MCP bridge configuration', () => {
+    expect(parseServerEnv(validEnvironment).features.tencent).toBe(false)
     expect(() =>
       parseServerEnv({
         ...validEnvironment,
-        AMA_TENCENT_INTEGRATION_ENABLED: 'true',
+        TENCENT_MEETING_MCP_TOKEN: 'tencent-token',
       }),
     ).toThrowError(/TENCENT_MEETING_MCP_URL/)
 
     expect(() =>
       parseServerEnv({
         ...validEnvironment,
-        AMA_TENCENT_INTEGRATION_ENABLED: 'true',
         TENCENT_MEETING_MCP_URL: 'http://insecure.example.com/mcp',
         TENCENT_MEETING_MCP_TOKEN: 'tencent-token',
       }),
@@ -405,7 +396,6 @@ describe('AMA server environment', () => {
 
     const environment = parseServerEnv({
       ...validEnvironment,
-      AMA_TENCENT_INTEGRATION_ENABLED: 'true',
       TENCENT_MEETING_MCP_URL: 'https://mcp.example.com/tencent',
       TENCENT_MEETING_MCP_TOKEN: 'tencent-token',
     })

@@ -81,8 +81,8 @@ async function verifyPublicPages(baseUrl) {
     !inspectedBody.includes('security-boundary-session-must-not-render'),
   )
 
-  // The AMA service page is public and static; its booking mutations stay
-  // behind the launch switches (checked in verifyDisabledPublicAmaApis).
+  // The AMA service page is public and static; its booking mutations are
+  // checked in verifyPublicAmaApiBoundary.
   const ama = await fetchBoundary(baseUrl, '/ama')
   assert.equal(ama.response.status, 200)
 }
@@ -172,11 +172,13 @@ async function verifyAdminApiSecurity(baseUrl) {
   assert.equal(media.response.headers.get('set-cookie'), null)
 }
 
-async function verifyDisabledProviderApis(baseUrl) {
+async function verifyProviderApiAuthentication(baseUrl) {
   const sameOriginHeaders = {
     origin: 'https://cali.so',
     'sec-fetch-site': 'same-origin',
   }
+  // Google is configured in this environment, so the owner provider routes
+  // pass the configuration boundary and must stop at authentication.
   const requests = [
     {
       path: '/api/admin/ama/google/connect',
@@ -195,7 +197,7 @@ async function verifyDisabledProviderApis(baseUrl) {
 
   for (const { path, init } of requests) {
     const { response, body } = await fetchBoundary(baseUrl, path, init)
-    assert.equal(response.status, 503, `${path} disabled status`)
+    assert.equal(response.status, 401, `${path} unauthenticated status`)
     assert.equal(response.headers.get('cache-control'), 'no-store')
     assert.equal(
       response.headers.get('referrer-policy'),
@@ -206,32 +208,56 @@ async function verifyDisabledProviderApis(baseUrl) {
   }
 }
 
-async function verifyDisabledPublicAmaApis(baseUrl) {
+async function verifyPublicAmaApiBoundary(baseUrl) {
   const sameOriginHeaders = {
     origin: 'https://cali.so',
     'sec-fetch-site': 'same-origin',
     'content-type': 'application/json',
   }
   const holdId = '00000000-0000-4000-8000-000000000000'
+  // Public mutations are enabled by default: empty submissions stop at
+  // validation, while routes whose provider (Stripe, Resend) is not
+  // configured in this environment keep failing closed with 503.
   const requests = [
-    { path: '/api/ama/holds', body: '{}' },
-    { path: `/api/ama/holds/${holdId}/checkout`, body: '{}' },
-    { path: '/api/ama/stripe/webhook', body: '{}' },
-    { path: '/api/ama/alternate-time-requests', body: '{}' },
-    { path: '/api/ama/manage/security-boundary-token/cancel', body: '{}' },
-    { path: '/api/ama/manage/security-boundary-token/reschedule', body: '{}' },
+    { path: '/api/ama/holds', body: '{}', status: 400 },
+    { path: `/api/ama/holds/${holdId}/checkout`, body: '{}', status: 503 },
+    { path: '/api/ama/stripe/webhook', body: '{}', status: 503 },
+    { path: '/api/ama/alternate-time-requests', body: '{}', status: 400 },
+    {
+      path: '/api/ama/manage/security-boundary-token/cancel',
+      body: '{}',
+      status: 503,
+    },
+    {
+      path: '/api/ama/manage/security-boundary-token/reschedule',
+      body: '{}',
+      status: 503,
+    },
   ]
 
-  for (const { path, body } of requests) {
+  for (const { path, body, status } of requests) {
     const { response } = await fetchBoundary(baseUrl, path, {
       method: 'POST',
       headers: sameOriginHeaders,
       body,
     })
-    assert.equal(response.status, 503, `${path} disabled status`)
+    assert.equal(response.status, status, `${path} boundary status`)
     assert.equal(response.headers.get('cache-control'), 'no-store')
     assert.equal(response.headers.get('set-cookie'), null)
   }
+
+  // Cross-site public mutations stay rejected outright.
+  const crossSite = await fetchBoundary(baseUrl, '/api/ama/holds', {
+    method: 'POST',
+    headers: {
+      origin: 'https://attacker.example',
+      'sec-fetch-site': 'cross-site',
+      'content-type': 'application/json',
+    },
+    body: '{}',
+  })
+  assert.equal(crossSite.response.status, 403, 'cross-site hold status')
+  assert.equal(crossSite.response.headers.get('set-cookie'), null)
 }
 
 const server = await openProductionServer(process.env.SECURITY_BOUNDARY_BASE_URL)
@@ -239,8 +265,8 @@ try {
   await verifyPublicPages(server.baseUrl)
   await verifyAdminPages(server.baseUrl)
   await verifyAdminApiSecurity(server.baseUrl)
-  await verifyDisabledProviderApis(server.baseUrl)
-  await verifyDisabledPublicAmaApis(server.baseUrl)
+  await verifyProviderApiAuthentication(server.baseUrl)
+  await verifyPublicAmaApiBoundary(server.baseUrl)
   console.log(`Verified the production security boundary at ${server.baseUrl}`)
 } finally {
   await server.stop()

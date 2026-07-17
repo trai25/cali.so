@@ -25,32 +25,41 @@ function isHttpsUrl(value: string) {
   }
 }
 
-const featureSwitch = z
-  .enum(['true', 'false'])
-  .default('false')
-  .transform((value) => value === 'true')
+function configured(value: string | undefined) {
+  return typeof value === 'string' && value.trim() !== ''
+}
 
-const amaFeatureEnvironmentSchema = z.object({
-  AMA_PUBLIC_MUTATIONS_ENABLED: featureSwitch,
-  AMA_PAYMENTS_ENABLED: featureSwitch,
-  AMA_BOOKING_FINALIZATION_ENABLED: featureSwitch,
-  AMA_GOOGLE_INTEGRATION_ENABLED: featureSwitch,
-  AMA_TENCENT_INTEGRATION_ENABLED: featureSwitch,
-})
+type ProviderCredentialSource = {
+  GOOGLE_CLIENT_ID?: string
+  GOOGLE_CLIENT_SECRET?: string
+  STRIPE_SECRET_KEY?: string
+  STRIPE_WEBHOOK_SECRET?: string
+  RESEND_API_KEY?: string
+  AMA_EMAIL_FROM?: string
+  TENCENT_MEETING_MCP_URL?: string
+  TENCENT_MEETING_MCP_TOKEN?: string
+}
 
-function featureFlags({
-  AMA_PUBLIC_MUTATIONS_ENABLED,
-  AMA_PAYMENTS_ENABLED,
-  AMA_BOOKING_FINALIZATION_ENABLED,
-  AMA_GOOGLE_INTEGRATION_ENABLED,
-  AMA_TENCENT_INTEGRATION_ENABLED,
-}: z.output<typeof amaFeatureEnvironmentSchema>) {
+/**
+ * AMA capabilities are enabled by default. Each provider-backed capability
+ * derives its availability from whether that provider's credentials are
+ * configured, so an environment without (say) Stripe still boots and its
+ * payment routes fail closed instead of crashing.
+ */
+function featureFlags(source: ProviderCredentialSource) {
   return {
-    publicMutations: AMA_PUBLIC_MUTATIONS_ENABLED,
-    payments: AMA_PAYMENTS_ENABLED,
-    bookingFinalization: AMA_BOOKING_FINALIZATION_ENABLED,
-    google: AMA_GOOGLE_INTEGRATION_ENABLED,
-    tencent: AMA_TENCENT_INTEGRATION_ENABLED,
+    publicMutations: true,
+    payments:
+      configured(source.STRIPE_SECRET_KEY) &&
+      configured(source.STRIPE_WEBHOOK_SECRET),
+    bookingFinalization:
+      configured(source.RESEND_API_KEY) && configured(source.AMA_EMAIL_FROM),
+    google:
+      configured(source.GOOGLE_CLIENT_ID) &&
+      configured(source.GOOGLE_CLIENT_SECRET),
+    tencent:
+      configured(source.TENCENT_MEETING_MCP_URL) &&
+      configured(source.TENCENT_MEETING_MCP_TOKEN),
   }
 }
 
@@ -86,8 +95,8 @@ const serverEnvironmentSchema = z
     ADMIN_EMAIL: z.email().transform((value) => value.trim().toLowerCase()),
     AMA_ENCRYPTION_KEY: z.string().refine(isBase64Key),
     RATE_LIMIT_HASH_KEY: z.string().refine(isBase64Key),
-    GOOGLE_CLIENT_ID: z.string().trim().min(1).optional(),
-    GOOGLE_CLIENT_SECRET: z.string().trim().min(1).optional(),
+    GOOGLE_CLIENT_ID: blankAsUndefined(z.string().trim().min(1).optional()),
+    GOOGLE_CLIENT_SECRET: blankAsUndefined(z.string().trim().min(1).optional()),
     STRIPE_SECRET_KEY: blankAsUndefined(z.string().trim().min(1).optional()),
     STRIPE_WEBHOOK_SECRET: blankAsUndefined(z.string().trim().min(1).optional()),
     RESEND_API_KEY: blankAsUndefined(z.string().trim().min(1).optional()),
@@ -136,7 +145,6 @@ const serverEnvironmentSchema = z
       .int()
       .positive()
       .default(60),
-    ...amaFeatureEnvironmentSchema.shape,
   })
   .superRefine(
     (
@@ -148,16 +156,12 @@ const serverEnvironmentSchema = z
         VERCEL_ENV,
         GOOGLE_CLIENT_ID,
         GOOGLE_CLIENT_SECRET,
-        AMA_GOOGLE_INTEGRATION_ENABLED,
         STRIPE_SECRET_KEY,
         STRIPE_WEBHOOK_SECRET,
-        AMA_PAYMENTS_ENABLED,
         RESEND_API_KEY,
         AMA_EMAIL_FROM,
-        AMA_BOOKING_FINALIZATION_ENABLED,
         TENCENT_MEETING_MCP_URL,
         TENCENT_MEETING_MCP_TOKEN,
-        AMA_TENCENT_INTEGRATION_ENABLED,
       },
       context,
     ) => {
@@ -216,68 +220,27 @@ const serverEnvironmentSchema = z
         }
       }
 
-      if (AMA_GOOGLE_INTEGRATION_ENABLED && !GOOGLE_CLIENT_ID) {
-        context.addIssue({
-          code: 'custom',
-          path: ['GOOGLE_CLIENT_ID'],
-          message: 'Google OAuth client ID is required when Google is enabled',
-        })
-      }
-      if (AMA_GOOGLE_INTEGRATION_ENABLED && !GOOGLE_CLIENT_SECRET) {
-        context.addIssue({
-          code: 'custom',
-          path: ['GOOGLE_CLIENT_SECRET'],
-          message:
-            'Google OAuth client secret is required when Google is enabled',
-        })
-      }
-
-      if (AMA_PAYMENTS_ENABLED && !STRIPE_SECRET_KEY) {
-        context.addIssue({
-          code: 'custom',
-          path: ['STRIPE_SECRET_KEY'],
-          message: 'Stripe secret key is required when payments are enabled',
-        })
-      }
-      if (AMA_PAYMENTS_ENABLED && !STRIPE_WEBHOOK_SECRET) {
-        context.addIssue({
-          code: 'custom',
-          path: ['STRIPE_WEBHOOK_SECRET'],
-          message:
-            'Stripe webhook signing secret is required when payments are enabled',
-        })
-      }
-      if (AMA_BOOKING_FINALIZATION_ENABLED && !RESEND_API_KEY) {
-        context.addIssue({
-          code: 'custom',
-          path: ['RESEND_API_KEY'],
-          message:
-            'Resend API key is required when booking finalization is enabled',
-        })
-      }
-      if (AMA_BOOKING_FINALIZATION_ENABLED && !AMA_EMAIL_FROM) {
-        context.addIssue({
-          code: 'custom',
-          path: ['AMA_EMAIL_FROM'],
-          message:
-            'AMA sender address is required when booking finalization is enabled',
-        })
-      }
-      if (AMA_TENCENT_INTEGRATION_ENABLED && !TENCENT_MEETING_MCP_URL) {
-        context.addIssue({
-          code: 'custom',
-          path: ['TENCENT_MEETING_MCP_URL'],
-          message:
-            'Tencent Meeting MCP URL is required when Tencent is enabled',
-        })
-      }
-      if (AMA_TENCENT_INTEGRATION_ENABLED && !TENCENT_MEETING_MCP_TOKEN) {
-        context.addIssue({
-          code: 'custom',
-          path: ['TENCENT_MEETING_MCP_TOKEN'],
-          message:
-            'Tencent Meeting MCP token is required when Tencent is enabled',
-        })
+      // Provider credentials arrive as complete pairs or not at all; a half
+      // configured provider is a misconfiguration, not a disabled feature.
+      const credentialPairs: Array<[string, string | undefined, string, string | undefined]> = [
+        ['GOOGLE_CLIENT_ID', GOOGLE_CLIENT_ID, 'GOOGLE_CLIENT_SECRET', GOOGLE_CLIENT_SECRET],
+        ['STRIPE_SECRET_KEY', STRIPE_SECRET_KEY, 'STRIPE_WEBHOOK_SECRET', STRIPE_WEBHOOK_SECRET],
+        ['RESEND_API_KEY', RESEND_API_KEY, 'AMA_EMAIL_FROM', AMA_EMAIL_FROM],
+        [
+          'TENCENT_MEETING_MCP_URL',
+          TENCENT_MEETING_MCP_URL,
+          'TENCENT_MEETING_MCP_TOKEN',
+          TENCENT_MEETING_MCP_TOKEN,
+        ],
+      ]
+      for (const [firstName, first, secondName, second] of credentialPairs) {
+        if (Boolean(first) !== Boolean(second)) {
+          context.addIssue({
+            code: 'custom',
+            path: [first ? secondName : firstName],
+            message: `${firstName} and ${secondName} must be configured together`,
+          })
+        }
       }
     },
   )
@@ -291,11 +254,6 @@ const serverEnvironmentSchema = z
       KV_URL: _kvUrl,
       REDIS_URL: _redisUrl,
       VERCEL_ENV,
-      AMA_PUBLIC_MUTATIONS_ENABLED,
-      AMA_PAYMENTS_ENABLED,
-      AMA_BOOKING_FINALIZATION_ENABLED,
-      AMA_GOOGLE_INTEGRATION_ENABLED,
-      AMA_TENCENT_INTEGRATION_ENABLED,
       ...environment
     }) => ({
       ...environment,
@@ -309,22 +267,14 @@ const serverEnvironmentSchema = z
           : VERCEL_ENV === 'preview'
             ? { kind: 'database' as const }
             : { kind: 'memory' as const },
-      features: featureFlags({
-        AMA_PUBLIC_MUTATIONS_ENABLED,
-        AMA_PAYMENTS_ENABLED,
-        AMA_BOOKING_FINALIZATION_ENABLED,
-        AMA_GOOGLE_INTEGRATION_ENABLED,
-        AMA_TENCENT_INTEGRATION_ENABLED,
-      }),
+      features: featureFlags(environment),
     }),
   )
 
 export type ServerEnvironment = z.output<typeof serverEnvironmentSchema>
 
 export function parseAmaFeatures(source: Record<string, string | undefined>) {
-  const result = amaFeatureEnvironmentSchema.safeParse(source)
-  if (result.success) return featureFlags(result.data)
-  throw invalidEnvironmentError(result.error)
+  return featureFlags(source)
 }
 
 export function parseServerEnv(source: Record<string, string | undefined>) {

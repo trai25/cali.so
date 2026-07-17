@@ -1,9 +1,11 @@
 # AMA booking operations
 
 The paid AMA booking system (issue #79, slices #82 through #87) is fully
-implemented and fails closed behind the five `AMA_*_ENABLED` switches. This
-document records the environment contract and the operating lifecycle. No
-secret values belong in this file, in the repository, or in issue threads.
+implemented and enabled by default. There are no capability switches: each
+provider-backed capability turns on when its credential pair is configured
+and its routes fail closed with 503 while it is not. This document records
+the environment contract and the operating lifecycle. No secret values
+belong in this file, in the repository, or in issue threads.
 
 ## Environment contract
 
@@ -18,21 +20,20 @@ startup with field names only. `.env.example` mirrors this table.
 | `RATE_LIMIT_HASH_KEY` | always | 32-byte base64 key pseudonymizing rate-limit and audit actors, including public booking clients. |
 | `SITE_URL` | always | Canonical public origin. Anchors same-origin mutation checks, Stripe return URLs, and Manage Link URLs. |
 | `CRON_SECRET` | scheduled work | Bearer secret for `/api/internal/ama/work` (and media reconcile). Vercel injects it for cron invocations. |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | `AMA_GOOGLE_INTEGRATION_ENABLED=true` | OAuth client for free/busy and calendar event writes. |
-| `STRIPE_SECRET_KEY` | `AMA_PAYMENTS_ENABLED=true` | Checkout Session and refund API access. |
-| `STRIPE_WEBHOOK_SECRET` | `AMA_PAYMENTS_ENABLED=true` | Signs `/api/ama/stripe/webhook`; the webhook, never the return URL, is authoritative for payment. |
-| `RESEND_API_KEY` | `AMA_BOOKING_FINALIZATION_ENABLED=true` | Transactional email delivery. |
-| `AMA_EMAIL_FROM` | `AMA_BOOKING_FINALIZATION_ENABLED=true` | Sender, `Name <address@domain>` accepted. |
-| `TENCENT_MEETING_MCP_URL` / `TENCENT_MEETING_MCP_TOKEN` | `AMA_TENCENT_INTEGRATION_ENABLED=true` | Server-only MCP bridge; the token travels as `X-Tencent-Meeting-Token` and never reaches logs or errors. |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | availability + calendar | OAuth client for free/busy and calendar event writes. Slots and meeting creation are unavailable until configured. |
+| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | payments | Checkout Session and refund API access; the webhook secret signs `/api/ama/stripe/webhook` (the webhook, never the return URL, is authoritative for payment). Checkout and webhook routes return 503 until configured. |
+| `RESEND_API_KEY` / `AMA_EMAIL_FROM` | booking finalization | Transactional email delivery; sender accepts `Name <address@domain>`. Finalization and Manage Link mutations return 503 until configured. |
+| `TENCENT_MEETING_MCP_URL` / `TENCENT_MEETING_MCP_TOKEN` | Tencent Meeting | Server-only MCP bridge; the token travels as `X-Tencent-Meeting-Token` and never reaches logs or errors. |
 | `AMA_PUBLIC_RATE_LIMIT_MAX_REQUESTS` / `_WINDOW_SECONDS` | optional | Public mutation rate limit (defaults 10 per 60s). Backend follows the environment: Upstash in Production, Neon windows in Preview, process-local elsewhere. |
 | `ADMIN_MUTATION_RATE_LIMIT_MAX_REQUESTS` / `_WINDOW_SECONDS` | optional | Owner admin mutation limit. |
 
-The launch switches themselves: `AMA_PUBLIC_MUTATIONS_ENABLED` (holds and
-Alternate Time Requests), `AMA_PAYMENTS_ENABLED` (Checkout and webhook),
-`AMA_BOOKING_FINALIZATION_ENABLED` (meetings, email, Manage Link actions),
-`AMA_GOOGLE_INTEGRATION_ENABLED`, `AMA_TENCENT_INTEGRATION_ENABLED`. Every
-switch defaults to false and every gated route returns 503 before touching
-provider code. All five stay `false` for the v3 production launch.
+Capability posture (maintainer decision, July 2026): the former
+`AMA_*_ENABLED` launch switches are removed. Public booking mutations (Slot
+Holds and Alternate Time Requests) are always enabled. Payments, booking
+finalization, Google, and Tencent derive their availability from the
+credential pairs above; each pair must be complete or entirely absent (a
+half pair fails startup validation), and a route whose provider is
+unconfigured returns 503 before touching provider code.
 
 ## Lifecycle summary
 
