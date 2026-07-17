@@ -71,13 +71,15 @@ function errorResponse(error: unknown) {
       ? 400
       : code === 'not_found'
         ? 404
-        : code === 'rate_limited'
-          ? 429
-          : code === 'dependency_unavailable' ||
-              code === 'generation_failed' ||
-              code === 'cache_invalidation_failed'
-            ? 503
-            : 409
+        : code === 'no_capture_location' || code === 'no_results'
+          ? 422
+          : code === 'rate_limited'
+            ? 429
+            : code === 'dependency_unavailable' ||
+                code === 'generation_failed' ||
+                code === 'cache_invalidation_failed'
+              ? 503
+              : 409
   return json(status, { error: code })
 }
 

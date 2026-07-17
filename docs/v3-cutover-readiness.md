@@ -160,12 +160,12 @@ Final review artifacts after the accessibility corrections:
   a failure; transient provider or TLS failures remain visible as inconclusive
   rather than making repository release status depend on another service's
   uptime. The final run had no inconclusive targets.
-- The keyboard-coverage gap is closed by the sixth Playwright test and by
-  replacing the Preferences menu with the correct popover semantics. Shared
+- The keyboard-coverage gap is closed by replacing the Preferences menu with
+  the correct popover semantics. Shared
   controls now follow the 44-pixel target, 14-pixel chrome, reduced-motion,
   and motion-token contracts.
-- The seventh Playwright test closes the remaining design-contract findings.
-  Shared product controls now change selection and focus without decorative
+- The remaining design-contract findings are closed. Shared product controls
+  now change selection and focus without decorative
   motion, keep selected and unselected labels at one weight, and preserve
   selected-label contrast. Scroll reveals and public chrome typography use the
   documented timing and type tokens.

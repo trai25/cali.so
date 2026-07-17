@@ -34,6 +34,7 @@ const activeAsset: MediaAssetReviewRecord = {
   aperture: 1.7,
   shutterSpeedSeconds: 0.01,
   iso: 80,
+  hasCaptureLocation: true,
   locationLabelZhHans: '旧金山',
   locationLabelEn: 'San Francisco',
   focalPoint: { x: 0.4, y: 0.6 },
@@ -52,6 +53,12 @@ const activeAsset: MediaAssetReviewRecord = {
     width: 640,
     height: 480,
   },
+}
+
+const emptyDraft = {
+  revision: 0,
+  mediaAssetIds: [],
+  updatedAt: null,
 }
 
 beforeEach(() => {
@@ -88,7 +95,11 @@ afterEach(() => {
 describe('Media Library UI contract', () => {
   it('renders the batch, review, accessibility, and destructive controls', () => {
     const html = renderToStaticMarkup(
-      <MediaLibrary initialActive={[activeAsset]} initialArchived={[]} />,
+      <MediaLibrary
+        initialActive={[activeAsset]}
+        initialArchived={[]}
+        initialDraft={emptyDraft}
+      />,
     )
 
     expect(html).toContain('Drop JPEG, PNG, or HEIC files here')
@@ -107,7 +118,11 @@ describe('Media Library UI contract', () => {
 
   it('supports keyboard adjustment of the Focal Point', () => {
     const { container, getByRole } = render(
-      <MediaLibrary initialActive={[activeAsset]} initialArchived={[]} />,
+      <MediaLibrary
+        initialActive={[activeAsset]}
+        initialArchived={[]}
+        initialDraft={emptyDraft}
+      />,
     )
 
     fireEvent.keyDown(getByRole('button', { name: '设置焦点' }), {
@@ -119,6 +134,90 @@ describe('Media Library UI contract', () => {
         'button[aria-label="设置焦点"] span[style]',
       )?.style.left,
     ).toBe('45%')
+  })
+
+  it('explains missing GPS metadata and keeps manual Location Labels available', () => {
+    document.documentElement.dataset.locale = 'en'
+    const withoutCaptureLocation = {
+      ...activeAsset,
+      hasCaptureLocation: false,
+      locationLabelEn: null,
+      locationLabelZhHans: null,
+    }
+    const { getByRole, getByText } = render(
+      <MediaLibrary
+        initialActive={[withoutCaptureLocation]}
+        initialArchived={[]}
+        initialDraft={emptyDraft}
+      />,
+    )
+
+    expect(
+      (
+        getByRole('button', {
+          name: /Suggest from Capture Location/,
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true)
+    expect(
+      getByText(
+        'This file has no GPS Capture Location. Enter the label manually.',
+      ),
+    ).toBeTruthy()
+    expect(
+      (
+        getByRole('textbox', {
+          name: /Location Label \(English\)/,
+        }) as HTMLInputElement
+      ).disabled,
+    ).toBe(false)
+  })
+
+  it('adds a reviewed asset to the Draft from the same workspace', async () => {
+    document.documentElement.dataset.locale = 'en'
+    const eligibleAsset = {
+      ...activeAsset,
+      altTextZhHans: '一辆缆车沿着街道行驶。',
+      altTextEn: 'A cable car travels along a city street.',
+      altTextApprovedAt: new Date('2026-07-15T12:30:00.000Z'),
+    }
+    const fetchMock = vi.fn(
+      async (_input: RequestInfo | URL, init?: RequestInit) => {
+        const request = JSON.parse(String(init?.body)) as {
+          mediaAssetIds: string[]
+        }
+        return Response.json({
+          draft: {
+            revision: 1,
+            mediaAssetIds: request.mediaAssetIds,
+            updatedAt: '2026-07-15T12:31:00.000Z',
+          },
+        })
+      },
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    const { getByRole } = render(
+      <MediaLibrary
+        initialActive={[eligibleAsset]}
+        initialArchived={[]}
+        initialDraft={emptyDraft}
+      />,
+    )
+
+    fireEvent.click(getByRole('button', { name: /Add to Draft/ }))
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledOnce())
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/admin/media/photo-selection',
+      expect.objectContaining({ method: 'PUT' }),
+    )
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toEqual({
+      expectedRevision: 0,
+      mediaAssetIds: [eligibleAsset.id],
+    })
+    await waitFor(() =>
+      expect(getByRole('link', { name: /In Draft/ })).toBeTruthy(),
+    )
   })
 
   it('does not purge when passkey verification is cancelled', async () => {
@@ -135,7 +234,11 @@ describe('Media Library UI contract', () => {
     const fetchMock = vi.fn()
     vi.stubGlobal('fetch', fetchMock)
     const { getByRole } = render(
-      <MediaLibrary initialActive={[]} initialArchived={[archivedAsset]} />,
+      <MediaLibrary
+        initialActive={[]}
+        initialArchived={[archivedAsset]}
+        initialDraft={emptyDraft}
+      />,
     )
 
     fireEvent.click(getByRole('tab', { name: /Archived/ }))
@@ -195,7 +298,11 @@ describe('Media Library UI contract', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const { container, getByRole } = render(
-      <MediaLibrary initialActive={[]} initialArchived={[]} />,
+      <MediaLibrary
+        initialActive={[]}
+        initialArchived={[]}
+        initialDraft={emptyDraft}
+      />,
     )
     const file = new File([new Uint8Array([1, 2, 3])], 'photo.jpg', {
       type: 'image/jpeg',
@@ -259,7 +366,11 @@ describe('Media Library UI contract', () => {
     }
 
     const first = render(
-      <MediaLibrary initialActive={[]} initialArchived={[]} />,
+      <MediaLibrary
+        initialActive={[]}
+        initialArchived={[]}
+        initialDraft={emptyDraft}
+      />,
     )
     fireEvent.change(first.container.querySelector('input[type="file"]')!, {
       target: { files: [file] },
@@ -268,7 +379,11 @@ describe('Media Library UI contract', () => {
     first.unmount()
 
     const second = render(
-      <MediaLibrary initialActive={[]} initialArchived={[]} />,
+      <MediaLibrary
+        initialActive={[]}
+        initialArchived={[]}
+        initialDraft={emptyDraft}
+      />,
     )
     fireEvent.change(second.container.querySelector('input[type="file"]')!, {
       target: { files: [file] },
@@ -312,7 +427,11 @@ describe('Media Library UI contract', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const { container, getByText, queryByRole } = render(
-      <MediaLibrary initialActive={[]} initialArchived={[]} />,
+      <MediaLibrary
+        initialActive={[]}
+        initialArchived={[]}
+        initialDraft={emptyDraft}
+      />,
     )
     const file = new File([new Uint8Array([1, 2, 3])], 'photo.jpg', {
       type: 'image/jpeg',

@@ -59,8 +59,5 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Chromium
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: Verify Bunny storage and browser contracts
+      - name: Verify Bunny storage contract
         run: pnpm test:media:storage:live

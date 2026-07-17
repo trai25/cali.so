@@ -19,6 +19,13 @@ import {
 import { T } from '~/lib/i18n'
 import { localize, useLocale } from '~/lib/locale-client'
 import type { MediaAssetReviewRecord } from '~/lib/media/asset-review/service'
+import type { DraftPhotoSelection } from '~/lib/media/photo-selection/service'
+
+import {
+  isMediaAssetEligible,
+  PhotoSelectionEditor,
+  type PhotoSelectionEditorHandle,
+} from '../photos/PhotoSelectionEditor'
 
 type LibraryView = 'active' | 'archived'
 type QueueStatus =
@@ -142,7 +149,23 @@ function UploadQueue({
   }
 
   return (
-    <section aria-labelledby="upload-heading" className="mt-8">
+    <section
+      id="upload"
+      aria-labelledby="upload-heading"
+      className="scroll-mt-6 pt-8"
+    >
+      <p className="text-sm font-medium tracking-[-0.011em] text-muted-foreground">
+        <T zh="01 / 上传" en="01 / UPLOAD" />
+      </p>
+      <h2 id="upload-heading" className="mt-2 text-sm font-semibold">
+        <T zh="添加照片" en="Add photos" />
+      </h2>
+      <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+        <T
+          zh="选择照片后，每个文件会独立校验、上传和处理。完成的照片会直接出现在审核区。"
+          en="Choose photos once. Each file is checked, uploaded, and processed independently, then appears directly in Review."
+        />
+      </p>
       <div
         onDragEnter={(event) => {
           event.preventDefault()
@@ -151,18 +174,18 @@ function UploadQueue({
         onDragOver={(event) => event.preventDefault()}
         onDragLeave={() => setDragging(false)}
         onDrop={drop}
-        className={`rounded-lg border border-dashed px-5 py-5 ${
+        className={`mt-5 rounded-lg border border-dashed px-5 py-4 ${
           dragging ? 'border-foreground bg-surface-1' : 'border-border'
         }`}
       >
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 id="upload-heading" className="text-sm font-medium">
+            <p className="text-sm font-medium">
               <T
                 zh="将 JPEG、PNG 或 HEIC 文件拖到这里"
                 en="Drop JPEG, PNG, or HEIC files here"
               />
-            </h2>
+            </p>
             <p className="mt-1 text-sm leading-5 text-muted-foreground">
               <T
                 zh="每个文件最大 50 MiB。每个文件会独立上传、处理和重试。"
@@ -236,11 +259,15 @@ function UploadQueue({
 
 function AssetGrid({
   assets,
+  draftIds,
   selectedId,
+  onAddToDraft,
   onSelect,
 }: {
   assets: MediaAssetReviewRecord[]
+  draftIds: string[]
   selectedId: string | null
+  onAddToDraft(id: string): void
   onSelect(id: string): void
 }) {
   if (assets.length === 0) {
@@ -258,8 +285,10 @@ function AssetGrid({
     <ul className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 xl:grid-cols-4">
       {assets.map((asset) => {
         const status = processingLabel(asset)
+        const inDraft = draftIds.includes(asset.id)
+        const eligible = isMediaAssetEligible(asset)
         return (
-          <li key={asset.id}>
+          <li key={asset.id} className="min-w-0">
             <button
               type="button"
               onClick={() => onSelect(asset.id)}
@@ -296,14 +325,42 @@ function AssetGrid({
                 <T zh={status.zh} en={status.en} />
                 <span aria-hidden="true">·</span>
                 <span>
-                  {asset.altTextApprovedAt ? (
-                    <T zh="替代文本已审核" en="Alt Text approved" />
+                  {eligible ? (
+                    <T zh="可发布" en="Ready to publish" />
                   ) : (
-                    <T zh="等待替代文本" en="Alt Text pending" />
+                    <T zh="需要审核" en="Review needed" />
                   )}
                 </span>
               </span>
             </button>
+            {asset.catalogState === 'active' && (
+              <div className="mt-2 min-h-11 border-t border-dotted border-border pt-1">
+                {inDraft ? (
+                  <a
+                    href="#publish"
+                    className="inline-flex min-h-11 items-center text-sm font-medium text-foreground outline-none focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
+                  >
+                    <T zh="已在草稿中" en="In Draft" />
+                  </a>
+                ) : eligible ? (
+                  <button
+                    type="button"
+                    onClick={() => onAddToDraft(asset.id)}
+                    className="min-h-11 text-sm font-medium text-foreground outline-none active:scale-[0.97] focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground motion-reduce:transform-none"
+                  >
+                    <T zh="添加到草稿" en="Add to Draft" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => onSelect(asset.id)}
+                    className="min-h-11 text-sm text-muted-foreground outline-none focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
+                  >
+                    <T zh="完成审核以发布" en="Finish review to publish" />
+                  </button>
+                )}
+              </div>
+            )}
           </li>
         )
       })}
@@ -467,13 +524,26 @@ function Inspector({
           'Suggested from the private Capture Location. Review before saving.',
         ),
       )
-    } catch {
+    } catch (error) {
+      const code = error instanceof Error ? error.message : ''
       setNotice(
-        localize(
-          locale,
-          '没有可用的拍摄位置建议，现有素材不受影响。',
-          'No Capture Location suggestion is available. The Media Asset is unchanged.',
-        ),
+        code === 'no_capture_location'
+          ? localize(
+              locale,
+              '这个文件没有 GPS 拍摄位置。请手动填写地点标签。',
+              'This file has no GPS Capture Location. Enter the Location Label manually.',
+            )
+          : code === 'no_results'
+            ? localize(
+                locale,
+                '找不到这个拍摄位置的地点名称。请手动填写地点标签。',
+                'No place name was found for this Capture Location. Enter the label manually.',
+              )
+            : localize(
+                locale,
+                '暂时无法查询地点名称。请重试，或手动填写地点标签。',
+                'The place name could not be looked up. Retry or enter the label manually.',
+              ),
       )
     } finally {
       setPending(null)
@@ -700,15 +770,34 @@ function Inspector({
       )}
 
       <div className="mt-6 grid gap-4 border-t border-dotted border-border pt-5">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="text-sm font-medium">
-            <T zh="地点标签" en="Location Label" />
-          </h3>
+        <div className="flex flex-col items-start gap-2 sm:flex-row sm:justify-between">
+          <div>
+            <h3 className="text-sm font-medium">
+              <T zh="地点标签" en="Location Label" />
+            </h3>
+            <p className="mt-1 text-sm leading-5 text-muted-foreground">
+              {asset.hasCaptureLocation ? (
+                <T
+                  zh="有私密拍摄位置，可安全查询地点名称。"
+                  en="Private Capture Location available for a place-name lookup."
+                />
+              ) : (
+                <T
+                  zh="这个文件没有 GPS 拍摄位置，请手动填写。"
+                  en="This file has no GPS Capture Location. Enter the label manually."
+                />
+              )}
+            </p>
+          </div>
           <button
             type="button"
-            disabled={pending !== null || asset.catalogState !== 'active'}
+            disabled={
+              pending !== null ||
+              asset.catalogState !== 'active' ||
+              !asset.hasCaptureLocation
+            }
             onClick={suggestLocationLabel}
-            className="min-h-11 px-2 text-sm font-medium text-muted-foreground outline-none disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
+            className="min-h-11 shrink-0 px-2 text-sm font-medium text-muted-foreground outline-none disabled:cursor-not-allowed disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
           >
             {pending === 'location' ? (
               <T zh="正在查询…" en="Suggesting…" />
@@ -845,9 +934,11 @@ function Inspector({
 export function MediaLibrary({
   initialActive,
   initialArchived,
+  initialDraft,
 }: {
   initialActive: MediaAssetReviewRecord[]
   initialArchived: MediaAssetReviewRecord[]
+  initialDraft: DraftPhotoSelection
 }) {
   const locale = useLocale()
   const [active, setActive] = useState(initialActive)
@@ -858,6 +949,8 @@ export function MediaLibrary({
   )
   const [queue, setQueue] = useState<QueueItem[]>([])
   const [search, setSearch] = useState('')
+  const [draftIds, setDraftIds] = useState(initialDraft.mediaAssetIds)
+  const photoSelectionRef = useRef<PhotoSelectionEditorHandle>(null)
 
   const assets = view === 'active' ? active : archived
   const visibleAssets = useMemo(() => {
@@ -1024,19 +1117,49 @@ export function MediaLibrary({
 
   return (
     <div>
-      <div className="flex flex-wrap items-start justify-between gap-5">
-        <div>
-          <h1 className="text-sm font-semibold">
-            <T zh="媒体库" en="Media Library" />
-          </h1>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-            <T
-              zh="在媒体素材加入照片选择之前，保存、审核并准备它们。"
-              en="Store, review, and prepare photos before they join a Photo Selection."
-            />
-          </p>
-        </div>
+      <div className="border-b border-dashed border-border pb-6">
+        <p className="text-sm font-medium tracking-[-0.011em] text-muted-foreground">
+          <T zh="媒体工作区" en="MEDIA WORKSPACE" />
+        </p>
+        <h1 className="mt-2 text-sm font-semibold">
+          <T
+            zh="从上传到发布，一处完成"
+            en="From upload to publish, in one place"
+          />
+        </h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+          <T
+            zh="上传照片、完成地点与替代文本审核、加入草稿，然后发布。每个素材都会显示下一步。"
+            en="Upload photos, finish Location and Alt Text review, add them to the Draft, then publish. Every asset shows its next action."
+          />
+        </p>
       </div>
+
+      <nav
+        aria-label="Media workflow"
+        className="sticky top-0 isolate mt-4 grid grid-cols-3 gap-1 border-y border-dashed border-border bg-background py-2 sm:grid-cols-[repeat(3,minmax(0,1fr))_auto]"
+      >
+        {[
+          { href: '#upload', zh: '01 上传', en: '01 Upload' },
+          { href: '#review', zh: '02 审核', en: '02 Review' },
+          { href: '#publish', zh: '03 发布', en: '03 Publish' },
+        ].map((stage) => (
+          <a
+            key={stage.href}
+            href={stage.href}
+            className="inline-flex min-h-11 items-center justify-center rounded-md px-3 text-sm text-muted-foreground outline-none hover:bg-hover hover:text-foreground focus-visible:ring-1 focus-visible:ring-foreground sm:justify-start"
+          >
+            <T zh={stage.zh} en={stage.en} />
+          </a>
+        ))}
+        <a
+          href="#publish"
+          className="col-span-3 inline-flex min-h-11 items-center justify-between rounded-md bg-surface-1 px-3 text-sm font-medium outline-none focus-visible:ring-1 focus-visible:ring-foreground sm:col-span-1 sm:min-w-36"
+        >
+          <T zh="草稿" en="Draft" />
+          <span className="tabular-nums">{draftIds.length}</span>
+        </a>
+      </nav>
 
       <UploadQueue
         items={queue}
@@ -1044,59 +1167,109 @@ export function MediaLibrary({
         onRetry={(item) => void upload(item)}
       />
 
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-dashed border-border pt-5">
-        <div className="flex items-center gap-1" role="tablist" aria-label="Media Asset view">
-          {(['active', 'archived'] as const).map((item) => (
-            <button
-              key={item}
-              type="button"
-              role="tab"
-              aria-selected={view === item}
-              onClick={() => chooseView(item)}
-              className={`min-h-11 rounded-md px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-foreground ${
-                view === item
-                  ? 'bg-foreground text-background'
-                  : 'text-muted-foreground hover:bg-hover hover:text-foreground'
-              }`}
-            >
-              {item === 'active' ? (
-                <T zh={`使用中 ${active.length}`} en={`Active ${active.length}`} />
-              ) : (
-                <T zh={`已归档 ${archived.length}`} en={`Archived ${archived.length}`} />
-              )}
-            </button>
-          ))}
+      <section id="review" className="scroll-mt-6 pt-10">
+        <p className="text-sm font-medium tracking-[-0.011em] text-muted-foreground">
+          <T zh="02 / 审核" en="02 / REVIEW" />
+        </p>
+        <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h2 className="text-sm font-semibold">
+              <T zh="准备照片" en="Prepare photos" />
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              <T
+                zh="选择素材，完成地点、焦点和替代文本。准备完成后可直接加入草稿。"
+                en="Select an asset, finish its location, focal point, and Alt Text, then add it directly to the Draft."
+              />
+            </p>
+          </div>
         </div>
-        <label className="relative w-full max-w-xs">
-          <span className="sr-only">
-            <T zh="搜索媒体素材" en="Search Media Assets" />
-          </span>
-          <input
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder={localize(locale, '搜索媒体素材', 'Search Media Assets')}
-            className="min-h-11 w-full rounded-md border border-border bg-background px-3 text-base outline-none placeholder:text-muted-foreground focus:border-foreground"
-          />
-        </label>
-      </div>
 
-      <div className="mt-7 grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1fr)_22rem]">
-        <AssetGrid
-          assets={visibleAssets}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-        />
-        {selected ? (
-          <Inspector key={selected.id} asset={selected} onUpdated={updatedAsset} />
-        ) : (
-          <aside className="border-t border-dashed border-border pt-6 text-sm leading-6 text-muted-foreground xl:border-l xl:border-t-0 xl:pl-7 xl:pt-0">
-            <T
-              zh="选择一个媒体素材以审核显示元数据、焦点和替代文本。"
-              en="Select a Media Asset to review Display Metadata, Focal Point, and Alt Text."
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-dashed border-border pt-5">
+          <div
+            className="flex items-center gap-1"
+            role="tablist"
+            aria-label="Media Asset view"
+          >
+            {(['active', 'archived'] as const).map((item) => (
+              <button
+                key={item}
+                type="button"
+                role="tab"
+                aria-selected={view === item}
+                onClick={() => chooseView(item)}
+                className={`min-h-11 rounded-md px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-foreground ${
+                  view === item
+                    ? 'bg-foreground text-background'
+                    : 'text-muted-foreground hover:bg-hover hover:text-foreground'
+                }`}
+              >
+                {item === 'active' ? (
+                  <T
+                    zh={`使用中 ${active.length}`}
+                    en={`Active ${active.length}`}
+                  />
+                ) : (
+                  <T
+                    zh={`已归档 ${archived.length}`}
+                    en={`Archived ${archived.length}`}
+                  />
+                )}
+              </button>
+            ))}
+          </div>
+          <label className="relative w-full max-w-xs">
+            <span className="sr-only">
+              <T zh="搜索媒体素材" en="Search Media Assets" />
+            </span>
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={localize(
+                locale,
+                '搜索媒体素材',
+                'Search Media Assets',
+              )}
+              className="min-h-11 w-full rounded-md border border-border bg-background px-3 text-base outline-none placeholder:text-muted-foreground focus:border-foreground"
             />
-          </aside>
-        )}
+          </label>
+        </div>
+
+        <div className="mt-7 grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(24rem,0.8fr)]">
+          <AssetGrid
+            assets={visibleAssets}
+            draftIds={draftIds}
+            selectedId={selectedId}
+            onAddToDraft={(mediaAssetId) =>
+              photoSelectionRef.current?.addToDraft(mediaAssetId)
+            }
+            onSelect={setSelectedId}
+          />
+          {selected ? (
+            <Inspector
+              key={selected.id}
+              asset={selected}
+              onUpdated={updatedAsset}
+            />
+          ) : (
+            <aside className="border-t border-dashed border-border pt-6 text-sm leading-6 text-muted-foreground xl:border-l xl:border-t-0 xl:pl-7 xl:pt-0">
+              <T
+                zh="选择一个媒体素材以审核显示元数据、焦点和替代文本。"
+                en="Select a Media Asset to review Display Metadata, Focal Point, and Alt Text."
+              />
+            </aside>
+          )}
+        </div>
+      </section>
+
+      <div className="mt-12">
+        <PhotoSelectionEditor
+          ref={photoSelectionRef}
+          initialDraft={initialDraft}
+          initialAssets={active}
+          onDraftChange={setDraftIds}
+        />
       </div>
     </div>
   )
