@@ -25,6 +25,21 @@ function isHttpsUrl(value: string) {
   }
 }
 
+function isVercelDeploymentHost(value: string) {
+  try {
+    const url = new URL(`https://${value}`)
+    return (
+      url.hostname === value &&
+      url.hostname.endsWith('.vercel.app') &&
+      url.pathname === '/' &&
+      url.search === '' &&
+      url.hash === ''
+    )
+  } catch {
+    return false
+  }
+}
+
 function configured(value: string | undefined) {
   return typeof value === 'string' && value.trim() !== ''
 }
@@ -118,6 +133,9 @@ const serverEnvironmentSchema = z
     KV_URL: z.string().trim().min(1).optional(),
     REDIS_URL: z.string().trim().min(1).optional(),
     VERCEL_ENV: z.enum(['development', 'preview', 'production']).optional(),
+    VERCEL_URL: blankAsUndefined(
+      z.string().trim().refine(isVercelDeploymentHost).optional(),
+    ),
     SITE_URL: z
       .url()
       .refine((value) => {
@@ -254,9 +272,14 @@ const serverEnvironmentSchema = z
       KV_URL: _kvUrl,
       REDIS_URL: _redisUrl,
       VERCEL_ENV,
+      VERCEL_URL,
       ...environment
     }) => ({
       ...environment,
+      browserMutationBaseUrl:
+        VERCEL_ENV === 'preview' && VERCEL_URL
+          ? new URL(`https://${VERCEL_URL}`)
+          : environment.SITE_URL,
       rateLimitBackend:
         VERCEL_ENV === 'production'
           ? {

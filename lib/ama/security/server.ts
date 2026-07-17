@@ -18,7 +18,7 @@ export function getAmaSecurity() {
   })
 
   security = createAmaSecurity({
-    baseUrl: environment.SITE_URL,
+    baseUrl: environment.browserMutationBaseUrl,
     features: environment.features,
     pseudonymKey: Buffer.from(environment.RATE_LIMIT_HASH_KEY, 'base64'),
     rateLimiter: limiter,
