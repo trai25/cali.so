@@ -19,26 +19,63 @@ npx vercel project inspect cali-so $SCOPE
 If the repo is not yet linked, run `npx vercel link` once and pick the team
 and the `cali-so` project.
 
-## 1. Require Quality and CodeQL on both branches
+## 1. Activate the controlled deployment topology
 
-The `v2` ruleset (`18920686`) has deletion, non-fast-forward, and PR rules but
-no required checks; `main` classic protection has none. Add the rule to the
-ruleset by round-tripping it:
+These hosted changes are shared state. Obtain an action-time confirmation
+before the Git branch rename, and two fresh confirmations before inspecting or
+changing either Neon project.
 
-```bash
-gh api repos/CaliCastle/cali.so/rulesets/18920686 > /tmp/ruleset.json
-jq '{name, target, enforcement, conditions, bypass_actors, rules: (.rules + [{
-  "type": "required_status_checks",
-  "parameters": {
-    "strict_required_status_checks_policy": false,
-    "required_status_checks": [{"context": "Quality"}, {"context": "CodeQL"}]
-  }
-}])}' /tmp/ruleset.json > /tmp/ruleset-update.json
-gh api -X PUT repos/CaliCastle/cali.so/rulesets/18920686 \
-  --input /tmp/ruleset-update.json
-```
+1. Rename the Git integration branch from `v2` to `dev` through GitHub's branch
+   rename operation. Do not create a second unrelated branch or delete `v2`
+   manually. Verify open pull requests, local tracking branches, and the
+   existing ruleset now target `dev`.
+2. In the non-production Neon project, rename the persistent `preview` branch
+   to `staging`. Preserve its data, migration history, migration role, and
+   SQL-created CRUD-only runtime role. Configure the migration role's default
+   privileges so new tables and sequences grant only the required CRUD and
+   sequence access to the runtime role; grant the same access explicitly on
+   existing objects. The runtime role must not own objects or inherit DDL.
+   Set Staging as the parent for disposable `preview/<git-branch>` branches so
+   those roles and grants are copied into every Preview.
+3. Keep Production in a separate Neon project. Its API key and migration URL
+   must never be stored in the Preview or Staging GitHub environments.
+4. Create a Vercel custom environment named `staging`. Copy only approved
+   non-production application settings into it; database URLs are supplied per
+   deployment by GitHub Actions.
+5. Create these GitHub deployment environments:
 
-Then protect `main` (PUT replaces the whole protection object; force pushes
+| Environment | Variables | Secrets | Protection |
+| --- | --- | --- | --- |
+| `preview` | `NEON_PROJECT_ID`, `NEON_MIGRATION_ROLE`, `NEON_RUNTIME_ROLE`, `NEON_DATABASE`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` | project-scoped `NEON_API_KEY`, `VERCEL_TOKEN` | Internal branches only; exclude `dev` and `main` |
+| `staging` | Same non-production variables | Same non-production secrets | `dev` only; no approval |
+| `production-migration-review` | None | None | `main` only; required reviewer |
+| `production` | `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` | `MIGRATION_DATABASE_URL`, `VERCEL_TOKEN` | `main` only; required reviewer |
+
+The committed `vercel.json` disables Vercel Git deployments. Do not re-enable
+them in the dashboard: GitHub must create or select the Neon branch, migrate it,
+and only then call Vercel. Configure the hosted environments and rename the
+branch before merging this automation change into `dev`. That merge is the
+first Staging workflow run and applies all pending migrations, including
+`0010` and `0011`, before deploying. Use GitHub's job rerun for a failed
+activation; the manual Staging dispatch becomes available after the workflow
+reaches the default branch.
+
+Verify `/admin/media` and `/admin/photos` on Staging after the workflow is green.
+Feature pushes should create `preview/<git-branch>` once, preserve it across
+subsequent pushes, and delete both Neon and Vercel Preview resources when the
+Git branch is deleted. `Refresh Preview` is the explicit destructive reset path.
+All three operations share one per-branch concurrency lock. Refresh checks out
+the trusted deployment action from `dev` and runs the requested branch only
+from the isolated `target/` working directory.
+
+## 2. Require Quality and CodeQL on both branches
+
+The historical `v2` ruleset (`18920686`) already requires `Quality` and
+`CodeQL` alongside its deletion, non-fast-forward, and pull-request rules.
+After the branch rename, inspect the ruleset and verify its ref condition now
+targets `dev`; do not append a duplicate required-check rule.
+
+Protect `main` as well (PUT replaces the whole protection object; force pushes
 and deletions stay disabled by default):
 
 ```bash
@@ -52,36 +89,28 @@ gh api -X PUT repos/CaliCastle/cali.so/branches/main/protection --input - <<'JSO
 JSON
 ```
 
-## 2. Isolate Preview and Production credentials
+## 3. Isolate Staging, Preview, and Production credentials
 
-- The v3 app no longer uses Resend. Remove the legacy key from Preview rather
-  than creating another key. Keep its Production assignment only while the
-  historical site is live, then remove it after cutover:
-
-  ```bash
-  npx vercel env rm RESEND_API_KEY preview $SCOPE
-  ```
+- AMA provider capabilities follow complete credential pairs and fail closed
+  while a pair is absent. Use non-production Google, Stripe, Resend, and Tencent
+  credentials in Preview and Staging when those flows need hosted testing;
+  never copy their Production credentials into non-production environments.
 
 - Redis is Production-only. In the dashboard's Storage tab, change the
   existing Upstash integration to target Production only, or remove the
   integration and reconnect it for Production only. Delete every `KV_*`,
   `REDIS_URL`, and `UPSTASH_*` variable from Preview. Do not create a Preview
-  Redis store: Preview rate limits use its isolated Neon database.
+  Redis store: Staging and Preview rate limits use their isolated Neon
+  branches.
 
-- Before deploying this runtime contract to Preview, apply migration `0010`
-  with the separately held Preview migration credential. This is sensitive
-  remote database access and requires two fresh explicit confirmations. Never
-  place the migration credential in Vercel:
-
-  ```bash
-  MIGRATION_DATABASE_URL=postgresql://... pnpm db:migrate
-  ```
-
-  Verify the Preview runtime role can only select, insert, update, and delete
-  `rate_limit_windows`; it must not own the table or receive DDL privileges.
-  Preview has no Redis fallback: if the table or grants are missing,
+- The first successful Staging workflow applies migrations `0010` and `0011`
+  with the separately scoped GitHub migration role before deployment. Verify
+  the Staging runtime role has only required CRUD access to
+  `rate_limit_windows` and the AMA booking tables; it must not own tables or
+  receive DDL privileges.
+  Staging and Preview have no Redis fallback: if the table or grants are missing,
   rate-limited admin mutations fail closed with 503. Because the Redis
-  variables are already absent, do not count Preview mutation checks as passed
+  variables are already absent, do not count mutation checks as passed
   until this migration and grant verification succeeds.
 
 - Add a Preview-only `CLERK_SECRET_KEY` from the non-production Clerk
@@ -93,7 +122,7 @@ JSON
   npx vercel env rm AMA_ADMIN_ENABLED preview $SCOPE
   ```
 
-## 3. Provision the Production environment
+## 4. Provision the Production environment
 
 Production currently satisfies none of the v3 contract in `.env.example`.
 Each `env add` prompts for its value; generate fresh secrets rather than
@@ -122,6 +151,8 @@ add MEDIA_ENCRYPTION_KEY     # openssl rand -hex 32
 # Rate limits (values from .env.example defaults unless tuned).
 add ADMIN_MUTATION_RATE_LIMIT_MAX_REQUESTS
 add ADMIN_MUTATION_RATE_LIMIT_WINDOW_SECONDS
+add AMA_PUBLIC_RATE_LIMIT_MAX_REQUESTS
+add AMA_PUBLIC_RATE_LIMIT_WINDOW_SECONDS
 
 # Redis rate-limit backend: Production only. A Vercel Marketplace integration
 # may inject KV_REST_API_URL and KV_REST_API_TOKEN instead; configure one
@@ -129,8 +160,16 @@ add ADMIN_MUTATION_RATE_LIMIT_WINDOW_SECONDS
 add UPSTASH_REDIS_REST_URL
 add UPSTASH_REDIS_REST_TOKEN
 
-# The five optional AMA capability switches default to false when absent.
-# If you set them for operational visibility, enter the literal value `false`.
+# AMA provider capabilities use complete credential pairs and fail closed while
+# absent. Configure only the providers intended for the Production launch.
+add GOOGLE_CLIENT_ID
+add GOOGLE_CLIENT_SECRET
+add STRIPE_SECRET_KEY
+add STRIPE_WEBHOOK_SECRET
+add RESEND_API_KEY
+add AMA_EMAIL_FROM
+add TENCENT_MEETING_MCP_URL
+add TENCENT_MEETING_MCP_TOKEN
 
 # Bunny media storage (production zones, not the preview zones).
 add BUNNY_MEDIA_REGION
@@ -150,7 +189,7 @@ The remaining `MEDIA_ALT_TEXT_*` and `BUNNY_STORAGE_CONTRACT_*` values are
 needed only when Alt Text generation and the live storage contract are turned
 on; consult `.env.example` and `docs/media/ai-provider-policy.md` first.
 
-## 4. Dashboard-only checks
+## 5. Dashboard-only checks
 
 The CLI does not expose these; verify in the Vercel dashboard and record the
 results in the readiness report:
@@ -159,17 +198,30 @@ results in the readiness report:
 - Firewall and Attack Challenge configuration.
 - Git production-branch mapping (`main`) and the `cali.so` certificate.
 
-## 5. Production database and migrations
+## 6. Production database and migrations
 
 Gated by two fresh explicit confirmations immediately before access. Verify
-the runtime role has only CRUD grants, then apply the ten additive
-migrations with the separately held credential:
+the separate Production Neon project, CRUD-only runtime role, and migration-role
+default privileges for both existing and future tables and sequences. A merge
+to `main` then starts `Deploy Production`. The no-secret
+`production-migration-review` environment records the first approval. Only
+after it succeeds can the separately protected `production` environment expose
+the migration credential and record the second approval.
 
-```bash
-MIGRATION_DATABASE_URL=postgresql://... pnpm db:migrate
-```
+The workflow hash-locks reviewed migrations `0001` through `0011` and rejects
+any modification or deletion. Future migrations fail closed unless every SQL
+statement is an explicitly allowed expand operation: create a new table, type,
+sequence, view, function, or non-unique index; add a nullable column; add a
+non-null column with a statically proven non-null default; validate a named
+constraint; or set a statically proven non-null column default. New constraints,
+including `NOT VALID` constraints, affect new writes and therefore require an
+explicitly reviewed digest exception. Dynamic blocks, unknown default
+expressions, and every unrecognized statement are rejected. After both
+approvals and that check, the workflow applies pending migrations with the
+GitHub-only credential and deploys the exact commit. Do not approve either
+environment until the migration diff and rollback anchor have been reviewed.
 
-## 6. Rollback anchor
+## 7. Rollback anchor
 
 The last known-good production deployment is recorded in the readiness
 report's audit baseline. Deployments can age out of plan retention, so

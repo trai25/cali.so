@@ -1,0 +1,64 @@
+name: Refresh Preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      git_branch:
+        description: Internal Git branch whose Preview database should be reset from Staging.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: preview-${{ inputs.git_branch }}
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    if: inputs.git_branch != 'dev' && inputs.git_branch != 'main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: preview
+    steps:
+      - name: Check out trusted deployment action
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: dev
+
+      - name: Validate target branch
+        shell: bash
+        env:
+          GIT_BRANCH: ${{ inputs.git_branch }}
+        run: git check-ref-format --branch "$GIT_BRANCH"
+
+      - name: Check out target branch
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: refs/heads/${{ inputs.git_branch }}
+          path: target
+
+      - name: Resolve target commit
+        id: target
+        shell: bash
+        working-directory: target
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Refresh Preview
+        uses: ./.github/actions/deploy-neon-vercel
+        with:
+          branch-name: preview/${{ inputs.git_branch }}
+          reset: true
+          working-directory: target
+          target: preview
+          git-ref: ${{ inputs.git_branch }}
+          commit-sha: ${{ steps.target.outputs.sha }}
+          project-id: ${{ vars.NEON_PROJECT_ID }}
+          api-key: ${{ secrets.NEON_API_KEY }}
+          migration-role: ${{ vars.NEON_MIGRATION_ROLE }}
+          runtime-role: ${{ vars.NEON_RUNTIME_ROLE }}
+          database: ${{ vars.NEON_DATABASE }}
+          vercel-org-id: ${{ vars.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ vars.VERCEL_PROJECT_ID }}
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
