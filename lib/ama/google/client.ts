@@ -72,6 +72,29 @@ type FreeBusyInput = {
   timeMax: Date
 }
 
+type CalendarEventPathInput = {
+  accessToken: string
+  calendarId?: string
+  eventId: string
+}
+
+type InsertCalendarEventInput = CalendarEventPathInput & {
+  summary: string
+  description: string
+  location: string | null
+  startsAt: Date
+  endsAt: Date
+  attendee: { email: string; displayName: string }
+  withMeetConference: boolean
+}
+
+export type GoogleCalendarEventResult = {
+  meetUrl: string | null
+  created: boolean
+}
+
+export type GoogleCalendarMutationOutcome = 'done' | 'missing'
+
 function pkceChallenge(codeVerifier: string) {
   return createHash('sha256').update(codeVerifier).digest('base64url')
 }
@@ -131,6 +154,34 @@ async function readJson(response: Response): Promise<unknown> {
   }
 }
 
+function eventTime(value: Date) {
+  return { dateTime: value.toISOString(), timeZone: 'UTC' }
+}
+
+function calendarEventUrl(calendarId: string | undefined, eventId: string) {
+  const calendar = encodeURIComponent(calendarId ?? 'primary')
+  return `${GOOGLE_CALENDAR_API}/calendars/${calendar}/events/${encodeURIComponent(eventId)}`
+}
+
+function meetUrlFrom(payload: Record<string, unknown>): string | null {
+  if (typeof payload.hangoutLink === 'string' && payload.hangoutLink) {
+    return payload.hangoutLink
+  }
+  if (!isRecord(payload.conferenceData) || !Array.isArray(payload.conferenceData.entryPoints)) {
+    return null
+  }
+  for (const entryPoint of payload.conferenceData.entryPoints) {
+    if (
+      isRecord(entryPoint) &&
+      entryPoint.entryPointType === 'video' &&
+      typeof entryPoint.uri === 'string'
+    ) {
+      return entryPoint.uri
+    }
+  }
+  return null
+}
+
 async function readProviderErrorCode(response: Response): Promise<string | null> {
   try {
     const payload = (await response.json()) as { error?: unknown }
@@ -150,6 +201,21 @@ export function createGoogleCalendarClient(dependencies: GoogleCalendarClientDep
         'Google Calendar is temporarily unavailable.',
       )
     }
+  }
+
+  async function getCalendarEvent(
+    input: CalendarEventPathInput,
+  ): Promise<{ meetUrl: string | null }> {
+    const response = await request(calendarEventUrl(input.calendarId, input.eventId), {
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${input.accessToken}`,
+      },
+    })
+    await assertCalendarResponse(response)
+    const payload = await readJson(response)
+    if (!isRecord(payload)) invalidResponse()
+    return { meetUrl: meetUrlFrom(payload) }
   }
 
   return {
@@ -346,6 +412,97 @@ export function createGoogleCalendarClient(dependencies: GoogleCalendarClientDep
           end: new Date(end).toISOString(),
         }
       })
+    },
+
+    getCalendarEvent,
+
+    async insertCalendarEvent(input: InsertCalendarEventInput): Promise<GoogleCalendarEventResult> {
+      const calendar = encodeURIComponent(input.calendarId ?? 'primary')
+      const response = await request(
+        `${GOOGLE_CALENDAR_API}/calendars/${calendar}/events?conferenceDataVersion=1&sendUpdates=all`,
+        {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${input.accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: input.eventId,
+            summary: input.summary,
+            description: input.description,
+            ...(input.location === null ? {} : { location: input.location }),
+            start: eventTime(input.startsAt),
+            end: eventTime(input.endsAt),
+            attendees: [
+              {
+                email: input.attendee.email,
+                displayName: input.attendee.displayName,
+              },
+            ],
+            ...(input.withMeetConference
+              ? {
+                  conferenceData: {
+                    createRequest: {
+                      requestId: input.eventId,
+                      conferenceSolutionKey: { type: 'hangoutsMeet' },
+                    },
+                  },
+                }
+              : {}),
+          }),
+        },
+      )
+      if (response.status === 409) {
+        // Stable event ids make inserts idempotent: a conflict means an
+        // earlier attempt already created this event.
+        const existing = await getCalendarEvent(input)
+        return { meetUrl: existing.meetUrl, created: false }
+      }
+      await assertCalendarResponse(response)
+      const payload = await readJson(response)
+      if (!isRecord(payload)) invalidResponse()
+      return { meetUrl: meetUrlFrom(payload), created: true }
+    },
+
+    async patchCalendarEventTime(
+      input: CalendarEventPathInput & { startsAt: Date; endsAt: Date },
+    ): Promise<GoogleCalendarMutationOutcome> {
+      const response = await request(
+        `${calendarEventUrl(input.calendarId, input.eventId)}?sendUpdates=all`,
+        {
+          method: 'PATCH',
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${input.accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            start: eventTime(input.startsAt),
+            end: eventTime(input.endsAt),
+          }),
+        },
+      )
+      if (response.status === 404 || response.status === 410) return 'missing'
+      await assertCalendarResponse(response)
+      return 'done'
+    },
+
+    async deleteCalendarEvent(
+      input: CalendarEventPathInput,
+    ): Promise<GoogleCalendarMutationOutcome> {
+      const response = await request(
+        `${calendarEventUrl(input.calendarId, input.eventId)}?sendUpdates=all`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${input.accessToken}`,
+          },
+        },
+      )
+      if (response.status === 404 || response.status === 410) return 'missing'
+      await assertCalendarResponse(response)
+      return 'done'
     },
 
     async revokeToken(token: string): Promise<void> {

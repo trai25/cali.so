@@ -93,6 +93,23 @@ const publicPages = [
       en: 'Projects · Cali Castle. Products, open-source tools, and small experiments I have made over the years. Some useful, some playful, all made with care.',
     },
   ),
+  ...localizedPages(
+    '/ama',
+    {
+      title: '一对一',
+      description:
+        '与 Cali 的专注一小时。一场 60 分钟的一对一 AMA，聊工程、设计、职业或做产品。',
+    },
+    {
+      title: 'AMA',
+      description:
+        'A focused hour with Cali. One 60 minute one-to-one AMA Session about engineering, design, career, or building products.',
+    },
+    {
+      zh: '一对一 · Cali Castle。与 Cali 的专注一小时。一场 60 分钟的一对一 AMA，聊工程、设计、职业或做产品。',
+      en: 'AMA · Cali Castle. A focused hour with Cali. One 60 minute one-to-one AMA Session about engineering, design, career, or building products.',
+    },
+  ),
 ]
 
 const blogDirectory = new URL('../content/blog/', import.meta.url)

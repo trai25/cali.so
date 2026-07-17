@@ -67,6 +67,22 @@ export function ProjectsIcon() {
   )
 }
 
+export function AmaIcon() {
+  return (
+    <Base>
+      <path
+        d="M9 2.25c-3.728 0-6.75 2.798-6.75 6.25 0 1.603.652 3.064 1.723 4.17L3.25 15.75l3.397-1.13c.74.278 1.533.43 2.353.43 3.728 0 6.75-2.798 6.75-6.25S12.728 2.25 9 2.25Z"
+        fill="currentColor"
+        opacity=".3"
+        strokeWidth="0"
+        stroke="none"
+      />
+      <path d="M9 2.25c-3.728 0-6.75 2.798-6.75 6.25 0 1.603.652 3.064 1.723 4.17L3.25 15.75l3.397-1.13c.74.278 1.533.43 2.353.43 3.728 0 6.75-2.798 6.75-6.25S12.728 2.25 9 2.25Z" />
+      <path d="M9 5.75V8.5l1.875 1.375" />
+    </Base>
+  )
+}
+
 export function SayHiIcon() {
   return (
     <Base>

@@ -4447,3 +4447,27 @@ html[data-locale='en'] [data-en-block] {
     transition: none !important;
   }
 }
+
+/* ── AMA booking: calm waiting dots (no spinner) ─────────────────── */
+
+.ama-waiting-dots::after {
+  display: inline-block;
+  min-width: 1.5em;
+  animation: ama-waiting-dots 1.6s steps(1) infinite;
+  content: '…';
+  text-align: left;
+}
+
+@keyframes ama-waiting-dots {
+  0% {
+    content: '·';
+  }
+
+  33% {
+    content: '· ·';
+  }
+
+  66% {
+    content: '· · ·';
+  }
+}

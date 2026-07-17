@@ -150,6 +150,52 @@ function OgSectionMark({ section }: { section: PublicSection }) {
     )
   }
 
+  if (section === 'ama') {
+    // Two sketched speech bubbles trading a conversation, with an hour tick.
+    return (
+      <svg
+        width="232"
+        height="232"
+        viewBox="0 0 232 232"
+        fill="none"
+        aria-hidden="true"
+      >
+        <g strokeLinecap="round" strokeLinejoin="round">
+          <path
+            d="M40 52C74 45 116 46 148 52C152 74 152 96 148 116C122 121 92 122 68 118C62 126 54 133 44 138C47 129 48 121 47 113C42 95 38 72 40 52Z"
+            stroke={faint}
+            strokeWidth="1.4"
+          />
+          <path
+            d="M46 46C80 41 118 41 152 47C156 70 155 94 151 114C124 119 94 120 70 116C64 125 55 132 45 136C48 128 50 119 48 111C43 92 42 67 46 46Z"
+            stroke={stroke}
+            strokeWidth="1.7"
+          />
+          <path
+            d="M96 132C124 127 156 128 186 134C189 152 189 170 186 186C179 184 172 184 165 186C167 179 167 172 165 166C142 170 116 170 96 166C93 155 93 143 96 132Z"
+            stroke={faint}
+            strokeWidth="1.4"
+          />
+          <path
+            d="M92 136C122 131 154 132 184 138C187 155 186 172 183 188C176 186 169 186 162 188C164 181 164 174 162 168C139 172 113 171 93 167C90 157 90 146 92 136Z"
+            stroke={stroke}
+            strokeWidth="1.65"
+          />
+          <path
+            d="M70 80C86 78 104 78 122 80M70 96C82 94 96 94 108 95"
+            stroke={stroke}
+            strokeWidth="1.7"
+          />
+          <path
+            d="M138 62C144 61 149 65 149 71C149 77 144 81 138 81C132 81 128 76 128 71C128 66 132 62 138 62ZM138 66L138 71L142 74"
+            stroke={stroke}
+            strokeWidth="1.55"
+          />
+        </g>
+      </svg>
+    )
+  }
+
   if (section === 'photos') {
     return (
       <svg
