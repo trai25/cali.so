@@ -84,6 +84,28 @@ describe('AMA server environment', () => {
     },
   )
 
+  it('derives the Preview site URL when no canonical URL is configured', () => {
+    const { SITE_URL: _siteUrl, ...withoutSiteUrl } = validEnvironment
+    const environment = parseServerEnv({
+      ...withoutSiteUrl,
+      VERCEL_ENV: 'preview',
+      VERCEL_URL: 'cali-preview-cali.vercel.app',
+    })
+
+    expect(environment.SITE_URL.href).toBe(
+      'https://cali-preview-cali.vercel.app/',
+    )
+    expect(environment.browserMutationBaseUrl.href).toBe(
+      environment.SITE_URL.href,
+    )
+  })
+
+  it('requires a canonical site URL outside Preview', () => {
+    const { SITE_URL: _siteUrl, ...withoutSiteUrl } = validEnvironment
+
+    expect(() => parseServerEnv(withoutSiteUrl)).toThrowError(/SITE_URL/)
+  })
+
   it('keeps Production mutations pinned to the canonical site', () => {
     const environment = parseServerEnv({
       ...validEnvironment,

@@ -136,13 +136,19 @@ const serverEnvironmentSchema = z
     VERCEL_URL: blankAsUndefined(
       z.string().trim().refine(isVercelDeploymentHost).optional(),
     ),
-    SITE_URL: z
-      .url()
-      .refine((value) => {
-        const url = new URL(value)
-        return url.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(url.hostname)
-      })
-      .transform((value) => new URL(value)),
+    SITE_URL: blankAsUndefined(
+      z
+        .url()
+        .refine((value) => {
+          const url = new URL(value)
+          return (
+            url.protocol === 'https:' ||
+            ['localhost', '127.0.0.1'].includes(url.hostname)
+          )
+        })
+        .transform((value) => new URL(value))
+        .optional(),
+    ),
     ADMIN_MUTATION_RATE_LIMIT_MAX_REQUESTS: z.coerce
       .number()
       .int()
@@ -173,6 +179,7 @@ const serverEnvironmentSchema = z
         KV_REST_API_TOKEN,
         VERCEL_ENV,
         VERCEL_URL,
+        SITE_URL,
         GOOGLE_CLIENT_ID,
         GOOGLE_CLIENT_SECRET,
         STRIPE_SECRET_KEY,
@@ -189,6 +196,13 @@ const serverEnvironmentSchema = z
           code: 'custom',
           path: ['VERCEL_URL'],
           message: 'Vercel Preview requires its trusted deployment hostname',
+        })
+      }
+      if (VERCEL_ENV !== 'preview' && !SITE_URL) {
+        context.addIssue({
+          code: 'custom',
+          path: ['SITE_URL'],
+          message: 'The canonical site URL is required outside Vercel Preview',
         })
       }
 
@@ -282,13 +296,15 @@ const serverEnvironmentSchema = z
       REDIS_URL: _redisUrl,
       VERCEL_ENV,
       VERCEL_URL,
+      SITE_URL,
       ...environment
     }) => ({
       ...environment,
+      SITE_URL: SITE_URL ?? new URL(`https://${VERCEL_URL!}`),
       browserMutationBaseUrl:
         VERCEL_ENV === 'preview'
           ? new URL(`https://${VERCEL_URL!}`)
-          : environment.SITE_URL,
+          : SITE_URL!,
       rateLimitBackend:
         VERCEL_ENV === 'production'
           ? {
