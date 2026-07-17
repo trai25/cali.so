@@ -6,14 +6,14 @@ Current as of July 2026.
 
 - The ground-up rewrite is **v3**. The site released in 2024 remains the
   historical v2.
-- The integration branch keeps the name **`v2`** for continuity. `main` still
-  drives production; merging the completed v3 release into `main` is the
-  cutover.
+- Git **`dev`** is the long-lived Staging and integration branch. `main` drives
+  Production; a reviewed `dev` to `main` pull request is the release path.
 - Release scope and evidence are tracked by
   [#98](https://github.com/CaliCastle/cali.so/issues/98). Do not merge to
   `main` until its complete dependency chain and final proof are green.
 - Release slices #99 through #106 are merged into `v2`. Final cutover proof is
-  tracked by #107; its checked-in report is the current readiness authority.
+  tracked by #107; those `v2` references are historical evidence from before
+  the branch became `dev`.
 
 ## Current architecture
 
@@ -44,6 +44,10 @@ Current as of July 2026.
   the v3 production launch.
 - Rate limits use Upstash only in Production. Preview persists its limits in
   the isolated Neon database, while Local and CI use process-local limits.
+- GitHub Actions owns deployment ordering. `dev` migrates the persistent Neon
+  `staging` branch before deploying Vercel Staging. Internal feature branches
+  use persistent `preview/<git-branch>` children of Staging. Production lives
+  in a separate Neon project and waits for protected-environment approval.
 - Security baseline controls from PR #97 remain mandatory: CSP and security
   headers, same-origin mutation policy, rate limits, kill switches,
   privacy-safe audit events, isolated credentials, and security automation.
@@ -87,6 +91,7 @@ pnpm test:unit
 pnpm test:localization
 pnpm test:port-post
 pnpm test:ama
+pnpm test:deployment
 pnpm test:security
 pnpm test:media:storage
 pnpm test:media:catalog
@@ -109,7 +114,8 @@ pnpm verify:security-boundary
 pnpm audit:prod
 ```
 
-Run migrations only with an explicitly supplied migration credential:
+Deployment workflows run migrations before deployment with a scoped GitHub
+environment credential. For an explicitly authorized local operation:
 
 ```bash
 MIGRATION_DATABASE_URL=postgresql://... pnpm db:migrate
@@ -120,9 +126,8 @@ The Vercel runtime receives only the CRUD-only `DATABASE_URL`. Never put
 
 ## Gotchas
 
-- Product generation and branch name differ: v3 is developed on `v2`. Do not
-  rename historical tags, the integration branch, vendor APIs, or protocol
-  versions while correcting product terminology.
+- Historical product v2 tags and old readiness evidence remain v2. Do not
+  rewrite them when working on Git `dev`, the current v3 integration branch.
 - This Next.js preview has breaking changes. Read the relevant bundled guide in
   `node_modules/next/dist/docs/` before changing framework behavior.
 - `turbopack.root` supports nested worktrees and must stay configured.
@@ -131,9 +136,10 @@ The Vercel runtime receives only the CRUD-only `DATABASE_URL`. Never put
 - Raw stylesheet `backdrop-filter` is stripped by the CSS pipeline. The liquid
   dock owns its SVG filter as an inline style; ordinary blur uses Tailwind
   utilities.
-- Preview and Production credentials and data are separate. Preview data must
-  be disposable or irreversibly sanitized. Never attach Redis credentials to
-  Preview; its rate-limit windows live in the Preview Neon database.
+- Staging/Preview and Production credentials and data are isolated in separate
+  Neon projects. Non-production data must be disposable or irreversibly
+  sanitized. Never attach Redis credentials to Staging or Preview; their
+  rate-limit windows live in Neon.
 - The five optional `AMA_*_ENABLED` variables fail closed. Leave every one
   `false` for the v3 launch; owner admin has no capability switch.
 - Design references are private. Public code and documentation use only the

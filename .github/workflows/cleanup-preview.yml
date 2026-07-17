@@ -1,0 +1,40 @@
+name: Cleanup Preview
+
+on:
+  delete:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cleanup-preview-${{ github.event.ref }}
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    if: >-
+      github.event.ref_type == 'branch' &&
+      github.event.ref != 'dev' &&
+      github.event.ref != 'main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: preview
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Delete Neon Preview branch
+        uses: neondatabase/delete-branch-action@4468d825d5a88ef4012f1705a82f02ec3072f776 # v3
+        with:
+          project_id: ${{ vars.NEON_PROJECT_ID }}
+          api_key: ${{ secrets.NEON_API_KEY }}
+          branch: preview/${{ github.event.ref }}
+
+      - name: Delete Vercel Preview deployments
+        if: always()
+        env:
+          GIT_BRANCH: ${{ github.event.ref }}
+          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: node scripts/delete-vercel-branch-deployments.mjs

@@ -1,0 +1,39 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: staging
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Deploy Staging
+        uses: ./.github/actions/deploy-neon-vercel
+        with:
+          branch-name: staging
+          target: staging
+          git-ref: dev
+          commit-sha: ${{ github.sha }}
+          project-id: ${{ vars.NEON_PROJECT_ID }}
+          api-key: ${{ secrets.NEON_API_KEY }}
+          migration-role: ${{ vars.NEON_MIGRATION_ROLE }}
+          runtime-role: ${{ vars.NEON_RUNTIME_ROLE }}
+          database: ${{ vars.NEON_DATABASE }}
+          vercel-org-id: ${{ vars.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ vars.VERCEL_PROJECT_ID }}
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}

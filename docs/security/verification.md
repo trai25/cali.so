@@ -16,7 +16,10 @@ Google, and Tencent; an absent switch is deliberately equivalent to `false`.
   vulnerability reporting.
 - [x] Dependabot covers pnpm/npm dependencies and GitHub Actions.
 - [x] `.github/workflows/security.yml` runs Quality and advanced CodeQL for
-  pull requests, `v2`, `main`, and the weekly schedule.
+  pull requests, `dev`, `main`, and the weekly schedule.
+- [x] Deployment contract tests verify migration-before-deploy ordering,
+  expand-only Production migrations, fork isolation, reserved-branch cleanup,
+  and the absence of migration credentials from Vercel steps.
 - [x] Workflow permissions default to read-only. Only CodeQL adds
   `security-events: write`.
 - [x] Third-party Actions are pinned to full reviewed commit SHAs.
@@ -34,11 +37,12 @@ Local recheck:
 pnpm typecheck
 pnpm test:unit
 pnpm test:ama
+pnpm test:deployment
 pnpm test:security
 pnpm audit:prod
 pnpm verify:security-boundary
 gitleaks git --redact --no-banner --log-opts='--branches --tags' --verbose
-git grep -nE 'uses: [^#[:space:]]+@(v|main|master|[0-9a-f]{1,39})([[:space:]]|$)' -- '.github/workflows/*.yml'
+git grep -nE 'uses: [^#[:space:]]+@(v|main|master|[0-9a-f]{1,39})([[:space:]]|$)' -- '.github/workflows/*.yml' '.github/actions/*/*.yml'
 ```
 
 The production dependency audit queries OSV from the installed pnpm graph.
@@ -55,12 +59,14 @@ Repository API checks on 2026-07-16 verified:
 - [x] Default Actions workflow permissions are read-only and workflows cannot
   approve pull requests.
 - [x] Actions must be pinned to a full commit SHA.
-- [x] The `v2` ruleset requires pull requests, blocks force pushes and branch
-  deletion, and limits the audited emergency bypass to repository
+- [x] The historical `v2` ruleset requires pull requests, blocks force pushes
+  and branch deletion, and limits the audited emergency bypass to repository
   administrators. It requires no approving review while the project has one
   maintainer.
-- [x] The `v2` ruleset requires the successful GitHub Actions checks named
+- [x] The historical `v2` ruleset requires the successful GitHub Actions checks named
   `Quality` and `CodeQL`.
+- [ ] Rename the hosted `v2` branch and its ruleset target to `dev`, then verify
+  the same PR, deletion, force-push, and required-check protections.
 - [ ] Require `Quality` and `CodeQL` on `main` branch protection.
 - [x] CodeQL default setup is disabled so the committed advanced workflow is
   the single analysis source.
@@ -69,6 +75,9 @@ Repository API checks on 2026-07-16 verified:
   change.
 - [x] Fork pull requests cannot receive Vercel secrets, and the GitHub Actions
   workflow uses committed non-secret fixtures instead of repository secrets.
+- [ ] Configure `preview`, `staging`, and protected `production` GitHub
+  environments with the variables, secrets, branch restrictions, and required
+  Production reviewer documented in the cutover runbook.
 
 ## Vercel
 
@@ -79,6 +88,11 @@ Project API checks on 2026-07-16 verified:
 - [x] Production and Preview have distinct database variables. Preview uses a
   disposable Neon branch and a pooled CRUD-only runtime role; migrations use a
   separate direct credential that is absent from Vercel.
+- [ ] Rename the persistent non-production Neon branch to `staging`, configure
+  the custom Vercel Staging environment, and verify feature branches receive
+  isolated `preview/<git-branch>` children.
+- [x] Committed Vercel configuration disables Git deployments; hosted proof
+  requires a GitHub-controlled Staging and Preview deployment after setup.
 - [x] Preview explicitly sets all five optional AMA capability switches to
   `false`. Owner admin has no capability switch and remains protected by Clerk
   authentication plus the exact server-side `siteOwner: "yes"` marker.

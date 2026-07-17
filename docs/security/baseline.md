@@ -9,7 +9,8 @@ an attacker can read the implementation.
 | Environment | Data and integrations | Secret policy |
 | --- | --- | --- |
 | Production | Production-only accounts and durable data | Available only to protected production deployments |
-| Preview | Test accounts and disposable, isolated data | Preview-scoped credentials; never production credentials |
+| Staging | Persistent non-production baseline and test accounts | Staging-scoped credentials; never production credentials |
+| Preview | Disposable child of Staging for one internal Git branch | Preview-scoped runtime credentials; never production credentials |
 | Local and CI | Local emulators, fixtures, or dedicated test accounts | Developer-local or CI-scoped credentials with the minimum privilege |
 
 - Keep production and preview credentials in separate provider projects or
@@ -41,12 +42,15 @@ Production uses separate database identities:
 - The runtime role receives only the schema usage and table or sequence
   privileges required for application CRUD. It cannot create or alter schema,
   manage roles, grant privileges, or run migrations.
-- The migration role may perform approved DDL but is never present in runtime,
-  Preview, browser, or routine CI environments.
+- The migration role may perform approved DDL only in its scoped GitHub
+  deployment step. It is never sent to Vercel, an application build or runtime,
+  a browser, or ordinary code-validation CI.
 - An owner or emergency role is break-glass only, access-controlled and
   audited. It is not an application credential.
-- Preview uses a separate database and credentials. Production snapshots are
-  not copied into Preview unless they are irreversibly sanitized first.
+- Staging and Preview use a separate non-production Neon project and
+  credentials. Production snapshots are not copied into it unless they are
+  irreversibly sanitized first. The non-production automation key has no access
+  to the Production Neon project.
 
 Review grants whenever the schema changes. Prefer explicit grants over broad
 database ownership, require encrypted connections, and revoke default/public
@@ -77,6 +81,9 @@ recording their sensitive payloads.
 - Keep Actions' repository default at read-only. Each workflow declares its
   own minimum permissions; the CodeQL upload job is allowed only
   `security-events: write` in addition to `contents: read`.
+- Database-backed deployment workflows run only for branches inside this
+  repository. Fork pull requests receive code-only checks and never receive
+  Neon or Vercel credentials.
 - Pin every action to a verified full commit SHA and retain the release tag in
   a comment so updates remain reviewable.
 - Require pull requests and required CI/security checks on the integration and

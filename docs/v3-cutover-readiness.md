@@ -2,6 +2,12 @@
 
 Last checked: 2026-07-16 (hosted-control inventory refreshed the same day).
 
+The accepted deployment architecture now renames the integration branch from
+`v2` to `dev` and the persistent non-production database branch from Preview to
+Staging. The hosted rename and environment setup are still pending. Exact `v2`
+names below remain historical evidence from the dated audit baseline until the
+next hosted verification refresh.
+
 ## Verdict
 
 **NOT READY.** The merged `v2` integration branch is green under the complete
@@ -220,10 +226,12 @@ explicit confirmations immediately before access.
 
 ## Domain and rollback expectations
 
-The intended cutover is a reviewed merge from `v2` into `main`. Vercel should
-then build `main` and retain `cali.so` and `www.cali.so` on the same project.
-No manual DNS move is expected, but current project ownership, production
-branch, aliases, certificate, and environment scopes must be verified first.
+The intended cutover is a reviewed pull request from `dev` into `main`.
+`Deploy Production` must wait for protected-environment approval, migrate the
+separate Production Neon project, and then deploy that exact commit. Vercel
+must retain `cali.so` and `www.cali.so` on the same project. No manual DNS move
+is expected, but current project ownership, aliases, certificate, and
+environment scopes must be verified first.
 
 Rollback must prefer promoting the last known-good Vercel production deployment
 or reverting the cutover merge. The ten additive database migrations should
@@ -236,27 +244,29 @@ operator before cutover.
 The maintainer-operated commands for actions 1 through 4 are collected in
 `docs/v3-cutover-ops-runbook.md`.
 
-1. Provision the Production environment for the v3 contract: replace the
+1. Rename Git `v2` to `dev`, rename the persistent non-production Neon branch
+   to `staging`, configure the three GitHub deployment environments, and create
+   the Vercel custom Staging environment.
+2. Run the GitHub-controlled Staging deployment. With two fresh confirmations,
+   verify migration `0010`, Media tables, and the runtime role's CRUD-only
+   grants. Until these pass, treat Staging admin reads and mutations as
+   unavailable rather than validated.
+3. Provision the Production environment for the v3 contract: replace the
    legacy `DATABASE_URL` with the CRUD-only Neon runtime role and add the
    missing secrets, rate limits, capability switches, and complete Bunny and
    media configuration.
-2. With two fresh confirmations, verify migration `0010` on Preview and the
-   runtime role's CRUD-only grants for `rate_limit_windows`. Until both pass,
-   treat rate-limited Preview admin mutations as potentially unavailable by
-   fail-closed 503 responses rather than as validated behavior.
-3. Add `Quality` and `CodeQL` as required checks to `main`; the `v2` ruleset is
-   already complete.
-4. In the Vercel dashboard, verify logs, drains, retention, firewall rules,
+4. Verify `Quality` and `CodeQL` are required on protected `dev` and `main`.
+5. In the Vercel dashboard, verify logs, drains, retention, firewall rules,
    the production-branch mapping, and the certificate.
-5. With two fresh confirmations, verify production runtime database grants
-   and migration state, then apply migrations `0001` through `0010` with the
-   separately supplied migration credential.
-6. Verify the production Bunny and Neon Media boundary, run the protected live
+6. With two fresh confirmations, verify Production runtime grants and the
+   reviewed initial migration baseline. Approve the protected Production
+   environment only after confirming the workflow will migrate before deploy.
+7. Verify the production Bunny and Neon Media boundary, run the protected live
    storage contract, and publish the intended two-photo Published Photo
    Selection through the owner admin.
-7. Review the recorded production-like Vercel Preview across the remaining
+8. Review the recorded production-like Vercel Preview across the remaining
    browser matrix and confirm the fresh Chinese and English Preview pageviews
    are visible in the existing `cali-so` Analytics dashboard.
-8. Confirm the rollback procedure against the recorded known-good deployment.
-9. Only after every blocker above is passed, approve the separately operated
-   merge to `main` and production cutover.
+9. Confirm the rollback procedure against the recorded known-good deployment.
+10. Only after every blocker above is passed, merge `dev` to `main`, approve
+    the protected Production deployment, and complete the cutover smoke tests.

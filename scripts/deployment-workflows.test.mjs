@@ -1,0 +1,193 @@
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+import { test } from 'node:test'
+
+import { parse } from 'yaml'
+
+const root = new URL('../', import.meta.url)
+
+async function text(path) {
+  return readFile(new URL(path, root), 'utf8')
+}
+
+async function workflow(name) {
+  return parse(await text(`.github/workflows/${name}.yml`))
+}
+
+async function action(name) {
+  return parse(await text(`.github/actions/${name}/action.yml`))
+}
+
+function stepIndex(steps, name) {
+  return steps.findIndex((step) => step.name === name)
+}
+
+function assertOrdered(steps, before, after) {
+  const beforeIndex = stepIndex(steps, before)
+  const afterIndex = stepIndex(steps, after)
+  assert.notEqual(beforeIndex, -1, `Missing workflow step: ${before}`)
+  assert.notEqual(afterIndex, -1, `Missing workflow step: ${after}`)
+  assert.ok(beforeIndex < afterIndex, `${before} must run before ${after}`)
+}
+
+test('Vercel Git integration cannot race the deployment workflows', async () => {
+  const config = JSON.parse(await text('vercel.json'))
+  assert.equal(config.git?.deploymentEnabled, false)
+})
+
+test('feature pushes branch from Staging, migrate, then deploy Preview', async () => {
+  const config = await workflow('deploy-preview')
+  assert.deepEqual(config.on.push['branches-ignore'], ['main', 'dev'])
+  assert.equal(config.on.pull_request, undefined)
+  assert.equal(config.on.pull_request_target, undefined)
+
+  const job = config.jobs.deploy
+  assert.equal(job.environment, 'preview')
+  assert.match(job.if, /CaliCastle\/cali\.so/)
+  assert.match(job.if, /dependabot/)
+  assert.match(
+    job.concurrency?.group ?? config.concurrency?.group,
+    /github\.ref/,
+  )
+
+  const deploy = job.steps.find((step) => step.name === 'Deploy Preview')
+  assert.equal(deploy.uses, './.github/actions/deploy-neon-vercel')
+  assert.equal(deploy.with['parent-branch'], 'staging')
+  assert.match(deploy.with['branch-name'], /^preview\//)
+  assert.equal(deploy.with.target, 'preview')
+})
+
+test('dev continuously migrates and deploys the persistent Staging environment', async () => {
+  const config = await workflow('deploy-staging')
+  assert.deepEqual(config.on.push.branches, ['dev'])
+
+  const job = config.jobs.deploy
+  assert.equal(job.environment, 'staging')
+  const deploy = job.steps.find((step) => step.name === 'Deploy Staging')
+  assert.equal(deploy.uses, './.github/actions/deploy-neon-vercel')
+  assert.equal(deploy.with['branch-name'], 'staging')
+  assert.equal(deploy.with.target, 'staging')
+})
+
+test('main uses protected Production credentials and deploys only after migration', async () => {
+  const config = await workflow('deploy-production')
+  assert.deepEqual(config.on.push.branches, ['main'])
+
+  const job = config.jobs.deploy
+  assert.equal(job.environment, 'production')
+  assert.equal(job.env, undefined)
+  assertOrdered(
+    job.steps,
+    'Reject destructive database migrations',
+    'Run database migrations',
+  )
+  assertOrdered(
+    job.steps,
+    'Run database migrations',
+    'Deploy Vercel Production',
+  )
+  const migrate = job.steps.find(
+    (step) => step.name === 'Run database migrations',
+  )
+  assert.equal(
+    migrate.env.MIGRATION_DATABASE_URL,
+    '${{ secrets.MIGRATION_DATABASE_URL }}',
+  )
+  const deploy = job.steps.find(
+    (step) => step.name === 'Deploy Vercel Production',
+  )
+  assert.match(deploy.run, /vercel@56\.3\.1 deploy --prod/)
+  assert.equal(deploy.env.MIGRATION_DATABASE_URL, undefined)
+  assert.equal(deploy.env.DATABASE_URL, undefined)
+  assert.equal(deploy.env.NEON_API_KEY, undefined)
+})
+
+test('release pull requests reject unsafe migrations before merging to main', async () => {
+  const config = await workflow('security')
+  const job = config.jobs.quality
+  const checkout = job.steps.find((step) => step.name === 'Check out repository')
+  assert.equal(checkout.with['fetch-depth'], 0)
+
+  const check = job.steps.find(
+    (step) => step.name === 'Check Production migration compatibility',
+  )
+  assert.match(check.if, /github\.base_ref == 'main'/)
+  assert.match(check.run, /check-production-migrations\.mjs/)
+  assert.equal(check.env.BASE_SHA, '${{ github.event.pull_request.base.sha }}')
+  assert.equal(check.env.HEAD_SHA, '${{ github.event.pull_request.head.sha }}')
+})
+
+test('branch deletion cleans only ephemeral Neon and Vercel Previews', async () => {
+  const config = await workflow('cleanup-preview')
+  assert.ok(Object.hasOwn(config.on, 'delete'))
+  assert.equal(config.on.pull_request_target, undefined)
+
+  const job = config.jobs.cleanup
+  assert.equal(job.environment, 'preview')
+  assert.match(job.if, /ref_type == 'branch'/)
+  assert.match(job.if, /github\.event\.ref != 'dev'/)
+  assert.match(job.if, /github\.event\.ref != 'main'/)
+
+  const removeNeon = job.steps.find(
+    (step) => step.name === 'Delete Neon Preview branch',
+  )
+  assert.equal(
+    removeNeon.uses,
+    'neondatabase/delete-branch-action@4468d825d5a88ef4012f1705a82f02ec3072f776',
+  )
+  assert.match(removeNeon.with.branch, /^preview\//)
+  assert.ok(
+    job.steps.some((step) => {
+      return (
+        step.name === 'Delete Vercel Preview deployments' &&
+        step.if === 'always()'
+      )
+    }),
+  )
+})
+
+test('manual refresh resets a feature database from Staging before redeploying', async () => {
+  const config = await workflow('refresh-preview')
+  assert.ok(config.on.workflow_dispatch.inputs.git_branch.required)
+
+  const job = config.jobs.refresh
+  assert.equal(job.environment, 'preview')
+  const reset = job.steps.find((step) => step.name === 'Refresh Preview')
+  assert.equal(reset.uses, './.github/actions/deploy-neon-vercel')
+  assert.equal(reset.with.reset, true)
+  assert.match(reset.with['branch-name'], /^preview\//)
+  assert.equal(reset.with.target, 'preview')
+})
+
+test('shared non-production action keeps migration credentials out of Vercel', async () => {
+  const config = await action('deploy-neon-vercel')
+  const steps = config.runs.steps
+
+  const create = steps.find((step) => step.id === 'migration-branch')
+  assert.equal(
+    create.uses,
+    'neondatabase/create-branch-action@fb620d43d4c565abaf088b848a4e28e5c4ea4d9c',
+  )
+  assert.match(create.with.role, /migration-role/)
+
+  const reset = steps.find((step) => step.id === 'reset-branch')
+  assert.equal(
+    reset.uses,
+    'neondatabase/reset-branch-action@470ab8101095ea33737c294d17364a72fd80761b',
+  )
+  assert.equal(reset.with.parent, true)
+
+  const runtime = steps.find((step) => step.id === 'runtime-branch')
+  assert.match(runtime.with.role, /runtime-role/)
+  assertOrdered(steps, 'Run database migrations', 'Deploy to Vercel')
+
+  const deploy = steps.find((step) => step.name === 'Deploy to Vercel')
+  assert.match(deploy.run, /vercel@56\.3\.1 deploy/)
+  assert.match(deploy.run, /--target=/)
+  assert.match(deploy.run, /--build-env DATABASE_URL=/)
+  assert.match(deploy.run, /--env DATABASE_URL=/)
+  assert.doesNotMatch(deploy.run, /MIGRATION_DATABASE_URL/)
+  assert.doesNotMatch(deploy.run, /\$\{\{ inputs\.(?:git-ref|target) \}\}/)
+  assert.equal(deploy.env.DEPLOY_GIT_REF, '${{ inputs.git-ref }}')
+  assert.equal(deploy.env.DEPLOY_TARGET, '${{ inputs.target }}')
+})
