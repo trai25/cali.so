@@ -13,6 +13,7 @@ interface LocaleMetadataOptions {
 }
 
 const SOCIAL_IMAGE_VERSION = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12)
+const SECTION_IMAGE_PATHS = new Set(['/ama', '/blog', '/photos', '/projects'])
 
 export function socialImageUrl(locale: Locale, path: string) {
   const url = new URL('/og', seo.url)
@@ -47,15 +48,16 @@ export function localeMetadata({
 }: LocaleMetadataOptions): Metadata {
   const pair = localeRoutePair(path)
   const canonical = locale === 'en' ? pair.en : pair.zh
+  const sentenceSeparator = locale === 'en' ? '. ' : '。'
   const image = {
     url: socialImageUrl(locale, path),
     width: 1200,
     height: 630,
     alt:
       path === '/'
-        ? locale === 'en'
-          ? `${title}. ${description}`
-          : `${title}。${description}`
+        ? `${title}${sentenceSeparator}${description}`
+        : SECTION_IMAGE_PATHS.has(path)
+          ? `${title} · Cali Castle${sentenceSeparator}${description}`
         : `${title} · Cali Castle`,
     type: 'image/png',
   }

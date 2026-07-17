@@ -4055,7 +4055,7 @@ html[data-locale='en'] [data-en-block] {
 
 @media (max-width: 39.99rem) {
   .dock {
-    bottom: max(0.5rem, calc(env(safe-area-inset-bottom, 0px) - 0.5rem));
+    bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
   }
 }
 
