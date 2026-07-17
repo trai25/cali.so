@@ -47,7 +47,8 @@ Current as of July 2026.
 - GitHub Actions owns deployment ordering. `dev` migrates the persistent Neon
   `staging` branch before deploying Vercel Staging. Internal feature branches
   use persistent `preview/<git-branch>` children of Staging. Production lives
-  in a separate Neon project and waits for protected-environment approval.
+  in a separate Neon project and waits for two sequential protected-environment
+  approvals before database access.
 - Security baseline controls from PR #97 remain mandatory: CSP and security
   headers, same-origin mutation policy, rate limits, kill switches,
   privacy-safe audit events, isolated credentials, and security automation.

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import { test } from 'node:test'
 
 import {
-  destructiveMigrationFindings,
+  expandOnlyMigrationFindings,
   migrationDiffArguments,
   migrationPathsInRepository,
   parseChangedMigrations,
@@ -18,15 +18,32 @@ test('accepts additive expand migrations', () => {
     );
     ALTER TABLE media_assets ADD COLUMN label_id uuid;
     CREATE INDEX media_assets_label_id_idx ON media_assets (label_id);
-    ALTER TABLE media_assets
-      ADD CONSTRAINT media_assets_label_id_fk
-      FOREIGN KEY (label_id) REFERENCES media_labels(id) NOT VALID;
   `
 
-  assert.deepEqual(destructiveMigrationFindings(sql), [])
+  assert.deepEqual(expandOnlyMigrationFindings(sql), [])
 })
 
-test('rejects contract-breaking schema and data operations', () => {
+test('accepts only explicitly reviewed expand operations', () => {
+  const sql = `
+    CREATE TYPE media_label_source AS ENUM ('owner', 'suggested');
+    CREATE SEQUENCE media_label_order_seq;
+    CREATE VIEW visible_media_labels AS SELECT id FROM media_labels;
+    CREATE FUNCTION visible_media_label_count() RETURNS bigint
+      LANGUAGE SQL AS 'SELECT count(*) FROM visible_media_labels';
+    ALTER TABLE media_assets ADD COLUMN sort_order bigint NOT NULL DEFAULT 0;
+    ALTER TABLE media_assets ADD COLUMN visible boolean NOT NULL DEFAULT true;
+    ALTER TABLE media_assets
+      ADD COLUMN created_at timestamptz NOT NULL DEFAULT now();
+    ALTER TABLE media_assets
+      ADD COLUMN public_id uuid NOT NULL DEFAULT gen_random_uuid();
+    ALTER TABLE media_assets ALTER COLUMN sort_order SET DEFAULT 1;
+    ALTER TABLE media_assets VALIDATE CONSTRAINT media_assets_label_id_fk;
+  `
+
+  assert.deepEqual(expandOnlyMigrationFindings(sql), [])
+})
+
+test('rejects contract-breaking and unrecognized operations', () => {
   const sql = `
     DROP TABLE old_media;
     ALTER TABLE media_assets DROP COLUMN legacy_caption;
@@ -39,7 +56,7 @@ test('rejects contract-breaking schema and data operations', () => {
   `
 
   assert.deepEqual(
-    destructiveMigrationFindings(sql).map(({ operation }) => operation),
+    expandOnlyMigrationFindings(sql).map(({ operation }) => operation),
     [
       'DROP TABLE',
       'DROP COLUMN',
@@ -53,15 +70,64 @@ test('rejects contract-breaking schema and data operations', () => {
   )
 })
 
-test('ignores destructive words inside SQL comments and string literals', () => {
+test('rejects unsafe column, constraint, and dynamic SQL forms', () => {
+  const sql = `
+    ALTER TABLE media_assets ADD COLUMN owner_label text NOT NULL;
+    ALTER TABLE media_assets
+      ADD CONSTRAINT media_assets_width_check CHECK (width > 0);
+    ALTER TABLE media_assets
+      ADD CONSTRAINT media_assets_sha_unique UNIQUE (sha256);
+    ALTER TABLE media_assets
+      ADD CONSTRAINT media_assets_hidden_check CHECK (NOT valid);
+    ALTER TABLE media_assets
+      ADD CONSTRAINT media_assets_label_fk
+      FOREIGN KEY (label_id) REFERENCES media_labels(id) NOT VALID;
+    ALTER TABLE media_assets
+      ADD CONSTRAINT media_assets_no_writes CHECK (false) NOT VALID;
+    ALTER TABLE media_assets
+      ADD COLUMN null_owner_label text NOT NULL DEFAULT (NULL);
+    ALTER TABLE media_assets
+      ADD COLUMN computed_owner_label text NOT NULL
+      DEFAULT (NULLIF('x', 'x'));
+    ALTER TABLE media_assets
+      ADD COLUMN computed_caption text DEFAULT COALESCE(NULL, 'caption');
+    ALTER TABLE media_assets ALTER COLUMN sort_order SET DEFAULT NULL;
+    CREATE UNIQUE INDEX media_assets_sha_idx ON media_assets (sha256);
+    DO $$
+    BEGIN
+      EXECUTE 'DROP TABLE media_assets';
+    END
+    $$;
+  `
+
+  assert.deepEqual(
+    expandOnlyMigrationFindings(sql).map(({ operation }) => operation),
+    [
+      'ADD COLUMN NOT NULL WITHOUT SAFE DEFAULT',
+      'ADD CONSTRAINT REQUIRES REVIEW',
+      'ADD CONSTRAINT REQUIRES REVIEW',
+      'ADD CONSTRAINT REQUIRES REVIEW',
+      'ADD CONSTRAINT REQUIRES REVIEW',
+      'ADD CONSTRAINT REQUIRES REVIEW',
+      'ADD COLUMN NOT NULL WITHOUT SAFE DEFAULT',
+      'ADD COLUMN NOT NULL WITHOUT SAFE DEFAULT',
+      'ADD COLUMN REQUIRES SAFE DEFAULT',
+      'SET DEFAULT REQUIRES SAFE VALUE',
+      'UNRECOGNIZED STATEMENT',
+      'UNRECOGNIZED STATEMENT',
+    ],
+  )
+})
+
+test('ignores operation words inside SQL comments and string literals', () => {
   const sql = `
     -- DROP TABLE media_assets;
     /* ALTER TABLE media_assets DROP COLUMN width; */
-    INSERT INTO audit_events (event_type, detail)
-      VALUES ('DELETE FROM media_assets', $$TRUNCATE media_assets$$);
+    CREATE FUNCTION migration_example() RETURNS text
+      LANGUAGE SQL AS $$SELECT 'DROP TABLE media_assets'::text$$;
   `
 
-  assert.deepEqual(destructiveMigrationFindings(sql), [])
+  assert.deepEqual(expandOnlyMigrationFindings(sql), [])
 })
 
 test('allows only newly added migration files in a Production release', () => {

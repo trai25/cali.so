@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: refresh-preview-${{ inputs.git_branch }}
+  group: preview-${{ inputs.git_branch }}
   cancel-in-progress: false
 
 jobs:
@@ -22,14 +22,27 @@ jobs:
     timeout-minutes: 30
     environment: preview
     steps:
+      - name: Check out trusted deployment action
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: dev
+
+      - name: Validate target branch
+        shell: bash
+        env:
+          GIT_BRANCH: ${{ inputs.git_branch }}
+        run: git check-ref-format --branch "$GIT_BRANCH"
+
       - name: Check out target branch
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
-          ref: ${{ inputs.git_branch }}
+          ref: refs/heads/${{ inputs.git_branch }}
+          path: target
 
       - name: Resolve target commit
         id: target
         shell: bash
+        working-directory: target
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Refresh Preview
@@ -37,6 +50,7 @@ jobs:
         with:
           branch-name: preview/${{ inputs.git_branch }}
           reset: true
+          working-directory: target
           target: preview
           git-ref: ${{ inputs.git_branch }}
           commit-sha: ${{ steps.target.outputs.sha }}

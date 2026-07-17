@@ -95,8 +95,9 @@ pnpm audit:prod
 - `dev` automatically migrates and deploys persistent Staging. Internal feature
   branches receive persistent Neon `preview/<git-branch>` children of Staging;
   fork pull requests receive code-only CI.
-- Production uses a separate Neon project. A protected GitHub environment
-  approves the migration before GitHub deploys the exact `main` commit.
+- Production uses a separate Neon project. Two sequential protected GitHub
+  environments approve the migration review and database access before GitHub
+  deploys the exact `main` commit.
 - Next.js preview versions stay pinned exactly and require explicit review,
   a lockfile update, and the complete validation suite.
 - Staging and Previews use a separate non-production Neon project and disposable
@@ -106,7 +107,9 @@ pnpm audit:prod
   ordinary CI use process-local limits.
 - The Vercel runtime never receives migration credentials.
 - Production migrations are expand-only in the normal release workflow.
-  Destructive contract migrations require a later, separately approved release.
+  Reviewed migrations are hash-locked, and future SQL must match the explicit
+  allowlist. Destructive contract migrations require a later, separately
+  approved release.
 - Owner admin remains available in every environment and relies on
   Clerk authentication plus the server-checked
   `publicMetadata.siteOwner = "yes"` marker rather than an environment switch.

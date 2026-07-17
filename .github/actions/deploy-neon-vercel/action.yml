@@ -46,6 +46,15 @@ inputs:
   vercel-token:
     description: Vercel deployment token.
     required: true
+  working-directory:
+    description: Checked-out application directory to install, migrate, and deploy.
+    required: false
+    default: "."
+
+outputs:
+  deployment-url:
+    description: URL of the Vercel deployment.
+    value: ${{ steps.vercel.outputs.url }}
 
 runs:
   using: composite
@@ -58,9 +67,11 @@ runs:
       with:
         node-version: 24
         cache: pnpm
+        cache-dependency-path: ${{ inputs.working-directory }}/pnpm-lock.yaml
 
     - name: Install dependencies
       shell: bash
+      working-directory: ${{ inputs.working-directory }}
       run: pnpm install --frozen-lockfile
 
     - name: Create or reuse Neon branch for migrations
@@ -90,6 +101,7 @@ runs:
 
     - name: Run database migrations
       shell: bash
+      working-directory: ${{ inputs.working-directory }}
       env:
         MIGRATION_DATABASE_URL: ${{ steps.reset-branch.outputs.db_url || steps.migration-branch.outputs.db_url }}
       run: pnpm db:migrate
@@ -105,7 +117,9 @@ runs:
         database: ${{ inputs.database }}
 
     - name: Deploy to Vercel
+      id: vercel
       shell: bash
+      working-directory: ${{ inputs.working-directory }}
       env:
         DEPLOY_COMMIT_SHA: ${{ inputs.commit-sha }}
         DEPLOY_GIT_REF: ${{ inputs.git-ref }}
@@ -114,12 +128,22 @@ runs:
         VERCEL_ORG_ID: ${{ inputs.vercel-org-id }}
         VERCEL_PROJECT_ID: ${{ inputs.vercel-project-id }}
         VERCEL_TOKEN: ${{ inputs.vercel-token }}
-      run: >-
-        pnpm dlx vercel@56.3.1 deploy
-        --yes
-        --token "$VERCEL_TOKEN"
-        --target="$DEPLOY_TARGET"
-        --build-env DATABASE_URL="$RUNTIME_DATABASE_URL"
-        --env DATABASE_URL="$RUNTIME_DATABASE_URL"
-        --meta githubCommitRef="$DEPLOY_GIT_REF"
-        --meta githubCommitSha="$DEPLOY_COMMIT_SHA"
+      run: |
+        deployment_url="$(
+          pnpm dlx vercel@56.3.1 deploy \
+            --yes \
+            --token "$VERCEL_TOKEN" \
+            --target="$DEPLOY_TARGET" \
+            --build-env DATABASE_URL="$RUNTIME_DATABASE_URL" \
+            --env DATABASE_URL="$RUNTIME_DATABASE_URL" \
+            --meta githubCommitRef="$DEPLOY_GIT_REF" \
+            --meta githubCommitSha="$DEPLOY_COMMIT_SHA"
+        )"
+        if [[ ! "$deployment_url" =~ ^https://[A-Za-z0-9.-]+\.vercel\.app$ ]]; then
+          echo "Vercel did not return a deployment URL." >&2
+          exit 1
+        fi
+        echo "url=$deployment_url" >> "$GITHUB_OUTPUT"
+        printf '### %s deployment\n[%s](%s)\n' \
+          "$DEPLOY_TARGET" "$deployment_url" "$deployment_url" \
+          >> "$GITHUB_STEP_SUMMARY"

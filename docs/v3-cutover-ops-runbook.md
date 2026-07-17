@@ -31,8 +31,12 @@ changing either Neon project.
    existing ruleset now target `dev`.
 2. In the non-production Neon project, rename the persistent `preview` branch
    to `staging`. Preserve its data, migration history, migration role, and
-   SQL-created CRUD-only runtime role. Set it as the parent for disposable
-   `preview/<git-branch>` branches.
+   SQL-created CRUD-only runtime role. Configure the migration role's default
+   privileges so new tables and sequences grant only the required CRUD and
+   sequence access to the runtime role; grant the same access explicitly on
+   existing objects. The runtime role must not own objects or inherit DDL.
+   Set Staging as the parent for disposable `preview/<git-branch>` branches so
+   those roles and grants are copied into every Preview.
 3. Keep Production in a separate Neon project. Its API key and migration URL
    must never be stored in the Preview or Staging GitHub environments.
 4. Create a Vercel custom environment named `staging`. Copy only approved
@@ -44,6 +48,7 @@ changing either Neon project.
 | --- | --- | --- | --- |
 | `preview` | `NEON_PROJECT_ID`, `NEON_MIGRATION_ROLE`, `NEON_RUNTIME_ROLE`, `NEON_DATABASE`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` | project-scoped `NEON_API_KEY`, `VERCEL_TOKEN` | Internal branches only; exclude `dev` and `main` |
 | `staging` | Same non-production variables | Same non-production secrets | `dev` only; no approval |
+| `production-migration-review` | None | None | `main` only; required reviewer |
 | `production` | `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` | `MIGRATION_DATABASE_URL`, `VERCEL_TOKEN` | `main` only; required reviewer |
 
 The committed `vercel.json` disables Vercel Git deployments. Do not re-enable
@@ -59,6 +64,9 @@ Verify `/admin/media` and `/admin/photos` on Staging after the workflow is green
 Feature pushes should create `preview/<git-branch>` once, preserve it across
 subsequent pushes, and delete both Neon and Vercel Preview resources when the
 Git branch is deleted. `Refresh Preview` is the explicit destructive reset path.
+All three operations share one per-branch concurrency lock. Refresh checks out
+the trusted deployment action from `dev` and runs the requested branch only
+from the isolated `target/` working directory.
 
 ## 2. Require Quality and CodeQL on both branches
 
@@ -185,12 +193,25 @@ results in the readiness report:
 ## 6. Production database and migrations
 
 Gated by two fresh explicit confirmations immediately before access. Verify
-the separate Production Neon project and CRUD-only runtime role. A merge to
-`main` then starts `Deploy Production`, waits for the protected GitHub
-environment reviewer, rejects contract-breaking migration SQL, applies pending
-expand migrations with the GitHub-only credential, and deploys the exact commit.
-Never approve that environment until the migration diff and rollback anchor
-have been reviewed.
+the separate Production Neon project, CRUD-only runtime role, and migration-role
+default privileges for both existing and future tables and sequences. A merge
+to `main` then starts `Deploy Production`. The no-secret
+`production-migration-review` environment records the first approval. Only
+after it succeeds can the separately protected `production` environment expose
+the migration credential and record the second approval.
+
+The workflow hash-locks reviewed migrations `0001` through `0010` and rejects
+any modification or deletion. Future migrations fail closed unless every SQL
+statement is an explicitly allowed expand operation: create a new table, type,
+sequence, view, function, or non-unique index; add a nullable column; add a
+non-null column with a statically proven non-null default; validate a named
+constraint; or set a statically proven non-null column default. New constraints,
+including `NOT VALID` constraints, affect new writes and therefore require an
+explicitly reviewed digest exception. Dynamic blocks, unknown default
+expressions, and every unrecognized statement are rejected. After both
+approvals and that check, the workflow applies pending migrations with the
+GitHub-only credential and deploys the exact commit. Do not approve either
+environment until the migration diff and rollback anchor have been reviewed.
 
 ## 7. Rollback anchor
 

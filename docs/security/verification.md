@@ -75,9 +75,10 @@ Repository API checks on 2026-07-16 verified:
   change.
 - [x] Fork pull requests cannot receive Vercel secrets, and the GitHub Actions
   workflow uses committed non-secret fixtures instead of repository secrets.
-- [ ] Configure `preview`, `staging`, and protected `production` GitHub
-  environments with the variables, secrets, branch restrictions, and required
-  Production reviewer documented in the cutover runbook.
+- [ ] Configure `preview`, `staging`, no-secret
+  `production-migration-review`, and protected `production` GitHub environments
+  with the variables, secrets, branch restrictions, and required Production
+  reviewers documented in the cutover runbook.
 
 ## Vercel
 

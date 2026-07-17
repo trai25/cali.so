@@ -40,15 +40,13 @@ test('feature pushes branch from Staging, migrate, then deploy Preview', async (
   assert.deepEqual(config.on.push['branches-ignore'], ['main', 'dev'])
   assert.equal(config.on.pull_request, undefined)
   assert.equal(config.on.pull_request_target, undefined)
+  assert.equal(config.concurrency['cancel-in-progress'], false)
 
   const job = config.jobs.deploy
   assert.equal(job.environment, 'preview')
   assert.match(job.if, /CaliCastle\/cali\.so/)
   assert.match(job.if, /dependabot/)
-  assert.match(
-    job.concurrency?.group ?? config.concurrency?.group,
-    /github\.ref/,
-  )
+  assert.equal(config.concurrency.group, 'preview-${{ github.ref_name }}')
 
   const deploy = job.steps.find((step) => step.name === 'Deploy Preview')
   assert.equal(deploy.uses, './.github/actions/deploy-neon-vercel')
@@ -63,6 +61,7 @@ test('dev continuously migrates and deploys the persistent Staging environment',
 
   const job = config.jobs.deploy
   assert.equal(job.environment, 'staging')
+  assert.equal(job.if, "github.ref == 'refs/heads/dev'")
   const deploy = job.steps.find((step) => step.name === 'Deploy Staging')
   assert.equal(deploy.uses, './.github/actions/deploy-neon-vercel')
   assert.equal(deploy.with['branch-name'], 'staging')
@@ -73,12 +72,17 @@ test('main uses protected Production credentials and deploys only after migratio
   const config = await workflow('deploy-production')
   assert.deepEqual(config.on.push.branches, ['main'])
 
+  const review = config.jobs['migration-review']
+  assert.equal(review.environment, 'production-migration-review')
+  assert.equal(review.env, undefined)
+
   const job = config.jobs.deploy
+  assert.equal(job.needs, 'migration-review')
   assert.equal(job.environment, 'production')
   assert.equal(job.env, undefined)
   assertOrdered(
     job.steps,
-    'Reject destructive database migrations',
+    'Enforce expand-only database migrations',
     'Run database migrations',
   )
   assertOrdered(
@@ -97,6 +101,7 @@ test('main uses protected Production credentials and deploys only after migratio
     (step) => step.name === 'Deploy Vercel Production',
   )
   assert.match(deploy.run, /vercel@56\.3\.1 deploy --prod/)
+  assert.match(deploy.run, /GITHUB_STEP_SUMMARY/)
   assert.equal(deploy.env.MIGRATION_DATABASE_URL, undefined)
   assert.equal(deploy.env.DATABASE_URL, undefined)
   assert.equal(deploy.env.NEON_API_KEY, undefined)
@@ -123,6 +128,8 @@ test('branch deletion cleans only ephemeral Neon and Vercel Previews', async () 
   assert.equal(config.on.pull_request_target, undefined)
 
   const job = config.jobs.cleanup
+  assert.equal(config.concurrency.group, 'preview-${{ github.event.ref }}')
+  assert.equal(config.concurrency['cancel-in-progress'], false)
   assert.equal(job.environment, 'preview')
   assert.match(job.if, /ref_type == 'branch'/)
   assert.match(job.if, /github\.event\.ref != 'dev'/)
@@ -151,10 +158,27 @@ test('manual refresh resets a feature database from Staging before redeploying',
   assert.ok(config.on.workflow_dispatch.inputs.git_branch.required)
 
   const job = config.jobs.refresh
+  assert.equal(config.concurrency.group, 'preview-${{ inputs.git_branch }}')
+  assert.equal(config.concurrency['cancel-in-progress'], false)
   assert.equal(job.environment, 'preview')
+  const trustedCheckout = job.steps.find(
+    (step) => step.name === 'Check out trusted deployment action',
+  )
+  assert.equal(trustedCheckout.with.ref, 'dev')
+  assert.equal(trustedCheckout.with.path, undefined)
+
+  const targetCheckout = job.steps.find(
+    (step) => step.name === 'Check out target branch',
+  )
+  assert.match(targetCheckout.with.ref, /refs\/heads/)
+  assert.equal(targetCheckout.with.path, 'target')
+
+  const resolve = job.steps.find((step) => step.name === 'Resolve target commit')
+  assert.equal(resolve['working-directory'], 'target')
   const reset = job.steps.find((step) => step.name === 'Refresh Preview')
   assert.equal(reset.uses, './.github/actions/deploy-neon-vercel')
   assert.equal(reset.with.reset, true)
+  assert.equal(reset.with['working-directory'], 'target')
   assert.match(reset.with['branch-name'], /^preview\//)
   assert.equal(reset.with.target, 'preview')
 })
@@ -162,6 +186,11 @@ test('manual refresh resets a feature database from Staging before redeploying',
 test('shared non-production action keeps migration credentials out of Vercel', async () => {
   const config = await action('deploy-neon-vercel')
   const steps = config.runs.steps
+  assert.equal(
+    config.outputs['deployment-url'].value,
+    '${{ steps.vercel.outputs.url }}',
+  )
+  assert.equal(config.inputs['working-directory'].default, '.')
 
   const create = steps.find((step) => step.id === 'migration-branch')
   assert.equal(
@@ -182,6 +211,7 @@ test('shared non-production action keeps migration credentials out of Vercel', a
   assertOrdered(steps, 'Run database migrations', 'Deploy to Vercel')
 
   const deploy = steps.find((step) => step.name === 'Deploy to Vercel')
+  assert.equal(deploy.id, 'vercel')
   assert.match(deploy.run, /vercel@56\.3\.1 deploy/)
   assert.match(deploy.run, /--target=/)
   assert.match(deploy.run, /--build-env DATABASE_URL=/)
@@ -190,4 +220,13 @@ test('shared non-production action keeps migration credentials out of Vercel', a
   assert.doesNotMatch(deploy.run, /\$\{\{ inputs\.(?:git-ref|target) \}\}/)
   assert.equal(deploy.env.DEPLOY_GIT_REF, '${{ inputs.git-ref }}')
   assert.equal(deploy.env.DEPLOY_TARGET, '${{ inputs.target }}')
+  assert.match(deploy.run, /GITHUB_STEP_SUMMARY/)
+  for (const stepName of [
+    'Install dependencies',
+    'Run database migrations',
+    'Deploy to Vercel',
+  ]) {
+    const step = steps.find((candidate) => candidate.name === stepName)
+    assert.equal(step['working-directory'], '${{ inputs.working-directory }}')
+  }
 })

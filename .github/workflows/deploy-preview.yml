@@ -10,8 +10,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: deploy-preview-${{ github.ref }}
-  cancel-in-progress: true
+  group: preview-${{ github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
   deploy:

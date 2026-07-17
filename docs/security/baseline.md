@@ -8,7 +8,7 @@ an attacker can read the implementation.
 
 | Environment | Data and integrations | Secret policy |
 | --- | --- | --- |
-| Production | Production-only accounts and durable data | Available only to protected production deployments |
+| Production | Production-only accounts and durable data | Available only after two sequential protected-environment approvals |
 | Staging | Persistent non-production baseline and test accounts | Staging-scoped credentials; never production credentials |
 | Preview | Disposable child of Staging for one internal Git branch | Preview-scoped runtime credentials; never production credentials |
 | Local and CI | Local emulators, fixtures, or dedicated test accounts | Developer-local or CI-scoped credentials with the minimum privilege |
@@ -54,7 +54,9 @@ Production uses separate database identities:
 
 Review grants whenever the schema changes. Prefer explicit grants over broad
 database ownership, require encrypted connections, and revoke default/public
-privileges that are not needed.
+privileges that are not needed. The migration role's default privileges must
+grant the runtime role only the table and sequence access new application
+objects require, so automatic migrations do not create owner-only tables.
 
 ## Logging and audit events
 

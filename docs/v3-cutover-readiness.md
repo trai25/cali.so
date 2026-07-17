@@ -227,8 +227,9 @@ explicit confirmations immediately before access.
 ## Domain and rollback expectations
 
 The intended cutover is a reviewed pull request from `dev` into `main`.
-`Deploy Production` must wait for protected-environment approval, migrate the
-separate Production Neon project, and then deploy that exact commit. Vercel
+`Deploy Production` must wait for the no-secret migration-review approval and
+then the separately protected Production approval, migrate the separate
+Production Neon project, and deploy that exact commit. Vercel
 must retain `cali.so` and `www.cali.so` on the same project. No manual DNS move
 is expected, but current project ownership, aliases, certificate, and
 environment scopes must be verified first.
@@ -245,7 +246,7 @@ The maintainer-operated commands for actions 1 through 4 are collected in
 `docs/v3-cutover-ops-runbook.md`.
 
 1. Rename Git `v2` to `dev`, rename the persistent non-production Neon branch
-   to `staging`, configure the three GitHub deployment environments, and create
+   to `staging`, configure the four GitHub deployment environments, and create
    the Vercel custom Staging environment.
 2. Run the GitHub-controlled Staging deployment. With two fresh confirmations,
    verify migration `0010`, Media tables, and the runtime role's CRUD-only
@@ -259,8 +260,10 @@ The maintainer-operated commands for actions 1 through 4 are collected in
 5. In the Vercel dashboard, verify logs, drains, retention, firewall rules,
    the production-branch mapping, and the certificate.
 6. With two fresh confirmations, verify Production runtime grants and the
-   reviewed initial migration baseline. Approve the protected Production
-   environment only after confirming the workflow will migrate before deploy.
+   reviewed initial migration baseline. Configure and approve the no-secret
+   `production-migration-review` environment first, then approve the protected
+   `production` environment only after confirming the workflow will migrate
+   before deploy.
 7. Verify the production Bunny and Neon Media boundary, run the protected live
    storage contract, and publish the intended two-photo Published Photo
    Selection through the owner admin.
@@ -269,4 +272,5 @@ The maintainer-operated commands for actions 1 through 4 are collected in
    are visible in the existing `cali-so` Analytics dashboard.
 9. Confirm the rollback procedure against the recorded known-good deployment.
 10. Only after every blocker above is passed, merge `dev` to `main`, approve
-    the protected Production deployment, and complete the cutover smoke tests.
+    both Production deployment gates in order, and complete the cutover smoke
+    tests.
