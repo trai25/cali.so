@@ -14,6 +14,7 @@ import {
 } from '~/components/dock-icons'
 import { LiquidGlass } from '~/components/liquid-glass'
 import { Preferences } from '~/components/preferences'
+import { dockGoKeyFor, useDockGoShortcuts } from '~/hooks/use-dock-go-shortcuts'
 import { T } from '~/lib/i18n'
 import { localize, useLocale } from '~/lib/locale-client'
 import {
@@ -30,11 +31,36 @@ const ITEMS = [
   { href: '/ama', zh: '咨询', en: 'AMA', icon: AmaIcon },
 ] as const
 
+function DockTip({
+  zh,
+  en,
+  goKey,
+}: {
+  zh: string
+  en: string
+  goKey?: string
+}) {
+  return (
+    <span className="dock-tip" aria-hidden>
+      <span className="dock-tip-label">
+        <T zh={zh} en={en} />
+      </span>
+      {goKey ? (
+        <span className="dock-tip-keys">
+          <kbd className="dock-tip-key">G</kbd>
+          <kbd className="dock-tip-key">{goKey}</kbd>
+        </span>
+      ) : null}
+    </span>
+  )
+}
+
 function DockItem({
   href,
   locale,
   zh,
   en,
+  goKey,
   active = false,
   itemRef,
   onNavigate,
@@ -44,18 +70,24 @@ function DockItem({
   locale: Locale
   zh: string
   en: string
+  goKey?: string
   active?: boolean
   itemRef?: (element: HTMLAnchorElement | null) => void
   onNavigate?: (href: string, keyboardInitiated: boolean) => void
   children: React.ReactNode
 }) {
+  const label = localize(locale, zh, en)
+  const ariaLabel = goKey
+    ? localize(locale, `${zh}，G 然后 ${goKey}`, `${en}, G then ${goKey}`)
+    : label
+
   return (
     <Link
       ref={itemRef}
       href={href}
       className="dock-item"
       data-active={active || undefined}
-      aria-label={localize(locale, zh, en)}
+      aria-label={ariaLabel}
       aria-current={active ? 'page' : undefined}
       onClick={
         onNavigate
@@ -69,9 +101,7 @@ function DockItem({
       }
     >
       {children}
-      <span className="dock-tip" aria-hidden>
-        <T zh={zh} en={en} />
-      </span>
+      <DockTip zh={zh} en={en} goKey={goKey} />
     </Link>
   )
 }
@@ -84,7 +114,13 @@ export function DockFallback({ locale }: { locale: Locale }) {
       aria-busy="true"
     >
       <LiquidGlass />
-      <DockItem href={localePath(locale, '/')} locale={locale} zh="首页" en="Home">
+      <DockItem
+        href={localePath(locale, '/')}
+        locale={locale}
+        zh="首页"
+        en="Home"
+        goKey={dockGoKeyFor('/')}
+      >
         <span className="dock-avatar">
           <Image src="/images/avatar.png" alt="" width={26} height={26} />
         </span>
@@ -97,6 +133,7 @@ export function DockFallback({ locale }: { locale: Locale }) {
           locale={locale}
           zh={zh}
           en={en}
+          goKey={dockGoKeyFor(href)}
         >
           <Icon />
         </DockItem>
@@ -109,9 +146,7 @@ export function DockFallback({ locale }: { locale: Locale }) {
         disabled
       >
         <PreferencesIcon />
-        <span className="dock-tip" aria-hidden>
-          <T zh="偏好" en="Preferences" />
-        </span>
+        <DockTip zh="偏好" en="Preferences" />
       </button>
     </nav>
   )
@@ -181,6 +216,12 @@ export function Dock() {
     keyboardNavigationRef.current = href !== activeHref && keyboardInitiated
   }
 
+  useDockGoShortcuts({
+    locale,
+    activeHref,
+    onNavigate: handleNavigate,
+  })
+
   useLayoutEffect(() => {
     activeHrefRef.current = activeHref
     positionIndicator(keyboardNavigationRef.current)
@@ -208,6 +249,7 @@ export function Dock() {
         locale={locale}
         zh="首页"
         en="Home"
+        goKey={dockGoKeyFor('/')}
         active={routePathname === '/'}
         itemRef={(element) => registerItem('/', element)}
         onNavigate={handleNavigate}
@@ -224,6 +266,7 @@ export function Dock() {
           locale={locale}
           zh={zh}
           en={en}
+          goKey={dockGoKeyFor(href)}
           active={routePathname.startsWith(href)}
           itemRef={(element) => registerItem(href, element)}
           onNavigate={handleNavigate}
