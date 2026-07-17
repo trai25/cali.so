@@ -175,7 +175,7 @@ open rich hover cards. The contract:
     ~180 days; the stat below still counts the past year, hairline 0.5px
     cell borders) whose cells **cascade in individually** — each cell rises
     from `translateY(4px) scale(0.92)` over ~0.48s with a per-cell stagger.
-  - Social card: avatar, name + verified mark, bio, follower stats in
+  - Social card: avatar, name + verified mark, bio, follower and following stats in
     `tabular-nums`.
   - Music card: current/last track with artwork.
 - **Behavior.** ~256px fixed-width card, 300ms open intent delay (0ms when
@@ -195,7 +195,7 @@ open rich hover cards. The contract:
   or ISR, never on hover; an open card never shows a network spinner.
 - All content animations inside cards respect `prefers-reduced-motion`.
 - **Implemented service cards** (`components/social-cards.tsx`, chrome
-  social links): the X card (avatar, name/@handle, bio, follower stat) and
+  social links): the X card (avatar, name/@handle, bio, follower and following stats) and
   the code card: a recent 26×7 contribution grid, 4px cells on 1px gaps,
   ink = foreground alpha ramp (7/30/52/74/100%), each cell cascading in
   (`translateY(4px) scale(0.92)`, 480ms, ~1.1ms/cell stagger). GitHub data
@@ -491,6 +491,15 @@ the shared selective-focus treatment softens the other rows. The row never
 expands or moves. Touch is a plain whole-row link, keyboard focus uses the
 neutral focus ring without motion, and reduced motion keeps every artifact
 still.
+
+## Photo index
+
+The photo route keeps its title in the prefetched static shell and streams the
+active Published Photo Selection into a page-level masonry boundary. While the
+selection resolves, six quiet, nonanimated tiles reserve the two-column mobile
+or three-column desktop masonry. The placeholder uses the final card radius,
+gutter, and neutral edge treatment so navigation responds immediately without
+introducing a second visual language or shifting the page header.
 
 ## Liquid glass dock
 

@@ -12,6 +12,7 @@ export interface SocialSnapshot {
   bio: string
   bioEn: string
   followers?: string
+  following?: string
 }
 
 export interface GitHubSnapshot {
@@ -145,9 +146,19 @@ export function XCardBody({ data }: { data: SocialSnapshot }) {
         avatar="/images/headshot.jpg"
         service="x"
       />
-      {data.followers && (
+      {(data.followers || data.following) && (
         <span className="service-card-stat">
-          <b>{data.followers}</b> <T zh="关注者" en="followers" />
+          {data.followers && (
+            <span>
+              <b>{data.followers}</b> <T zh="关注者" en="followers" />
+            </span>
+          )}
+          {data.followers && data.following && <span aria-hidden>·</span>}
+          {data.following && (
+            <span>
+              <b>{data.following}</b> <T zh="正在关注" en="following" />
+            </span>
+          )}
         </span>
       )}
     </>
