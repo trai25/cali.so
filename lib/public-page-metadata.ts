@@ -41,6 +41,18 @@ export const publicPageMetadata = {
         'Products, open-source tools, and small experiments I have made over the years. Some useful, some playful, all made with care.',
     },
   },
+  ama: {
+    zh: {
+      title: '一对一',
+      description:
+        '与 Cali 的专注一小时。一场 60 分钟的一对一 AMA，聊工程、设计、职业或做产品。',
+    },
+    en: {
+      title: 'AMA',
+      description:
+        'A focused hour with Cali. One 60 minute one-to-one AMA Session about engineering, design, career, or building products.',
+    },
+  },
 } as const
 
 export type PublicSection = Exclude<keyof typeof publicPageMetadata, 'home'>

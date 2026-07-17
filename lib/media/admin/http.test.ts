@@ -639,6 +639,27 @@ describe('Media admin HTTP contract', () => {
     )
   })
 
+  it('reports a missing Location Label provider credential', async () => {
+    const f = fixture()
+    const handler = createMediaLocationLabelHandler({
+      authenticator: f.authenticator,
+      security: f.security,
+      geocoding: null,
+    })
+
+    const response = await handler(
+      request(`/api/admin/media/assets/${mediaAssetId}/location-label`, {
+        method: 'POST',
+      }),
+      mediaAssetId,
+    )
+
+    expect(response.status).toBe(503)
+    await expect(response.json()).resolves.toEqual({
+      error: 'provider_not_configured',
+    })
+  })
+
   it('resumes durable processing through the owner mutation boundary', async () => {
     const f = fixture()
     const handler = createMediaResumeHandler({

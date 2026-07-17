@@ -27,6 +27,14 @@ describe('localeMetadata', () => {
       locale: 'zh_CN',
       type: 'article',
       url: new URL('/blog/a-post', seo.url),
+      images: [
+        expect.objectContaining({
+          url: new URL('/og?locale=zh&path=%2Fblog%2Fa-post', seo.url),
+          width: 1200,
+          height: 630,
+          type: 'image/png',
+        }),
+      ],
     })
   })
 
@@ -50,6 +58,15 @@ describe('localeMetadata', () => {
       card: 'summary_large_image',
       title: 'A post',
       description: 'An English summary',
+      images: [
+        {
+          url: new URL('/og?locale=en&path=%2Fblog%2Fa-post', seo.url),
+          width: 1200,
+          height: 630,
+          alt: 'A post · Cali Castle',
+          type: 'image/png',
+        },
+      ],
     })
   })
 

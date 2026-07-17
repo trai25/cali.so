@@ -13,7 +13,14 @@ describe('localized discovery routes', () => {
       rules: {
         userAgent: '*',
         allow: '/',
-        disallow: ['/admin', '/api/admin', '/confirm/', '/en/confirm/'],
+        disallow: [
+          '/admin',
+          '/api/admin',
+          '/confirm/',
+          '/en/confirm/',
+          '/ama/manage/',
+          '/en/ama/manage/',
+        ],
       },
       sitemap: new URL('/sitemap.xml', seo.url).href,
       host: seo.url.origin,
@@ -41,6 +48,7 @@ describe('localized discovery routes', () => {
       '/blog',
       '/photos',
       '/projects',
+      '/ama',
       ...archivedNewsletterIds.map((id) => `/newsletters/${id}`),
       ...getAllPosts().map((post) => `/blog/${post.slug}`),
     ]

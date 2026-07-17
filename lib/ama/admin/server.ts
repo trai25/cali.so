@@ -7,12 +7,17 @@ import {
 
 import { availabilityRepository } from '../availability/repository'
 import { createAvailabilityService } from '../availability/service'
+import { createBookingAdminService } from '../booking/admin'
+import { slotClaimsRepository } from '../booking/claims'
+import { bookingRepository } from '../booking/repository'
+import { getAmaBookingServices } from '../booking/server'
 import { createGoogleCalendarClient } from '../google/client'
 import { googleRepository } from '../google/repository'
 import {
   createGoogleCalendarService,
   type GoogleCalendarService,
 } from '../google/service'
+import { durableOperationsRepository } from '../operations/repository'
 import { getServerEnv } from '../server-env'
 import { createSecretBox } from '../secrets'
 import { getAmaSecurity } from '../security/server'
@@ -73,9 +78,18 @@ function createServices() {
     clock,
   })
 
+  const bookingAdmin = createBookingAdminService({
+    repository: bookingRepository,
+    claims: slotClaimsRepository,
+    operations: durableOperationsRepository,
+    slotsSource: { computeSlots: () => getAmaBookingServices().booking.computeSlots() },
+    clock,
+  })
+
   return {
     google,
     availability,
+    bookingAdmin,
     security: getAmaSecurity(),
     baseUrl: environment.SITE_URL,
   }

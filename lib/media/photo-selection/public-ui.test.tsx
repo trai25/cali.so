@@ -6,8 +6,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('server-only', () => ({}))
 
-import { NavCards } from '../../../components/nav-cards'
-import { PublishedPhotoWall } from '../../../components/published-photo-wall'
+import { NavCards, PhotoNavCard } from '../../../components/nav-cards'
+import {
+  PublishedPhotoWall,
+  PublishedPhotoWallLoading,
+} from '../../../components/published-photo-wall'
 import {
   getHomepagePhotoPreview,
   type PublicPhotoSelection,
@@ -103,7 +106,9 @@ describe('Published Photo Selection UI', () => {
       <NavCards
         postCount={9}
         projectCount={6}
-        photoPreview={getHomepagePhotoPreview(published)}
+        photoCard={
+          <PhotoNavCard photoPreview={getHomepagePhotoPreview(published)} />
+        }
       />,
     )
 
@@ -115,10 +120,33 @@ describe('Published Photo Selection UI', () => {
     expect(html).toContain('object-position:30% 60%')
   })
 
+  it('reserves the homepage photo card while its selection streams', () => {
+    const html = renderToStaticMarkup(
+      <NavCards
+        postCount={9}
+        projectCount={6}
+        photoCard={<PhotoNavCard photoPreview={null} pending />}
+      />,
+    )
+
+    expect(html).toContain('aria-busy="true"')
+    expect(html.match(/nc-polaroid-placeholder/g)).toHaveLength(3)
+    expect(html).not.toContain('0 photos')
+  })
+
   it('renders a calm empty state without a static fallback', () => {
     const html = renderToStaticMarkup(<PublishedPhotoWall selection={null} />)
 
     expect(html).toContain('No photos have been published yet.')
     expect(html).not.toContain('/images/photos/')
+  })
+
+  it('reserves a calm masonry shell while published photos stream', () => {
+    const html = renderToStaticMarkup(<PublishedPhotoWallLoading />)
+
+    expect(html).toContain('role="status"')
+    expect(html).toContain('aria-busy="true"')
+    expect(html).toContain('Loading photos')
+    expect(html.match(/photo-masonry-placeholder/g)).toHaveLength(6)
   })
 })

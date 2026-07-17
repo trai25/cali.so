@@ -2,8 +2,8 @@
 
 Source for [Cali Castle's personal site](https://cali.so). The ground-up
 rewrite is the v3 release. The 2024 site remains the historical v2 release,
-and the long-lived integration branch keeps the name `v2` until v3 is ready
-to cut over to `main`.
+Git `dev` is the long-lived Staging and integration branch, and `main` is
+Production.
 
 This repository documents and builds cali.so itself. It is not maintained as a
 general-purpose blog template.
@@ -23,8 +23,8 @@ general-purpose blog template.
 - A Bunny-backed Media Library with owner review and curation in admin; its
   active Published Photo Selection powers `/photos` and the homepage preview
   while private Originals remain server-only
-- CSP, same-origin mutation checks, rate limits, capability kill switches,
-  security automation, and isolated Preview credentials
+- CSP, same-origin mutation checks, rate limits, fail-closed provider controls,
+  security automation, and isolated Staging, Preview, and Production credentials
 
 The public route and launch contract is tracked in
 [issue #98](https://github.com/CaliCastle/cali.so/issues/98). Merging the
@@ -64,6 +64,7 @@ pnpm test:unit
 pnpm test:localization
 pnpm test:port-post
 pnpm test:ama
+pnpm test:deployment
 pnpm test:security
 pnpm test:media:storage
 pnpm test:media:catalog
@@ -87,15 +88,28 @@ pnpm audit:prod
 
 ## Deployment constraints
 
-- `main` is the production branch. The historically named `v2` branch is the
-  v3 integration branch until cutover.
+- Feature pull requests target `dev`; reviewed releases promote `dev` to
+  `main`.
+- GitHub Actions is the sole deployment controller. Vercel Git deployments are
+  disabled so migrations finish before the matching commit is deployed.
+- `dev` automatically migrates and deploys persistent Staging. Internal feature
+  branches receive persistent Neon `preview/<git-branch>` children of Staging;
+  fork pull requests receive code-only CI.
+- Production uses a separate Neon project. Two sequential protected GitHub
+  environments approve the migration review and database access before GitHub
+  deploys the exact `main` commit.
 - Next.js preview versions stay pinned exactly and require explicit review,
   a lockfile update, and the complete validation suite.
-- Preview and Production use separate credentials and data. Preview data must
-  be disposable or irreversibly sanitized.
-- Redis is Production-only. Preview rate limits use its isolated Neon database;
-  Local and CI use process-local limits.
+- Staging and Previews use a separate non-production Neon project and disposable
+  or irreversibly sanitized data. Production credentials cannot reach it, and
+  its automation credentials cannot reach Production.
+- Redis is Production-only. Staging and Preview rate limits use Neon; Local and
+  ordinary CI use process-local limits.
 - The Vercel runtime never receives migration credentials.
+- Production migrations are expand-only in the normal release workflow.
+  Reviewed migrations are hash-locked, and future SQL must match the explicit
+  allowlist. Destructive contract migrations require a later, separately
+  approved release.
 - Owner admin remains available in every environment and relies on
   Clerk authentication plus the server-checked
   `publicMetadata.siteOwner = "yes"` marker rather than an environment switch.

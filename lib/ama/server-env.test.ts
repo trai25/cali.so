@@ -16,20 +16,27 @@ const validEnvironment = {
 }
 
 describe('AMA server environment', () => {
-  it('reads disabled launch switches without private configuration', () => {
+  it('enables public mutations by default and derives providers from configuration', () => {
     expect(parseAmaFeatures({})).toEqual({
-      publicMutations: false,
+      publicMutations: true,
       payments: false,
       bookingFinalization: false,
       google: false,
       tencent: false,
     })
-  })
-
-  it('rejects ambiguous launch switches before private services initialize', () => {
-    expect(() =>
-      parseAmaFeatures({ AMA_GOOGLE_INTEGRATION_ENABLED: 'yes' }),
-    ).toThrowError(/AMA_GOOGLE_INTEGRATION_ENABLED/)
+    expect(
+      parseAmaFeatures({
+        GOOGLE_CLIENT_ID: 'client-id',
+        GOOGLE_CLIENT_SECRET: 'client-secret',
+        STRIPE_SECRET_KEY: '   ',
+      }),
+    ).toEqual({
+      publicMutations: true,
+      payments: false,
+      bookingFinalization: false,
+      google: true,
+      tencent: false,
+    })
   })
 
   it('accepts the complete server-only configuration', () => {
@@ -43,15 +50,83 @@ describe('AMA server environment', () => {
       token: 'redis-secret',
     })
     expect(environment.features).toEqual({
-      publicMutations: false,
+      publicMutations: true,
       payments: false,
       bookingFinalization: false,
-      google: false,
+      google: true,
       tencent: false,
     })
   })
 
-  it('does not require Google credentials while Google is disabled', () => {
+  it('uses an explicit Preview site URL for custom deployment aliases', () => {
+    const environment = parseServerEnv({
+      ...validEnvironment,
+      VERCEL_ENV: 'preview',
+      VERCEL_URL: 'cali-preview-cali.vercel.app',
+      SITE_URL: 'https://beta.cali.so',
+    })
+
+    expect(environment.SITE_URL.href).toBe('https://beta.cali.so/')
+    expect(environment.browserMutationBaseUrl.href).toBe(
+      'https://beta.cali.so/',
+    )
+  })
+
+  it.each([undefined, ''])(
+    'rejects Preview without a trusted Vercel deployment hostname',
+    (VERCEL_URL) => {
+      expect(() =>
+        parseServerEnv({
+          ...validEnvironment,
+          VERCEL_ENV: 'preview',
+          VERCEL_URL,
+        }),
+      ).toThrowError(/VERCEL_URL/)
+    },
+  )
+
+  it('derives the Preview site URL when no canonical URL is configured', () => {
+    const { SITE_URL: _siteUrl, ...withoutSiteUrl } = validEnvironment
+    const environment = parseServerEnv({
+      ...withoutSiteUrl,
+      VERCEL_ENV: 'preview',
+      VERCEL_URL: 'cali-preview-cali.vercel.app',
+    })
+
+    expect(environment.SITE_URL.href).toBe(
+      'https://cali-preview-cali.vercel.app/',
+    )
+    expect(environment.browserMutationBaseUrl.href).toBe(
+      environment.SITE_URL.href,
+    )
+  })
+
+  it('requires a canonical site URL outside Preview', () => {
+    const { SITE_URL: _siteUrl, ...withoutSiteUrl } = validEnvironment
+
+    expect(() => parseServerEnv(withoutSiteUrl)).toThrowError(/SITE_URL/)
+  })
+
+  it('keeps Production mutations pinned to the canonical site', () => {
+    const environment = parseServerEnv({
+      ...validEnvironment,
+      VERCEL_URL: 'cali-production-cali.vercel.app',
+    })
+
+    expect(environment.browserMutationBaseUrl.href).toBe('https://cali.so/')
+  })
+
+  it('rejects untrusted Vercel deployment host overrides', () => {
+    expect(() =>
+      parseServerEnv({
+        ...validEnvironment,
+        VERCEL_ENV: 'preview',
+        VERCEL_URL: 'cali-preview.vercel.app.attacker.example',
+      }),
+    ).toThrowError(/VERCEL_URL/)
+  })
+
+  it('treats Google as unconfigured without its credential pair', () => {
     const {
       GOOGLE_CLIENT_ID: _clientId,
       GOOGLE_CLIENT_SECRET: _clientSecret,
@@ -59,6 +134,9 @@ describe('AMA server environment', () => {
     } = validEnvironment
 
     expect(parseServerEnv(withoutGoogle).features.google).toBe(false)
+    expect(() =>
+      parseServerEnv({ ...withoutGoogle, GOOGLE_CLIENT_ID: 'client-id-only' }),
+    ).toThrowError(/GOOGLE_CLIENT_SECRET/)
   })
 
   it('accepts Vercel Marketplace Redis aliases', () => {
@@ -106,7 +184,11 @@ describe('AMA server environment', () => {
     } = validEnvironment
 
     expect(
-      parseServerEnv({ ...withoutUpstash, VERCEL_ENV: 'preview' })
+      parseServerEnv({
+        ...withoutUpstash,
+        VERCEL_ENV: 'preview',
+        VERCEL_URL: 'cali-preview-cali.vercel.app',
+      })
         .rateLimitBackend,
     ).toEqual({ kind: 'database' })
   })
@@ -120,6 +202,7 @@ describe('AMA server environment', () => {
     const previewEnvironment = parseServerEnv({
       ...withoutUpstash,
       VERCEL_ENV: 'preview',
+      VERCEL_URL: 'cali-preview-cali.vercel.app',
       KV_REST_API_URL: 'https://marketplace.upstash.io',
       KV_REST_API_TOKEN: 'marketplace-secret',
       KV_REST_API_READ_ONLY_TOKEN: 'marketplace-read-only-secret',
@@ -255,14 +338,15 @@ describe('AMA server environment', () => {
     }
   })
 
-  it('enables each sensitive feature only through an explicit switch', () => {
+  it('enables every capability once its provider credentials are configured', () => {
     const environment = parseServerEnv({
       ...validEnvironment,
-      AMA_PUBLIC_MUTATIONS_ENABLED: 'true',
-      AMA_PAYMENTS_ENABLED: 'true',
-      AMA_BOOKING_FINALIZATION_ENABLED: 'true',
-      AMA_GOOGLE_INTEGRATION_ENABLED: 'true',
-      AMA_TENCENT_INTEGRATION_ENABLED: 'true',
+      STRIPE_SECRET_KEY: 'sk_test_secret',
+      STRIPE_WEBHOOK_SECRET: 'whsec_secret',
+      RESEND_API_KEY: 're_secret',
+      AMA_EMAIL_FROM: 'Cali Castle <ama@cali.so>',
+      TENCENT_MEETING_MCP_URL: 'https://mcp.example.com/tencent',
+      TENCENT_MEETING_MCP_TOKEN: 'tencent-token',
     })
 
     expect(environment.features).toEqual({
@@ -272,15 +356,6 @@ describe('AMA server environment', () => {
       google: true,
       tencent: true,
     })
-  })
-
-  it('rejects ambiguous feature-switch values', () => {
-    expect(() =>
-      parseServerEnv({
-        ...validEnvironment,
-        AMA_GOOGLE_INTEGRATION_ENABLED: 'yes',
-      }),
-    ).toThrowError(/AMA_GOOGLE_INTEGRATION_ENABLED/)
   })
 
   it('rejects migration credentials in the runtime environment', () => {
@@ -310,23 +385,121 @@ describe('AMA server environment', () => {
     }
   })
 
-  it('requires Google OAuth credentials without exposing their values', () => {
+  it('rejects a half configured Google pair without exposing secret values', () => {
     const { GOOGLE_CLIENT_SECRET: _missing, ...missingSecret } = validEnvironment
-    expect(() =>
-      parseServerEnv({
-        ...missingSecret,
-        AMA_GOOGLE_INTEGRATION_ENABLED: 'true',
-      }),
-    ).toThrowError(/GOOGLE_CLIENT_SECRET/)
+    expect(() => parseServerEnv(missingSecret)).toThrowError(/GOOGLE_CLIENT_SECRET/)
 
     try {
-      parseServerEnv({
-        ...validEnvironment,
-        GOOGLE_CLIENT_SECRET: '',
-        AMA_GOOGLE_INTEGRATION_ENABLED: 'true',
-      })
+      parseServerEnv({ ...validEnvironment, GOOGLE_CLIENT_SECRET: '' })
     } catch (error) {
       expect(String(error)).not.toContain('google-client-secret')
     }
+  })
+
+  it('requires the Stripe credential pair to be complete', () => {
+    expect(parseServerEnv(validEnvironment).STRIPE_SECRET_KEY).toBeUndefined()
+    expect(parseServerEnv(validEnvironment).features.payments).toBe(false)
+
+    expect(() =>
+      parseServerEnv({ ...validEnvironment, STRIPE_SECRET_KEY: 'sk_test_secret' }),
+    ).toThrowError(/STRIPE_WEBHOOK_SECRET/)
+
+    const environment = parseServerEnv({
+      ...validEnvironment,
+      STRIPE_SECRET_KEY: 'sk_test_secret',
+      STRIPE_WEBHOOK_SECRET: 'whsec_secret',
+    })
+    expect(environment.features.payments).toBe(true)
+
+    try {
+      parseServerEnv({ ...validEnvironment, STRIPE_SECRET_KEY: 'sk_test_secret' })
+    } catch (error) {
+      expect(String(error)).not.toContain('sk_test')
+    }
+  })
+
+  it('requires the Resend delivery pair to be complete', () => {
+    expect(parseServerEnv(validEnvironment).features.bookingFinalization).toBe(false)
+    expect(() =>
+      parseServerEnv({ ...validEnvironment, RESEND_API_KEY: 're_secret' }),
+    ).toThrowError(/AMA_EMAIL_FROM/)
+
+    const environment = parseServerEnv({
+      ...validEnvironment,
+      RESEND_API_KEY: 're_secret',
+      AMA_EMAIL_FROM: 'Cali Castle <ama@cali.so>',
+    })
+    expect(environment.features.bookingFinalization).toBe(true)
+    expect(environment.AMA_EMAIL_FROM).toBe('Cali Castle <ama@cali.so>')
+
+    for (const malformed of ['@', '@cali.so', 'ama@', 'Cali <not-an-address>']) {
+      expect(() =>
+        parseServerEnv({
+          ...validEnvironment,
+          RESEND_API_KEY: 're_secret',
+          AMA_EMAIL_FROM: malformed,
+        }),
+      ).toThrowError(/AMA_EMAIL_FROM/)
+    }
+    expect(
+      parseServerEnv({
+        ...validEnvironment,
+        RESEND_API_KEY: 're_secret',
+        AMA_EMAIL_FROM: 'ama@cali.so',
+      }).AMA_EMAIL_FROM,
+    ).toBe('ama@cali.so')
+  })
+
+  it('requires a complete secure Tencent MCP bridge configuration', () => {
+    expect(parseServerEnv(validEnvironment).features.tencent).toBe(false)
+    expect(() =>
+      parseServerEnv({
+        ...validEnvironment,
+        TENCENT_MEETING_MCP_TOKEN: 'tencent-token',
+      }),
+    ).toThrowError(/TENCENT_MEETING_MCP_URL/)
+
+    expect(() =>
+      parseServerEnv({
+        ...validEnvironment,
+        TENCENT_MEETING_MCP_URL: 'http://insecure.example.com/mcp',
+        TENCENT_MEETING_MCP_TOKEN: 'tencent-token',
+      }),
+    ).toThrowError(/TENCENT_MEETING_MCP_URL/)
+
+    const environment = parseServerEnv({
+      ...validEnvironment,
+      TENCENT_MEETING_MCP_URL: 'https://mcp.example.com/tencent',
+      TENCENT_MEETING_MCP_TOKEN: 'tencent-token',
+    })
+    expect(environment.features.tencent).toBe(true)
+  })
+
+  it('treats blank provider placeholders like absent configuration', () => {
+    const environment = parseServerEnv({
+      ...validEnvironment,
+      STRIPE_SECRET_KEY: '',
+      STRIPE_WEBHOOK_SECRET: '  ',
+      RESEND_API_KEY: '',
+      AMA_EMAIL_FROM: '',
+      TENCENT_MEETING_MCP_URL: '',
+      TENCENT_MEETING_MCP_TOKEN: '',
+    })
+    expect(environment.STRIPE_SECRET_KEY).toBeUndefined()
+    expect(environment.RESEND_API_KEY).toBeUndefined()
+    expect(environment.TENCENT_MEETING_MCP_URL).toBeUndefined()
+  })
+
+  it('reads public booking rate limits with safe defaults', () => {
+    const environment = parseServerEnv(validEnvironment)
+    expect(environment.AMA_PUBLIC_RATE_LIMIT_MAX_REQUESTS).toBe(10)
+    expect(environment.AMA_PUBLIC_RATE_LIMIT_WINDOW_SECONDS).toBe(60)
+
+    expect(() =>
+      parseServerEnv({
+        ...validEnvironment,
+        AMA_PUBLIC_RATE_LIMIT_MAX_REQUESTS: '0',
+      }),
+    ).toThrowError(/AMA_PUBLIC_RATE_LIMIT_MAX_REQUESTS/)
   })
 })

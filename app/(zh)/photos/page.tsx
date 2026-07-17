@@ -2,9 +2,8 @@ import { PhotosPageView } from '../../_views/photos-page'
 import { localeMetadata } from '~/lib/locale-metadata'
 import { publicPageMetadata } from '~/lib/public-page-metadata'
 
-// The active photo publication is request-time data and must not block
-// navigation validation.
-export const instant = false
+// The active photo publication streams into a prefetched masonry shell.
+export const instant = true
 
 const copy = publicPageMetadata.photos.zh
 

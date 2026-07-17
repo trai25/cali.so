@@ -8,6 +8,10 @@ const migrationUrls = {
   googleCalendar: new URL('../db/migrations/0003_ama_google_calendar.sql', import.meta.url),
   googleOAuth: new URL('../db/migrations/0004_ama_google_oauth.sql', import.meta.url),
   rateLimits: new URL('../db/migrations/0010_rate_limit_windows.sql', import.meta.url),
+  bookingSystem: new URL(
+    '../db/migrations/0011_ama_booking_system.sql',
+    import.meta.url,
+  ),
 }
 
 async function readMigration(url) {
@@ -70,12 +74,48 @@ test('rate-limit migration stores bounded windows without private request keys',
   assert.doesNotMatch(sql, /"request_key"/)
 })
 
+test('AMA Booking migration adds the paid booking system with one exclusion guarantee', async () => {
+  const sql = await readMigration(migrationUrls.bookingSystem)
+
+  assert.match(sql, /create table "ama_slot_claims"/)
+  assert.match(sql, /create table "ama_booking_intents"/)
+  assert.match(sql, /create table "ama_bookings"/)
+  assert.match(sql, /create table "ama_booking_events"/)
+  assert.match(sql, /create table "ama_provider_events"/)
+  assert.match(sql, /create table "ama_durable_operations"/)
+  assert.match(sql, /create table "ama_alternate_time_requests"/)
+
+  // The database exclusion guarantee: overlapping active claims cannot both
+  // exist, including the 15-minute buffers baked into blocked_during.
+  assert.match(
+    sql,
+    /exclude using gist \("blocked_during" with &&\) where \("status" = 'active'\)/,
+  )
+  assert.match(
+    sql,
+    /"blocked_during" = tstzrange\("ama_slot_claims"\."starts_at" - interval '15 minutes', "ama_slot_claims"\."ends_at" \+ interval '15 minutes', '\[\)'\)/,
+  )
+
+  // Exactly-once payment processing and hidden capabilities: provider events
+  // and Checkout Sessions are unique, and only a Manage Link hash is stored.
+  assert.match(sql, /"ama_provider_events_provider_event_id_pk" primary key/)
+  assert.match(sql, /"ama_bookings_checkout_session_uidx"/)
+  assert.match(sql, /"ama_durable_operations_dedupe_uidx"/)
+  assert.match(sql, /"manage_token_hash" varchar\(64\)/)
+  assert.doesNotMatch(sql, /"manage_token"\s/)
+
+  assert.doesNotMatch(sql, /\b(drop|truncate)\s+table\b/)
+})
+
 test('AMA migrations never mutate legacy subscriber or newsletter tables', async () => {
   const sql = (
     await Promise.all(Object.values(migrationUrls).map(readMigration))
   ).join('\n')
 
-  assert.doesNotMatch(sql, /\b(drop|truncate|alter)\s+table\b/)
+  assert.doesNotMatch(sql, /\b(drop|truncate)\s+table\b/)
+  // Foreign keys arrive as ALTER TABLE ... ADD CONSTRAINT; every other ALTER
+  // TABLE form stays banned.
+  assert.doesNotMatch(sql, /\balter\s+table\s+(?![^;]*\badd\s+constraint\b)/)
   assert.doesNotMatch(
     sql,
     /\b(create|drop|alter|truncate)\s+table[^;]*(subscribers|newsletters)/,

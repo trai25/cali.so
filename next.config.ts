@@ -36,6 +36,12 @@ const nextConfig: NextConfig = {
   // slug is dynamic, so output tracing cannot discover these files from the
   // readFile calls on its own when packaging serverless functions.
   outputFileTracingIncludes: {
+    '/og': [
+      ...ogRuntimeAssets,
+      './content/blog/**/*',
+      './content/newsletters/**/*',
+      './public/images/headshot.jpg',
+    ],
     '/blog/**': ['./content/blog/**/*', ...ogRuntimeAssets],
     '/en/blog/**': ['./content/blog/**/*', ...ogRuntimeAssets],
     '/newsletters/**': ['./content/newsletters/**/*', ...ogRuntimeAssets],
@@ -52,10 +58,6 @@ const nextConfig: NextConfig = {
   // Pin the project root: when developing from a git worktree nested inside
   // another checkout, Next's lockfile-based root inference walks too far up.
   turbopack: { root: import.meta.dirname },
-
-  // subset-font (OG images) loads harfbuzz wasm from node_modules via fs —
-  // bundling breaks the wasm path, so both stay external.
-  serverExternalPackages: ['subset-font', 'harfbuzzjs'],
 
   // Shared-element morphs (cover/title) on route navigation; browsers
   // without the View Transitions API just navigate instantly.

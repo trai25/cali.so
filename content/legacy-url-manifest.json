@@ -263,11 +263,11 @@
       "status": 308
     },
     {
-      "kind": "redirect",
+      "kind": "page",
       "source": "/ama",
-      "destination": "/",
       "probes": ["/ama"],
-      "status": 308
+      "status": 200,
+      "contains": "AMA"
     },
     {
       "kind": "redirect",

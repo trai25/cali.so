@@ -6,14 +6,14 @@ Current as of July 2026.
 
 - The ground-up rewrite is **v3**. The site released in 2024 remains the
   historical v2.
-- The integration branch keeps the name **`v2`** for continuity. `main` still
-  drives production; merging the completed v3 release into `main` is the
-  cutover.
+- Git **`dev`** is the long-lived Staging and integration branch. `main` drives
+  Production; a reviewed `dev` to `main` pull request is the release path.
 - Release scope and evidence are tracked by
   [#98](https://github.com/CaliCastle/cali.so/issues/98). Do not merge to
   `main` until its complete dependency chain and final proof are green.
 - Release slices #99 through #106 are merged into `v2`. Final cutover proof is
-  tracked by #107; its checked-in report is the current readiness authority.
+  tracked by #107; those `v2` references are historical evidence from before
+  the branch became `dev`.
 
 ## Current architecture
 
@@ -39,17 +39,35 @@ Current as of July 2026.
 - The owner admin is always reachable for Media and AMA operations, with
   Clerk authentication and an exact server-checked
   `publicMetadata.siteOwner = "yes"` authorization marker. Origin checks, rate
-  limits, audit events, and the strict admin CSP remain in force. Public AMA
-  mutations, payment, provider, and finalization capabilities stay disabled for
-  the v3 production launch.
+  limits, audit events, and the strict admin CSP remain in force.
+- The complete paid AMA booking system (#79, slices #82 through #87) is
+  implemented and enabled by default (maintainer decision, July 2026; the
+  former `AMA_*_ENABLED` switches are removed): public `/ama` and
+  `/ama/book`, Slot Holds
+  with a Postgres exclusion guarantee, Stripe-hosted Checkout with an
+  authoritative signed webhook, durable finalization (Google Meet, Tencent
+  Meeting over MCP, Resend email, Manage Links), guest rescheduling and
+  refunds, owner operations in `/admin/ama`, reminders, and 90-day Booking
+  Brief retention. Provider-backed capabilities (payments, finalization,
+  Google, Tencent) turn on when their credential pairs are configured and
+  fail closed with 503 while they are not.
+  `docs/ama-booking-operations.md` is the environment and operations
+  reference.
 - Rate limits use Upstash only in Production. Preview persists its limits in
   the isolated Neon database, while Local and CI use process-local limits.
+- GitHub Actions owns deployment ordering. `dev` migrates the persistent Neon
+  `staging` branch before deploying Vercel Staging. Internal feature branches
+  use persistent `preview/<git-branch>` children of Staging. Production lives
+  in a separate Neon project and waits for two sequential protected-environment
+  approvals before database access.
 - Security baseline controls from PR #97 remain mandatory: CSP and security
   headers, same-origin mutation policy, rate limits, kill switches,
   privacy-safe audit events, isolated credentials, and security automation.
 - The Bunny-backed Media Library in ADR-0007 owns the curated photo workflow.
   Private Originals stay server-only, while `/photos` and homepage previews
-  consume the active Published Photo Selection from Bunny Renditions.
+  consume the active Published Photo Selection from Bunny Renditions. Media
+  capabilities have no runtime feature switches: Alt Text Suggestions are on
+  by default, and Location Label suggestions follow their provider credential.
 
 ## Launch gates
 
@@ -59,8 +77,8 @@ Current as of July 2026.
 2. Complete all three issue #91 stages: Cache Components baseline,
    route-by-route Instant Navigations, then Partial Prefetching and browser
    regression coverage.
-3. Keep owner admin authenticated and reachable while unfinished public AMA,
-   payment, provider, and finalization capabilities fail closed.
+3. Keep owner admin authenticated and reachable, and keep AMA capabilities
+   whose provider credentials are absent failing closed with 503.
 4. Validate from a frozen-lockfile install: types, all tests, migrations,
    localization, security, production build, dependency audit, links, HTTP
    contracts, and browser checks.
@@ -87,6 +105,7 @@ pnpm test:unit
 pnpm test:localization
 pnpm test:port-post
 pnpm test:ama
+pnpm test:deployment
 pnpm test:security
 pnpm test:media:storage
 pnpm test:media:catalog
@@ -109,7 +128,8 @@ pnpm verify:security-boundary
 pnpm audit:prod
 ```
 
-Run migrations only with an explicitly supplied migration credential:
+Deployment workflows run migrations before deployment with a scoped GitHub
+environment credential. For an explicitly authorized local operation:
 
 ```bash
 MIGRATION_DATABASE_URL=postgresql://... pnpm db:migrate
@@ -120,32 +140,43 @@ The Vercel runtime receives only the CRUD-only `DATABASE_URL`. Never put
 
 ## Gotchas
 
-- Product generation and branch name differ: v3 is developed on `v2`. Do not
-  rename historical tags, the integration branch, vendor APIs, or protocol
-  versions while correcting product terminology.
+- Historical product v2 tags and old readiness evidence remain v2. Do not
+  rewrite them when working on Git `dev`, the current v3 integration branch.
 - This Next.js preview has breaking changes. Read the relevant bundled guide in
   `node_modules/next/dist/docs/` before changing framework behavior.
 - `turbopack.root` supports nested worktrees and must stay configured.
-- OG font subsetting dynamically imports `subset-font` to keep HarfBuzz WASM
-  out of Turbopack tracing. Preserve that boundary.
+- OG font subsetting runs only in the prebuild script. Runtime image routes
+  load the generated `FrexSansGB-OG-*.ttf` files so HarfBuzz WASM stays out of
+  Turbopack tracing. Preserve that boundary.
 - Raw stylesheet `backdrop-filter` is stripped by the CSS pipeline. The liquid
   dock owns its SVG filter as an inline style; ordinary blur uses Tailwind
   utilities.
-- Preview and Production credentials and data are separate. Preview data must
-  be disposable or irreversibly sanitized. Never attach Redis credentials to
-  Preview; its rate-limit windows live in the Preview Neon database.
-- The five optional `AMA_*_ENABLED` variables fail closed. Leave every one
-  `false` for the v3 launch; owner admin has no capability switch.
+- Staging/Preview and Production credentials and data are isolated in separate
+  Neon projects. Non-production data must be disposable or irreversibly
+  sanitized. Never attach Redis credentials to Staging or Preview; their
+  rate-limit windows live in Neon.
+- AMA has no capability switches: capabilities are on by default, and each
+  provider capability follows its credential pair (complete or absent; a
+  half pair fails startup). Owner admin has no capability switch either.
+- Media has no capability switches. Alt Text Suggestions are always on;
+  Location Label suggestions use Google Maps whenever its server credential is
+  configured, while manual labels remain available without it.
 - Design references are private. Public code and documentation use only the
   vocabulary in `docs/design-language.md`.
+- Local builds validate the full server environment. Keep `.env.local`
+  aligned with `.env.example`; blank provider placeholders are fine, but the
+  always-required values (`ADMIN_EMAIL`, `AMA_ENCRYPTION_KEY`,
+  `RATE_LIMIT_HASH_KEY`, `SITE_URL`, Bunny media) must be present.
 
 ## Post-launch work
 
 - Maintain #93's Clerk-native passkey-first high-impact boundary without
   disabling owner admin. Hosted setup, session revocation, credential rotation,
   and Clerk's server-side factor-strategy limitation are documented in
-  `docs/security/clerk-admin-operations.md`. Resume the public AMA product
-  slices (#82 through #87) only behind their security and privacy gates.
+  `docs/security/clerk-admin-operations.md`. The public AMA product slices
+  (#82 through #87) are implemented and enabled by default; going live end
+  to end only needs the provider credential pairs and hosted checks in
+  `docs/ama-booking-operations.md`.
 - Revisit Bunny S3 preview constraints and provider capabilities before
   expanding the Media Library beyond the curated photo workflow.
 - Re-enable private capabilities only after their provider, retention,
