@@ -84,6 +84,14 @@ function assertObjectKey(key: string) {
   }
 }
 
+export function createPublicRenditionUrl(cdnBaseUrl: URL) {
+  return function publicRenditionUrl(key: string) {
+    assertObjectKey(key)
+    const encodedKey = key.split('/').map(encodeURIComponent).join('/')
+    return new URL(encodedKey, cdnBaseUrl).toString()
+  }
+}
+
 function checksumBase64(checksumSha256: string) {
   if (!/^[a-f0-9]{64}$/.test(checksumSha256)) {
     throw new TypeError('Invalid SHA-256 checksum')
@@ -123,11 +131,9 @@ export function createBunnyStorage(
     dependencies.renditionsClient ?? createClient(config.region, config.renditions)
   const request = dependencies.fetch ?? fetch
 
-  function publicRenditionUrl(key: string) {
-    assertObjectKey(key)
-    const encodedKey = key.split('/').map(encodeURIComponent).join('/')
-    return new URL(encodedKey, config.renditions.cdnBaseUrl).toString()
-  }
+  const publicRenditionUrl = createPublicRenditionUrl(
+    config.renditions.cdnBaseUrl,
+  )
 
   async function deleteObject(client: S3Client, bucket: string, key: string) {
     assertObjectKey(key)

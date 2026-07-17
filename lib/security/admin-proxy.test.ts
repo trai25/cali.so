@@ -42,6 +42,27 @@ afterAll(() => {
 })
 
 describe('admin CSP proxy', () => {
+  it('allows Clerk to keep the browser session synchronized', () => {
+    const previousPublishableKey =
+      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY =
+      'pk_live_Y2xlcmsuY2FsaS5zbyQ'
+
+    try {
+      const policy = siteProxy(
+        new NextRequest('https://cali.so/admin/media'),
+      ).headers.get('content-security-policy')
+
+      expect(policy).toContain("connect-src 'self' https://clerk.cali.so")
+    } finally {
+      if (previousPublishableKey === undefined) {
+        delete process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+      } else {
+        process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = previousPublishableKey
+      }
+    }
+  })
+
   it('uses a fresh strict nonce policy for each admin render', () => {
     const request = new NextRequest('https://cali.so/admin/login')
     const first = siteProxy(request).headers.get('content-security-policy')
