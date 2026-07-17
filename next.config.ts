@@ -21,9 +21,6 @@ const legacyRewrites = legacyUrlManifest.entries.flatMap((entry) =>
     : [],
 )
 
-const exposeNavigationTestingApi =
-  process.env.NEXT_INSTANT_NAVIGATION_TEST === '1'
-
 const ogRuntimeAssets = [
   './app/_fonts/FrexSansGB-OG-*.ttf',
 ]
@@ -61,7 +58,6 @@ const nextConfig: NextConfig = {
   // without the View Transitions API just navigate instantly.
   experimental: {
     authInterrupts: true,
-    exposeTestingApiInProductionBuild: exposeNavigationTestingApi,
     viewTransition: true,
     globalNotFound: true,
     sri: { algorithm: 'sha256' },

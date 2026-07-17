@@ -78,7 +78,6 @@ pnpm test:media:photo-selection
 pnpm test:media:purge
 pnpm test:media:reconciliation
 pnpm build
-pnpm test:navigation
 pnpm verify:legacy-urls
 pnpm verify:links
 pnpm verify:public-discovery

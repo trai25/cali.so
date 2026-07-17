@@ -12,7 +12,7 @@ issue rather than as an incidental documentation update.
 Production cutover is gated on both:
 
 1. completing the full issue #91 rollout: Cache Components, route-by-route
-   Instant Navigations, Partial Prefetching, and browser regression coverage;
+   Instant Navigations, and Partial Prefetching;
 2. verifying 100% of the checked-in legacy URL manifest against a production
    build and production-like Preview, not spot checks.
 

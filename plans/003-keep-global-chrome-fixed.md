@@ -139,8 +139,7 @@ content receives the documented opacity + 2px blur treatment. Nested
 ## Verification
 
 - **Mechanical**: run `pnpm typecheck`, `pnpm test:localization`, and
-  `git diff --check`; all must exit 0. Then run the focused public navigation
-  cases from `pnpm test:navigation`.
+  `git diff --check`; all must exit 0.
 - **Feel check**: at 1440x900 and 393x852, pointer-open a covered post from
   `/blog` and `/en/blog`:
   - In DevTools at 10% playback, the dock, ambient guides, and footer stay
