@@ -184,7 +184,8 @@ export function HomeIntroduction({ social, github }: { social: SocialSnapshot; g
         <T
           zh={
             <>
-              我是 Cali，两个孩子的爸爸，也是一名热爱把细节做到
+              我是 Cali，两个孩子的爸爸，也是一名
+              <DesignEngineerPhrase>设计工程师</DesignEngineerPhrase>。我也是 Agent 指挥官，热爱把细节做到
               <DetailsPhrase>
                 <span className="home-detail-units">
                   <span className="home-detail-unit">刚</span>
@@ -192,14 +193,13 @@ export function HomeIntroduction({ social, github }: { social: SocialSnapshot; g
                   <span className="home-detail-unit">好</span>
                 </span>
               </DetailsPhrase>
-              的
-              <DesignEngineerPhrase>设计工程师</DesignEngineerPhrase>。
+              。
             </>
           }
           en={
             <>
-              I’m Cali, a father of two and a <DesignEngineerPhrase>design engineer</DesignEngineerPhrase> who loves
-              getting the{' '}
+              I’m Cali, a father of two and a <DesignEngineerPhrase>design engineer</DesignEngineerPhrase>. I’m also an
+              agent orchestrator, and I love getting the{' '}
               <DetailsPhrase>
                 <span className="home-detail-units home-detail-words">
                   <span className="home-detail-unit">details</span>
