@@ -90,6 +90,13 @@ test('main uses protected Production credentials and deploys only after migratio
     'Run database migrations',
     'Deploy Vercel Production',
   )
+  const compatibility = job.steps.find(
+    (step) => step.name === 'Enforce expand-only database migrations',
+  )
+  assert.equal(compatibility.env.BASE_SHA, '${{ github.event.before }}')
+  assert.equal(compatibility.env.HEAD_SHA, '${{ github.sha }}')
+  assert.match(compatibility.run, /"\$BASE_SHA" "\$HEAD_SHA"/)
+  assert.doesNotMatch(compatibility.run, /\$\{\{/)
   const migrate = job.steps.find(
     (step) => step.name === 'Run database migrations',
   )
@@ -143,6 +150,17 @@ test('branch deletion cleans only ephemeral Neon and Vercel Previews', async () 
     'neondatabase/delete-branch-action@4468d825d5a88ef4012f1705a82f02ec3072f776',
   )
   assert.match(removeNeon.with.branch, /^preview\//)
+  const setupNode = job.steps.find((step) => step.name === 'Set up Node.js')
+  assert.equal(
+    setupNode.uses,
+    'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020',
+  )
+  assert.equal(setupNode.with['node-version'], 24)
+  assertOrdered(
+    job.steps,
+    'Set up Node.js',
+    'Delete Vercel Preview deployments',
+  )
   assert.ok(
     job.steps.some((step) => {
       return (

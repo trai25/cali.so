@@ -45,7 +45,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Enforce expand-only database migrations
-        run: node scripts/check-production-migrations.mjs "${{ github.event.before }}" "${{ github.sha }}"
+        env:
+          BASE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: node scripts/check-production-migrations.mjs "$BASE_SHA" "$HEAD_SHA"
 
       - name: Run database migrations
         env:

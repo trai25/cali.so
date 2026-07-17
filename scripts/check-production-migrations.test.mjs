@@ -43,6 +43,25 @@ test('accepts only explicitly reviewed expand operations', () => {
   assert.deepEqual(expandOnlyMigrationFindings(sql), [])
 })
 
+test('parses ADD COLUMN IF NOT EXISTS before checking its definition', () => {
+  const safe = `
+    ALTER TABLE media_assets
+      ADD COLUMN IF NOT EXISTS owner_label text;
+    ALTER TABLE media_assets
+      ADD COLUMN IF NOT EXISTS sort_order bigint NOT NULL DEFAULT 0;
+  `
+  const unsafe = `
+    ALTER TABLE media_assets
+      ADD COLUMN IF NOT EXISTS sort_order bigint NOT NULL;
+  `
+
+  assert.deepEqual(expandOnlyMigrationFindings(safe), [])
+  assert.deepEqual(
+    expandOnlyMigrationFindings(unsafe).map(({ operation }) => operation),
+    ['ADD COLUMN NOT NULL WITHOUT SAFE DEFAULT'],
+  )
+})
+
 test('rejects contract-breaking and unrecognized operations', () => {
   const sql = `
     DROP TABLE old_media;

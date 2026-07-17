@@ -370,6 +370,22 @@ function allowedCreate(tokens) {
   return tokens[1]?.value === 'MATERIALIZED' && tokens[2]?.value === 'VIEW'
 }
 
+function addColumnDefinition(action) {
+  let columnIndex = 2
+  if (
+    action[2]?.value === 'IF' &&
+    action[3]?.value === 'NOT' &&
+    action[4]?.value === 'EXISTS'
+  ) {
+    columnIndex = 5
+  }
+  if (!['word', 'identifier'].includes(action[columnIndex]?.type)) {
+    return undefined
+  }
+  const definition = action.slice(columnIndex + 1)
+  return definition.length === 0 ? undefined : definition
+}
+
 function alterTableFinding(tokens) {
   const action = tableAction(tokens)
   if (action.length === 0) return 'UNRECOGNIZED STATEMENT'
@@ -378,7 +394,8 @@ function alterTableFinding(tokens) {
   }
 
   if (action[0]?.value === 'ADD' && action[1]?.value === 'COLUMN') {
-    const definition = action.slice(3)
+    const definition = addColumnDefinition(action)
+    if (!definition) return 'UNRECOGNIZED STATEMENT'
     const hasNotNull = hasSequence(definition, ['NOT', 'NULL'], 0)
     const defaultIndex = definition.findIndex(
       (token) => token.depth === 0 && token.value === 'DEFAULT',
