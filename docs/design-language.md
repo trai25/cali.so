@@ -492,6 +492,15 @@ expands or moves. Touch is a plain whole-row link, keyboard focus uses the
 neutral focus ring without motion, and reduced motion keeps every artifact
 still.
 
+## Photo index
+
+The photo route keeps its title in the prefetched static shell and streams the
+active Published Photo Selection into a page-level masonry boundary. While the
+selection resolves, six quiet, nonanimated tiles reserve the two-column mobile
+or three-column desktop masonry. The placeholder uses the final card radius,
+gutter, and neutral edge treatment so navigation responds immediately without
+introducing a second visual language or shifting the page header.
+
 ## Liquid glass dock
 
 The dock pill is real glass: a runtime-built displacement map (rounded-rect

@@ -70,6 +70,45 @@ for (const entry of [
   })
 }
 
+for (const entry of [
+  {
+    locale: 'Chinese',
+    from: '/projects',
+    photos: '/photos',
+    photosLabel: '照片',
+    navigationLabel: '主导航',
+  },
+  {
+    locale: 'English',
+    from: '/en/projects',
+    photos: '/en/photos',
+    photosLabel: 'Photos',
+    navigationLabel: 'Main navigation',
+  },
+] as const) {
+  test(`${entry.locale} dock navigation streams the photo masonry`, async ({
+    page,
+  }) => {
+    await page.goto(entry.from)
+    await page.waitForLoadState('networkidle')
+
+    await instant(page, async () => {
+      await page
+        .getByRole('navigation', { name: entry.navigationLabel })
+        .getByRole('link', { name: entry.photosLabel })
+        .click()
+
+      await expect(page).toHaveURL(entry.photos)
+      await expect(
+        page.getByRole('heading', { level: 1, name: entry.photosLabel }),
+      ).toBeVisible()
+      await expect(page.getByRole('status')).toBeVisible()
+    })
+
+    await expect(page.getByRole('status')).not.toBeVisible()
+  })
+}
+
 async function observeViewTransitionLifecycles(
   page: import('@playwright/test').Page,
 ) {

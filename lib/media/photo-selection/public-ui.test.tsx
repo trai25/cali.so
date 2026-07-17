@@ -7,7 +7,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 vi.mock('server-only', () => ({}))
 
 import { NavCards, PhotoNavCard } from '../../../components/nav-cards'
-import { PublishedPhotoWall } from '../../../components/published-photo-wall'
+import {
+  PublishedPhotoWall,
+  PublishedPhotoWallLoading,
+} from '../../../components/published-photo-wall'
 import {
   getHomepagePhotoPreview,
   type PublicPhotoSelection,
@@ -136,5 +139,14 @@ describe('Published Photo Selection UI', () => {
 
     expect(html).toContain('No photos have been published yet.')
     expect(html).not.toContain('/images/photos/')
+  })
+
+  it('reserves a calm masonry shell while published photos stream', () => {
+    const html = renderToStaticMarkup(<PublishedPhotoWallLoading />)
+
+    expect(html).toContain('role="status"')
+    expect(html).toContain('aria-busy="true"')
+    expect(html).toContain('Loading photos')
+    expect(html.match(/photo-masonry-placeholder/g)).toHaveLength(6)
   })
 })

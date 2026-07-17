@@ -9,6 +9,15 @@ import { ZoomImage } from './zoom-image'
 
 type PublishedPhoto = PublicPhotoSelection['items'][number]
 
+const LOADING_ASPECT_RATIOS = [
+  '4 / 3',
+  '3 / 4',
+  '1 / 1',
+  '3 / 4',
+  '4 / 3',
+  '1 / 1',
+]
+
 function captureDate(date: Date, locale: 'zh' | 'en') {
   return new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
     year: 'numeric',
@@ -132,6 +141,24 @@ export function PublishedPhotoWall({
     <div className="photo-masonry mt-6">
       {selection.items.map((photo, index) => (
         <PublishedPhotoItem key={photo.id} photo={photo} index={index} center={center} />
+      ))}
+    </div>
+  )
+}
+
+export function PublishedPhotoWallLoading() {
+  return (
+    <div className="photo-masonry mt-6" role="status" aria-busy="true">
+      <span className="sr-only">
+        <T zh="正在加载照片" en="Loading photos" />
+      </span>
+      {LOADING_ASPECT_RATIOS.map((aspectRatio, index) => (
+        <span
+          key={index}
+          className="photo-item photo-masonry-placeholder"
+          style={{ aspectRatio }}
+          aria-hidden
+        />
       ))}
     </div>
   )
