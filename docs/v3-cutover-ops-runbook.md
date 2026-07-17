@@ -39,9 +39,11 @@ changing either Neon project.
    those roles and grants are copied into every Preview.
 3. Keep Production in a separate Neon project. Its API key and migration URL
    must never be stored in the Preview or Staging GitHub environments.
-4. Create a Vercel custom environment named `staging`. Copy only approved
-   non-production application settings into it; database URLs are supplied per
-   deployment by GitHub Actions.
+4. Create a Vercel custom environment named `staging`. Set `SITE_URL` to its
+   stable custom alias (currently `https://beta.cali.so`) so browser mutation
+   checks match the URL maintainers use. Copy only approved non-production
+   application settings into it; database URLs are supplied per deployment by
+   GitHub Actions.
 5. Create these GitHub deployment environments:
 
 | Environment | Variables | Secrets | Protection |
