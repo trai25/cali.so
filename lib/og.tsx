@@ -4,8 +4,9 @@ import { cacheLife } from 'next/cache'
 
 // Loaded outside the build graph: Turbopack chokes on harfbuzz's wasm when
 // subset-font gets bundled or traced (NftJsonAsset error), and
-// serverExternalPackages doesn't take here. The cached OG helpers prerender
-// once per deployment, where node_modules is present.
+// serverExternalPackages doesn't take here. Static OG helpers call this only
+// during the build, where node_modules is present. Dynamic metadata functions
+// use the generated runtime subsets below.
 async function loadSubsetFont() {
   const mod = await import(/* turbopackIgnore: true */ 'subset-font')
   return mod.default
@@ -40,6 +41,23 @@ export async function ogFonts(text: string) {
           targetFormat: 'sfnt',
         }),
       ).buffer,
+    ),
+  )
+  return [
+    { name: 'Frex Sans GB', data: regular, weight: 400 as const, style: 'normal' as const },
+    { name: 'Frex Sans GB', data: semibold, weight: 600 as const, style: 'normal' as const },
+  ]
+}
+
+export async function ogRuntimeFonts() {
+  'use cache'
+  cacheLife('max')
+
+  const [regular, semibold] = await Promise.all(
+    ['Regular', 'SemiBold'].map((weight) =>
+      readFile(path.join(FONTS_DIR, `FrexSansGB-OG-${weight}.ttf`)).then(
+        (font) => new Uint8Array(font).buffer,
+      ),
     ),
   )
   return [

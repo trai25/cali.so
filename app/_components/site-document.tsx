@@ -40,11 +40,32 @@ export async function SiteDocument({
   locale: Locale
   restoreLocale?: boolean
 }>) {
-  // Live-but-cached social numbers (ISR via the fetch data cache) keep the
-  // shared chrome fresh without making any page request-bound.
-  const [social, github] = await Promise.all([getSocial(), getGitHub()])
   const english = locale === 'en'
-  const isPublicSite = !isAdmin
+
+  if (isAdmin) {
+    return (
+      <html
+        lang={english ? 'en' : 'zh-CN'}
+        data-locale={english ? 'en' : undefined}
+        suppressHydrationWarning
+        className={cn('font-sans', fontVariables)}
+      >
+        <head>
+          <script dangerouslySetInnerHTML={{ __html: PREPAINT_SCRIPT }} />
+        </head>
+        <body className="antialiased">
+          <ThemeProvider>
+            {restoreLocale && <LocaleRestorer />}
+            {children}
+          </ThemeProvider>
+        </body>
+      </html>
+    )
+  }
+
+  // Live-but-cached social numbers (ISR via the fetch data cache) keep the
+  // shared public chrome fresh without making any page request-bound.
+  const [social, github] = await Promise.all([getSocial(), getGitHub()])
 
   return (
     <html
@@ -52,7 +73,7 @@ export async function SiteDocument({
       data-locale={english ? 'en' : undefined}
       data-route-motion="none"
       suppressHydrationWarning
-      className={cn('font-sans', fontVariables, isPublicSite && 'public-site')}
+      className={cn('font-sans', fontVariables, 'public-site')}
     >
       <head>
         {/* Pre-paint handles the visited flag and theme. Locale restoration
@@ -76,7 +97,7 @@ export async function SiteDocument({
             <Dock />
           </Suspense>
         </ThemeProvider>
-        {isPublicSite && <Analytics />}
+        <Analytics />
       </body>
     </html>
   )

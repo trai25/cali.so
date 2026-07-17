@@ -21,7 +21,29 @@ function optionalMediaImageSource() {
   }
 }
 
-function contentSecurityPolicy(scriptSources: string, styleSources: string) {
+function clerkFrontendApiSource() {
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+  const encodedHost = publishableKey?.match(/^pk_(?:test|live)_(.+)$/)?.[1]
+  if (!encodedHost) return ''
+
+  try {
+    const decodedHost = Buffer.from(encodedHost, 'base64url')
+      .toString('utf8')
+      .replace(/\$$/, '')
+    const url = new URL(`https://${decodedHost}`)
+    return url.protocol === 'https:' && url.hostname === decodedHost
+      ? ` ${url.origin}`
+      : ''
+  } catch {
+    return ''
+  }
+}
+
+function contentSecurityPolicy(
+  scriptSources: string,
+  styleSources: string,
+  connectSources = '',
+) {
   return [
     "default-src 'self'",
     "base-uri 'self'",
@@ -33,7 +55,7 @@ function contentSecurityPolicy(scriptSources: string, styleSources: string) {
     `style-src ${styleSources}`,
     `img-src 'self' data: blob: https://og.zolplay.com${optionalMediaImageSource()}`,
     "font-src 'self' data:",
-    "connect-src 'self'",
+    `connect-src 'self'${connectSources}`,
     "media-src 'self' blob:",
     "worker-src 'self' blob:",
     "frame-src 'none'",
@@ -51,6 +73,7 @@ export function adminContentSecurityPolicy(nonce: string) {
   return contentSecurityPolicy(
     `'self' ${nonceSource} ${prepaintScriptHash} 'strict-dynamic'${isDevelopment ? " 'unsafe-eval'" : ''}`,
     "'self' 'unsafe-inline'",
+    clerkFrontendApiSource(),
   )
 }
 

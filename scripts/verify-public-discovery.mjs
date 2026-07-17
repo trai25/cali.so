@@ -37,16 +37,15 @@ const publicPages = [
     '/',
     {
       title: 'Cali Castle',
-      description: '我是 Cali，两个孩子的爸爸，也是一名热爱把细节做到刚刚好的设计工程师。',
+      description: '设计工程师、Agent 指挥官、创意总监。',
     },
     {
       title: 'Cali Castle',
-      description:
-        'I’m Cali, a father of two and a design engineer who loves getting the details just right.',
+      description: 'Design Engineer. Agent Orchestrator. Creative Director.',
     },
     {
-      zh: 'Cali Castle。两个孩子的爸爸，也是一名热爱把细节做到刚刚好的设计工程师。',
-      en: 'Cali Castle. A father of two and a design engineer who loves getting the details just right.',
+      zh: 'Cali Castle。设计工程师、Agent 指挥官、创意总监。',
+      en: 'Cali Castle. Design Engineer. Agent Orchestrator. Creative Director.',
     },
   ),
   ...localizedPages(

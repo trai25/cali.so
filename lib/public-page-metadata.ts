@@ -2,15 +2,13 @@ export const publicPageMetadata = {
   home: {
     zh: {
       title: 'Cali Castle',
-      description: '我是 Cali，两个孩子的爸爸，也是一名热爱把细节做到刚刚好的设计工程师。',
-      ogDescription: '两个孩子的爸爸，也是一名热爱把细节做到刚刚好的设计工程师。',
+      description: '设计工程师、Agent 指挥官、创意总监。',
+      ogDescription: '设计工程师、Agent 指挥官、创意总监。',
     },
     en: {
       title: 'Cali Castle',
-      description:
-        'I’m Cali, a father of two and a design engineer who loves getting the details just right.',
-      ogDescription:
-        'A father of two and a design engineer who loves getting the details just right.',
+      description: 'Design Engineer. Agent Orchestrator. Creative Director.',
+      ogDescription: 'Design Engineer. Agent Orchestrator. Creative Director.',
     },
   },
   blog: {

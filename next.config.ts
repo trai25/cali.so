@@ -25,9 +25,7 @@ const exposeNavigationTestingApi =
   process.env.NEXT_INSTANT_NAVIGATION_TEST === '1'
 
 const ogRuntimeAssets = [
-  './app/_fonts/*.woff2',
-  './node_modules/harfbuzzjs/**/*',
-  './node_modules/subset-font/**/*',
+  './app/_fonts/FrexSansGB-OG-*.ttf',
 ]
 
 const nextConfig: NextConfig = {
