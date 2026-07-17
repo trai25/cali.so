@@ -303,7 +303,7 @@ const serverEnvironmentSchema = z
       SITE_URL: SITE_URL ?? new URL(`https://${VERCEL_URL!}`),
       browserMutationBaseUrl:
         VERCEL_ENV === 'preview'
-          ? new URL(`https://${VERCEL_URL!}`)
+          ? (SITE_URL ?? new URL(`https://${VERCEL_URL!}`))
           : SITE_URL!,
       rateLimitBackend:
         VERCEL_ENV === 'production'

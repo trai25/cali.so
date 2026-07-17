@@ -58,16 +58,17 @@ describe('AMA server environment', () => {
     })
   })
 
-  it('uses the Vercel deployment origin for Preview mutations', () => {
+  it('uses an explicit Preview site URL for custom deployment aliases', () => {
     const environment = parseServerEnv({
       ...validEnvironment,
       VERCEL_ENV: 'preview',
       VERCEL_URL: 'cali-preview-cali.vercel.app',
+      SITE_URL: 'https://beta.cali.so',
     })
 
-    expect(environment.SITE_URL.href).toBe('https://cali.so/')
+    expect(environment.SITE_URL.href).toBe('https://beta.cali.so/')
     expect(environment.browserMutationBaseUrl.href).toBe(
-      'https://cali-preview-cali.vercel.app/',
+      'https://beta.cali.so/',
     )
   })
 
