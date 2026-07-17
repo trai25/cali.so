@@ -96,6 +96,7 @@ describe('Photo Selection admin UI contract', () => {
 
   it('autosaves keyboard reorder with the current Draft revision', async () => {
     document.documentElement.dataset.locale = 'en'
+    const onDraftChange = vi.fn()
     const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
       const request = JSON.parse(String(init?.body)) as {
         mediaAssetIds: string[]
@@ -117,9 +118,11 @@ describe('Photo Selection admin UI contract', () => {
           updatedAt: null,
         }}
         initialAssets={[first, second]}
+        onDraftChange={onDraftChange}
       />,
     )
 
+    expect(onDraftChange).not.toHaveBeenCalled()
     fireEvent.click(getAllByRole('button', { name: 'Move later' })[0]!)
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
@@ -131,6 +134,8 @@ describe('Photo Selection admin UI contract', () => {
       expectedRevision: 2,
       mediaAssetIds: [second.id, first.id],
     })
+    expect(onDraftChange).toHaveBeenCalledOnce()
+    expect(onDraftChange).toHaveBeenCalledWith([second.id, first.id])
   })
 
   it('ignores text dragged from outside the Photo Selection', () => {

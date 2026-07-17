@@ -2,6 +2,7 @@
 
 import {
   forwardRef,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useMemo,
@@ -48,6 +49,13 @@ function assetName(asset: MediaAssetReviewRecord) {
     asset.altTextEn ||
     asset.altTextZhHans ||
     asset.id.slice(0, 8)
+  )
+}
+
+function sameMediaAssetIds(first: string[], second: string[]) {
+  return (
+    first.length === second.length &&
+    first.every((mediaAssetId, index) => mediaAssetId === second[index])
   )
 }
 
@@ -137,15 +145,12 @@ export const PhotoSelectionEditor = forwardRef<
     if (notice) noticeRef.current?.focus()
   }, [notice])
 
-  useEffect(() => {
-    onDraftChange?.(mediaAssetIds)
-  }, [mediaAssetIds, onDraftChange])
-
-  async function save(nextIds: string[]) {
+  const save = useCallback(async (nextIds: string[]) => {
     if (saveInFlightRef.current || publishing) return
     saveInFlightRef.current = true
     const previousIds = mediaAssetIds
     setMediaAssetIds(nextIds)
+    onDraftChange?.(nextIds)
     setSaveState('saving')
     setNotice(null)
     try {
@@ -157,11 +162,15 @@ export const PhotoSelectionEditor = forwardRef<
       const body = await responseJson(response)
       const draft = body.draft as DraftPhotoSelection
       setRevision(draft.revision)
-      setMediaAssetIds(draft.mediaAssetIds)
+      if (!sameMediaAssetIds(draft.mediaAssetIds, nextIds)) {
+        setMediaAssetIds(draft.mediaAssetIds)
+        onDraftChange?.(draft.mediaAssetIds)
+      }
       publishKeyRef.current = null
       setSaveState('saved')
     } catch (error) {
       setMediaAssetIds(previousIds)
+      onDraftChange?.(previousIds)
       setSaveState('error')
       setNotice(
         error instanceof Error && error.message === 'revision_conflict'
@@ -179,7 +188,7 @@ export const PhotoSelectionEditor = forwardRef<
     } finally {
       saveInFlightRef.current = false
     }
-  }
+  }, [locale, mediaAssetIds, onDraftChange, publishing, revision])
 
   useImperativeHandle(
     ref,
@@ -196,6 +205,7 @@ export const PhotoSelectionEditor = forwardRef<
         void save([...mediaAssetIds, mediaAssetId])
       },
     }),
+    [assetById, mediaAssetIds, save],
   )
 
   function move(mediaAssetId: string, direction: -1 | 1) {
