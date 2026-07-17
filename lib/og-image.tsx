@@ -8,7 +8,6 @@ import type { ArchivedNewsletter } from './newsletters'
 import {
   coverDataUri,
   ogColors,
-  ogFonts,
   ogRuntimeFonts,
   OgPolaroid,
   OgSheet,
@@ -101,7 +100,7 @@ async function renderHomeOgImage(locale: Locale) {
         </div>
       </OgSheet>
     ),
-    { ...IMAGE_SIZE, fonts: await ogFonts(NAME + introduction) },
+    { ...IMAGE_SIZE, fonts: await ogRuntimeFonts() },
   ).arrayBuffer()
 }
 
@@ -344,7 +343,7 @@ async function renderSectionOgImage(section: PublicSection, locale: Locale) {
     ),
     {
       ...IMAGE_SIZE,
-      fonts: await ogFonts(signature + copy.title + copy.description),
+      fonts: await ogRuntimeFonts(),
     },
   ).arrayBuffer()
 }

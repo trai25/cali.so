@@ -15,6 +15,28 @@ const DURATION = 650
 const MIN_HIT = 44
 const SHELF_GAP = 1
 
+function waitForImageLoad(image: HTMLImageElement) {
+  if (image.complete) return Promise.resolve()
+
+  return new Promise<void>((resolve) => {
+    const finish = () => {
+      image.removeEventListener('load', finish)
+      image.removeEventListener('error', finish)
+      resolve()
+    }
+
+    image.addEventListener('load', finish)
+    image.addEventListener('error', finish)
+    if (image.complete) finish()
+  })
+}
+
+async function prepareImage(image: HTMLImageElement) {
+  image.loading = 'eager'
+  await waitForImageLoad(image)
+  if (image.naturalWidth > 0) await image.decode().catch(() => undefined)
+}
+
 // deterministic base lean 0.65–1.55°, alternating direction
 function baseLean(i: number, title: string): number {
   let h = 0
@@ -142,6 +164,10 @@ export function Bookshelf() {
   const bookRefs = useRef<Array<HTMLLIElement | null>>([])
   const controlRefs = useRef<Array<HTMLButtonElement | null>>([])
   const innerRefs = useRef<Array<HTMLSpanElement | null>>([])
+  const coverRefs = useRef<Array<HTMLImageElement | null>>([])
+  const coverReadyRef = useRef(books.map((book) => !book.art))
+  const coverPreparationRef = useRef<Array<Promise<void> | undefined>>([])
+  const selectionRequestRef = useRef(0)
   const boundsRef = useRef<Array<{ left: number; right: number }>>([])
   const pointerXRef = useRef<number | null>(null)
   const hoverRef = useRef<number | null>(null)
@@ -231,6 +257,25 @@ export function Bookshelf() {
     }
   }, [hoveredBook, setHoverOwner])
 
+  const prepareBookCover = useCallback((index: number) => {
+    if (coverReadyRef.current[index]) return Promise.resolve()
+
+    const image = coverRefs.current[index]
+    if (!image) return Promise.resolve()
+
+    const pending = coverPreparationRef.current[index]
+    if (pending) return pending
+
+    const preparation = prepareImage(image).finally(() => {
+      coverReadyRef.current[index] = true
+      if (coverPreparationRef.current[index] === preparation) {
+        coverPreparationRef.current[index] = undefined
+      }
+    })
+    coverPreparationRef.current[index] = preparation
+    return preparation
+  }, [])
+
   const settleOn = useCallback(
     (nextOpen: number, mode: 'animated' | 'instant' = 'animated') => {
       if (nextOpen === targetRef.current && frameRef.current) return
@@ -283,6 +328,21 @@ export function Bookshelf() {
     [applyPoses, hoveredBook, setHoverOwner, shouldReduceMotion],
   )
 
+  const selectBook = useCallback(
+    (nextOpen: number, mode: 'animated' | 'instant' = 'animated') => {
+      const request = ++selectionRequestRef.current
+      if (coverReadyRef.current[nextOpen]) {
+        settleOn(nextOpen, mode)
+        return
+      }
+
+      void prepareBookCover(nextOpen).then(() => {
+        if (selectionRequestRef.current === request) settleOn(nextOpen, mode)
+      })
+    },
+    [prepareBookCover, settleOn],
+  )
+
   useLayoutEffect(() => {
     applyPoses(progressRef.current, tiltRef.current)
     return () => {
@@ -298,6 +358,28 @@ export function Bookshelf() {
     observer.observe(viewport)
     return () => observer.disconnect()
   }, [updateShelfScale])
+
+  useEffect(() => {
+    const viewport = viewportRef.current
+    if (!viewport || !('IntersectionObserver' in window)) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return
+        books.forEach((_, index) => void prepareBookCover(index))
+        observer.disconnect()
+      },
+      { rootMargin: '320px 0px' },
+    )
+    observer.observe(viewport)
+    return () => observer.disconnect()
+  }, [prepareBookCover])
+
+  useEffect(() => {
+    return () => {
+      selectionRequestRef.current += 1
+    }
+  }, [])
 
   useEffect(() => {
     if (!shouldReduceMotion || !frameRef.current) return
@@ -329,10 +411,10 @@ export function Bookshelf() {
       if (nearest === clicked) return
       event.preventDefault()
       event.stopPropagation()
-      settleOn(nearest)
+      selectBook(nearest)
       controlRefs.current[nearest]?.focus()
     },
-    [nearestBook, pointerXInShelf, settleOn],
+    [nearestBook, pointerXInShelf, selectBook],
   )
 
   const handleShelfPointerMove = useCallback(
@@ -370,10 +452,10 @@ export function Bookshelf() {
       if (event.key === 'End') next = books.length - 1
       if (next === null) return
       event.preventDefault()
-      settleOn(next, 'instant')
+      selectBook(next, 'instant')
       controlRefs.current[next]?.focus()
     },
-    [settleOn],
+    [selectBook],
   )
 
   const handleShelfPointerLeave = useCallback(() => {
@@ -421,6 +503,9 @@ export function Bookshelf() {
               <span className="book3-cover" style={{ transform: `translateZ(${spine}px)` }}>
                 {book.art ? (
                   <Image
+                    ref={(node) => {
+                      coverRefs.current[i] = node
+                    }}
                     src={book.art}
                     alt=""
                     width={book.coverWidth ?? Math.round(nativeCoverWidth)}
@@ -479,7 +564,9 @@ export function Bookshelf() {
                     : localize(locale, '（选择）', '(select)')
                 }`}
                 onKeyDown={(event) => handleBookKeyDown(event, i)}
-                onClick={(event) => settleOn(i, event.detail === 0 ? 'instant' : 'animated')}
+                onPointerDown={() => void prepareBookCover(i)}
+                onFocus={() => void prepareBookCover(i)}
+                onClick={(event) => selectBook(i, event.detail === 0 ? 'instant' : 'animated')}
               >
                 {content}
               </button>

@@ -286,6 +286,15 @@ export function VinylShelf() {
 
     lastPointerPointRef.current = { x: event.clientX, y: event.clientY }
 
+    // Capture immediately so a quick touch swipe keeps delivering moves even
+    // after the finger leaves the clipped shelf. `touch-action: pan-y` still
+    // leaves vertical gestures to the page.
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId)
+    } catch {
+      // Pointer capture can fail if the UA has already claimed a gesture.
+    }
+
     // Mouse buttons focus on pointerdown. A shelf interaction should leave
     // page focus alone unless focus was already roving inside the shelf.
     if (event.pointerType === 'mouse' && !focusWasInside) event.preventDefault()
@@ -349,10 +358,11 @@ export function VinylShelf() {
     snapTo(Math.round(selectionPositionRef.current), 'animated', session.focusWasInside)
   }
 
-  function handleShelfPointerLeave() {
-    lastPointerPointRef.current = null
-
+  function handleShelfPointerLeave(event: React.PointerEvent<HTMLDivElement>) {
     const session = pointerSessionRef.current
+    if (session && event.currentTarget.hasPointerCapture(session.pointerId)) return
+
+    lastPointerPointRef.current = null
     if (session && session.intent !== 'horizontal') pointerSessionRef.current = null
 
     if (interactionPhaseRef.current === 'idle') setPointerOwnerIndex(null)

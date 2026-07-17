@@ -145,8 +145,9 @@ The Vercel runtime receives only the CRUD-only `DATABASE_URL`. Never put
 - This Next.js preview has breaking changes. Read the relevant bundled guide in
   `node_modules/next/dist/docs/` before changing framework behavior.
 - `turbopack.root` supports nested worktrees and must stay configured.
-- OG font subsetting dynamically imports `subset-font` to keep HarfBuzz WASM
-  out of Turbopack tracing. Preserve that boundary.
+- OG font subsetting runs only in the prebuild script. Runtime image routes
+  load the generated `FrexSansGB-OG-*.ttf` files so HarfBuzz WASM stays out of
+  Turbopack tracing. Preserve that boundary.
 - Raw stylesheet `backdrop-filter` is stripped by the CSS pipeline. The liquid
   dock owns its SVG filter as an inline style; ordinary blur uses Tailwind
   utilities.
