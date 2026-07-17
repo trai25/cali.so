@@ -18,10 +18,10 @@ const size = { width: 1200, height: 630 }
 describe('dynamic OG image metadata', () => {
   it('does not repeat Cali’s name in the homepage artwork description', () => {
     expect(chineseHomeAlt).toBe(
-      'Cali Castle。两个孩子的爸爸，也是一名热爱把细节做到刚刚好的设计工程师。',
+      'Cali Castle。设计工程师、Agent 指挥官、创意总监。',
     )
     expect(englishHomeAlt).toBe(
-      'Cali Castle. A father of two and a design engineer who loves getting the details just right.',
+      'Cali Castle. Design Engineer. Agent Orchestrator. Creative Director.',
     )
   })
 

@@ -122,10 +122,11 @@ are short, concrete, and conversational — "为什么按钮不需要手指光�
 ## Homepage introduction
 
 The homepage opens with four short bilingual paragraphs: Cali is a father of
-two and a design engineer who loves getting the details just right, Zolplay is
-introduced as an AI-native design studio creating products, brands, and digital
-experiences, a casual generalist note connects curiosity and craft to having
-fun with the team, and a final contact line links to X, GitHub, and email.
+two, a design engineer, and an agent orchestrator; he loves getting the details
+just right. Zolplay is introduced as an AI-native design studio creating
+products, brands, and digital experiences, a casual generalist note connects
+curiosity and craft to having fun with the team, and a final contact line links
+to X, GitHub, and email.
 Chinese also includes Xiaohongshu. Those inline contact triggers reuse the footer's
 fixed-size informational preview cards and remain plain destination links on
 touch. The personal sentence carries two decorative 18px

@@ -7,27 +7,19 @@ describe('server output tracing', () => {
     expect(nextConfig.outputFileTracingIncludes).toMatchObject({
       '/blog/**': expect.arrayContaining([
         './content/blog/**/*',
-        './app/_fonts/*.woff2',
-        './node_modules/harfbuzzjs/**/*',
-        './node_modules/subset-font/**/*',
+        './app/_fonts/FrexSansGB-OG-*.ttf',
       ]),
       '/en/blog/**': expect.arrayContaining([
         './content/blog/**/*',
-        './app/_fonts/*.woff2',
-        './node_modules/harfbuzzjs/**/*',
-        './node_modules/subset-font/**/*',
+        './app/_fonts/FrexSansGB-OG-*.ttf',
       ]),
       '/newsletters/**': expect.arrayContaining([
         './content/newsletters/**/*',
-        './app/_fonts/*.woff2',
-        './node_modules/harfbuzzjs/**/*',
-        './node_modules/subset-font/**/*',
+        './app/_fonts/FrexSansGB-OG-*.ttf',
       ]),
       '/en/newsletters/**': expect.arrayContaining([
         './content/newsletters/**/*',
-        './app/_fonts/*.woff2',
-        './node_modules/harfbuzzjs/**/*',
-        './node_modules/subset-font/**/*',
+        './app/_fonts/FrexSansGB-OG-*.ttf',
       ]),
       '/content/\\[\\.\\.\\.path\\]': [
         './content/blog/**/*',
