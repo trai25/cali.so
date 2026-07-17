@@ -2,16 +2,6 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { cacheLife } from 'next/cache'
 
-// Loaded outside the build graph: Turbopack chokes on harfbuzz's wasm when
-// subset-font gets bundled or traced (NftJsonAsset error), and
-// serverExternalPackages doesn't take here. Static OG helpers call this only
-// during the build, where node_modules is present. Dynamic metadata functions
-// use the generated runtime subsets below.
-async function loadSubsetFont() {
-  const mod = await import(/* turbopackIgnore: true */ 'subset-font')
-  return mod.default
-}
-
 // Design-language tokens resolved to sRGB for satori (no oklch support).
 // Sources: --paper / --paper-ink / --foreground / --muted-foreground /
 // --border in app/globals.css.
@@ -24,30 +14,6 @@ export const ogColors = {
 } as const
 
 const FONTS_DIR = path.join(process.cwd(), 'app/_fonts')
-
-// Frex Sans GB carries both the CJK and Latin glyphs OG images need, but
-// ships as a ~1.6MB woff2 satori can't read — subset to the exact text
-// (plus digits/punctuation) and convert to sfnt per image.
-export async function ogFonts(text: string) {
-  'use cache'
-  cacheLife('max')
-
-  const subsetFont = await loadSubsetFont()
-  const chars = text + '0123456789 ·，。…（）「」?？!！'
-  const [regular, semibold] = await Promise.all(
-    ['FrexSansGB-Regular.woff2', 'FrexSansGB-SemiBold.woff2'].map(async (file) =>
-      new Uint8Array(
-        await subsetFont(await readFile(path.join(FONTS_DIR, file)), chars, {
-          targetFormat: 'sfnt',
-        }),
-      ).buffer,
-    ),
-  )
-  return [
-    { name: 'Frex Sans GB', data: regular, weight: 400 as const, style: 'normal' as const },
-    { name: 'Frex Sans GB', data: semibold, weight: 600 as const, style: 'normal' as const },
-  ]
-}
 
 export async function ogRuntimeFonts() {
   'use cache'

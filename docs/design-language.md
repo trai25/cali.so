@@ -610,8 +610,10 @@ reduced motion. Decorative instances set `role="img"` + `aria-label` (or
 
 ## Static by default
 
-Blog, feeds, and OG images are statically generated. GitHub and YouTube social
-data revalidate on ISR timers and fall back to committed snapshots. Fonts are
-preloaded (except the CJK fallback, which loads on demand); above-the-fold images get
-`rel="preload"`. Page scrollbars are never customized; code-block scrollbars
+Blog and feeds are statically generated. OG images render from repository-owned
+inputs through the long-lived cached, same-origin `/og` route so custom staging
+aliases never advertise deployment-host assets. GitHub and YouTube social data
+revalidate on ISR timers and fall back to committed snapshots. Fonts are
+preloaded (except the CJK fallback, which loads on demand); above-the-fold images
+get `rel="preload"`. Page scrollbars are never customized; code-block scrollbars
 may be.

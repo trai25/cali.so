@@ -4,7 +4,8 @@ export const seo = {
   title: publicPageMetadata.home.zh.title,
   description: publicPageMetadata.home.zh.description,
   url: new URL(
-    process.env.NODE_ENV === 'production' ? 'https://cali.so' : 'http://localhost:3199',
+    process.env.SITE_URL ??
+      (process.env.NODE_ENV === 'production' ? 'https://cali.so' : 'http://localhost:3199'),
   ),
 } as const
 
