@@ -182,14 +182,18 @@ add BUNNY_RENDITIONS_PASSWORD
 add BUNNY_RENDITIONS_CDN_URL
 add BUNNY_CDN_API_KEY
 
-# Media enrichment — leave disabled until provider policy is approved.
-add MEDIA_GEOCODING_ENABLED
-add MEDIA_ALT_TEXT_ENABLED
+# Media enrichment. Both capabilities are enabled by default.
+add GOOGLE_MAPS_GEOCODING_API_KEY
+add MEDIA_ALT_TEXT_PRIMARY_MODEL
+add MEDIA_ALT_TEXT_FALLBACK_MODEL
+add MEDIA_ALT_TEXT_TIMEOUT_MS
+add MEDIA_ALT_TEXT_MAX_RETRIES
+add MEDIA_ALT_TEXT_RATE_LIMIT_MAX_REQUESTS
+add MEDIA_ALT_TEXT_RATE_LIMIT_WINDOW_SECONDS
 ```
 
-The remaining `MEDIA_ALT_TEXT_*` and `BUNNY_STORAGE_CONTRACT_*` values are
-needed only when Alt Text generation and the live storage contract are turned
-on; consult `.env.example` and `docs/media/ai-provider-policy.md` first.
+The `BUNNY_STORAGE_CONTRACT_*` values are needed only for the live storage
+contract; consult `.env.example` and `docs/media/ai-provider-policy.md` first.
 
 ## 5. Dashboard-only checks
 

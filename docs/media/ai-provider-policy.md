@@ -1,7 +1,7 @@
 # Media Alt Text Suggestion provider policy
 
-Status: approved for Staging on 2026-07-17; pending owner approval for
-Production use.
+Status: approved for deployed use on 2026-07-17. The capability is enabled by
+default and has no runtime feature switch.
 
 This policy covers only Alt Text Suggestion generation for the Media Library.
 It does not authorize other image analysis, captions, tagging, search, or
@@ -28,9 +28,9 @@ Location, Location Label, or camera metadata.
 
 The application requests AI Gateway Zero Data Retention and disallows routing
 to providers that train on prompts. Gateway content logging must remain off.
-The provider and Gateway terms still need an owner review covering retention,
-training, subprocessors, regional processing, and incident handling before the
-production feature flag is approved.
+The owner review covers retention, training, subprocessors, regional
+processing, and incident handling. Deployments must continue to satisfy the
+data and credential boundaries below.
 
 ## Credentials and controls
 
@@ -48,12 +48,8 @@ owner-approved Alt Text, and manual Alt Text remains available without AI.
 
 ## Provider approval
 
-AI generation in every environment stays disabled until this policy is
-reviewed and `MEDIA_ALT_TEXT_PROVIDER_POLICY_APPROVED=true` is set together
-with `MEDIA_ALT_TEXT_ENABLED=true`.
-
-The owner approved Staging use on 2026-07-17 with these restrictions: Vercel
+The owner approved deployed use on 2026-07-17 with these restrictions: Vercel
 AI Gateway OIDC only, no static Gateway or provider credentials, Gateway
 content logging off, Zero Data Retention and prompt-training prohibition
-requested on every generation, the existing owner limit of 10 requests per
-hour, and no Production enablement without a separate approval.
+requested on every generation, and the existing owner limit of 10 requests per
+hour.

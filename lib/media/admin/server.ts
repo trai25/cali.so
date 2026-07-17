@@ -90,30 +90,27 @@ function createServices() {
     storage,
   })
   const altTextConfig = parseMediaAltTextEnv(process.env)
-  const altText = altTextConfig.enabled
-    ? createMediaAltTextService({
-        repository: createMediaAltTextRepository(database),
-        storage,
-        generator: createMediaAltTextGenerator(altTextConfig),
-        rateLimiter: createRateLimiter(environment.rateLimitBackend, {
-          prefix: 'cali:media:alt-text',
-          maxRequests: altTextConfig.rateLimitMaxRequests,
-          windowSeconds: altTextConfig.rateLimitWindowSeconds,
+  const altText = createMediaAltTextService({
+    repository: createMediaAltTextRepository(database),
+    storage,
+    generator: createMediaAltTextGenerator(altTextConfig),
+    rateLimiter: createRateLimiter(environment.rateLimitBackend, {
+      prefix: 'cali:media:alt-text',
+      maxRequests: altTextConfig.rateLimitMaxRequests,
+      windowSeconds: altTextConfig.rateLimitWindowSeconds,
+    }),
+  })
+
+  const geocodingConfig = parseMediaGeocodingEnv(process.env)
+  const geocoding = geocodingConfig.apiKey
+    ? createMediaGeocodingService({
+        repository: createMediaGeocodingRepository(database),
+        captureLocationVault,
+        suggester: createGoogleMapsLocationLabelSuggester({
+          apiKey: geocodingConfig.apiKey,
         }),
       })
     : null
-
-  const geocodingConfig = parseMediaGeocodingEnv(process.env)
-  const geocoding =
-    geocodingConfig.enabled && geocodingConfig.apiKey
-      ? createMediaGeocodingService({
-          repository: createMediaGeocodingRepository(database),
-          captureLocationVault,
-          suggester: createGoogleMapsLocationLabelSuggester({
-            apiKey: geocodingConfig.apiKey,
-          }),
-        })
-      : null
   const reconciliation = createMediaReconciliationService({
     repository: createMediaReconciliationRepository(database),
     ingestion,
