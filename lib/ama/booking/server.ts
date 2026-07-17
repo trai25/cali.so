@@ -204,7 +204,7 @@ function createServices() {
     clock,
   })
   const guard = createPublicRequestGuard({
-    baseUrl: environment.SITE_URL,
+    baseUrl: environment.browserMutationBaseUrl,
     rateLimiter: createRateLimiter(environment.rateLimitBackend, {
       prefix: 'cali:ama:public-mutation',
       maxRequests: environment.AMA_PUBLIC_RATE_LIMIT_MAX_REQUESTS,

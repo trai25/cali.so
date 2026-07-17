@@ -58,6 +58,73 @@ describe('AMA server environment', () => {
     })
   })
 
+  it('uses the Vercel deployment origin for Preview mutations', () => {
+    const environment = parseServerEnv({
+      ...validEnvironment,
+      VERCEL_ENV: 'preview',
+      VERCEL_URL: 'cali-preview-cali.vercel.app',
+    })
+
+    expect(environment.SITE_URL.href).toBe('https://cali.so/')
+    expect(environment.browserMutationBaseUrl.href).toBe(
+      'https://cali-preview-cali.vercel.app/',
+    )
+  })
+
+  it.each([undefined, ''])(
+    'rejects Preview without a trusted Vercel deployment hostname',
+    (VERCEL_URL) => {
+      expect(() =>
+        parseServerEnv({
+          ...validEnvironment,
+          VERCEL_ENV: 'preview',
+          VERCEL_URL,
+        }),
+      ).toThrowError(/VERCEL_URL/)
+    },
+  )
+
+  it('derives the Preview site URL when no canonical URL is configured', () => {
+    const { SITE_URL: _siteUrl, ...withoutSiteUrl } = validEnvironment
+    const environment = parseServerEnv({
+      ...withoutSiteUrl,
+      VERCEL_ENV: 'preview',
+      VERCEL_URL: 'cali-preview-cali.vercel.app',
+    })
+
+    expect(environment.SITE_URL.href).toBe(
+      'https://cali-preview-cali.vercel.app/',
+    )
+    expect(environment.browserMutationBaseUrl.href).toBe(
+      environment.SITE_URL.href,
+    )
+  })
+
+  it('requires a canonical site URL outside Preview', () => {
+    const { SITE_URL: _siteUrl, ...withoutSiteUrl } = validEnvironment
+
+    expect(() => parseServerEnv(withoutSiteUrl)).toThrowError(/SITE_URL/)
+  })
+
+  it('keeps Production mutations pinned to the canonical site', () => {
+    const environment = parseServerEnv({
+      ...validEnvironment,
+      VERCEL_URL: 'cali-production-cali.vercel.app',
+    })
+
+    expect(environment.browserMutationBaseUrl.href).toBe('https://cali.so/')
+  })
+
+  it('rejects untrusted Vercel deployment host overrides', () => {
+    expect(() =>
+      parseServerEnv({
+        ...validEnvironment,
+        VERCEL_ENV: 'preview',
+        VERCEL_URL: 'cali-preview.vercel.app.attacker.example',
+      }),
+    ).toThrowError(/VERCEL_URL/)
+  })
+
   it('treats Google as unconfigured without its credential pair', () => {
     const {
       GOOGLE_CLIENT_ID: _clientId,
@@ -116,7 +183,11 @@ describe('AMA server environment', () => {
     } = validEnvironment
 
     expect(
-      parseServerEnv({ ...withoutUpstash, VERCEL_ENV: 'preview' })
+      parseServerEnv({
+        ...withoutUpstash,
+        VERCEL_ENV: 'preview',
+        VERCEL_URL: 'cali-preview-cali.vercel.app',
+      })
         .rateLimitBackend,
     ).toEqual({ kind: 'database' })
   })
@@ -130,6 +201,7 @@ describe('AMA server environment', () => {
     const previewEnvironment = parseServerEnv({
       ...withoutUpstash,
       VERCEL_ENV: 'preview',
+      VERCEL_URL: 'cali-preview-cali.vercel.app',
       KV_REST_API_URL: 'https://marketplace.upstash.io',
       KV_REST_API_TOKEN: 'marketplace-secret',
       KV_REST_API_READ_ONLY_TOKEN: 'marketplace-read-only-secret',

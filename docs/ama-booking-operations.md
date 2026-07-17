@@ -18,7 +18,7 @@ startup with field names only. `.env.example` mirrors this table.
 | `ADMIN_EMAIL` | always | Owner data namespace and Google Calendar owner. |
 | `AMA_ENCRYPTION_KEY` | always | 32-byte base64 key: Google refresh-token envelopes and Manage Link token derivation. |
 | `RATE_LIMIT_HASH_KEY` | always | 32-byte base64 key pseudonymizing rate-limit and audit actors, including public booking clients. |
-| `SITE_URL` | always | Canonical public origin. Anchors same-origin mutation checks, Stripe return URLs, and Manage Link URLs. |
+| `SITE_URL` | always | Canonical public origin for Production links and provider return URLs. Vercel Preview and Staging mutation checks use Vercel's system-provided deployment URL so same-origin writes work on ephemeral deployment hosts. |
 | `CRON_SECRET` | scheduled work | Bearer secret for `/api/internal/ama/work` (and media reconcile). Vercel injects it for cron invocations. |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | availability + calendar | OAuth client for free/busy and calendar event writes. Slots and meeting creation are unavailable until configured. |
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | payments | Checkout Session and refund API access; the webhook secret signs `/api/ama/stripe/webhook` (the webhook, never the return URL, is authoritative for payment). Checkout and webhook routes return 503 until configured. |
