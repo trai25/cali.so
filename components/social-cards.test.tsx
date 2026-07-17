@@ -21,13 +21,16 @@ describe('X hover card', () => {
     const { container } = render(<XCardBody data={social.x} />)
 
     expect(container.textContent).toContain(
+      '爸爸、Agent 指挥官、设计工程师、@raycast 大使。',
+    )
+    expect(container.textContent).toContain(
       'a dad. an agent orchestrator. a design engineer. a @raycast ambassador.',
     )
     expect(container.textContent).toContain(
       'creative director & founder at @zolplay.',
     )
-    expect(container.textContent).toContain('27,419')
-    expect(container.textContent).toContain('633')
+    expect(container.textContent).toContain(social.x.followers)
+    expect(container.textContent).toContain(social.x.following)
     expect(container.textContent).toContain('followers')
     expect(container.textContent).toContain('following')
   })
