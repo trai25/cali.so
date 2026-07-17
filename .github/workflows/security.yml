@@ -42,11 +42,6 @@ jobs:
       BUNNY_RENDITIONS_PASSWORD: ci-renditions-password
       BUNNY_RENDITIONS_CDN_URL: https://media-ci.example.com
       BUNNY_CDN_API_KEY: ci-cdn-api-key
-      AMA_PUBLIC_MUTATIONS_ENABLED: "false"
-      AMA_PAYMENTS_ENABLED: "false"
-      AMA_BOOKING_FINALIZATION_ENABLED: "false"
-      AMA_GOOGLE_INTEGRATION_ENABLED: "false"
-      AMA_TENCENT_INTEGRATION_ENABLED: "false"
     steps:
       - name: Check out repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1

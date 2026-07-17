@@ -56,9 +56,9 @@ them in the dashboard: GitHub must create or select the Neon branch, migrate it,
 and only then call Vercel. Configure the hosted environments and rename the
 branch before merging this automation change into `dev`. That merge is the
 first Staging workflow run and applies all pending migrations, including
-`0010`, before deploying. Use GitHub's job rerun for a failed activation; the
-manual Staging dispatch becomes available after the workflow reaches the
-default branch.
+`0010` and `0011`, before deploying. Use GitHub's job rerun for a failed
+activation; the manual Staging dispatch becomes available after the workflow
+reaches the default branch.
 
 Verify `/admin/media` and `/admin/photos` on Staging after the workflow is green.
 Feature pushes should create `preview/<git-branch>` once, preserve it across
@@ -91,13 +91,10 @@ JSON
 
 ## 3. Isolate Staging, Preview, and Production credentials
 
-- The v3 app no longer uses Resend. Remove the legacy key from Preview rather
-  than creating another key. Keep its Production assignment only while the
-  historical site is live, then remove it after cutover:
-
-  ```bash
-  npx vercel env rm RESEND_API_KEY preview $SCOPE
-  ```
+- AMA provider capabilities follow complete credential pairs and fail closed
+  while a pair is absent. Use non-production Google, Stripe, Resend, and Tencent
+  credentials in Preview and Staging when those flows need hosted testing;
+  never copy their Production credentials into non-production environments.
 
 - Redis is Production-only. In the dashboard's Storage tab, change the
   existing Upstash integration to target Production only, or remove the
@@ -106,10 +103,11 @@ JSON
   Redis store: Staging and Preview rate limits use their isolated Neon
   branches.
 
-- The first successful Staging workflow applies migration `0010` with the
-  separately scoped GitHub migration role before deployment. Verify the
-  Staging runtime role can only select, insert, update, and delete
-  `rate_limit_windows`; it must not own the table or receive DDL privileges.
+- The first successful Staging workflow applies migrations `0010` and `0011`
+  with the separately scoped GitHub migration role before deployment. Verify
+  the Staging runtime role has only required CRUD access to
+  `rate_limit_windows` and the AMA booking tables; it must not own tables or
+  receive DDL privileges.
   Staging and Preview have no Redis fallback: if the table or grants are missing,
   rate-limited admin mutations fail closed with 503. Because the Redis
   variables are already absent, do not count mutation checks as passed
@@ -153,6 +151,8 @@ add MEDIA_ENCRYPTION_KEY     # openssl rand -hex 32
 # Rate limits (values from .env.example defaults unless tuned).
 add ADMIN_MUTATION_RATE_LIMIT_MAX_REQUESTS
 add ADMIN_MUTATION_RATE_LIMIT_WINDOW_SECONDS
+add AMA_PUBLIC_RATE_LIMIT_MAX_REQUESTS
+add AMA_PUBLIC_RATE_LIMIT_WINDOW_SECONDS
 
 # Redis rate-limit backend: Production only. A Vercel Marketplace integration
 # may inject KV_REST_API_URL and KV_REST_API_TOKEN instead; configure one
@@ -160,8 +160,16 @@ add ADMIN_MUTATION_RATE_LIMIT_WINDOW_SECONDS
 add UPSTASH_REDIS_REST_URL
 add UPSTASH_REDIS_REST_TOKEN
 
-# The five optional AMA capability switches default to false when absent.
-# If you set them for operational visibility, enter the literal value `false`.
+# AMA provider capabilities use complete credential pairs and fail closed while
+# absent. Configure only the providers intended for the Production launch.
+add GOOGLE_CLIENT_ID
+add GOOGLE_CLIENT_SECRET
+add STRIPE_SECRET_KEY
+add STRIPE_WEBHOOK_SECRET
+add RESEND_API_KEY
+add AMA_EMAIL_FROM
+add TENCENT_MEETING_MCP_URL
+add TENCENT_MEETING_MCP_TOKEN
 
 # Bunny media storage (production zones, not the preview zones).
 add BUNNY_MEDIA_REGION
@@ -200,7 +208,7 @@ to `main` then starts `Deploy Production`. The no-secret
 after it succeeds can the separately protected `production` environment expose
 the migration credential and record the second approval.
 
-The workflow hash-locks reviewed migrations `0001` through `0010` and rejects
+The workflow hash-locks reviewed migrations `0001` through `0011` and rejects
 any modification or deletion. Future migrations fail closed unless every SQL
 statement is an explicitly allowed expand operation: create a new table, type,
 sequence, view, function, or non-unique index; add a nullable column; add a

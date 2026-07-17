@@ -154,8 +154,8 @@ test('allows only newly added migration files in a Production release', () => {
   )
 })
 
-test('admits the exact reviewed initial migration baseline without weakening future checks', async () => {
-  const path = 'db/migrations/0009_media_catalog_state.sql'
+test('admits the exact reviewed migration baseline without weakening future checks', async () => {
+  const path = 'db/migrations/0011_ama_booking_system.sql'
   const sql = await readFile(path, 'utf8')
   assert.deepEqual(productionMigrationFindings(path, sql), [])
   assert.throws(

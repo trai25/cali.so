@@ -6,9 +6,9 @@ use GitHub private vulnerability reporting.
 
 Owner admin is an always-available control plane for Media and AMA operations.
 It has no environment kill switch: Clerk authentication plus the exact
-server-checked `publicMetadata.siteOwner = "yes"` marker protects access. The
-five AMA switches cover only public mutations, payments, booking finalization,
-Google, and Tencent; an absent switch is deliberately equivalent to `false`.
+server-checked `publicMetadata.siteOwner = "yes"` marker protects access. AMA
+has no capability switches: provider-backed capabilities require complete
+credential pairs and fail closed while their pair is absent.
 
 ## Local repository
 
@@ -94,17 +94,15 @@ Project API checks on 2026-07-16 verified:
   isolated `preview/<git-branch>` children.
 - [x] Committed Vercel configuration disables Git deployments; hosted proof
   requires a GitHub-controlled Staging and Preview deployment after setup.
-- [x] Preview explicitly sets all five optional AMA capability switches to
-  `false`. Owner admin has no capability switch and remains protected by Clerk
-  authentication plus the exact server-side `siteOwner: "yes"` marker.
-- [x] Production omits the five optional AMA capability switches, which is the
-  schema's documented fail-closed state. Explicit `false` values are optional,
-  not a launch requirement.
+- [x] The former AMA capability switches are absent. Owner admin remains
+  protected by Clerk plus the exact server-side `siteOwner: "yes"` marker;
+  provider-backed capabilities follow complete environment-specific credential
+  pairs and fail closed while absent.
 - [x] Preview uses an isolated non-production Clerk instance. A normal-browser
   request to `/admin` reaches its sign-in UI, while direct non-browser requests
   remain fail closed.
-- [x] The unused `RESEND_API_KEY` is absent from Preview. Keep the legacy
-  Production Resend key only until the historical site is cut over.
+- [ ] Configure an isolated Preview Resend credential pair only when hosted AMA
+  finalization and transactional email testing is required.
 - [ ] Apply migration `0010` to the Preview Neon branch and grant its runtime
   role CRUD-only access to `rate_limit_windows`. This remote database check
   requires two fresh confirmations. Preview unconditionally selects the

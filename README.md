@@ -23,7 +23,7 @@ general-purpose blog template.
 - A Bunny-backed Media Library with owner review and curation in admin; its
   active Published Photo Selection powers `/photos` and the homepage preview
   while private Originals remain server-only
-- CSP, same-origin mutation checks, rate limits, capability kill switches,
+- CSP, same-origin mutation checks, rate limits, fail-closed provider controls,
   security automation, and isolated Staging, Preview, and Production credentials
 
 The public route and launch contract is tracked in

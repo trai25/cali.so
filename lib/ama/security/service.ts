@@ -11,6 +11,12 @@ import {
 import { createSecurityAuditRecorder } from './audit'
 
 export type PrivilegedAuditEvent =
+  | 'ama_booking.cancelled'
+  | 'ama_booking.rescheduled'
+  | 'ama_booking.refund_exception_granted'
+  | 'ama_operation.retried'
+  | 'ama_operation.resolved'
+  | 'ama_time_request.resolved'
   | 'availability_mutation.succeeded'
   | 'google_connect.started'
   | 'google_callback.completed'

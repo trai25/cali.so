@@ -44,6 +44,10 @@ const reviewedMigrationDigests = new Map([
     'db/migrations/0010_rate_limit_windows.sql',
     '02868db5c548947ccd50bd8fa2a84c0507128bc97d1c5932dca990fb3f7cc289',
   ],
+  [
+    'db/migrations/0011_ama_booking_system.sql',
+    '6f0952e9bb809738875ae1eb1d4276ae91b97dc7b78de828f69ab3200b6d7cb4',
+  ],
 ])
 
 function dollarDelimiterAt(sql, index) {
@@ -471,7 +475,7 @@ export function productionMigrationFindings(path, sql) {
   if (reviewedDigest) {
     const digest = createHash('sha256').update(sql).digest('hex')
     if (digest !== reviewedDigest) {
-      throw new Error(`Reviewed initial migration is immutable: ${path}`)
+      throw new Error(`Reviewed migration is immutable: ${path}`)
     }
     return []
   }
