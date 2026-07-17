@@ -3,7 +3,7 @@
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { useDockGoShortcuts } from './use-dock-go-shortcuts'
+import { GO_TIMEOUT_MS, useDockGoShortcuts } from './use-dock-go-shortcuts'
 
 const push = vi.fn()
 const playDockSound = vi.fn()
@@ -29,9 +29,13 @@ function Harness({
   return null
 }
 
-function keydown(key: string, target: HTMLElement = document.body) {
+function keydown(
+  key: string,
+  target: HTMLElement = document.body,
+  init: KeyboardEventInit = {},
+) {
   target.dispatchEvent(
-    new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }),
+    new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init }),
   )
 }
 
@@ -90,8 +94,17 @@ describe('useDockGoShortcuts', () => {
     render(<Harness />)
 
     keydown('g')
-    vi.advanceTimersByTime(1000)
+    vi.advanceTimersByTime(GO_TIMEOUT_MS)
     keydown('h')
+
+    expect(push).not.toHaveBeenCalled()
+  })
+
+  it('ignores shifted letter keys while a chord is pending', () => {
+    render(<Harness />)
+
+    keydown('g')
+    keydown('H', document.body, { shiftKey: true })
 
     expect(push).not.toHaveBeenCalled()
   })

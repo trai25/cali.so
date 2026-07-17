@@ -31,10 +31,10 @@ const buttonVariants = cva(
       size: {
         sm: "px-3 py-[5px] gap-1",
         md: "px-3 py-[5px] gap-1.5",
-        lg: "px-3 py-[5px] gap-1.5",
+        lg: "px-4 py-1.5 gap-2",
         "icon-sm": "p-[5px] [&_svg]:h-3.5 [&_svg]:w-3.5",
         icon: "p-[5px] [&_svg]:h-4 [&_svg]:w-4",
-        "icon-lg": "p-[5px] [&_svg]:h-5 [&_svg]:w-5",
+        "icon-lg": "p-1.5 [&_svg]:h-5 [&_svg]:w-5",
       },
       iconLeft: { true: "" },
       iconRight: { true: "" },
@@ -42,10 +42,10 @@ const buttonVariants = cva(
     compoundVariants: [
       { size: "sm", iconLeft: true, className: "pl-1.5" },
       { size: "md", iconLeft: true, className: "pl-1.5" },
-      { size: "lg", iconLeft: true, className: "pl-1.5" },
+      { size: "lg", iconLeft: true, className: "pl-2" },
       { size: "sm", iconRight: true, className: "pr-1.5" },
       { size: "md", iconRight: true, className: "pr-1.5" },
-      { size: "lg", iconRight: true, className: "pr-1.5" },
+      { size: "lg", iconRight: true, className: "pr-2" },
     ],
     defaultVariants: {
       variant: "primary",

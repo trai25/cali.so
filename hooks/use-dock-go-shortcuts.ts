@@ -6,7 +6,7 @@ import { useEffect, useRef } from 'react'
 import { localePath, type Locale } from '~/lib/locale-route'
 import { playDockSound } from '~/lib/sound'
 
-const GO_TIMEOUT_MS = 1000
+export const GO_TIMEOUT_MS = 1000
 
 /** G then <key> → unlocalized dock route (GitHub-style). */
 export const DOCK_GO_SHORTCUTS: Record<string, string> = {
@@ -82,7 +82,7 @@ export function useDockGoShortcuts({
     }
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.metaKey || event.ctrlKey || event.altKey) {
+      if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) {
         clearPending()
         return
       }
