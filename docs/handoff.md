@@ -65,7 +65,9 @@ Current as of July 2026.
   privacy-safe audit events, isolated credentials, and security automation.
 - The Bunny-backed Media Library in ADR-0007 owns the curated photo workflow.
   Private Originals stay server-only, while `/photos` and homepage previews
-  consume the active Published Photo Selection from Bunny Renditions.
+  consume the active Published Photo Selection from Bunny Renditions. Media
+  capabilities have no runtime feature switches: Alt Text Suggestions are on
+  by default, and Location Label suggestions follow their provider credential.
 
 ## Launch gates
 
@@ -155,6 +157,9 @@ The Vercel runtime receives only the CRUD-only `DATABASE_URL`. Never put
 - AMA has no capability switches: capabilities are on by default, and each
   provider capability follows its credential pair (complete or absent; a
   half pair fails startup). Owner admin has no capability switch either.
+- Media has no capability switches. Alt Text Suggestions are always on;
+  Location Label suggestions use Google Maps whenever its server credential is
+  configured, while manual labels remain available without it.
 - Design references are private. Public code and documentation use only the
   vocabulary in `docs/design-language.md`.
 - Local builds validate the full server environment. Keep `.env.local`

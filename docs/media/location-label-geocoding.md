@@ -1,8 +1,9 @@
 # Media Location Label geocoding
 
-Location Label suggestions are an optional owner-only Media Library feature.
-They are disabled unless `MEDIA_GEOCODING_ENABLED=true` and a server-restricted
-`GOOGLE_MAPS_GEOCODING_API_KEY` is present.
+Location Label suggestions are an owner-only Media Library capability enabled
+by default. They use a server-restricted `GOOGLE_MAPS_GEOCODING_API_KEY`; when
+the credential is absent, only the external provider is unavailable and manual
+Location Label editing continues to work.
 
 The application decrypts a Media Asset's private Capture Location only after
 the owner requests a suggestion. It sends the coordinates directly to the

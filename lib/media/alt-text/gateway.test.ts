@@ -15,20 +15,20 @@ vi.mock('ai', async (importOriginal) => ({
 import { altTextSuggestionSchema, createMediaAltTextGenerator } from './gateway'
 
 const config = {
-  primaryModel: 'google/gemini-3.1-flash-lite',
-  fallbackModel: 'anthropic/claude-haiku-4.5',
+  primaryModel: 'openai/gpt-5.6-luna',
+  fallbackModel: 'openai/gpt-5.4-mini',
   timeoutMs: 12_000,
   maxRetries: 1,
 }
 
 describe('Media Library AI Gateway Alt Text Suggestion generator', () => {
-  it('uses structured output, cross-provider fallback, and privacy controls', async () => {
+  it('uses structured output, model fallback, and privacy controls', async () => {
     generateTextMock.mockResolvedValueOnce({
       output: {
         zhHans: '一辆红白相间的缆车沿城市街道行驶。',
         en: 'A red and white cable car travels along a city street.',
       },
-      response: { modelId: 'anthropic/claude-haiku-4.5' },
+      response: { modelId: 'openai/gpt-5.4-mini' },
     })
     const bytes = new Uint8Array([255, 216, 255, 217])
     const generator = createMediaAltTextGenerator(config)
@@ -36,7 +36,7 @@ describe('Media Library AI Gateway Alt Text Suggestion generator', () => {
     await expect(
       generator.generate({ ownerUserId: 'user_owner', imageBytes: bytes }),
     ).resolves.toMatchObject({
-      model: 'anthropic/claude-haiku-4.5',
+      model: 'openai/gpt-5.4-mini',
       zhHans: expect.any(String),
       en: expect.any(String),
     })

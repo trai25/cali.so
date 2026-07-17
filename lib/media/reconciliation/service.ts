@@ -62,7 +62,7 @@ type Dependencies = {
       ownerUserId: string
       mediaAssetId: string
     }): Promise<unknown>
-  } | null
+  }
   clock?: { now(): Date }
 }
 
@@ -74,13 +74,11 @@ export function createMediaReconciliationService({
   clock = { now: () => new Date() },
 }: Dependencies) {
   async function generateAltText(ownerUserId: string, mediaAssetId: string) {
-    if (!altText) return false
     await repository.markAltTextSuggestionAttempted({
       mediaAssetId,
       attemptedAt: clock.now(),
     })
     await altText.generateSuggestion({ ownerUserId, mediaAssetId })
-    return true
   }
 
   return {
@@ -133,9 +131,8 @@ export function createMediaReconciliationService({
             resumed += 1
             try {
               attemptedAltText.add(asset.id)
-              if (await generateAltText(candidate.ownerUserId, asset.id)) {
-                suggested += 1
-              }
+              await generateAltText(candidate.ownerUserId, asset.id)
+              suggested += 1
             } catch {
               failed += 1
             }
@@ -145,25 +142,22 @@ export function createMediaReconciliationService({
         }
       }
 
-      if (altText) {
-        let missing: Array<{ ownerUserId: string; mediaAssetId: string }>
+      let missing: Array<{ ownerUserId: string; mediaAssetId: string }>
+      try {
+        missing = await repository.listReadyWithoutAltTextSuggestion(
+          BATCH_SIZE,
+        )
+      } catch {
+        failed += 1
+        return { resumed, cleaned, suggested, failed }
+      }
+      for (const asset of missing) {
+        if (attemptedAltText.has(asset.mediaAssetId)) continue
         try {
-          missing = await repository.listReadyWithoutAltTextSuggestion(
-            BATCH_SIZE,
-          )
+          await generateAltText(asset.ownerUserId, asset.mediaAssetId)
+          suggested += 1
         } catch {
           failed += 1
-          return { resumed, cleaned, suggested, failed }
-        }
-        for (const asset of missing) {
-          if (attemptedAltText.has(asset.mediaAssetId)) continue
-          try {
-            if (await generateAltText(asset.ownerUserId, asset.mediaAssetId)) {
-              suggested += 1
-            }
-          } catch {
-            failed += 1
-          }
         }
       }
 

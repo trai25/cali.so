@@ -1,27 +1,8 @@
 import { z } from 'zod'
 
-const featureSwitch = z
-  .enum(['true', 'false'])
-  .default('false')
-  .transform((value) => value === 'true')
-
-const schema = z
-  .object({
-    MEDIA_GEOCODING_ENABLED: featureSwitch,
-    GOOGLE_MAPS_GEOCODING_API_KEY: z.string().trim().min(1).optional(),
-  })
-  .superRefine((environment, context) => {
-    if (
-      environment.MEDIA_GEOCODING_ENABLED &&
-      !environment.GOOGLE_MAPS_GEOCODING_API_KEY
-    ) {
-      context.addIssue({
-        code: 'custom',
-        path: ['GOOGLE_MAPS_GEOCODING_API_KEY'],
-        message: 'Google Maps Geocoding requires a server credential',
-      })
-    }
-  })
+const schema = z.object({
+  GOOGLE_MAPS_GEOCODING_API_KEY: z.string().trim().min(1).optional(),
+})
 
 export function parseMediaGeocodingEnv(
   source: Record<string, string | undefined>,
@@ -36,7 +17,6 @@ export function parseMediaGeocodingEnv(
     throw new Error(`Invalid Media Geocoding environment: ${fields.join(', ')}`)
   }
   return {
-    enabled: result.data.MEDIA_GEOCODING_ENABLED,
     apiKey: result.data.GOOGLE_MAPS_GEOCODING_API_KEY,
   }
 }

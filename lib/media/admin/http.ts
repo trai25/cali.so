@@ -363,13 +363,12 @@ export function createMediaAltTextHandler(
         ownerUserId: string
         mediaAssetId: string
       }): Promise<unknown>
-    } | null
+    }
   },
 ) {
   return async function POST(request: Request, mediaAssetId: string) {
     const access = await authenticate(dependencies, request, true)
     if ('response' in access) return access.response
-    if (!dependencies.altText) return json(503, { error: 'feature_disabled' })
     try {
       const suggestion = await dependencies.altText.generateSuggestion({
         ownerUserId: access.principal.id,
@@ -402,7 +401,7 @@ export function createMediaLocationLabelHandler(
     const access = await authenticate(dependencies, request, true)
     if ('response' in access) return access.response
     if (!dependencies.geocoding) {
-      return json(503, { error: 'feature_disabled' })
+      return json(503, { error: 'provider_not_configured' })
     }
     audit(
       dependencies,
