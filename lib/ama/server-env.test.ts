@@ -71,6 +71,19 @@ describe('AMA server environment', () => {
     )
   })
 
+  it.each([undefined, ''])(
+    'rejects Preview without a trusted Vercel deployment hostname',
+    (VERCEL_URL) => {
+      expect(() =>
+        parseServerEnv({
+          ...validEnvironment,
+          VERCEL_ENV: 'preview',
+          VERCEL_URL,
+        }),
+      ).toThrowError(/VERCEL_URL/)
+    },
+  )
+
   it('keeps Production mutations pinned to the canonical site', () => {
     const environment = parseServerEnv({
       ...validEnvironment,
@@ -148,7 +161,11 @@ describe('AMA server environment', () => {
     } = validEnvironment
 
     expect(
-      parseServerEnv({ ...withoutUpstash, VERCEL_ENV: 'preview' })
+      parseServerEnv({
+        ...withoutUpstash,
+        VERCEL_ENV: 'preview',
+        VERCEL_URL: 'cali-preview-cali.vercel.app',
+      })
         .rateLimitBackend,
     ).toEqual({ kind: 'database' })
   })
@@ -162,6 +179,7 @@ describe('AMA server environment', () => {
     const previewEnvironment = parseServerEnv({
       ...withoutUpstash,
       VERCEL_ENV: 'preview',
+      VERCEL_URL: 'cali-preview-cali.vercel.app',
       KV_REST_API_URL: 'https://marketplace.upstash.io',
       KV_REST_API_TOKEN: 'marketplace-secret',
       KV_REST_API_READ_ONLY_TOKEN: 'marketplace-read-only-secret',

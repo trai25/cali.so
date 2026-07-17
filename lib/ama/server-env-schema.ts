@@ -172,6 +172,7 @@ const serverEnvironmentSchema = z
         KV_REST_API_URL,
         KV_REST_API_TOKEN,
         VERCEL_ENV,
+        VERCEL_URL,
         GOOGLE_CLIENT_ID,
         GOOGLE_CLIENT_SECRET,
         STRIPE_SECRET_KEY,
@@ -183,6 +184,14 @@ const serverEnvironmentSchema = z
       },
       context,
     ) => {
+      if (VERCEL_ENV === 'preview' && !VERCEL_URL) {
+        context.addIssue({
+          code: 'custom',
+          path: ['VERCEL_URL'],
+          message: 'Vercel Preview requires its trusted deployment hostname',
+        })
+      }
+
       const upstashPairComplete = Boolean(
         UPSTASH_REDIS_REST_URL && UPSTASH_REDIS_REST_TOKEN,
       )
@@ -277,8 +286,8 @@ const serverEnvironmentSchema = z
     }) => ({
       ...environment,
       browserMutationBaseUrl:
-        VERCEL_ENV === 'preview' && VERCEL_URL
-          ? new URL(`https://${VERCEL_URL}`)
+        VERCEL_ENV === 'preview'
+          ? new URL(`https://${VERCEL_URL!}`)
           : environment.SITE_URL,
       rateLimitBackend:
         VERCEL_ENV === 'production'
