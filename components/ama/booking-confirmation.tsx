@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
+import { BookingSuccessStage } from '~/components/ama/booking-success-stage'
 import { trackFunnelEvent } from '~/lib/analytics'
 import { T } from '~/lib/i18n'
 import { localize, useLocale } from '~/lib/locale-client'
@@ -219,25 +220,27 @@ export function BookingConfirmation() {
   }
 
   return (
-    <div role="status" className="flex flex-col gap-3">
-      <p className="text-sm font-medium">
-        <T zh="付款已确认。" en="Payment confirmed." />
-      </p>
-      {state.bookingStatus === 'finalizing' ? (
-        <p className="text-sm leading-6 text-muted-foreground">
-          <T
-            zh="会议细节正在生成，确认邮件很快就到。日历邀请、会议链接和管理链接都会发到你的邮箱。"
-            en="Your meeting details are being finalized; the confirmation email is on its way. The calendar invite, meeting link, and your Manage Link all arrive by email."
-          />
+    <BookingSuccessStage>
+      <div role="status" className="flex flex-col gap-3">
+        <p className="text-sm font-medium">
+          <T zh="付款已确认。" en="Payment confirmed." />
         </p>
-      ) : (
-        <p className="text-sm leading-6 text-muted-foreground">
-          <T
-            zh="确认邮件已经出发，里面有日历邀请、会议链接和专属管理链接。到时见。"
-            en="A confirmation email is on its way with the calendar invite, meeting link, and your private Manage Link. See you then."
-          />
-        </p>
-      )}
-    </div>
+        {state.bookingStatus === 'finalizing' ? (
+          <p className="text-sm leading-6 text-muted-foreground">
+            <T
+              zh="会议细节正在生成，确认邮件很快就到。日历邀请、会议链接和管理链接都会发到你的邮箱。"
+              en="Your meeting details are being finalized; the confirmation email is on its way. The calendar invite, meeting link, and your Manage Link all arrive by email."
+            />
+          </p>
+        ) : (
+          <p className="text-sm leading-6 text-muted-foreground">
+            <T
+              zh="确认邮件已经出发，里面有日历邀请、会议链接和专属管理链接。到时见。"
+              en="A confirmation email is on its way with the calendar invite, meeting link, and your private Manage Link. See you then."
+            />
+          </p>
+        )}
+      </div>
+    </BookingSuccessStage>
   )
 }

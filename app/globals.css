@@ -4914,6 +4914,157 @@ html[data-locale='en'] [data-en-block] {
   text-align: left;
 }
 
+.ama-success-stage {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  min-height: 20rem;
+  overflow: hidden;
+  place-items: center;
+  border-radius: 0.75rem;
+  background: #08070a;
+  color: #f1eee5;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.1);
+}
+
+.ama-success-static-background,
+.ama-success-shader-layer,
+.ama-success-shader-shell,
+.ama-success-shader-canvas,
+.ama-success-confetti {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
+}
+
+.ama-success-static-background {
+  background:
+    linear-gradient(164deg, transparent 18%, rgb(118 24 219 / 0.2) 42%, transparent 62%),
+    linear-gradient(150deg, #030304 10%, #18181a 52%, #050407 90%);
+}
+
+.ama-success-shader-layer {
+  opacity: 0;
+  transition: opacity 350ms var(--ease-swift);
+}
+
+.ama-success-stage[data-shader-ready='true'] .ama-success-shader-layer {
+  opacity: 1;
+}
+
+.ama-success-confetti {
+  overflow: hidden;
+}
+
+.ama-success-confetti-piece {
+  position: absolute;
+  top: -1.25rem;
+  left: var(--ama-confetti-left);
+  width: 0.35rem;
+  height: 0.7rem;
+  border-radius: 1px;
+  background: var(--ama-confetti-color);
+  color: transparent;
+  opacity: 0;
+  animation: ama-success-confetti-fall var(--ama-confetti-duration)
+    var(--ease-swift) var(--ama-confetti-delay) both;
+}
+
+.ama-success-confetti-piece:nth-child(3n) {
+  width: 0.5rem;
+  height: 0.18rem;
+}
+
+.ama-success-confetti-piece:nth-child(4n) {
+  border-radius: 50%;
+}
+
+.ama-success-stage-content {
+  position: relative;
+  width: min(100%, 31rem);
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.ama-success-stage-content [role='status'] {
+  align-items: center;
+}
+
+.ama-success-stage .text-muted-foreground {
+  color: rgb(241 238 229 / 0.72);
+}
+
+.ama-success-mark {
+  display: grid;
+  width: 4rem;
+  height: 4rem;
+  margin: 0 auto 1.75rem;
+  place-items: center;
+  border-radius: 50%;
+  background: #f1eee5;
+  color: #131216;
+  box-shadow: 0 0 0 0.45rem rgb(217 239 98 / 0.46);
+  font-size: 1.5rem;
+  line-height: 1;
+  animation: ama-success-mark-arrive 350ms var(--ease-swift) both;
+}
+
+@keyframes ama-success-confetti-fall {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -1rem, 0) rotate(0deg);
+  }
+
+  12% {
+    opacity: 1;
+  }
+
+  82% {
+    opacity: 0.94;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--ama-confetti-drift), 22rem, 0)
+      rotate(var(--ama-confetti-rotation));
+  }
+}
+
+@keyframes ama-success-mark-arrive {
+  0% {
+    opacity: 0;
+    transform: scale(0.72) rotate(-10deg);
+  }
+
+  58% {
+    opacity: 1;
+    transform: scale(1.08) rotate(-2deg);
+  }
+
+  100% {
+    transform: scale(1) rotate(-4deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ama-success-shader-layer {
+    display: none;
+    transition: none;
+  }
+
+  .ama-success-confetti {
+    display: none;
+  }
+
+  .ama-success-mark {
+    animation: none;
+  }
+}
+
 @keyframes ama-waiting-dots {
   0% {
     content: '·';

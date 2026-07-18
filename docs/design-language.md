@@ -518,6 +518,26 @@ plate, touch preserves direct first-tap navigation, and reduced motion,
 unavailable WebGPU, or initialization failure stay static. The field fades
 away and unmounts only after the pointer leaves the full list.
 
+## AMA confirmation
+
+The public confirmation route reserves its full celebration for a server-proven
+paid AMA Session whose Booking is `finalizing` or `confirmed`. Those two states
+become one bounded dark stage using the Shaders **Undertones 8** preset
+(`bb1fda80-5ce2-4072-b528-9837f6e7aff7`) as its background: `Swirl` and
+`ChromaFlow`, refracted once through `FlutedGlass`, with the preset's restrained
+`FilmGrain` finish. The four layers remain one canvas, use the exported preset
+values, disable vendor telemetry, and mount only after WebGPU preflight. A
+matching static plate remains underneath during initialization and on browsers
+without WebGPU.
+
+Seventeen small registration-color confetti pieces cross the stage once when
+the success state mounts, using only transform and opacity, while a centered
+check mark settles over the field. Confetti never loops. Reduced motion keeps
+the static dark plate and check mark but omits both the shader and confetti.
+`needs_reschedule` is deliberately not celebratory: payment landed, but the
+chosen time did not, so it retains the calm explanatory state with no success
+stage.
+
 ## Photo index
 
 The photo route keeps its title in the prefetched static shell and streams the
