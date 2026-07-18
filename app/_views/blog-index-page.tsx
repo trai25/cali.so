@@ -1,3 +1,4 @@
+import { WritingInkStage } from '~/components/hidden-list-stage'
 import { PostRow } from '~/components/post-row'
 import { RevealScope } from '~/components/reveal-scope'
 import { getAllPosts } from '~/lib/content'
@@ -21,7 +22,7 @@ export function BlogIndexPageView({ locale }: { locale: Locale }) {
       <h1 className="enter text-sm font-medium text-muted-foreground">
         <T zh="写作" en="Writing" />
       </h1>
-      <div className="mt-6 flex flex-col gap-8">
+      <WritingInkStage className="mt-6" contentClassName="flex flex-col gap-8">
         {[...postsByYear].map(([year, yearPosts]) => {
           const center = (yearPosts.length - 1) / 2
 
@@ -49,6 +50,7 @@ export function BlogIndexPageView({ locale }: { locale: Locale }) {
                       headingLevel="h3"
                       dateStyle="month-day"
                       locale={locale}
+                      listStageId={post.slug}
                     />
                   </li>
                 ))}
@@ -56,7 +58,7 @@ export function BlogIndexPageView({ locale }: { locale: Locale }) {
             </section>
           )
         })}
-      </div>
+      </WritingInkStage>
     </div>
   )
 }

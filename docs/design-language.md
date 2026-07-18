@@ -328,6 +328,14 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
   static decoration; they never join the morph or change the row geometry.
   Desktop titles remain one line; below 40rem they may use two balanced lines
   before truncating. Rows swing in center-out.
+- **Writing ink current**: the index owns one dormant `Strands` field, never
+  one canvas per post. After 120ms of fine-pointer intent, three or four fine
+  monochrome strands occupy only the active row's dotted-leader lane and
+  retarget immediately as the pointer crosses rows. Keyboard focus reveals a
+  static ink plate with no animation. Touch remains an ordinary first-tap
+  link, and reduced motion, unavailable WebGPU, or initialization failure use
+  the same static treatment. The field fades out and unmounts only after the
+  pointer leaves the complete writing list.
 - **Hover cards are informational only**: `.link-card` carries
   `pointer-events: none; user-select: none` — a card is a printed label,
   never a control. Email's card is a little paper ENVELOPE (folded flap,
@@ -499,6 +507,16 @@ the shared selective-focus treatment softens the other rows. The row never
 expands or moves. Touch is a plain whole-row link, keyboard focus uses the
 neutral focus ring without motion, and reduced motion keeps every artifact
 still.
+
+The list also owns one dormant **blueprint field** behind all project rows:
+a monochrome `Grid` passing through one very low-strength `FlowField`. After
+120ms of initial fine-pointer intent, it develops across the bounded list and
+a separate registration mark retargets immediately to the active project's
+icon; the same runtime remains mounted while rows are traversed. It never
+tracks the cursor or emits ripples. Keyboard focus uses a static blueprint
+plate, touch preserves direct first-tap navigation, and reduced motion,
+unavailable WebGPU, or initialization failure stay static. The field fades
+away and unmounts only after the pointer leaves the full list.
 
 ## Photo index
 

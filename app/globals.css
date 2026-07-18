@@ -328,6 +328,200 @@
   border-top: var(--border-hairline) solid var(--border);
 }
 
+/* ── List stages: one dormant shader instrument per index ────────── */
+
+.hidden-list-stage {
+  position: relative;
+  isolation: isolate;
+}
+
+.hidden-list-stage-content {
+  position: relative;
+}
+
+.hidden-list-stage-field {
+  position: absolute;
+  inset: 0;
+  display: block;
+  overflow: hidden;
+  contain: layout paint;
+  color: var(--foreground);
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+}
+
+.projects-hidden-stage .hidden-list-stage-field {
+  transform: scale(0.985);
+  transition:
+    opacity var(--list-stage-exit-ms) var(--ease-swift),
+    transform var(--list-stage-exit-ms) var(--ease-swift);
+}
+
+.writing-hidden-stage .hidden-list-stage-field {
+  transition: opacity var(--list-stage-exit-ms) var(--ease-swift);
+}
+
+.hidden-list-stage[data-active='true'] .hidden-list-stage-field {
+  opacity: 1;
+}
+
+.projects-hidden-stage[data-active='true'] .hidden-list-stage-field {
+  transform: scale(1);
+}
+
+@keyframes projects-blueprint-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+}
+
+@keyframes writing-ink-enter {
+  from {
+    opacity: 0;
+  }
+}
+
+.projects-hidden-stage[data-active='true'][data-motion='true'] .hidden-list-stage-field {
+  animation: projects-blueprint-enter 260ms var(--ease-swift) backwards;
+}
+
+.writing-hidden-stage[data-active='true'][data-motion='true'] .hidden-list-stage-field {
+  animation: writing-ink-enter 180ms var(--ease-swift) backwards;
+}
+
+.hidden-list-stage[data-motion='false'] .hidden-list-stage-field,
+.hidden-list-stage[data-motion='false'] .hidden-list-shader-shell {
+  transition: none;
+}
+
+.hidden-list-stage-shader,
+.hidden-list-shader-shell,
+.hidden-list-shader-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.hidden-list-shader-shell {
+  opacity: 0;
+}
+
+.hidden-list-shader-shell[data-ready='true'] {
+  opacity: 1;
+}
+
+.projects-blueprint-static {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(
+      color-mix(in oklab, currentColor 35%, transparent) var(--border-hairline),
+      transparent var(--border-hairline)
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in oklab, currentColor 35%, transparent) var(--border-hairline),
+      transparent var(--border-hairline)
+    );
+  background-size: 24px 24px;
+  opacity: 0.1;
+}
+
+.projects-hidden-stage .hidden-list-stage-shader {
+  opacity: 0.14;
+}
+
+.projects-registration-mark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 58px;
+  height: 58px;
+  overflow: visible;
+  opacity: 0.26;
+  transform: translate3d(
+      var(--list-stage-target-x),
+      var(--list-stage-target-y),
+      0
+    )
+    translate(-50%, -50%);
+}
+
+.projects-registration-mark circle,
+.projects-registration-mark path {
+  vector-effect: non-scaling-stroke;
+  stroke: currentColor;
+  stroke-width: var(--border-hairline);
+}
+
+.writing-ink-current-target {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: var(--list-stage-target-width);
+  height: var(--list-stage-target-height);
+  overflow: hidden;
+  transform: translate3d(
+    var(--list-stage-target-x),
+    var(--list-stage-target-y),
+    0
+  );
+}
+
+.writing-ink-static {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: none;
+  opacity: 0.12;
+}
+
+.writing-ink-static path {
+  vector-effect: non-scaling-stroke;
+  stroke: currentColor;
+  stroke-width: 1.35;
+  stroke-linecap: round;
+}
+
+.writing-hidden-stage .hidden-list-stage-shader {
+  opacity: 0.2;
+}
+
+.dark .projects-blueprint-static {
+  opacity: 0.12;
+}
+
+.dark .projects-registration-mark {
+  opacity: 0.3;
+}
+
+.dark .projects-hidden-stage .hidden-list-stage-shader {
+  opacity: 0.12;
+}
+
+.dark .writing-ink-static {
+  opacity: 0.1;
+}
+
+.dark .writing-hidden-stage .hidden-list-stage-shader {
+  opacity: 0.17;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hidden-list-stage-field,
+  .hidden-list-shader-shell {
+    animation: none;
+    transition: none;
+  }
+}
+
 /* ── Project index: compact artifacts with drafting crop marks ───── */
 
 .project-row {
