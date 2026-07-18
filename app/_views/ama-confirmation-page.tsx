@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 
 import { BookingConfirmation } from '~/components/ama/booking-confirmation'
+import { PixelCluster } from '~/components/pixel-cluster'
 import { T } from '~/lib/i18n'
 import { localeMetadata } from '~/lib/locale-metadata'
 import type { Locale } from '~/lib/locale-route'
@@ -34,10 +35,11 @@ function ConfirmationFallback() {
 export function AmaConfirmationPageView() {
   return (
     <div className="mx-auto w-full max-w-[37.5rem] px-6">
-      <header className="max-w-[34rem]">
-        <h1 className="enter text-sm font-medium text-muted-foreground">
+      <header className="flex items-center justify-between gap-4">
+        <h1 className="page-eyebrow enter">
           <T zh="预订确认" en="Booking confirmation" />
         </h1>
+        <PixelCluster className="enter shrink-0" />
       </header>
 
       {/* useSearchParams requires a Suspense boundary; the fallback shares

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 
 import { BookingFlow } from '~/components/ama/booking-flow'
+import { PixelCluster } from '~/components/pixel-cluster'
 import { T } from '~/lib/i18n'
 import { localeMetadata } from '~/lib/locale-metadata'
 import type { Locale } from '~/lib/locale-route'
@@ -24,20 +25,23 @@ export function amaBookMetadata(locale: Locale): Metadata {
 export function AmaBookPageView() {
   return (
     <div className="mx-auto w-full max-w-[37.5rem] px-6">
-      <header className="max-w-[34rem]">
-        <h1 className="enter text-sm font-medium text-muted-foreground">
-          <T zh="预订时间" en="Book an AMA Session" />
-        </h1>
-        <p
-          className="page-introduction enter mt-4 text-balance"
-          style={{ '--enter-delay': '70ms' } as React.CSSProperties}
-        >
-          <T
-            zh="选一个时间，介绍一下你自己，然后付款。整个过程大约三分钟。"
-            en="Pick a time, introduce yourself, then pay. The whole thing takes about three minutes."
-          />
-        </p>
-      </header>
+      <div className="flex items-start justify-between gap-4">
+        <header className="max-w-[34rem]">
+          <h1 className="page-eyebrow enter">
+            <T zh="预订时间" en="Book an AMA Session" />
+          </h1>
+          <p
+            className="page-introduction enter mt-4 text-balance"
+            style={{ '--enter-delay': '70ms' } as React.CSSProperties}
+          >
+            <T
+              zh="选一个时间，介绍一下你自己，然后付款。整个过程大约三分钟。"
+              en="Pick a time, introduce yourself, then pay. The whole thing takes about three minutes."
+            />
+          </p>
+        </header>
+        <PixelCluster className="enter shrink-0" />
+      </div>
 
       <div className="enter mt-10 pb-4" style={{ '--enter-delay': '120ms' } as React.CSSProperties}>
         <BookingFlow />

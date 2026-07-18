@@ -210,6 +210,19 @@ export function ZoomImage({
               }}
               onTransitionEnd={settle}
             />
+            <div
+              aria-hidden
+              className="zoom-overlay-marks calibration-corners"
+              style={
+                {
+                  left: zoom.target.left - 10,
+                  top: zoom.target.top - 10,
+                  width: zoom.target.width + 20,
+                  height: zoom.target.height + 20,
+                  '--corner-arm': '11px',
+                } as React.CSSProperties
+              }
+            />
             {expandedContent && (
               <div className="zoom-overlay-details">{expandedContent}</div>
             )}

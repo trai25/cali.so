@@ -284,6 +284,10 @@
   --gray-12: oklch(0.23 0.0045 70);
   --selection-highlight: oklch(0.9 0.17 105 / 0.58);
 
+  /* the signal accent — one mark per view, never a text color */
+  --signal: oklch(0.62 0.17 45);
+  --ghost-ink: color-mix(in oklab, var(--foreground) 5%, transparent);
+
   --background: var(--gray-1);
   --foreground: var(--gray-12);
   --card: var(--gray-2);
@@ -318,6 +322,8 @@
   --gray-11: oklch(0.87 0.007 90);
   --gray-12: oklch(0.94 0.006 92);
   --selection-highlight: oklch(0.8 0.14 105 / 0.28);
+  --signal: oklch(0.7 0.17 48);
+  --ghost-ink: color-mix(in oklab, var(--foreground) 6.5%, transparent);
 }
 
 .public-site ::selection {
@@ -534,7 +540,8 @@
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  color: var(--foreground);
+  /* quiet registration marks — 30% ink, matching the plate-label register */
+  color: color-mix(in oklab, var(--foreground) 30%, transparent);
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 0.875rem;
   letter-spacing: -0.011em;
@@ -693,13 +700,6 @@
   margin-top: 4rem;
 }
 
-.error-kicker {
-  margin-bottom: 0.5rem;
-  color: var(--muted-foreground);
-  font-size: 0.875rem;
-  letter-spacing: -0.011em;
-}
-
 .error-actions {
   position: relative;
   z-index: 2;
@@ -796,6 +796,75 @@
 
 .column-guide-v:last-of-type {
   right: max(16px, calc((100% - 37.5rem) / 2));
+}
+
+/* registration cross where the (intentionally absent) top rule would
+   meet each guide — same missability contract as the guides */
+.column-guide-v::after {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: -4px;
+  width: 9px;
+  height: 9px;
+  color: color-mix(in oklab, var(--muted-foreground) 45%, transparent);
+  background:
+    linear-gradient(currentColor, currentColor) center / 9px var(--border-hairline) no-repeat,
+    linear-gradient(currentColor, currentColor) center / var(--border-hairline) 9px no-repeat;
+}
+
+/* ── Calibration marks: viewfinder corner brackets ────────────────── */
+
+.calibration-corners {
+  --corner-arm: 9px;
+  pointer-events: none;
+  user-select: none;
+  color: var(--foreground);
+  background:
+    linear-gradient(currentColor, currentColor) left top / var(--corner-arm) var(--border-hairline) no-repeat,
+    linear-gradient(currentColor, currentColor) left top / var(--border-hairline) var(--corner-arm) no-repeat,
+    linear-gradient(currentColor, currentColor) right top / var(--corner-arm) var(--border-hairline) no-repeat,
+    linear-gradient(currentColor, currentColor) right top / var(--border-hairline) var(--corner-arm) no-repeat,
+    linear-gradient(currentColor, currentColor) left bottom / var(--corner-arm) var(--border-hairline) no-repeat,
+    linear-gradient(currentColor, currentColor) left bottom / var(--border-hairline) var(--corner-arm) no-repeat,
+    linear-gradient(currentColor, currentColor) right bottom / var(--corner-arm) var(--border-hairline) no-repeat,
+    linear-gradient(currentColor, currentColor) right bottom / var(--border-hairline) var(--corner-arm) no-repeat;
+}
+
+/* photo tiles: brackets develop only under a fine-pointer attention */
+.photo-frame .calibration-corners {
+  position: absolute;
+  inset: 6px;
+  opacity: 0;
+  transform: scale(1.05);
+  transition:
+    opacity 150ms ease,
+    transform 300ms var(--ease-swift);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .photo-frame:hover .calibration-corners,
+  .photo-frame:focus-within .calibration-corners {
+    opacity: 0.62;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .photo-frame .calibration-corners {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* ── Ghost line art: a schematic at the edge of perception ────────── */
+
+.ghost-schematic {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  user-select: none;
+  color: var(--ghost-ink);
 }
 
 /* ── Selective focus: hovering a row defocuses its siblings ───────── */
@@ -957,6 +1026,185 @@
 
 .post-title-meta {
   color: var(--gray-8, var(--muted-foreground));
+}
+
+/* the post plate breathes under the title (wins over .spec-plate margin: 0) */
+.post-title-card .spec-plate {
+  margin-top: 1.5rem;
+}
+
+/* ── Spec plate: stamped label/value meta (technical print register) ── */
+
+.spec-plate {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.625rem 1rem;
+  margin: 0;
+  padding: 0.625rem 0;
+  border-top: var(--border-hairline) solid var(--border);
+  border-bottom: var(--border-hairline) solid var(--border);
+  font-family: var(--font-geist-mono), var(--font-frex-gb), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+@media (min-width: 28rem) {
+  .spec-plate {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.spec-plate dt {
+  color: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.spec-plate dd {
+  margin: 0.1875rem 0 0;
+  color: var(--gray-9, var(--muted-foreground));
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* the lit cell — the plate carries this page's single signal mark */
+.spec-signal {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-right: 0.375rem;
+  vertical-align: 0.09em;
+  background: var(--signal);
+}
+
+/* flow variant: cells wrap to their content instead of the fixed grid */
+.spec-plate-flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+}
+
+/* ── Pixel cluster: dither cells as a site mark, one lit ──────────── */
+
+.pixel-cluster {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  user-select: none;
+  background:
+    linear-gradient(var(--signal), var(--signal)) 6px 0 / 5px 5px no-repeat,
+    linear-gradient(
+        color-mix(in oklab, var(--foreground) 26%, transparent),
+        color-mix(in oklab, var(--foreground) 26%, transparent)
+      )
+      0 6px / 5px 5px no-repeat,
+    linear-gradient(
+        color-mix(in oklab, var(--foreground) 11%, transparent),
+        color-mix(in oklab, var(--foreground) 11%, transparent)
+      )
+      6px 6px / 5px 5px no-repeat;
+}
+
+/* ── Page eyebrows: mono section marks with a comment prefix ─────── */
+
+.page-eyebrow {
+  color: var(--gray-8, var(--muted-foreground));
+  font-family: var(--font-geist-mono), var(--font-frex-gb), ui-monospace, monospace;
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-normal);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.page-eyebrow::before {
+  content: '// ' / '';
+  color: color-mix(in oklab, var(--muted-foreground) 55%, transparent);
+}
+
+/* ── Adjacent-post plate: wayfinding at the article foot ──────────── */
+
+.post-adjacent {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 4rem;
+  padding-top: 1rem;
+}
+
+.post-adjacent-link {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.post-adjacent-link:focus-visible {
+  border-radius: 2px;
+  outline: 1px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.post-adjacent-next {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.post-adjacent-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
+  font-family: var(--font-geist-mono), var(--font-frex-gb), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.post-adjacent-arrow {
+  opacity: 0.6;
+  transition:
+    opacity 180ms ease,
+    translate 180ms ease;
+}
+
+.post-adjacent-title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: var(--gray-9, var(--muted-foreground));
+  font-size: 0.875rem;
+  line-height: 1.5;
+  text-wrap: balance;
+  transition: color 150ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .post-adjacent-link:hover .post-adjacent-title {
+    color: var(--gray-12, var(--foreground));
+  }
+
+  .post-adjacent-link:hover .post-adjacent-arrow {
+    opacity: 0.95;
+    translate: -1.5px 0;
+  }
+
+  .post-adjacent-next:hover .post-adjacent-arrow {
+    translate: 1.5px 0;
+  }
+}
+
+.post-adjacent-link:focus-visible .post-adjacent-title {
+  color: var(--gray-12, var(--foreground));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-adjacent-arrow,
+  .post-adjacent-title {
+    transition: none;
+  }
 }
 
 .prose ul,
@@ -1297,9 +1545,22 @@ img.tweet-card-avatar {
   box-shadow: var(--shadow-large);
 }
 
+/* viewfinder brackets develop just outside the settled photo */
+.zoom-overlay-marks {
+  position: fixed;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.zoom-overlay[data-state='open'] .zoom-overlay-marks {
+  opacity: 0.55;
+  transition: opacity 200ms ease 140ms;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .zoom-overlay-backdrop,
-  .zoom-overlay img {
+  .zoom-overlay img,
+  .zoom-overlay-marks {
     transition: none;
   }
 }
@@ -3112,6 +3373,12 @@ a:focus-visible .external-label .external-mark {
   font-size: 0.9375rem;
 }
 
+/* the date is quiet metadata — one step down from the row's title */
+.blog-row-date {
+  font-size: 0.8125rem;
+  letter-spacing: 0.01em;
+}
+
 .print-pile {
   position: relative;
   isolation: isolate;
@@ -3195,6 +3462,64 @@ a:focus-visible .external-label .external-mark {
       transparent 0.5px
     )
     0 0 / 6px 1px repeat-x;
+}
+
+/* ── Primary call-to-action: a compact pill ───────────────────────── */
+
+/* Trim visual height with a pill silhouette; a pseudo-element restores the
+   44px hit target (design language: 44px minimum, pseudo if visually smaller). */
+.btn-cta {
+  position: relative;
+  display: inline-flex;
+  height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding-inline: 1.125rem;
+  background: var(--foreground);
+  color: var(--background);
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium);
+  touch-action: manipulation;
+  outline: none;
+  transition:
+    transform 100ms ease,
+    background-color 150ms ease;
+}
+
+.btn-cta::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  height: 2.75rem;
+  transform: translateY(-50%);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn-cta:hover {
+    background: color-mix(in oklab, var(--foreground) 90%, var(--background));
+  }
+}
+
+.btn-cta:active {
+  transform: scale(0.97);
+}
+
+.btn-cta:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--background),
+    0 0 0 3px var(--focus-ring, var(--foreground));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-cta {
+    transition: none;
+  }
+
+  .btn-cta:active {
+    transform: none;
+  }
 }
 
 /* ── Bilingual chrome (lib/i18n.tsx) — CSS-swapped, no hydration ──── */
@@ -4038,14 +4363,19 @@ html[data-locale='en'] [data-en-block] {
   gap: 0.125rem;
 }
 
+/* the readout is a small spec plate: stamped label above a mono value */
 .footer-time-readout > span {
   color: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
-  font-size: 0.875rem;
-  letter-spacing: -0.011em;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
 }
 
 .footer-time-readout time {
   color: color-mix(in oklab, var(--muted-foreground) 90%, transparent);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
 }
 
 .footer-time-readout time {

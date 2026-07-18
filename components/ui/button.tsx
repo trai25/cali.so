@@ -15,7 +15,7 @@ import { cn } from "~/lib/utils";
 
 const buttonVariants = cva(
   [
-    "group relative isolate inline-flex items-center justify-center rounded-[8px] text-[12px] outline-none cursor-pointer",
+    "group relative isolate inline-flex items-center justify-center rounded-full text-[12px] outline-none cursor-pointer",
     "transition-colors duration-150",
     "disabled:opacity-50 disabled:pointer-events-none",
     "focus-visible:ring-1 focus-visible:ring-[color:var(--focus-ring,#6B97FF)]",
@@ -29,12 +29,12 @@ const buttonVariants = cva(
         ghost: "text-muted-foreground hover:text-foreground",
       },
       size: {
-        sm: "px-3 py-[5px] gap-1",
-        md: "px-3 py-[5px] gap-1.5",
-        lg: "px-4 py-1.5 gap-2",
-        "icon-sm": "p-[5px] [&_svg]:h-3.5 [&_svg]:w-3.5",
-        icon: "p-[5px] [&_svg]:h-4 [&_svg]:w-4",
-        "icon-lg": "p-1.5 [&_svg]:h-5 [&_svg]:w-5",
+        sm: "h-6 px-2.5 gap-1",
+        md: "h-7 px-3 gap-1.5",
+        lg: "h-8 px-3.5 gap-2",
+        "icon-sm": "h-6 w-6 [&_svg]:h-3.5 [&_svg]:w-3.5",
+        icon: "h-7 w-7 [&_svg]:h-4 [&_svg]:w-4",
+        "icon-lg": "h-8 w-8 [&_svg]:h-5 [&_svg]:w-5",
       },
       iconLeft: { true: "" },
       iconRight: { true: "" },

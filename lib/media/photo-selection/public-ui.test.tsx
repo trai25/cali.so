@@ -97,7 +97,10 @@ describe('Published Photo Selection UI', () => {
     expect(within(dialog).getByText(/Taipei · May 8, 2025/)).toBeTruthy()
     expect(within(dialog).getByText('Apple iPhone 16 Pro')).toBeTruthy()
     expect(within(dialog).getByText('24 mm')).toBeTruthy()
-    expect(within(dialog).getByText('ISO 80')).toBeTruthy()
+    // capture details render as spec-plate label/value cells
+    expect(within(dialog).getByText('ISO')).toBeTruthy()
+    expect(within(dialog).getByText('80')).toBeTruthy()
+    expect(dialog.querySelector('.spec-plate-flow')).toBeTruthy()
   })
 
   it('uses the first three photos and full count for the homepage card', () => {

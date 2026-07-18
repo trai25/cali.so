@@ -34,9 +34,6 @@ export function NotFoundPageView() {
         <span className="error-loose-pixel error-loose-pixel-c" aria-hidden />
 
         <div className="error-message">
-          <p className="error-kicker font-mono">
-            <T zh="页面偏离网格" en="PAGE_OFF_GRID" />
-          </p>
           <h1 id="not-found-title" className="text-sm font-semibold">
             <T zh="这页走丢了。" en="This page slipped off the grid." />
           </h1>

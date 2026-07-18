@@ -6,6 +6,7 @@ import { ExternalLabel } from '~/components/external-mark'
 import { HalftonePortrait } from '~/components/halftone-portrait'
 import { HomeIntroduction } from '~/components/home-introduction'
 import { NavCards, PhotoNavCard } from '~/components/nav-cards'
+import { PixelCluster } from '~/components/pixel-cluster'
 import { PostRow } from '~/components/post-row'
 import { VinylShelf } from '~/components/vinyl-shelf'
 import { getAllPosts } from '~/lib/content'
@@ -38,7 +39,10 @@ export async function HomePageView({ locale }: { locale: Locale }) {
     <div className="mx-auto w-full max-w-[37.5rem] px-6">
       <div className="flex flex-col-reverse justify-between gap-10 sm:flex-row sm:items-start">
         <div className="enter max-w-[19rem]">
-          <h1 className="text-base font-semibold tracking-tight text-foreground">Cali Castle</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-base font-semibold tracking-tight text-foreground">Cali Castle</h1>
+            <PixelCluster className="shrink-0" />
+          </div>
           <div className="mt-4">
             <HomeIntroduction social={social.x} github={github} />
           </div>

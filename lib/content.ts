@@ -44,6 +44,8 @@ export interface Post {
   cover?: PostCover
   readingMinutes: number
   readingMinutesEn: number
+  bodyUnits: number
+  bodyUnitsEn: number
   body: string
   bodyEn: string
 }
@@ -130,12 +132,16 @@ export function buildPostRail(title: string, body: string, idPrefix = ''): PostR
   return nodes
 }
 
-// CJK prose reads ~300 chars/min, Latin ~200 words/min
-function readingMinutes(body: string): number {
+// CJK prose reads ~300 chars/min, Latin ~200 words/min; units are the
+// countable prose atoms (CJK characters + Latin words) the spec plate reports
+function bodyStats(body: string) {
   const text = body.replace(/```[\s\S]*?```/g, '')
   const cjk = (text.match(/[一-鿿぀-ヿ]/g) ?? []).length
   const words = (text.replace(/[一-鿿぀-ヿ]/g, ' ').match(/[A-Za-z0-9]+/g) ?? []).length
-  return Math.max(1, Math.round(cjk / 300 + words / 200))
+  return {
+    units: cjk + words,
+    minutes: Math.max(1, Math.round(cjk / 300 + words / 200)),
+  }
 }
 
 export function getPost(slug: string): Post {
@@ -145,6 +151,9 @@ export function getPost(slug: string): Post {
   const translatedRaw = readFileSync(path.join(POSTS_DIR, slug, 'index.en.mdx'), 'utf8')
   const { data: translatedData, content: translatedContent } = matter(translatedRaw)
   const translatedFm = translatedFrontmatterSchema.parse(translatedData)
+
+  const stats = bodyStats(content)
+  const statsEn = bodyStats(translatedContent)
 
   let cover: PostCover | undefined
   if (fm.cover) {
@@ -166,8 +175,10 @@ export function getPost(slug: string): Post {
     descriptionEn: translatedFm.description,
     publishedAt: fm.publishedAt,
     cover,
-    readingMinutes: readingMinutes(content),
-    readingMinutesEn: readingMinutes(translatedContent),
+    readingMinutes: stats.minutes,
+    readingMinutesEn: statsEn.minutes,
+    bodyUnits: stats.units,
+    bodyUnitsEn: statsEn.units,
     body: content,
     bodyEn: translatedContent,
   }

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
+import { PixelCluster } from '~/components/pixel-cluster'
 import { AMA_TOPIC_LABELS, AMA_TOPICS } from '~/lib/ama/booking/topics'
 import { T } from '~/lib/i18n'
 import { localeMetadata } from '~/lib/locale-metadata'
@@ -94,20 +95,23 @@ function SectionHeading({
 export function AmaPageView() {
   return (
     <div className="mx-auto w-full max-w-[37.5rem] px-6">
-      <header className="max-w-[34rem]">
-        <h1 className="enter text-sm font-medium text-muted-foreground">
-          <T zh="一对一" en="AMA" />
-        </h1>
-        <p
-          className="page-introduction enter mt-4 text-balance"
-          style={{ '--enter-delay': '70ms' } as React.CSSProperties}
-        >
-          <T
-            zh="与 Cali 的专注一小时。一场 60 分钟的一对一 AMA，你带着问题来，我们把它聊透。"
-            en="A focused hour with Cali. One 60 minute one-to-one AMA Session: you bring the questions, we work through them properly."
-          />
-        </p>
-      </header>
+      <div className="flex items-start justify-between gap-4">
+        <header className="max-w-[34rem]">
+          <h1 className="page-eyebrow enter">
+            <T zh="一对一" en="AMA" />
+          </h1>
+          <p
+            className="page-introduction enter mt-4 text-balance"
+            style={{ '--enter-delay': '70ms' } as React.CSSProperties}
+          >
+            <T
+              zh="与 Cali 的专注一小时。一场 60 分钟的一对一 AMA，你带着问题来，我们把它聊透。"
+              en="A focused hour with Cali. One 60 minute one-to-one AMA Session: you bring the questions, we work through them properly."
+            />
+          </p>
+        </header>
+        <PixelCluster className="enter shrink-0" />
+      </div>
 
       <section
         className="enter mt-10"
@@ -194,8 +198,13 @@ export function AmaPageView() {
           <SectionHeading zh="来自聊过的人" en="From past sessions" delay={290} />
         </div>
         <div className="mt-4 flex flex-col gap-6">
-          {TESTIMONIALS.map((testimonial) => (
-            <figure key={testimonial.en} className="hairline-top pt-4 first:border-t-0 first:pt-0">
+          {TESTIMONIALS.map((testimonial, index) => (
+            // `.hairline-top` is unlayered, so a Tailwind `first:border-t-0`
+            // utility can't override it — apply the divider by index instead.
+            <figure
+              key={testimonial.en}
+              className={index === 0 ? '' : 'hairline-top pt-4'}
+            >
               <blockquote className="text-sm leading-6">
                 <T zh={`「${testimonial.zh}」`} en={`"${testimonial.en}"`} />
               </blockquote>
@@ -212,18 +221,12 @@ export function AmaPageView() {
         style={{ '--enter-delay': '320ms' } as React.CSSProperties}
       >
         <span data-zh-block>
-          <Link
-            href={localePath('zh', '/ama/book')}
-            className="inline-flex min-h-11 touch-manipulation items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background outline-none transition-transform duration-100 ease-[ease] active:scale-[0.97] focus-visible:ring-1 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transform-none motion-reduce:transition-none"
-          >
+          <Link href={localePath('zh', '/ama/book')} className="btn-cta">
             预订时间
           </Link>
         </span>
         <span data-en-block>
-          <Link
-            href={localePath('en', '/ama/book')}
-            className="inline-flex min-h-11 touch-manipulation items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background outline-none transition-transform duration-100 ease-[ease] active:scale-[0.97] focus-visible:ring-1 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transform-none motion-reduce:transition-none"
-          >
+          <Link href={localePath('en', '/ama/book')} className="btn-cta">
             Book a time
           </Link>
         </span>

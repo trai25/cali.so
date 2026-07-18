@@ -82,6 +82,9 @@ Hard rules:
 - **Chrome stays compact.** Navigation, footer, dates, section labels, and
   utility controls remain 14px with letter-spacing −0.011em. Compact chrome
   provides contrast against the editorial content instead of flattening it.
+  The exception is the page eyebrow (see Technical print): index and
+  service page h1s drop to 12px tracked uppercase mono with the faded
+  comment prefix.
 - **Editorial scale.** The scale is based on 14px body copy. List titles and
   project rows are 15px. Homepage and introductory paragraphs are 14px/1.7.
   Post bodies are 14px/1.72, with CJK at 1.9. Post titles scale from 28px to
@@ -106,6 +109,17 @@ Hard rules:
 - Text selection uses a translucent yellow-green highlighter token and never
   changes the selected text color. The dark token lowers opacity so it reads
   as marker on dark paper rather than a luminous block.
+- **The signal accent.** `--signal` is the one chromatic mark in the system —
+  a burnt safety orange (`oklch(0.62 0.17 45)` on light paper,
+  `oklch(0.7 0.17 48)` on dark). Discipline is the point: the signal only ever
+  appears as **one small filled shape — the lit dither cell**. It recurs
+  deliberately, always as that same 5px square: the masthead stamp (the pixel
+  cluster, once per page, see Technical print) is its home, and on posts the
+  spec plate's edition cell repeats it. It never colors text, borders,
+  controls, or links, never rides a hover state, and never appears as a
+  free-floating mark outside those two roles. The repetition reads as one
+  recurring stamp, not as scattered accents — which is exactly why it can
+  recur without cheapening.
 - 1px borders are the exception: prefer `box-shadow: 0 0 0 1px` for card
   edges (blends with any background) and hairline dividers via
   `--border-hairline` (0.5px on retina, 1px otherwise).
@@ -363,6 +377,62 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
   shelf. A closed book selects and opens into the accordion; activating the
   open book leaves it selected. The annotation below the plank is the only link
   to its official author or publisher page.
+- **Spec plates** (`.spec-plate`): metadata stamped like an engraved data
+  plate — label/value pairs between hairline top and bottom rules, set in
+  the mono stack (Geist Mono, CJK fallback), labels 11px uppercase at
+  +0.08em in faded ink, values 13px tabular below them. The post header
+  plate carries No. (chronological edition — the first post is 001
+  forever), Date (locale-neutral `YYYY.MM.DD`), Length (localized reading
+  minutes), and Words (tabular count of CJK characters + Latin words). The
+  No. cell holds the page's single signal cell — a 5px square, the same
+  cell the prose list marker uses, lit `--signal`. Four columns from 28rem,
+  a 2×2 grid below. Plates are chrome: `user-select: none`, and the post
+  plate keeps the established metadata develop timing. The lightbox's
+  capture details are the same register (`.spec-plate-flow`, cells wrapping
+  to content): Camera, Lens, Focal, Aperture, Shutter, ISO — capture data
+  was always plate content. The footer clock readout is the smallest plate.
+- **Calibration marks** (`.calibration-corners`): hairline viewfinder
+  corner brackets (9px arms; 11px around the lightbox photo). On photo
+  tiles they develop under fine-pointer hover or focus-within (opacity
+  150ms ease, settling from `scale(1.05)` over 300ms `--ease-swift`,
+  62% ink); in the lightbox they fade in 10px outside the settled photo,
+  delayed 140ms so the pick-up lands first. Reduced motion renders them
+  statically. Registration crosses — 9px hairline `+` marks — ride each
+  column guide 14px from the top, marking where the intentionally absent
+  top rule would cross; they live inside the guide layer and inherit its
+  missability contract.
+- **Ghost line art** (`components/ghost-schematic.tsx`): a single
+  precise-stroke schematic drawn in `--ghost-ink` (5% foreground on light,
+  6.5% on dark) — currently a drafting compass mid-arc behind the project
+  index (hidden below 40rem). Unlike illustration accents, ghost drawings
+  have no hand-drawn waver: they belong to the drafting instruments, not
+  the hand. Ambient rules apply — absolute, inert, behind the content,
+  noticed on the second visit; never more than one per page, and never on
+  a page already carrying a raster instrument.
+- **Pixel cluster / masthead stamp** (`.pixel-cluster`,
+  `components/pixel-cluster.tsx`): three 5px dither cells on a 1px seam —
+  one lit `--signal`, two in fading foreground ink, the fourth position
+  empty. It is the site's recurring masthead stamp: exactly one per page,
+  pinned top-right of the content column on the title/eyebrow line, and the
+  single home of the signal accent (see Color). It appears on every public
+  view — the home masthead (as a wordmark mark beside the name), the
+  writing / projects / photos / AMA eyebrows, and the post title line. A
+  mark, never a control (`aria-hidden`, out of the accessibility tree). On
+  the projects page it sits over the faint ghost schematic, which stays
+  behind it as an ambient layer — the stamp is a mark, exempt from the
+  one-instrument rule that governs full rasters.
+- **Page eyebrows** (`.page-eyebrow`): page h1s on the index and service
+  surfaces (writing, projects, photos, the AMA family) are set as mono
+  section marks — 12px, +0.08em tracking, uppercase Latin — prefixed by a
+  faded `//` drawn in CSS with empty alt text so it never reaches the
+  accessible name. Homepage section headers and in-page h2s keep the plain
+  14px treatment; the comment mark stays rare.
+- **Adjacent-post plate** (`.post-adjacent`): wayfinding at the article
+  foot in the plate register — a hairline-top two-column grid, mono
+  uppercase labels (older ←, newer →) over two-line clamped titles.
+  Arrows rest at 60% opacity and shift 1.5px outward on a fine-pointer
+  hover (180ms ease), mirroring the external-mark treatment; titles deepen
+  to full ink. Ordinary link navigation — no route morph.
 - Future candidates: ascii-on-hover for photos, dithered media
   placeholders, line-screen section dividers. One instrument per page —
   never stack rasters over each other.
@@ -461,7 +531,8 @@ links carried forward from the earlier dual-DOM implementation.
 The leftmost desktop colophon puts the copyright at the top and Cali's local
 clock at the bottom. The clock shows the `UTC+8` timezone, a muted tabular live
 Asia/Taipei time in 12-hour `h:mm AM/PM` format without seconds, and a small
-redundant analog face. The digital `<time>` is the accessible source; the clock
+redundant analog face. The readout is set as a small spec plate: the `UTC+8`
+label in 11px tracked uppercase mono over the 13px mono time value. The digital `<time>` is the accessible source; the clock
 face is decorative and deliberately quieter than the footer trees. Its fixed
 placeholder dimensions avoid hydration shift, and the second-aligned timer
 pauses while the page is hidden. On mobile, contact and index remain a
@@ -630,8 +701,12 @@ The page reads as a sheet of working paper, not a void:
 
 Few interactions, disproportionate care:
 
-- Buttons: `transform: scale(0.97)` on `:active`, 100ms. 44px minimum hit
-  area (pseudo-element if visually smaller).
+- Buttons are pills (`border-radius: 999px` / `rounded-full`) and kept
+  vertically compact — the shared `Button` (`components/ui/button.tsx`, on
+  the Base UI primitive) and the `.btn-cta` primary call-to-action share
+  that shape. `transform: scale(0.97)` on `:active`, 100ms. 44px minimum hit
+  area, restored with a pseudo-element when the visible pill is shorter (as
+  `.btn-cta` does at its 36px height).
 - Copy buttons on every code block; copied state swaps icon for 1.5s with no
   layout shift (fixed-width slot).
 - Anchored headings scroll with `scroll-margin-top` matching the nav height.

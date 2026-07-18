@@ -43,9 +43,6 @@ export function ErrorPageView({ retry }: Pick<ErrorBoundaryProps, 'retry'>) {
         <span className="error-loose-pixel error-loose-pixel-c" aria-hidden />
 
         <div className="error-message">
-          <p className="error-kicker font-mono">
-            <T zh="印刷中断" en="PRINT_INTERRUPTED" />
-          </p>
           <h1 id="error-title" className="text-sm font-semibold">
             <T zh="这页没有印好。" en="This page did not print correctly." />
           </h1>
