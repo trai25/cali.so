@@ -165,7 +165,7 @@ export async function HomePageView({ locale }: { locale: Locale }) {
       {records.length > 0 && (
         <section className="mt-16">
           <SectionTitle index={nextSectionIndex()} delay={320}>
-            <T zh="让我来劲的音乐" en="Music That Gets Me Going" />
+            <T zh="循环播放中" en="On rotation" />
           </SectionTitle>
           <div className="enter mt-5" style={{ '--enter-delay': '360ms' } as React.CSSProperties}>
             <VinylShelf />
@@ -176,7 +176,7 @@ export async function HomePageView({ locale }: { locale: Locale }) {
       {books.length > 0 && (
         <section className="mt-16">
           <SectionTitle index={nextSectionIndex()} delay={380}>
-            <T zh="启发我的书" en="Books That Inspire Me" />
+            <T zh="珍藏书架" en="Books I Love" />
           </SectionTitle>
           <div className="enter mt-5" style={{ '--enter-delay': '420ms' } as React.CSSProperties}>
             <Bookshelf />

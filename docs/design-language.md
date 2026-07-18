@@ -274,8 +274,22 @@ open rich hover cards. The contract:
 Post images zoom on click: the photo is picked up off the page (FLIP,
 transform-only, 300ms `--ease-swift`) and floats centered over the dimmed
 sheet at no more than its intrinsic size, gaining `--shadow-large`. Esc,
-click, or the first scroll puts it back. The inline image keeps its spot
-(zero layout shift); reduced motion swaps instantly. `components/zoom-image.tsx`.
+click, or the first scroll gesture puts it back — but a gesture never moves
+the page: wheel and touch scrolling are prevented while the photo is up (and
+through its return flight), so the sheet stays frozen underneath. Scrolls
+that bypass those gestures (keyboard, scrollbar drag) also dismiss, and
+closing re-measures the inline spot so the return flight always lands where
+the image actually is. The inline image keeps its spot (zero layout shift);
+reduced motion swaps instantly. `components/zoom-image.tsx`.
+
+When the lightbox carries a caption sheet (the photo details and their
+plate), its items are physical-object motion: each springs in from
+`translateY(10px) scale(0.97)` over 350ms `--ease-spring`, staggered 45ms
+apart after a 120ms head start for the photo's flight; the plate frame
+fades without transform. On close they slip away on the swift curve —
+150ms with a 15ms forward stagger, sized to finish inside the image's
+300ms return. Items carry their order as `--detail-index`; reduced motion
+renders the sheet instantly with no transform.
 
 ## Portrait & avatar
 
@@ -465,10 +479,17 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
   hazard-hatch chip (fine diagonal strokes in a bordered cell), and a
   tracked uppercase mono label. Numbering follows render order so
   conditional sections never leave gaps; the number and hatch are
-  `aria-hidden`, so the accessible name is just the label.
+  `aria-hidden`, so the accessible name is just the label. Prose h2s carry
+  the same tag as a leading ornament: a single `::before` draws the boxed
+  counter ordinal and hatch strip (one pseudo, layered backgrounds) while
+  the heading text keeps its editorial size — chrome labels join the
+  register wholesale, content headings only wear its mark. The ordinal is
+  excluded from the accessible name; h3s stay unmarked.
 - **Boxed step ordinals** (`.step-index`): manual/how-it-works lists carry
   their two-digit ordinals in small hairline boxes, tying numbered prose
-  steps to the nameplate register.
+  steps to the nameplate register. Prose ordered lists share the same
+  recipe globally: `.prose ol` draws the boxed `01` ordinal from a CSS
+  counter (`decimal-leading-zero`), replacing the native decimal marker.
 - **Barcode** (`components/barcode.tsx`): a decorative label-graphic
   barcode whose bar widths derive deterministically from its code string
   (stable across SSR), with the human-readable code beneath. It scans as
@@ -618,6 +639,10 @@ neutral focus ring without motion, and reduced motion keeps every artifact
 still.
 
 ## Photo index
+
+Photo tiles are quiet objects: no hover captions or overlays — location and
+capture data appear only in the lightbox details, and the only fine-pointer
+response is the calibration corner brackets.
 
 The photo route keeps its title in the prefetched static shell and streams the
 active Published Photo Selection into a page-level masonry boundary. While the

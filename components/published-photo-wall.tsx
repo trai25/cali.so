@@ -66,17 +66,26 @@ function PhotoDetails({ photo }: { photo: PublishedPhoto }) {
   const fields = cameraFields(photo)
   if (!location && !captured && fields.length === 0) return null
 
+  // The caption sheet staggers in behind the print: each item carries its
+  // order so the overlay's open state can spring them in one by one.
   return (
     <div className="mx-auto w-full max-w-xl px-5 text-foreground">
       {(location || captured) && (
-        <p className="text-sm font-medium tabular-nums">
+        <p
+          className="zoom-detail-item text-sm font-medium tabular-nums"
+          style={{ '--detail-index': 0 } as React.CSSProperties}
+        >
           {[location, captured].filter(Boolean).join(' · ')}
         </p>
       )}
       {fields.length > 0 && (
-        <dl className="spec-plate spec-plate-flow mt-3">
-          {fields.map((field) => (
-            <div key={field.en}>
+        <dl className="spec-plate spec-plate-flow zoom-detail-frame mt-3">
+          {fields.map((field, index) => (
+            <div
+              key={field.en}
+              className="zoom-detail-item"
+              style={{ '--detail-index': index + 1 } as React.CSSProperties}
+            >
               <dt>
                 <T zh={field.zh} en={field.en} />
               </dt>
@@ -100,13 +109,12 @@ function PublishedPhotoItem({
 }) {
   const locale = useLocale()
   const alt = localize(locale, photo.altText.zhHans, photo.altText.en)
-  const location = photo.locationLabel?.[locale === 'zh' ? 'zhHans' : 'en']
-  const captured = photo.capturedAt ? captureDate(photo.capturedAt, locale) : null
   const rendition = photo.renditions.at(-1)!
   const srcSet = photo.renditions
     .map(({ src, profileWidth }) => `${src} ${profileWidth}w`)
     .join(', ')
 
+  // Tiles stay quiet: location and capture data live in the lightbox details.
   return (
     <div
       className="photo-item enter-swing"
@@ -117,7 +125,7 @@ function PublishedPhotoItem({
         } as React.CSSProperties
       }
     >
-      <div className="photo-frame group relative overflow-hidden rounded-md">
+      <div className="photo-frame relative overflow-hidden rounded-md">
         <ZoomImage
           native
           src={rendition.src}
@@ -129,11 +137,6 @@ function PublishedPhotoItem({
           className="rounded-md"
           expandedContent={<PhotoDetails photo={photo} />}
         />
-        {(location || captured) && (
-          <p className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-1 bg-background/90 px-3 py-2 text-sm leading-5 tabular-nums opacity-0 backdrop-blur-sm transition-[opacity,transform] duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 motion-reduce:transform-none motion-reduce:transition-none">
-            {[location, captured].filter(Boolean).join(' · ')}
-          </p>
-        )}
         <span className="calibration-corners" aria-hidden />
       </div>
     </div>
