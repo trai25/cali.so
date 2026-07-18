@@ -1,7 +1,38 @@
 import { instant } from '@next/playwright'
-import { expect, test } from '@playwright/test'
+import { expect, test, type Locator } from '@playwright/test'
 
 const postSlug = '2023-year-in-review'
+
+async function captureMotionDuration(element: Locator, scrollY: number, duration: number) {
+  return element.evaluate(
+    (target, input) =>
+      new Promise<number[]>((resolve, reject) => {
+        let finished = false
+        const timeout = window.setTimeout(() => {
+          finished = true
+          reject(new Error(`Motion animation with ${input.duration}ms duration did not start`))
+        }, 5_000)
+        const capture = () => {
+          if (finished) return
+          const durations = target
+            .getAnimations()
+            .map((animation) => animation.effect?.getComputedTiming().duration)
+            .filter((value): value is number => typeof value === 'number')
+          if (durations.includes(input.duration)) {
+            finished = true
+            window.clearTimeout(timeout)
+            resolve(durations)
+            return
+          }
+          window.requestAnimationFrame(capture)
+        }
+
+        window.requestAnimationFrame(capture)
+        window.scrollTo(0, input.scrollY)
+      }),
+    { scrollY, duration },
+  )
+}
 
 // Next 16.3 preview.6 internal wire values, defined by FetchStrategy in
 // next/dist/client/components/segment-cache/cache.js. Re-check on upgrades:
@@ -798,31 +829,8 @@ test('mobile article map animates its entrance and toggle states', async ({
   const articleMap = page.getByRole('button', { name: 'Open article map' })
   await expect(island).toHaveCSS('opacity', '0')
 
-  const entranceDurations = await island.evaluate(
-    (element) =>
-      new Promise<number[]>((resolve, reject) => {
-        const timeout = window.setTimeout(() => {
-          element.removeEventListener('transitionrun', captureTransition)
-          reject(new Error('Mobile article map entrance did not start'))
-        }, 5_000)
-        const captureTransition = (event: Event) => {
-          if (event.target !== element) return
-          const durations = element
-            .getAnimations()
-            .map((animation) => animation.effect?.getComputedTiming().duration)
-            .filter((duration): duration is number => typeof duration === 'number')
-          if (!durations.includes(180) || !durations.includes(200)) return
-
-          window.clearTimeout(timeout)
-          element.removeEventListener('transitionrun', captureTransition)
-          resolve(durations)
-        }
-
-        element.addEventListener('transitionrun', captureTransition)
-        window.scrollTo(0, 700)
-      }),
-  )
-  expect(entranceDurations).toEqual(expect.arrayContaining([180, 200]))
+  const entranceDurations = await captureMotionDuration(island, 700, 200)
+  expect(entranceDurations).toContain(200)
   await expect(articleMap).toBeVisible()
 
   const opening = await articleMap.evaluate(async (button) => {
@@ -876,6 +884,52 @@ test('mobile article map animates its entrance and toggle states', async ({
   expect(closing.expanded).toBe('false')
   expect(closing.mapAnimations).toBeGreaterThan(0)
   expect(closing.nodeAnimations).toBeGreaterThan(0)
+
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll('.post-minimap-island, .post-minimap-node')].every(
+      (node) => node.getAnimations().length === 0,
+    ),
+  )
+  const exitDurations = await captureMotionDuration(island, 0, 160)
+  expect(exitDurations).toContain(160)
+  await expect(island).toHaveCSS('opacity', '0')
+})
+
+test('desktop article map shows reading progress', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto(`/en/blog/${postSlug}`)
+
+  const ring = page.locator('.post-minimap-progress')
+  const progress = ring.locator('.post-minimap-progress-value')
+  await expect(ring).toBeVisible()
+  await expect(ring).toHaveCSS('width', '24px')
+  await expect(progress).toHaveAttribute('stroke-dasharray', '0 1')
+
+  await page.evaluate(() => window.scrollTo(0, 700))
+  await expect
+    .poll(() => progress.getAttribute('stroke-dasharray'))
+    .not.toBe('0 1')
+})
+
+test('mobile article map honors reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto(`/en/blog/${postSlug}`)
+
+  const island = page.locator('.post-minimap-island')
+  await page.evaluate(() => window.scrollTo(0, 700))
+  await expect(page.getByRole('button', { name: 'Open article map' })).toBeVisible()
+  expect(await island.evaluate((element) => element.getAnimations().length)).toBe(0)
+
+  await page.getByRole('button', { name: 'Open article map' }).click()
+  const activeAnimations = await page.locator('.post-minimap').evaluate((panel) => ({
+    panel: panel.getAnimations().length,
+    nodes: [...document.querySelectorAll('.post-minimap-node')].reduce(
+      (count, node) => count + node.getAnimations().length,
+      0,
+    ),
+  }))
+  expect(activeAnimations).toEqual({ panel: 0, nodes: 0 })
 })
 
 test('administration stays outside public prefetching and requires login', async ({

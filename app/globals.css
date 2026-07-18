@@ -3541,6 +3541,41 @@ html[data-locale='en'] [data-en-block] {
   display: none;
 }
 
+.post-minimap-progress {
+  flex: none;
+  overflow: visible;
+  transform: rotate(-90deg);
+}
+
+.post-minimap-progress-track,
+.post-minimap-progress-value {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.post-minimap-progress-track {
+  stroke: color-mix(in oklab, var(--muted-foreground) 40%, transparent);
+}
+
+.post-minimap-progress-value {
+  stroke: currentColor;
+}
+
+@media (min-width: 64rem) {
+  .post-minimap-progress {
+    position: absolute;
+    display: block;
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .post-minimap-toggle-icon {
+    position: relative;
+    z-index: 1;
+  }
+}
+
 .post-minimap-toggle-panel {
   transform-origin: 3.75px 6px;
   transition: opacity 150ms ease, transform 200ms var(--ease-swift);
@@ -3599,9 +3634,6 @@ html[data-locale='en'] [data-en-block] {
     opacity: 0;
     pointer-events: none;
     transform: translate(-50%, -1rem) scale(0.96);
-    transition:
-      opacity 180ms var(--ease-swift),
-      transform 200ms var(--ease-swift);
   }
 
   .post-minimap-root[data-island-visible] .post-minimap-island {
@@ -3626,10 +3658,7 @@ html[data-locale='en'] [data-en-block] {
     pointer-events: none;
     transform: translateY(-0.75rem) scale(0.96);
     transform-origin: top center;
-    transition:
-      opacity 180ms var(--ease-swift),
-      transform 200ms var(--ease-swift),
-      visibility 1ms linear 200ms;
+    transition: visibility 1ms linear 200ms;
   }
 
   .post-minimap-root[data-open] .post-minimap {
@@ -3637,10 +3666,7 @@ html[data-locale='en'] [data-en-block] {
     visibility: visible;
     pointer-events: auto;
     transform: none;
-    transition:
-      opacity 180ms var(--ease-swift),
-      transform 200ms var(--ease-swift),
-      visibility 1ms linear;
+    transition: visibility 1ms linear;
   }
 
   .post-minimap-phone-surface {
@@ -3716,24 +3742,6 @@ html[data-locale='en'] [data-en-block] {
     display: block;
     width: 1.25rem;
     height: 1.25rem;
-    flex: none;
-    overflow: visible;
-    transform: rotate(-90deg);
-  }
-
-  .post-minimap-progress-track,
-  .post-minimap-progress-value {
-    fill: none;
-    stroke-width: 1.5;
-    stroke-linecap: round;
-  }
-
-  .post-minimap-progress-track {
-    stroke: color-mix(in oklab, var(--muted-foreground) 40%, transparent);
-  }
-
-  .post-minimap-progress-value {
-    stroke: var(--foreground);
   }
 
   .post-minimap-toggle-label {

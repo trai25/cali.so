@@ -17,6 +17,10 @@ const PHONE_ENTER_DURATION = 0.2
 const PHONE_ENTER_STAGGER_WINDOW = 0.06
 const PHONE_EXIT_DURATION = 0.16
 const PHONE_EXIT_STAGGER_WINDOW = 0.04
+const PHONE_ISLAND_HIDDEN_TRANSFORM = 'translate(-50%, -16px) scale(0.96)'
+const PHONE_ISLAND_VISIBLE_TRANSFORM = 'translate(-50%, 0px) scale(1)'
+const PHONE_PANEL_HIDDEN_TRANSFORM = 'translateY(-12px) scale(0.96)'
+const PHONE_PANEL_VISIBLE_TRANSFORM = 'translateY(0px) scale(1)'
 const PHONE_QUERY = '(max-width: 39.99rem)'
 const TARGET_OFFSET = 100
 const RAIL_ID = 'post-document-minimap'
@@ -70,11 +74,16 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
   const [backToTopVisible, setBackToTopVisible] = useState(false)
   const [active, setActive] = useState(landmarks[0]?.id)
   const activeRef = useRef(active)
+  const islandRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLElement>(null)
   const progressCircleRef = useRef<SVGCircleElement>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const toggleRef = useRef<HTMLButtonElement>(null)
+  const islandAnimationRef = useRef<ReturnType<typeof animate> | null>(null)
   const nodeAnimationRef = useRef<ReturnType<typeof animate> | null>(null)
+  const panelAnimationRef = useRef<ReturnType<typeof animate> | null>(null)
   const desktopEntrancePlayedRef = useRef(false)
+  const phoneIslandInitializedRef = useRef(false)
 
   useEffect(() => {
     activeRef.current = active
@@ -90,18 +99,30 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
     if (nextOpen === open) return
 
     const items = rootRef.current?.querySelectorAll<HTMLElement>('.post-minimap-node')
+    const panel = panelRef.current
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
     if (reducedMotion) {
       nodeAnimationRef.current?.cancel()
       nodeAnimationRef.current = null
+      panelAnimationRef.current?.cancel()
+      panelAnimationRef.current = null
+      for (const item of items ?? []) {
+        item.style.removeProperty('opacity')
+        item.style.removeProperty('transform')
+      }
+      panel?.style.removeProperty('opacity')
+      panel?.style.removeProperty('transform')
+      panel?.style.removeProperty('will-change')
       setOpen(nextOpen)
       return
     }
 
     nodeAnimationRef.current?.stop()
+    panelAnimationRef.current?.stop()
     if (!items?.length) {
       nodeAnimationRef.current = null
+      panelAnimationRef.current = null
       setOpen(nextOpen)
       return
     }
@@ -127,6 +148,39 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
       const style = window.getComputedStyle(item)
       item.style.opacity = style.opacity
       item.style.transform = style.transform
+    }
+    if (phone && panel) {
+      const style = window.getComputedStyle(panel)
+      panel.style.opacity = style.opacity
+      panel.style.transform = style.transform
+      panel.style.willChange = 'transform, opacity'
+    }
+
+    flushSync(() => setOpen(nextOpen))
+
+    if (phone && panel) {
+      const panelAnimation = animate(
+        panel,
+        {
+          opacity: nextOpen ? 1 : 0,
+          transform: nextOpen ? PHONE_PANEL_VISIBLE_TRANSFORM : PHONE_PANEL_HIDDEN_TRANSFORM,
+        },
+        {
+          duration: nextOpen ? PHONE_ENTER_DURATION : PHONE_EXIT_DURATION,
+          ease: EASE_SWIFT,
+        },
+      )
+      panelAnimationRef.current = panelAnimation
+      void panelAnimation.finished
+        .then(() => {
+          if (panelAnimationRef.current !== panelAnimation) return
+          panelAnimation.cancel()
+          panelAnimationRef.current = null
+          panel.style.removeProperty('opacity')
+          panel.style.removeProperty('transform')
+          panel.style.removeProperty('will-change')
+        })
+        .catch(() => undefined)
     }
 
     const animation = animate(
@@ -155,20 +209,25 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
       },
     )
     nodeAnimationRef.current = animation
-    flushSync(() => setOpen(nextOpen))
 
     void animation.finished
       .then(() => {
         if (nodeAnimationRef.current !== animation) return
         animation.cancel()
         nodeAnimationRef.current = null
+        for (const item of items) {
+          item.style.removeProperty('opacity')
+          item.style.removeProperty('transform')
+        }
       })
       .catch(() => undefined)
   }
 
   useEffect(
     () => () => {
+      islandAnimationRef.current?.stop()
       nodeAnimationRef.current?.stop()
+      panelAnimationRef.current?.stop()
     },
     [],
   )
@@ -217,6 +276,74 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
   }, [])
 
   useEffect(() => {
+    const island = islandRef.current
+    if (!phoneQueryReady || !island) return
+
+    if (!phone) {
+      islandAnimationRef.current?.stop()
+      islandAnimationRef.current = null
+      phoneIslandInitializedRef.current = false
+      island.style.removeProperty('opacity')
+      island.style.removeProperty('transform')
+      island.style.removeProperty('will-change')
+      panelAnimationRef.current?.stop()
+      panelAnimationRef.current = null
+      panelRef.current?.style.removeProperty('opacity')
+      panelRef.current?.style.removeProperty('transform')
+      panelRef.current?.style.removeProperty('will-change')
+      return
+    }
+
+    islandAnimationRef.current?.stop()
+    const visible = phoneIslandVisible
+    const targetOpacity = visible ? '1' : '0'
+    const targetTransform = visible
+      ? PHONE_ISLAND_VISIBLE_TRANSFORM
+      : PHONE_ISLAND_HIDDEN_TRANSFORM
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    if (!phoneIslandInitializedRef.current) {
+      phoneIslandInitializedRef.current = true
+      island.style.opacity = '0'
+      island.style.transform = PHONE_ISLAND_HIDDEN_TRANSFORM
+      if (!visible && !reducedMotion) return
+    } else {
+      const style = window.getComputedStyle(island)
+      island.style.opacity = style.opacity
+      island.style.transform = style.transform
+    }
+
+    if (reducedMotion) {
+      islandAnimationRef.current = null
+      island.style.opacity = targetOpacity
+      island.style.transform = targetTransform
+      island.style.removeProperty('will-change')
+      return
+    }
+
+    island.style.willChange = 'transform, opacity'
+    const animation = animate(
+      island,
+      { opacity: Number(targetOpacity), transform: targetTransform },
+      {
+        duration: visible ? PHONE_ENTER_DURATION : PHONE_EXIT_DURATION,
+        ease: EASE_SWIFT,
+      },
+    )
+    islandAnimationRef.current = animation
+    void animation.finished
+      .then(() => {
+        if (islandAnimationRef.current !== animation) return
+        animation.cancel()
+        islandAnimationRef.current = null
+        island.style.opacity = targetOpacity
+        island.style.transform = targetTransform
+        island.style.removeProperty('will-change')
+      })
+      .catch(() => undefined)
+  }, [phone, phoneIslandVisible, phoneQueryReady])
+
+  useEffect(() => {
     if (!open || desktop) return
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
@@ -237,7 +364,7 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
 
   useEffect(() => {
     if (!phone || phoneIslandVisible || !open) return
-    setOpen(false)
+    animateOpenState(false)
   }, [open, phone, phoneIslandVisible])
 
   useEffect(() => {
@@ -319,6 +446,7 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
     >
       <div className="post-minimap-backdrop backdrop-blur-[8px]" aria-hidden />
       <div
+        ref={islandRef}
         className="post-minimap-island backdrop-blur-[12px]"
         aria-hidden={islandConcealed || undefined}
         inert={islandConcealed ? true : undefined}
@@ -391,6 +519,7 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
           </svg>
         </button>
         <nav
+          ref={panelRef}
           id={RAIL_ID}
           className="post-minimap"
           aria-label={localize(locale, '文章地图', 'Article map')}
