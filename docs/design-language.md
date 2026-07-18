@@ -125,6 +125,10 @@ Hard rules:
 - 1px borders are the exception: prefer `box-shadow: 0 0 0 1px` for card
   edges (blends with any background) and hairline dividers via
   `--border-hairline` (0.5px on retina, 1px otherwise).
+- The surface ladder (`--surface-1…8`, `lib/surface-classes.ts`) is
+  warm-tuned on the public site so elevated sheets sit on the same paper
+  as everything else; the neutral values remain only as the
+  pre-hydration fallback. Code sheets rest on `--surface-1`.
 - Focus rings stay neutral (gray/black/white), visible on `:focus-visible`,
   and are never removed.
 - Z-index scale: `--z-nav: 100; --z-card: 200; --z-toast: 300`. Nothing else.
@@ -494,6 +498,48 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
   steps to the nameplate register. Prose ordered lists share the same
   recipe globally: `.prose ol` draws the boxed `01` ordinal from a CSS
   counter (`decimal-leading-zero`), replacing the native decimal marker.
+- **Figure prints**: post images are square-cornered on the register's
+  2px radius with a hairline ring, keeping their deterministic scatter
+  tilt; the floating lightbox photo and the photo-masonry tiles share the
+  same corner. Prints (inline and floating) rest on `--surface-1` — a
+  floor for transparent images and loading frames. Captions are plate annotations — left-set mono prefixed
+  with an auto-counted figure number (`FIG. 01 — ` / `图 01 — `, keyed
+  off `html[data-locale]`, excluded from accessible names).
+- **Code nameplates**: prose code blocks render as nameplates — the
+  pretty-code figure carries the hairline frame; a titled block gets a
+  ruled head row (the filename in 11px mono at 88% ink) with a boxed
+  uppercase language tag drawn from `data-language`; the code sheet below
+  is square-cornered inside the frame. Untitled blocks keep the bare
+  frame. The copy button and inline code chips sit on the register's 2px
+  radius. The sheet's background comes from the surface ladder
+  (`--surface-1`), not the highlighter theme — shiki contributes token
+  colors only. Horizontal overflow goes through the fluid scroll area
+  (`components/ui/scroll-area.tsx`): edge fades tinted with the sheet's
+  own surface appear only while content continues in that direction,
+  updated on scroll and resize — the fade is information, not
+  decoration. Fade visibility is an opacity swap (150ms ease, instant
+  under reduced motion).
+- **Quotation bar**: prose blockquotes swap the plain rule for the hazard
+  hatch set vertically — a bordered 6px strip of fine diagonal strokes
+  down the left edge. Quoted text keeps its muted ink; the strip marks it
+  as material brought in from elsewhere.
+- **Archived-post card** (`.tweet-card`, `components/mdx/tweet.tsx`): the
+  static social snapshot renders as a specimen label in the nameplate
+  register — a hairline frame with ruled head/body/foot rows resting on
+  `--surface-1` (a fine-pointer hover lifts it one step to
+  `--surface-2`), the handle in mono, and a plate-style foot: stamped `yyyy.mm.dd` date, the like
+  count (read from the public syndication endpoint at build/revalidate,
+  falling back to the snapshot's archived `likes`, hidden when neither
+  exists), notes, and the northeast mark resting at 60% opacity
+  (deepening and shifting 1.5px outward on hover, per the external-mark
+  treatment). The avatar is the plate's one round exception — a face is
+  a face. Snapshots
+  stay fully static, and so does the avatar: a committed
+  `tweet-<id>-avatar.(jpg|png)` beside the JSON wins; otherwise the
+  server fetches the author avatar once at build/revalidate time and
+  inlines it as a data URI in the static HTML (bounded to 200KB,
+  image content-types only). The visitor never contacts a third party,
+  and a failed fetch degrades to the initial-letter tile.
 - **Barcode** (`components/barcode.tsx`): a decorative label-graphic
   barcode whose bar widths derive deterministically from its code string
   (stable across SSR), with the human-readable code beneath. It scans as

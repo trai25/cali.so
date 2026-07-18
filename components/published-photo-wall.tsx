@@ -125,7 +125,7 @@ function PublishedPhotoItem({
         } as React.CSSProperties
       }
     >
-      <div className="photo-frame relative overflow-hidden rounded-md">
+      <div className="photo-frame relative overflow-hidden">
         <ZoomImage
           native
           src={rendition.src}
@@ -134,7 +134,6 @@ function PublishedPhotoItem({
           width={photo.width}
           height={photo.height}
           sizes="(max-width: 704px) 50vw, 288px"
-          className="rounded-md"
           expandedContent={<PhotoDetails photo={photo} />}
         />
         <span className="calibration-corners" aria-hidden />
