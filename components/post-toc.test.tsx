@@ -568,6 +568,7 @@ describe('PostToc', () => {
     expect(root.getAttribute('data-toggle-motion')).toBeNull()
     expect(root.getAttribute('data-scroll-motion')).toBe('instant')
 
+    root.setAttribute('data-toggle-motion', 'instant')
     fireEvent.click(container.querySelector('a[href="#second"]')!, { detail: 1 })
     expect(toggle.getAttribute('aria-expanded')).toBe('true')
     expect(root.getAttribute('data-toggle-motion')).toBeNull()
