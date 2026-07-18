@@ -204,6 +204,16 @@ open rich hover cards. The contract:
   `scale(0.95)` + `opacity: 0`, `transform-origin` at the trigger,
   `backface-visibility: hidden`. Exit faster than enter. Built on the fluid
   hover-card primitive so pointer exit mid-animation reverses smoothly.
+- **Chrome in the print register.** The card shell is a printed label:
+  the register's 2px corner, elevation from the surface ladder
+  (`--surface-3`), hairline ring plus the shadow scale. Machine text goes
+  mono — handles (`@handle`, account numbers) and the preview card's
+  domain line at 12px — while names and bios stay in the human sans. The
+  stat row is the card's ruled plate foot (hairline-top, 11px mono,
+  tabular); each stat is a no-break unit, so a long locale wraps at the
+  separators instead of overflowing the fixed-width card. Per-service composition is untouched, and the envelope card
+  stays exempt: it is already a physical object. Fixed-height cards size
+  for the ruled foot.
 - **Fixed dimensions per service card type** — service-card content loads
   into a fixed-size card (skeleton first). External-link preview cards are
   instead fixed-width with content-driven height, settled at render. Either
