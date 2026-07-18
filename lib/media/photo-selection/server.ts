@@ -9,6 +9,7 @@ import {
   PUBLIC_PHOTO_SELECTION_CACHE_TAG,
   type PublicPhotoSelection,
 } from './repository'
+import { devPhotoSelectionFixture } from './dev-fixtures'
 import { parseBunnyRenditionCdnEnv } from '../storage/config'
 
 type CachedPublicPhoto = Omit<
@@ -63,12 +64,21 @@ const readPublishedPhotoSelection = unstable_cache(
   },
 )
 
+// Local development only: when no real selection exists (no database or
+// nothing published), fall back to generated test cards so the photos
+// surfaces render. Strictly gated — test and production behavior unchanged.
+function devFallback(): PublicPhotoSelection | null {
+  return process.env.NODE_ENV === 'development' ? devPhotoSelectionFixture() : null
+}
+
 export async function getPublishedPhotoSelection() {
   try {
-    return restoreSelectionDates(
+    const selection = restoreSelectionDates(
       (await readPublishedPhotoSelection()) as CachedPublicPhotoSelection | null,
     )
+    if (selection && selection.items.length > 0) return selection
+    return devFallback()
   } catch {
-    return null
+    return devFallback()
   }
 }

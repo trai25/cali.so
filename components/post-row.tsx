@@ -56,7 +56,7 @@ export function PostRow({
       <span className="blog-row-leader" aria-hidden />
       <time
         dateTime={post.publishedAt.toISOString()}
-        className="shrink-0 text-muted-foreground tabular-nums"
+        className="blog-row-date shrink-0 text-muted-foreground tabular-nums"
       >
         {dateStyle === 'month-day' && formatMonthDay(post.publishedAt)}
         {dateStyle === 'short' && formatShortDate(post.publishedAt)}

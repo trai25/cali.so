@@ -69,7 +69,8 @@ describe('Published Photo Selection UI', () => {
     expect(html).toContain('alt="第 1 张城市照片"')
     expect(html).toContain('https://media.example.com/1/1600.jpg')
     expect(html).toContain('640w')
-    expect(html).toContain('台北')
+    // tiles stay quiet — location/capture data render only in the lightbox
+    expect(html).not.toContain('台北')
     expect(html).not.toContain('/_next/image')
     expect(html).not.toMatch(/latitude|longitude|originals\//i)
   })
@@ -97,7 +98,10 @@ describe('Published Photo Selection UI', () => {
     expect(within(dialog).getByText(/Taipei · May 8, 2025/)).toBeTruthy()
     expect(within(dialog).getByText('Apple iPhone 16 Pro')).toBeTruthy()
     expect(within(dialog).getByText('24 mm')).toBeTruthy()
-    expect(within(dialog).getByText('ISO 80')).toBeTruthy()
+    // capture details render as spec-plate label/value cells
+    expect(within(dialog).getByText('ISO')).toBeTruthy()
+    expect(within(dialog).getByText('80')).toBeTruthy()
+    expect(dialog.querySelector('.spec-plate-flow')).toBeTruthy()
   })
 
   it('uses the first three photos and full count for the homepage card', () => {

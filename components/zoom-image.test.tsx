@@ -184,7 +184,7 @@ describe('ZoomImage', () => {
 
     unmount()
 
-    for (const type of ['keydown', 'wheel', 'touchmove', 'resize']) {
+    for (const type of ['keydown', 'wheel', 'touchmove', 'scroll', 'resize']) {
       expect(removeListener.mock.calls.some(([removedType]) => removedType === type)).toBe(
         true,
       )

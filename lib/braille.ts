@@ -20,3 +20,18 @@ export function brailleDate(date: Date): string {
     .map((n) => '⠼' + [...String(n)].map((d) => DIGITS[d]).join(''))
     .join('⠲')
 }
+
+const LETTERS: Record<string, string> = {
+  a: '⠁', b: '⠃', c: '⠉', d: '⠙', e: '⠑', f: '⠋', g: '⠛', h: '⠓', i: '⠊',
+  j: '⠚', k: '⠅', l: '⠇', m: '⠍', n: '⠝', o: '⠕', p: '⠏', q: '⠟', r: '⠗',
+  s: '⠎', t: '⠞', u: '⠥', v: '⠧', w: '⠺', x: '⠭', y: '⠽', z: '⠵',
+}
+
+// Latin letters as braille cells; a space between words maps to a blank cell.
+// Ornamental dot texture in the print register — the readable text lives
+// elsewhere, so unknown characters are simply skipped.
+export function brailleText(text: string): string {
+  return [...text.toLowerCase()]
+    .map((ch) => (ch === ' ' ? '⠀' : (LETTERS[ch] ?? '')))
+    .join('')
+}

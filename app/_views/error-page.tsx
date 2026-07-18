@@ -3,6 +3,7 @@
 import { RefreshCw } from 'lucide-react'
 import { GeistPixelCircle, GeistPixelSquare } from 'geist/font/pixel'
 
+import { Barcode } from '~/components/barcode'
 import { ErrorHomeAction } from '~/components/error-home-action'
 import { Button } from '~/components/ui/button'
 import { T } from '~/lib/i18n'
@@ -43,9 +44,6 @@ export function ErrorPageView({ retry }: Pick<ErrorBoundaryProps, 'retry'>) {
         <span className="error-loose-pixel error-loose-pixel-c" aria-hidden />
 
         <div className="error-message">
-          <p className="error-kicker font-mono">
-            <T zh="印刷中断" en="PRINT_INTERRUPTED" />
-          </p>
           <h1 id="error-title" className="text-sm font-semibold">
             <T zh="这页没有印好。" en="This page did not print correctly." />
           </h1>
@@ -69,6 +67,8 @@ export function ErrorPageView({ retry }: Pick<ErrorBoundaryProps, 'retry'>) {
           </Button>
           <ErrorHomeAction />
         </nav>
+
+        <Barcode code="ERR-500-CALI-SO" className="error-barcode" />
 
         <div className="error-proof-footer font-mono" aria-hidden>
           <span>

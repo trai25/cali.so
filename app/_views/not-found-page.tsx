@@ -1,5 +1,6 @@
 import { GeistPixelCircle, GeistPixelSquare } from 'geist/font/pixel'
 
+import { Barcode } from '~/components/barcode'
 import { ErrorHomeAction } from '~/components/error-home-action'
 import { T } from '~/lib/i18n'
 
@@ -34,9 +35,6 @@ export function NotFoundPageView() {
         <span className="error-loose-pixel error-loose-pixel-c" aria-hidden />
 
         <div className="error-message">
-          <p className="error-kicker font-mono">
-            <T zh="页面偏离网格" en="PAGE_OFF_GRID" />
-          </p>
           <h1 id="not-found-title" className="text-sm font-semibold">
             <T zh="这页走丢了。" en="This page slipped off the grid." />
           </h1>
@@ -54,6 +52,8 @@ export function NotFoundPageView() {
           </span>
           <ErrorHomeAction />
         </nav>
+
+        <Barcode code="ERR-404-CALI-SO" className="error-barcode" />
 
         <div className="error-proof-footer font-mono" aria-hidden>
           <span>
