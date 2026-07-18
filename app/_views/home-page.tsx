@@ -18,13 +18,25 @@ import { getGitHub, getSocial } from '~/lib/social-live'
 import { getHomepagePhotoPreview } from '~/lib/media/photo-selection/repository'
 import { getPublishedPhotoSelection } from '~/lib/media/photo-selection/server'
 
-function SectionTitle({ children, delay }: { children: React.ReactNode; delay: number }) {
+function SectionTitle({
+  index,
+  children,
+  delay,
+}: {
+  index: string
+  children: React.ReactNode
+  delay: number
+}) {
   return (
     <h2
-      className="enter text-sm font-medium text-muted-foreground"
+      className="section-tag enter"
       style={{ '--enter-delay': `${delay}ms` } as React.CSSProperties}
     >
-      {children}
+      <span className="section-tag-index" aria-hidden>
+        {index}
+      </span>
+      <span className="section-tag-hatch" aria-hidden />
+      <span className="section-tag-label">{children}</span>
     </h2>
   )
 }
@@ -35,13 +47,17 @@ export async function HomePageView({ locale }: { locale: Locale }) {
   const latest = posts.slice(0, 5)
   const center = (latest.length - 1) / 2
 
+  // section tags number in render order; conditional shelves never leave gaps
+  let sectionCount = 0
+  const nextSectionIndex = () => String(++sectionCount).padStart(2, '0')
+
   return (
     <div className="mx-auto w-full max-w-[37.5rem] px-6">
       <div className="flex flex-col-reverse justify-between gap-10 sm:flex-row sm:items-start">
         <div className="enter max-w-[19rem]">
           <div className="flex items-center gap-2">
             <h1 className="text-base font-semibold tracking-tight text-foreground">Cali Castle</h1>
-            <PixelCluster className="shrink-0" />
+            <PixelCluster variant={2} className="shrink-0" />
           </div>
           <div className="mt-4">
             <HomeIntroduction social={social.x} github={github} />
@@ -77,7 +93,7 @@ export async function HomePageView({ locale }: { locale: Locale }) {
       />
 
       <section className="mt-16">
-        <SectionTitle delay={120}>
+        <SectionTitle index={nextSectionIndex()} delay={120}>
           <T zh="经历" en="Experience" />
         </SectionTitle>
         <ul className="mt-4 flex flex-col">
@@ -120,7 +136,7 @@ export async function HomePageView({ locale }: { locale: Locale }) {
 
       <section className="mt-16">
         <div className="flex items-center justify-between gap-4">
-          <SectionTitle delay={200}>
+          <SectionTitle index={nextSectionIndex()} delay={200}>
             <T zh="写作" en="Writing" />
           </SectionTitle>
           <Link
@@ -148,7 +164,7 @@ export async function HomePageView({ locale }: { locale: Locale }) {
 
       {records.length > 0 && (
         <section className="mt-16">
-          <SectionTitle delay={320}>
+          <SectionTitle index={nextSectionIndex()} delay={320}>
             <T zh="让我来劲的音乐" en="Music That Gets Me Going" />
           </SectionTitle>
           <div className="enter mt-5" style={{ '--enter-delay': '360ms' } as React.CSSProperties}>
@@ -159,7 +175,7 @@ export async function HomePageView({ locale }: { locale: Locale }) {
 
       {books.length > 0 && (
         <section className="mt-16">
-          <SectionTitle delay={380}>
+          <SectionTitle index={nextSectionIndex()} delay={380}>
             <T zh="启发我的书" en="Books That Inspire Me" />
           </SectionTitle>
           <div className="enter mt-5" style={{ '--enter-delay': '420ms' } as React.CSSProperties}>

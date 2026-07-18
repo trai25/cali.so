@@ -39,7 +39,7 @@ export function AmaConfirmationPageView() {
         <h1 className="page-eyebrow enter">
           <T zh="预订确认" en="Booking confirmation" />
         </h1>
-        <PixelCluster className="enter shrink-0" />
+        <PixelCluster variant={3} className="enter shrink-0" />
       </header>
 
       {/* useSearchParams requires a Suspense boundary; the fallback shares

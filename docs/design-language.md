@@ -115,9 +115,11 @@ Hard rules:
   appears as **one small filled shape — the lit dither cell**. It recurs
   deliberately, always as that same 5px square: the masthead stamp (the pixel
   cluster, once per page, see Technical print) is its home, and on posts the
-  spec plate's edition cell repeats it. It never colors text, borders,
+  spec plate's edition cell repeats it. Protocol state is the third
+  sanctioned role: a status ladder's current step and the confirmation
+  stamp each carry the same lit cell. It never colors text, borders,
   controls, or links, never rides a hover state, and never appears as a
-  free-floating mark outside those two roles. The repetition reads as one
+  free-floating mark outside those roles. The repetition reads as one
   recurring stamp, not as scattered accents — which is exactly why it can
   recur without cheapening.
 - 1px borders are the exception: prefer `box-shadow: 0 0 0 1px` for card
@@ -329,6 +331,12 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
   paper. Captions on covers are
   braille numerals (`lib/braille.ts`); readable dates stay for assistive
   tech.
+- **Braille** (`lib/braille.ts`): the print's dot medium. Post covers caption
+  their date in braille numerals (`brailleDate`); the footer colophon carries
+  the name in braille cells (`brailleText`, `.footer-braille`) as a printer's
+  mark beneath the copyright. Always decorative and `aria-hidden` — the
+  readable value lives elsewhere. Dot-based, so treat it like the other marks:
+  quiet, and never stacked with a full raster.
 - **Blog index rows**: one catalog row per post — 64×44 dithered print thumb
   (still the shared morph element) resting over two quiet paper sheets, title,
   dotted leader (the typewriter TOC register), tabular date. The sheets are
@@ -420,7 +428,10 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
   mark, never a control (`aria-hidden`, out of the accessibility tree). On
   the projects page it sits over the faint ghost schematic, which stays
   behind it as an ambient layer — the stamp is a mark, exempt from the
-  one-instrument rule that governs full rasters.
+  one-instrument rule that governs full rasters. The arrangement varies per
+  page (a `variant` picks which corner is lit and how the ink cells fall) so
+  no two stamps read identically; every variant still keeps exactly one lit
+  signal cell. Posts derive their variant from the slug, stable per post.
 - **Page eyebrows** (`.page-eyebrow`): page h1s on the index and service
   surfaces (writing, projects, photos, the AMA family) are set as mono
   section marks — 12px, +0.08em tracking, uppercase Latin — prefixed by a
@@ -433,6 +444,41 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
   Arrows rest at 60% opacity and shift 1.5px outward on a fine-pointer
   hover (180ms ease), mirroring the external-mark treatment; titles deepen
   to full ink. Ordinary link navigation — no route morph.
+- **Nameplate** (`.spec-nameplate`): the boxed variant of the spec plate —
+  label and value cells separated by hairline rules inside a hairline
+  frame, like an equipment serial plate. Used where the data is a
+  product's own specification (the AMA session specs). Same mono
+  typography as the plate; labels uppercase at 11px, values tabular.
+- **Status ladder** (`.status-ladder`): journey steps as mono rows —
+  two-digit index, label, and a 5px state cell at the row's end. Done is
+  filled ink, pending is a hairline outline, and the current step carries
+  the lit signal cell. Decorative reinforcement only (`aria-hidden`): the
+  prose beside it always announces the same state. Lives on the AMA
+  confirmation, driven by the server's real hold state — a ladder must
+  never show state the page cannot prove.
+- **Certification stamp** (`.cert-stamp`): a hairline-bordered mono
+  uppercase chip ("已确认 / Confirmed +") with the lit cell, for terminal
+  confirmed states. A stamp is applied once, at the end — never as a
+  badge on lists or previews.
+- **Section tags** (`.section-tag`): section h2s on the homepage and the
+  AMA page are set as index tags — a boxed two-digit number, a
+  hazard-hatch chip (fine diagonal strokes in a bordered cell), and a
+  tracked uppercase mono label. Numbering follows render order so
+  conditional sections never leave gaps; the number and hatch are
+  `aria-hidden`, so the accessible name is just the label.
+- **Boxed step ordinals** (`.step-index`): manual/how-it-works lists carry
+  their two-digit ordinals in small hairline boxes, tying numbered prose
+  steps to the nameplate register.
+- **Barcode** (`components/barcode.tsx`): a decorative label-graphic
+  barcode whose bar widths derive deterministically from its code string
+  (stable across SSR), with the human-readable code beneath. It scans as
+  ornament, not data (`aria-hidden`). One per surface, currently the
+  error proof sheets (`ERR-404-CALI-SO`, `ERR-500-CALI-SO`) at 38% ink.
+- **Ghost folio numerals** (`.ghost-folio`): the writing index's year
+  sections carry the year's last two digits as an oversized pixel-face
+  numeral in `--ghost-ink`, top-right behind the rows — the folio-number
+  device in the ambient register, following the same missability contract
+  as the ghost schematic.
 - Future candidates: ascii-on-hover for photos, dithered media
   placeholders, line-screen section dividers. One instrument per page —
   never stack rasters over each other.
@@ -532,7 +578,14 @@ The leftmost desktop colophon puts the copyright at the top and Cali's local
 clock at the bottom. The clock shows the `UTC+8` timezone, a muted tabular live
 Asia/Taipei time in 12-hour `h:mm AM/PM` format without seconds, and a small
 redundant analog face. The readout is set as a small spec plate: the `UTC+8`
-label in 11px tracked uppercase mono over the 13px mono time value. The digital `<time>` is the accessible source; the clock
+label in 11px tracked uppercase mono over the 13px mono time value. Below the
+clock sits the geo stamp (`.footer-geo`): a hairline graticule globe beside a
+pinned coordinate (`22.4820° N / 113.9247° E`) — a quiet easter egg for anyone
+who plots it. The globe shares the clock face's size and left edge, and the
+coordinate shares the digital clock's 13px mono size and colour, so the two
+rows read as one instrument. Decorative and `aria-hidden`. The colophon also
+carries the name in braille (`.footer-braille`) beneath the copyright as a
+printer's mark. The digital `<time>` is the accessible source; the clock
 face is decorative and deliberately quieter than the footer trees. Its fixed
 placeholder dimensions avoid hydration shift, and the second-aligned timer
 pauses while the page is hidden. On mobile, contact and index remain a

@@ -40,7 +40,7 @@ export function AmaBookPageView() {
             />
           </p>
         </header>
-        <PixelCluster className="enter shrink-0" />
+        <PixelCluster variant={1} className="enter shrink-0" />
       </div>
 
       <div className="enter mt-10 pb-4" style={{ '--enter-delay': '120ms' } as React.CSSProperties}>

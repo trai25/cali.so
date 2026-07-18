@@ -70,20 +70,28 @@ const TESTIMONIALS = [
 ] as const
 
 function SectionHeading({
+  index,
   zh,
   en,
   delay,
 }: {
+  index: string
   zh: string
   en: string
   delay: number
 }) {
   return (
     <h2
-      className="enter text-sm font-medium text-muted-foreground"
+      className="section-tag enter"
       style={{ '--enter-delay': `${delay}ms` } as React.CSSProperties}
     >
-      <T zh={zh} en={en} />
+      <span className="section-tag-index" aria-hidden>
+        {index}
+      </span>
+      <span className="section-tag-hatch" aria-hidden />
+      <span className="section-tag-label">
+        <T zh={zh} en={en} />
+      </span>
     </h2>
   )
 }
@@ -110,7 +118,7 @@ export function AmaPageView() {
             />
           </p>
         </header>
-        <PixelCluster className="enter shrink-0" />
+        <PixelCluster variant={5} className="enter shrink-0" />
       </div>
 
       <section
@@ -118,16 +126,13 @@ export function AmaPageView() {
         style={{ '--enter-delay': '120ms' } as React.CSSProperties}
         aria-label="AMA Session"
       >
-        <dl className="text-sm">
+        <dl className="spec-nameplate">
           {SPEC_ROWS.map((row) => (
-            <div
-              key={row.enLabel}
-              className="hairline-top grid grid-cols-[7.5rem_minmax(0,1fr)] gap-4 py-2.5 first:border-t-0"
-            >
-              <dt className="text-muted-foreground">
+            <div key={row.enLabel}>
+              <dt>
                 <T zh={row.zhLabel} en={row.enLabel} />
               </dt>
-              <dd className="tabular-nums">
+              <dd>
                 <T zh={row.zhValue} en={row.enValue} />
               </dd>
             </div>
@@ -137,7 +142,7 @@ export function AmaPageView() {
 
       <section className="mt-12" aria-labelledby="ama-who-heading">
         <div id="ama-who-heading">
-          <SectionHeading zh="这一小时和谁聊" en="Who you are talking to" delay={170} />
+          <SectionHeading index="01" zh="这一小时和谁聊" en="Who you are talking to" delay={170} />
         </div>
         <p className="page-introduction mt-4">
           <T
@@ -149,7 +154,7 @@ export function AmaPageView() {
 
       <section className="mt-12" aria-labelledby="ama-topics-heading">
         <div id="ama-topics-heading">
-          <SectionHeading zh="可以聊的话题" en="Topics" delay={200} />
+          <SectionHeading index="02" zh="可以聊的话题" en="Topics" delay={200} />
         </div>
         <ul className="mt-4 text-sm">
           {AMA_TOPICS.map((topic) => {
@@ -165,13 +170,16 @@ export function AmaPageView() {
 
       <section className="mt-12" aria-labelledby="ama-process-heading">
         <div id="ama-process-heading">
-          <SectionHeading zh="预订流程" en="How it works" delay={230} />
+          <SectionHeading index="03" zh="预订流程" en="How it works" delay={230} />
         </div>
         <ol className="mt-4 flex flex-col gap-3 text-sm">
           {STEPS.map((step, index) => (
-            <li key={step.en} className="grid grid-cols-[1.5rem_minmax(0,1fr)] gap-2 leading-6">
-              <span aria-hidden className="tabular-nums text-muted-foreground">
-                {index + 1}
+            <li
+              key={step.en}
+              className="grid grid-cols-[1.5rem_minmax(0,1fr)] items-baseline gap-2 leading-6"
+            >
+              <span aria-hidden className="step-index">
+                {String(index + 1).padStart(2, '0')}
               </span>
               <span className="text-balance">
                 <T zh={step.zh} en={step.en} />
@@ -183,7 +191,7 @@ export function AmaPageView() {
 
       <section className="mt-12" aria-labelledby="ama-policy-heading">
         <div id="ama-policy-heading">
-          <SectionHeading zh="改期与退款" en="Rescheduling and refunds" delay={260} />
+          <SectionHeading index="04" zh="改期与退款" en="Rescheduling and refunds" delay={260} />
         </div>
         <p className="page-introduction mt-4">
           <T
@@ -195,7 +203,7 @@ export function AmaPageView() {
 
       <section className="mt-12" aria-labelledby="ama-notes-heading">
         <div id="ama-notes-heading">
-          <SectionHeading zh="来自聊过的人" en="From past sessions" delay={290} />
+          <SectionHeading index="05" zh="来自聊过的人" en="From past sessions" delay={290} />
         </div>
         <div className="mt-4 flex flex-col gap-6">
           {TESTIMONIALS.map((testimonial, index) => (

@@ -169,6 +169,8 @@ export async function BlogPostPageView({ slug, locale }: { slug: string; locale:
   const plateDate = plateDateFormat.format(post.publishedAt).replaceAll('-', '.')
   const newer = postIndex > 0 ? posts[postIndex - 1] : undefined
   const older = postIndex < posts.length - 1 ? posts[postIndex + 1] : undefined
+  // stamp variant derives from the slug: stable per post, varied across them
+  const clusterVariant = [...post.slug].reduce((sum, ch) => sum + ch.charCodeAt(0), 0)
 
   return (
     <>
@@ -196,7 +198,7 @@ export async function BlogPostPageView({ slug, locale }: { slug: string; locale:
               >
                 <T zh={post.title} en={post.titleEn} />
               </h1>
-              <PixelCluster className="mt-1.5 shrink-0" />
+              <PixelCluster variant={clusterVariant} className="mt-1.5 shrink-0" />
             </div>
             <dl className="post-title-meta spec-plate">
               <div>

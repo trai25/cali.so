@@ -28,7 +28,7 @@ export function ProjectsPageView() {
             />
           </p>
         </header>
-        <PixelCluster className="enter shrink-0" />
+        <PixelCluster variant={3} className="enter shrink-0" />
       </div>
 
       <ul className="focus-list mt-10 flex flex-col">

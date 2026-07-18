@@ -1,3 +1,5 @@
+import { GeistPixelSquare } from 'geist/font/pixel'
+
 import { PixelCluster } from '~/components/pixel-cluster'
 import { PostRow } from '~/components/post-row'
 import { RevealScope } from '~/components/reveal-scope'
@@ -23,14 +25,18 @@ export function BlogIndexPageView({ locale }: { locale: Locale }) {
         <h1 className="page-eyebrow">
           <T zh="写作" en="Writing" />
         </h1>
-        <PixelCluster />
+        <PixelCluster variant={1} />
       </header>
       <div className="mt-6 flex flex-col gap-8">
         {[...postsByYear].map(([year, yearPosts]) => {
           const center = (yearPosts.length - 1) / 2
 
           return (
-            <section key={year} aria-labelledby={`posts-${year}`}>
+            <section key={year} aria-labelledby={`posts-${year}`} className="relative">
+              {/* ghost folio: the year as a print folio numeral, at the edge of perception */}
+              <span aria-hidden className={`ghost-folio ${GeistPixelSquare.className}`}>
+                {String(year).slice(2)}
+              </span>
               <h2
                 id={`posts-${year}`}
                 className="enter text-sm font-medium text-muted-foreground tabular-nums"

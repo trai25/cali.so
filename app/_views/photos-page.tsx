@@ -15,7 +15,7 @@ export function PhotosPageView() {
         <h1 className="page-eyebrow enter">
           <T zh="照片" en="Photos" />
         </h1>
-        <PixelCluster className="enter shrink-0" />
+        <PixelCluster variant={4} className="enter shrink-0" />
       </div>
       <Suspense fallback={<PublishedPhotoWallLoading />}>
         <PublishedPhotoMasonry />

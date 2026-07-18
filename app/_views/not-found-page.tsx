@@ -1,5 +1,6 @@
 import { GeistPixelCircle, GeistPixelSquare } from 'geist/font/pixel'
 
+import { Barcode } from '~/components/barcode'
 import { ErrorHomeAction } from '~/components/error-home-action'
 import { T } from '~/lib/i18n'
 
@@ -51,6 +52,8 @@ export function NotFoundPageView() {
           </span>
           <ErrorHomeAction />
         </nav>
+
+        <Barcode code="ERR-404-CALI-SO" className="error-barcode" />
 
         <div className="error-proof-footer font-mono" aria-hidden>
           <span>

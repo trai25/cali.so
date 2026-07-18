@@ -29,7 +29,7 @@ export function AmaManagePageView({ token }: { token: string }) {
         <h1 className="page-eyebrow enter">
           <T zh="管理你的预订" en="Manage your booking" />
         </h1>
-        <PixelCluster className="enter shrink-0" />
+        <PixelCluster variant={2} className="enter shrink-0" />
       </header>
 
       <div className="enter mt-10 pb-4" style={{ '--enter-delay': '70ms' } as React.CSSProperties}>

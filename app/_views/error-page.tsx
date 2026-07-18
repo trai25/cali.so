@@ -3,6 +3,7 @@
 import { RefreshCw } from 'lucide-react'
 import { GeistPixelCircle, GeistPixelSquare } from 'geist/font/pixel'
 
+import { Barcode } from '~/components/barcode'
 import { ErrorHomeAction } from '~/components/error-home-action'
 import { Button } from '~/components/ui/button'
 import { T } from '~/lib/i18n'
@@ -66,6 +67,8 @@ export function ErrorPageView({ retry }: Pick<ErrorBoundaryProps, 'retry'>) {
           </Button>
           <ErrorHomeAction />
         </nav>
+
+        <Barcode code="ERR-500-CALI-SO" className="error-barcode" />
 
         <div className="error-proof-footer font-mono" aria-hidden>
           <span>
