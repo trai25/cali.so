@@ -39,15 +39,37 @@ function getReadingTop(target: HTMLElement) {
 
 function WayfindingArrow({ direction }: { direction: 'back' | 'top' }) {
   return (
-    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden>
-      <path
-        d={direction === 'back' ? 'M10 6H2M5 3 2 6l3 3' : 'M6 10V2M3 5l3-3 3 3'}
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      aria-hidden
+    >
+      <g
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.25"
+        strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
-      />
+      >
+        {direction === 'back' ? (
+          <>
+            <path
+              d="m1.25,5.25h7c1.381,0,2.5,1.119,2.5,2.5h0c0,1.381-1.119,2.5-2.5,2.5h-1.25"
+            />
+            <polyline points="4.25 8.5 1 5.25 4.25 2" />
+          </>
+        ) : (
+          <>
+            <path
+              d="M11.25 6C11.25 3.1005 8.89949 0.75 6 0.75C3.1005 0.75 0.75 3.10051 0.75 6"
+            />
+            <path d="M6 11.25L6 3.75" />
+            <path d="M3.75 6L6 3.75L8.25 6" />
+          </>
+        )}
+      </g>
     </svg>
   )
 }
