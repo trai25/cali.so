@@ -522,18 +522,21 @@ away and unmounts only after the pointer leaves the full list.
 
 The public confirmation route reserves its full celebration for a server-proven
 paid AMA Session whose Booking is `finalizing` or `confirmed`. Those two states
-become one bounded dark stage using the Shaders **Undertones 8** preset
+become one full-viewport dark stage using the Shaders **Undertones 8** preset
 (`bb1fda80-5ce2-4072-b528-9837f6e7aff7`) as its background: `Swirl` and
 `ChromaFlow`, refracted once through `FlutedGlass`, with the preset's restrained
 `FilmGrain` finish. The four layers remain one canvas, use the exported preset
 values, disable vendor telemetry, and mount only after WebGPU preflight. A
 matching static plate remains underneath during initialization and on browsers
-without WebGPU.
+without WebGPU. The field covers the full visual viewport behind the site
+chrome and confirmation copy; it is not framed as a card inside the content
+column.
 
-Seventeen small registration-color confetti pieces cross the stage once when
-the success state mounts, using only transform and opacity, while a centered
-check mark settles over the field. Confetti never loops. Reduced motion keeps
-the static dark plate and check mark but omits both the shader and confetti.
+Two twelve-piece registration-color confetti bursts launch once from the lower
+left and lower right corners, arc inward across the viewport, and settle toward
+the center while a centered check mark arrives over the field. The pieces use
+only transform and opacity and never loop. Reduced motion keeps the static dark
+plate and check mark but omits both the shader and confetti.
 `needs_reschedule` is deliberately not celebratory: payment landed, but the
 chosen time did not, so it retains the calm explanatory state with no success
 stage.

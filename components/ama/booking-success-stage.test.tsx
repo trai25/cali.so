@@ -111,7 +111,32 @@ describe('BookingSuccessStage', () => {
 
     expect(container.querySelector('[data-success-shader-ready]')).toBeNull()
     expect(container.querySelector('.ama-success-static-background')).not.toBeNull()
-    expect(container.querySelectorAll('[data-ama-confetti-piece]').length).toBe(17)
+    expect(container.querySelectorAll('[data-ama-confetti-piece]').length).toBe(24)
+    expect(
+      container.querySelectorAll('[data-ama-confetti-origin="left"]').length,
+    ).toBe(12)
+    expect(
+      container.querySelectorAll('[data-ama-confetti-origin="right"]').length,
+    ).toBe(12)
+
+    const leftBurst = container.querySelector<HTMLElement>(
+      '[data-ama-confetti-origin="left"]',
+    )
+    const rightBurst = container.querySelector<HTMLElement>(
+      '[data-ama-confetti-origin="right"]',
+    )
+    expect(
+      leftBurst?.style.getPropertyValue('--ama-confetti-origin-x'),
+    ).toContain('safe-area-inset-left')
+    expect(leftBurst?.style.getPropertyValue('--ama-confetti-apex-x')).toBe(
+      '30vw',
+    )
+    expect(
+      rightBurst?.style.getPropertyValue('--ama-confetti-origin-x'),
+    ).toContain('safe-area-inset-right')
+    expect(rightBurst?.style.getPropertyValue('--ama-confetti-apex-x')).toBe(
+      '70vw',
+    )
   })
 
   it('does not mount a pending shader after reduced motion is enabled', async () => {

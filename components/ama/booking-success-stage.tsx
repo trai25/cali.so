@@ -16,161 +16,89 @@ const UndertonesEightField = dynamic(
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)'
 
 type ConfettiStyle = CSSProperties & {
+  '--ama-confetti-apex-x': string
+  '--ama-confetti-apex-y': string
   '--ama-confetti-color': string
   '--ama-confetti-delay': string
-  '--ama-confetti-drift': string
   '--ama-confetti-duration': string
-  '--ama-confetti-left': string
+  '--ama-confetti-end-x': string
+  '--ama-confetti-end-y': string
+  '--ama-confetti-mid-rotation': string
+  '--ama-confetti-origin-x': string
+  '--ama-confetti-origin-y': string
   '--ama-confetti-rotation': string
 }
 
 type ConfettiPiece = {
-  left: string
-  drift: string
+  apexX: string
+  apexY: string
+  color: string
   delay: string
   duration: string
+  endX: string
+  endY: string
+  key: string
+  midRotation: string
+  origin: 'left' | 'right'
+  originX: string
+  originY: string
   rotation: string
-  color: string
 }
 
-const CONFETTI = [
-  {
-    left: '4%',
-    drift: '-18px',
-    delay: '0ms',
-    duration: '2100ms',
-    rotation: '520deg',
-    color: '#d9ef62',
+const CONFETTI_COLORS = [
+  '#d9ef62',
+  '#ff6a82',
+  '#68b7ff',
+  '#a50ff2',
+  '#f1eee5',
+] as const
+
+const BURST_PATHS = [
+  { apexX: 30, apexY: 64, endX: 38, endY: 43 },
+  { apexX: 36, apexY: 76, endX: 44, endY: 55 },
+  { apexX: 42, apexY: 58, endX: 51, endY: 35 },
+  { apexX: 46, apexY: 84, endX: 52, endY: 64 },
+  { apexX: 50, apexY: 68, endX: 58, endY: 44 },
+  { apexX: 54, apexY: 79, endX: 61, endY: 58 },
+  { apexX: 58, apexY: 60, endX: 65, endY: 37 },
+  { apexX: 62, apexY: 88, endX: 69, endY: 68 },
+  { apexX: 66, apexY: 72, endX: 73, endY: 50 },
+  { apexX: 70, apexY: 82, endX: 76, endY: 62 },
+  { apexX: 74, apexY: 64, endX: 81, endY: 42 },
+  { apexX: 78, apexY: 76, endX: 85, endY: 54 },
+] as const
+
+const CONFETTI = (['left', 'right'] as const).flatMap(
+  (origin, originIndex): ConfettiPiece[] => {
+    const direction = origin === 'left' ? 1 : -1
+    return BURST_PATHS.map((path, index) => {
+      const rotation = direction * (440 + ((index * 47) % 250))
+
+      return {
+        apexX: `${origin === 'left' ? path.apexX : 100 - path.apexX}vw`,
+        apexY: `${100 - path.apexY}dvh`,
+        color:
+          CONFETTI_COLORS[
+            (index + originIndex * 2) % CONFETTI_COLORS.length
+          ]!,
+        delay: `${(index * 53 + originIndex * 29) % 260}ms`,
+        duration: `${2200 + ((index * 73 + originIndex * 41) % 520)}ms`,
+        endX: `${origin === 'left' ? path.endX : 100 - path.endX}vw`,
+        endY: `${100 - path.endY}dvh`,
+        key: `${origin}-${index}`,
+        midRotation: `${Math.round(rotation * 0.58)}deg`,
+        origin,
+        originX:
+          origin === 'left'
+            ? 'calc(env(safe-area-inset-left) - 1rem)'
+            : 'calc(100vw - env(safe-area-inset-right) + 1rem)',
+        originY:
+          'calc(100dvh - env(safe-area-inset-bottom) + 1rem)',
+        rotation: `${rotation}deg`,
+      }
+    })
   },
-  {
-    left: '9%',
-    drift: '26px',
-    delay: '90ms',
-    duration: '1950ms',
-    rotation: '-430deg',
-    color: '#ff6a82',
-  },
-  {
-    left: '14%',
-    drift: '-34px',
-    delay: '230ms',
-    duration: '2250ms',
-    rotation: '610deg',
-    color: '#68b7ff',
-  },
-  {
-    left: '19%',
-    drift: '42px',
-    delay: '40ms',
-    duration: '2050ms',
-    rotation: '-510deg',
-    color: '#a50ff2',
-  },
-  {
-    left: '25%',
-    drift: '-22px',
-    delay: '310ms',
-    duration: '1900ms',
-    rotation: '470deg',
-    color: '#f1eee5',
-  },
-  {
-    left: '31%',
-    drift: '48px',
-    delay: '160ms',
-    duration: '2200ms',
-    rotation: '-620deg',
-    color: '#d9ef62',
-  },
-  {
-    left: '37%',
-    drift: '-40px',
-    delay: '20ms',
-    duration: '2000ms',
-    rotation: '560deg',
-    color: '#ff6a82',
-  },
-  {
-    left: '43%',
-    drift: '20px',
-    delay: '260ms',
-    duration: '2300ms',
-    rotation: '-460deg',
-    color: '#68b7ff',
-  },
-  {
-    left: '49%',
-    drift: '-46px',
-    delay: '120ms',
-    duration: '2100ms',
-    rotation: '640deg',
-    color: '#a50ff2',
-  },
-  {
-    left: '55%',
-    drift: '32px',
-    delay: '350ms',
-    duration: '1950ms',
-    rotation: '-540deg',
-    color: '#f1eee5',
-  },
-  {
-    left: '61%',
-    drift: '-28px',
-    delay: '70ms',
-    duration: '2250ms',
-    rotation: '490deg',
-    color: '#d9ef62',
-  },
-  {
-    left: '67%',
-    drift: '44px',
-    delay: '210ms',
-    duration: '2050ms',
-    rotation: '-600deg',
-    color: '#ff6a82',
-  },
-  {
-    left: '73%',
-    drift: '-38px',
-    delay: '10ms',
-    duration: '2150ms',
-    rotation: '580deg',
-    color: '#68b7ff',
-  },
-  {
-    left: '79%',
-    drift: '24px',
-    delay: '290ms',
-    duration: '1900ms',
-    rotation: '-450deg',
-    color: '#a50ff2',
-  },
-  {
-    left: '85%',
-    drift: '-48px',
-    delay: '140ms',
-    duration: '2200ms',
-    rotation: '630deg',
-    color: '#f1eee5',
-  },
-  {
-    left: '91%',
-    drift: '30px',
-    delay: '330ms',
-    duration: '2000ms',
-    rotation: '-520deg',
-    color: '#d9ef62',
-  },
-  {
-    left: '96%',
-    drift: '-20px',
-    delay: '180ms',
-    duration: '2280ms',
-    rotation: '550deg',
-    color: '#ff6a82',
-  },
-] as const satisfies readonly ConfettiPiece[]
+)
 
 export function BookingSuccessStage({ children }: { children: React.ReactNode }) {
   const [shaderMounted, setShaderMounted] = useState(false)
@@ -231,18 +159,38 @@ export function BookingSuccessStage({ children }: { children: React.ReactNode })
       ) : null}
       <span className="ama-success-confetti" aria-hidden>
         {CONFETTI.map(
-          ({ left, drift, delay, duration, rotation, color }) => (
+          ({
+            apexX,
+            apexY,
+            color,
+            delay,
+            duration,
+            endX,
+            endY,
+            key,
+            midRotation,
+            origin,
+            originX,
+            originY,
+            rotation,
+          }) => (
             <span
-              key={`${left}-${delay}`}
+              key={key}
               className="ama-success-confetti-piece"
               data-ama-confetti-piece
+              data-ama-confetti-origin={origin}
               style={
                 {
+                  '--ama-confetti-apex-x': apexX,
+                  '--ama-confetti-apex-y': apexY,
                   '--ama-confetti-color': color,
                   '--ama-confetti-delay': delay,
-                  '--ama-confetti-drift': drift,
                   '--ama-confetti-duration': duration,
-                  '--ama-confetti-left': left,
+                  '--ama-confetti-end-x': endX,
+                  '--ama-confetti-end-y': endY,
+                  '--ama-confetti-mid-rotation': midRotation,
+                  '--ama-confetti-origin-x': originX,
+                  '--ama-confetti-origin-y': originY,
                   '--ama-confetti-rotation': rotation,
                 } as ConfettiStyle
               }

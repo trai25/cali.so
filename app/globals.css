@@ -4914,24 +4914,40 @@ html[data-locale='en'] [data-en-block] {
   text-align: left;
 }
 
-.ama-success-stage {
-  position: relative;
-  isolation: isolate;
-  display: grid;
-  min-height: 20rem;
-  overflow: hidden;
-  place-items: center;
-  border-radius: 0.75rem;
+body:has(.ama-success-stage) {
+  --background: #08070a;
+  --border: rgb(241 238 229 / 0.16);
+  --foreground: #f1eee5;
+  --muted-foreground: rgb(241 238 229 / 0.68);
+
   background: #08070a;
   color: #f1eee5;
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.1);
+}
+
+body:has(.ama-success-stage) main {
+  isolation: isolate;
+}
+
+.ama-success-stage {
+  position: relative;
+  display: grid;
+  min-height: max(32rem, calc(100svh - 10.5rem));
+  place-items: center;
+  color: #f1eee5;
 }
 
 .ama-success-static-background,
 .ama-success-shader-layer,
-.ama-success-shader-shell,
-.ama-success-shader-canvas,
 .ama-success-confetti {
+  position: fixed;
+  inset: 0;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
+
+.ama-success-shader-shell,
+.ama-success-shader-canvas {
   position: absolute;
   inset: 0;
   display: block;
@@ -4942,12 +4958,14 @@ html[data-locale='en'] [data-en-block] {
 }
 
 .ama-success-static-background {
+  z-index: -2;
   background:
     linear-gradient(164deg, transparent 18%, rgb(118 24 219 / 0.2) 42%, transparent 62%),
     linear-gradient(150deg, #030304 10%, #18181a 52%, #050407 90%);
 }
 
 .ama-success-shader-layer {
+  z-index: -1;
   opacity: 0;
   transition: opacity 350ms var(--ease-swift);
 }
@@ -4957,20 +4975,22 @@ html[data-locale='en'] [data-en-block] {
 }
 
 .ama-success-confetti {
+  z-index: 1;
   overflow: hidden;
 }
 
 .ama-success-confetti-piece {
   position: absolute;
-  top: -1.25rem;
-  left: var(--ama-confetti-left);
+  top: 0;
+  left: 0;
   width: 0.35rem;
   height: 0.7rem;
   border-radius: 1px;
   background: var(--ama-confetti-color);
   color: transparent;
   opacity: 0;
-  animation: ama-success-confetti-fall var(--ama-confetti-duration)
+  transform-origin: center;
+  animation: ama-success-confetti-burst var(--ama-confetti-duration)
     var(--ease-swift) var(--ama-confetti-delay) both;
 }
 
@@ -4985,8 +5005,9 @@ html[data-locale='en'] [data-en-block] {
 
 .ama-success-stage-content {
   position: relative;
+  z-index: 2;
   width: min(100%, 31rem);
-  padding: 3rem 2rem;
+  padding: 4rem 2rem calc(6rem + env(safe-area-inset-bottom));
   text-align: center;
 }
 
@@ -5013,24 +5034,39 @@ html[data-locale='en'] [data-en-block] {
   animation: ama-success-mark-arrive 350ms var(--ease-swift) both;
 }
 
-@keyframes ama-success-confetti-fall {
+@keyframes ama-success-confetti-burst {
   0% {
     opacity: 0;
-    transform: translate3d(0, -1rem, 0) rotate(0deg);
+    transform: translate3d(
+        var(--ama-confetti-origin-x),
+        var(--ama-confetti-origin-y),
+        0
+      )
+      scale(0.72) rotate(0deg);
   }
 
-  12% {
+  8% {
     opacity: 1;
   }
 
-  82% {
+  52% {
     opacity: 0.94;
+    transform: translate3d(
+        var(--ama-confetti-apex-x),
+        var(--ama-confetti-apex-y),
+        0
+      )
+      scale(1) rotate(var(--ama-confetti-mid-rotation));
   }
 
   100% {
     opacity: 0;
-    transform: translate3d(var(--ama-confetti-drift), 22rem, 0)
-      rotate(var(--ama-confetti-rotation));
+    transform: translate3d(
+        var(--ama-confetti-end-x),
+        var(--ama-confetti-end-y),
+        0
+      )
+      scale(0.86) rotate(var(--ama-confetti-rotation));
   }
 }
 
