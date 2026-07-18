@@ -95,6 +95,11 @@ export function SiteFooter({
             </Link>
           </li>
           <li>
+            <Link href={localePath(locale, '/ama')} className="footer-tree-link">
+              <T zh="一对一" en="AMA" />
+            </Link>
+          </li>
+          <li>
             <a href="/feed.xml" className="footer-tree-link" data-zh>
               RSS
             </a>
