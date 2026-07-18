@@ -4,7 +4,6 @@ import type {
   OwnerAccess,
   OwnerPrincipal,
 } from '~/lib/admin/authorization'
-import type { OwnerReverifier } from '~/lib/admin/reverification'
 import type { AmaSecurity, PrivilegedAuditEvent } from '~/lib/ama/security/service'
 
 import { MediaAltTextError } from '../alt-text/service'
@@ -34,10 +33,6 @@ type Security = Pick<
 type BaseDependencies = {
   authenticator: Authenticator
   security: Security
-}
-
-type HighImpactDependencies = BaseDependencies & {
-  reverifier: OwnerReverifier
 }
 
 type AccessResult =
@@ -129,7 +124,7 @@ export function createPhotoSelectionDraftHandler(
 }
 
 export function createPhotoSelectionPublishHandler(
-  dependencies: HighImpactDependencies & {
+  dependencies: BaseDependencies & {
     selection: {
       publish(input: {
         ownerUserId: string
@@ -140,12 +135,7 @@ export function createPhotoSelectionPublishHandler(
   },
 ) {
   return async function POST(request: Request) {
-    const access = await authenticate(
-      dependencies,
-      request,
-      true,
-      dependencies.reverifier,
-    )
+    const access = await authenticate(dependencies, request, true)
     if ('response' in access) return access.response
     try {
       const body = await requestJson(request)
@@ -187,7 +177,6 @@ async function authenticate(
   dependencies: BaseDependencies,
   request: Request,
   mutation: boolean,
-  reverifier?: OwnerReverifier,
 ): Promise<AccessResult> {
   const blocked = mutation
     ? await dependencies.security.protectOwnerAdminMutation(request)
@@ -215,14 +204,6 @@ async function authenticate(
       access.principal.actorId,
     )
     if (limited) return { response: limited }
-  }
-  if (reverifier) {
-    try {
-      const required = await reverifier.verify(request)
-      if (required) return { response: required }
-    } catch {
-      return { response: json(503, { error: 'dependency_unavailable' }) }
-    }
   }
   return { principal: access.principal }
 }
@@ -366,23 +347,66 @@ export function createMediaAltTextHandler(
         mediaAssetId: string
       }): Promise<unknown>
     }
+    review: {
+      getAsset(input: {
+        ownerUserId: string
+        mediaAssetId: string
+      }): Promise<{ altTextApprovedAt: Date | null }>
+      approveAltText(input: Record<string, unknown>): Promise<unknown>
+    }
   },
 ) {
   return async function POST(request: Request, mediaAssetId: string) {
     const access = await authenticate(dependencies, request, true)
     if ('response' in access) return access.response
     try {
-      const suggestion = await dependencies.altText.generateSuggestion({
+      const suggestion = (await dependencies.altText.generateSuggestion({
         ownerUserId: access.principal.id,
         mediaAssetId,
-      })
+      })) as { zhHans: string; en: string }
       audit(
         dependencies,
         request,
         'media_alt_text.requested',
         access.principal.actorId,
       )
-      return json(200, { suggestion })
+
+      // Auto-approval (maintainer decision, July 2026): a fresh suggestion
+      // becomes the approved bilingual Alt Text whenever none exists yet,
+      // so upload-to-archive needs no separate review step. Existing
+      // approved text is never overwritten — regenerating only updates the
+      // suggestion, and edits go through approve_alt_text as before.
+      let asset: unknown = null
+      let autoApprovalFailed = false
+      try {
+        const common = { ownerUserId: access.principal.id, mediaAssetId }
+        const current = await dependencies.review.getAsset(common)
+        if (current.altTextApprovedAt === null) {
+          asset = await dependencies.review.approveAltText({
+            ...common,
+            zhHans: suggestion.zhHans,
+            en: suggestion.en,
+          })
+          audit(
+            dependencies,
+            request,
+            'media_asset.reviewed',
+            access.principal.actorId,
+          )
+        } else {
+          asset = current
+        }
+      } catch {
+        // The suggestion still stands on its own; the flag lets the UI say
+        // the photo needs a save in the inspector before it can publish.
+        autoApprovalFailed = true
+      }
+
+      return json(200, {
+        suggestion,
+        asset,
+        ...(autoApprovalFailed ? { autoApprovalFailed: true } : {}),
+      })
     } catch (error) {
       return errorResponse(error)
     }
@@ -463,7 +487,7 @@ export function createMediaResumeHandler(
 }
 
 export function createMediaPurgeHandler(
-  dependencies: HighImpactDependencies & {
+  dependencies: BaseDependencies & {
     purge: {
       getStatus(input: {
         ownerUserId: string
@@ -492,12 +516,7 @@ export function createMediaPurgeHandler(
       }
     },
     async POST(request: Request, mediaAssetId: string) {
-      const access = await authenticate(
-        dependencies,
-        request,
-        true,
-        dependencies.reverifier,
-      )
+      const access = await authenticate(dependencies, request, true)
       if ('response' in access) return access.response
       try {
         const body = await requestJson(request)
