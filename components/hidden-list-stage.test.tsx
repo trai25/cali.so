@@ -129,6 +129,28 @@ afterEach(() => {
 })
 
 describe('hidden list shader stages', () => {
+  it('reuses the fine-pointer media query across pointer events', () => {
+    setMediaPreferences()
+
+    render(
+      <ProjectsBlueprintStage>
+        <ProjectRows />
+      </ProjectsBlueprintStage>,
+    )
+
+    const matchMedia = vi.mocked(window.matchMedia)
+    const stage = document.querySelector<HTMLElement>(
+      '[data-list-stage="projects"]',
+    )!
+    const first = screen.getByRole('link', { name: 'One' })
+
+    expect(matchMedia).toHaveBeenCalledTimes(2)
+    fireEvent.pointerOver(first, { pointerType: 'mouse' })
+    fireEvent.pointerOut(first, { pointerType: 'mouse' })
+    fireEvent.pointerLeave(stage, { pointerType: 'mouse' })
+    expect(matchMedia).toHaveBeenCalledTimes(2)
+  })
+
   it('waits for initial pointer intent and unmounts after the Projects exit', async () => {
     vi.useFakeTimers()
     setMediaPreferences()

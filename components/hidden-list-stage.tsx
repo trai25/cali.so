@@ -99,6 +99,7 @@ function HiddenListStage({
   const keyboardRow = useRef<HTMLElement | null>(null)
   const pointerIntentReady = useRef(false)
   const pointerFocusSuppressed = useRef(false)
+  const finePointer = useRef<MediaQueryList | null>(null)
   const reducedMotion = useRef(false)
   const motionActive = useRef(false)
   const mounted = useRef(true)
@@ -249,6 +250,7 @@ function HiddenListStage({
 
   useEffect(() => {
     const preference = window.matchMedia(REDUCED_MOTION_QUERY)
+    finePointer.current = window.matchMedia(FINE_POINTER_QUERY)
     const updatePreference = () => {
       reducedMotion.current = preference.matches
       syncStage()
@@ -256,7 +258,10 @@ function HiddenListStage({
 
     updatePreference()
     preference.addEventListener('change', updatePreference)
-    return () => preference.removeEventListener('change', updatePreference)
+    return () => {
+      finePointer.current = null
+      preference.removeEventListener('change', updatePreference)
+    }
   }, [syncStage])
 
   useEffect(() => {
@@ -294,8 +299,7 @@ function HiddenListStage({
   }, [clearExitTimer, clearIntentTimer])
 
   const isFinePointer = (event: PointerEvent<HTMLElement>) =>
-    event.pointerType !== 'touch' &&
-    window.matchMedia(FINE_POINTER_QUERY).matches
+    event.pointerType !== 'touch' && finePointer.current?.matches === true
 
   const handlePointerOver = (event: PointerEvent<HTMLDivElement>) => {
     if (!isFinePointer(event)) return

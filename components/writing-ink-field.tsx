@@ -5,6 +5,9 @@ import { Shader, Strands } from 'shaders/react'
 
 import { useHiddenShaderField } from '~/components/use-hidden-shader-field'
 
+const STRANDS_START = { x: 0, y: 0.5 }
+const STRANDS_END = { x: 1, y: 0.5 }
+
 export function WritingInkField({
   onUnavailable,
   onReady,
@@ -50,8 +53,8 @@ export function WritingInkField({
           colorScale={1}
           colorVariance={0}
           colorSpeed={0}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
+          start={STRANDS_START}
+          end={STRANDS_END}
         />
       </Shader>
     </span>
