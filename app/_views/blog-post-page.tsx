@@ -1,6 +1,5 @@
 import { MDXRemote } from 'next-mdx-remote/rsc'
 import { cacheLife } from 'next/cache'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import rehypePrettyCode from 'rehype-pretty-code'
@@ -11,19 +10,21 @@ import { BrailleDate } from '~/components/braille-date'
 import { mdxComponents } from '~/components/mdx/mdx-components'
 import { PixelCluster } from '~/components/pixel-cluster'
 import { PolaroidCover } from '~/components/polaroid-cover'
+import { PostRow } from '~/components/post-row'
 import { PostToc } from '~/components/post-toc'
 import { RevealScope } from '~/components/reveal-scope'
 import {
   buildPostRail,
   getAllPosts,
   getPost,
+  getRelatedPosts,
   isPostSlug,
   POST_ARTICLE_START_ID,
 } from '~/lib/content'
 import { SITE_TIME_ZONE } from '~/lib/date'
 import { T } from '~/lib/i18n'
 import { localeMetadata } from '~/lib/locale-metadata'
-import { localePath, type Locale } from '~/lib/locale-route'
+import type { Locale } from '~/lib/locale-route'
 import rehypePrefixIds from '~/lib/rehype-prefix-ids'
 import { postViewTransitionName } from '~/lib/view-transition-name'
 
@@ -167,8 +168,7 @@ export async function BlogPostPageView({ slug, locale }: { slug: string; locale:
   const postIndex = posts.findIndex((entry) => entry.slug === post.slug)
   const edition = String(posts.length - postIndex).padStart(3, '0')
   const plateDate = plateDateFormat.format(post.publishedAt).replaceAll('-', '.')
-  const newer = postIndex > 0 ? posts[postIndex - 1] : undefined
-  const older = postIndex < posts.length - 1 ? posts[postIndex + 1] : undefined
+  const related = getRelatedPosts(post.slug)
   // stamp variant derives from the slug: stable per post, varied across them
   const clusterVariant = [...post.slug].reduce((sum, ch) => sum + ch.charCodeAt(0), 0)
 
@@ -246,46 +246,27 @@ export async function BlogPostPageView({ slug, locale }: { slug: string; locale:
         <RevealScope lang={english ? 'en' : 'zh-CN'} className="post-body-stage prose enter mt-10">
           <CachedPostBody slug={post.slug} locale={locale} />
         </RevealScope>
-        {(older || newer) && (
-          <nav
-            className="post-adjacent hairline-top"
-            aria-label={english ? 'Adjacent posts' : '相邻文章'}
+        {related.length > 0 && (
+          <aside
+            className="post-related hairline-top"
+            aria-labelledby="post-related-heading"
           >
-            {older ? (
-              <Link
-                href={localePath(locale, `/blog/${older.slug}`)}
-                className="post-adjacent-link"
-              >
-                <span className="post-adjacent-label">
-                  <span className="post-adjacent-arrow" aria-hidden>
-                    ←
-                  </span>
-                  <T zh="上一篇" en="Older" />
-                </span>
-                <span className="post-adjacent-title">
-                  <T zh={older.title} en={older.titleEn} />
-                </span>
-              </Link>
-            ) : (
-              <span />
-            )}
-            {newer && (
-              <Link
-                href={localePath(locale, `/blog/${newer.slug}`)}
-                className="post-adjacent-link post-adjacent-next"
-              >
-                <span className="post-adjacent-label">
-                  <T zh="下一篇" en="Newer" />
-                  <span className="post-adjacent-arrow" aria-hidden>
-                    →
-                  </span>
-                </span>
-                <span className="post-adjacent-title">
-                  <T zh={newer.title} en={newer.titleEn} />
-                </span>
-              </Link>
-            )}
-          </nav>
+            <h2 id="post-related-heading" className="post-related-label">
+              <T zh="相关阅读" en="Posts like this" />
+            </h2>
+            <ul className="focus-list mt-3 flex flex-col">
+              {related.map((entry) => (
+                <li key={entry.slug}>
+                  <PostRow
+                    post={entry}
+                    headingLevel="h3"
+                    dateStyle="short"
+                    locale={locale}
+                  />
+                </li>
+              ))}
+            </ul>
+          </aside>
         )}
       </article>
     </>

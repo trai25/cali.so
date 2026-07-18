@@ -1408,88 +1408,21 @@
   color: color-mix(in oklab, var(--muted-foreground) 55%, transparent);
 }
 
-/* ── Adjacent-post plate: wayfinding at the article foot ──────────── */
+/* ── Posts like this: catalog rows at the article foot ────────────── */
 
-.post-adjacent {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
+.post-related {
   margin-top: 4rem;
   padding-top: 1rem;
 }
 
-.post-adjacent-link {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 0.375rem;
-}
-
-.post-adjacent-link:focus-visible {
-  border-radius: 2px;
-  outline: 1px solid var(--focus-ring);
-  outline-offset: 3px;
-}
-
-.post-adjacent-next {
-  align-items: flex-end;
-  text-align: right;
-}
-
-.post-adjacent-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
+.post-related-label {
   color: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
   font-family: var(--font-geist-mono), var(--font-frex-gb), ui-monospace, monospace;
   font-size: 0.6875rem;
+  font-weight: var(--font-weight-normal);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-}
-
-.post-adjacent-arrow {
-  opacity: 0.6;
-  transition:
-    opacity 180ms ease,
-    translate 180ms ease;
-}
-
-.post-adjacent-title {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  color: var(--gray-9, var(--muted-foreground));
-  font-size: 0.875rem;
-  line-height: 1.5;
-  text-wrap: balance;
-  transition: color 150ms ease;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .post-adjacent-link:hover .post-adjacent-title {
-    color: var(--gray-12, var(--foreground));
-  }
-
-  .post-adjacent-link:hover .post-adjacent-arrow {
-    opacity: 0.95;
-    translate: -1.5px 0;
-  }
-
-  .post-adjacent-next:hover .post-adjacent-arrow {
-    translate: 1.5px 0;
-  }
-}
-
-.post-adjacent-link:focus-visible .post-adjacent-title {
-  color: var(--gray-12, var(--foreground));
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .post-adjacent-arrow,
-  .post-adjacent-title {
-    transition: none;
-  }
+  user-select: none;
 }
 
 .prose ul {

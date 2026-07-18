@@ -188,6 +188,78 @@ export function isPostSlug(slug: string) {
   return isPublishedPostSlug(slug)
 }
 
+// ── "Posts like this" ─────────────────────────────────────────────────
+// Lexical similarity computed at build time — no tags to maintain. CJK
+// text reads as character bigrams and Latin as lowercased words (stop
+// words dropped); title terms weigh triple. Cosine over term frequencies,
+// with recency breaking ties.
+
+const STOP_WORDS = new Set([
+  'the', 'and', 'for', 'you', 'are', 'but', 'not', 'with', 'this', 'that',
+  'was', 'were', 'have', 'has', 'had', 'can', 'will', 'your', 'from',
+  'they', 'them', 'its', 'our', 'about', 'into', 'just', 'more', 'some',
+  'than', 'then', 'when', 'what', 'how', 'why', 'who', 'all', 'one',
+  'out', 'also', 'very',
+])
+
+function addTerms(vector: Map<string, number>, text: string, weight: number) {
+  const bump = (term: string) =>
+    vector.set(term, (vector.get(term) ?? 0) + weight)
+  const clean = text.replace(/```[\s\S]*?```/g, ' ').toLowerCase()
+
+  for (const run of clean.match(/[一-鿿぀-ヿ]+/g) ?? []) {
+    if (run.length === 1) bump(run)
+    for (let i = 0; i < run.length - 1; i += 1) bump(run.slice(i, i + 2))
+  }
+  for (const word of clean.match(/[a-z0-9]{3,}/g) ?? []) {
+    if (!STOP_WORDS.has(word)) bump(word)
+  }
+}
+
+function similarity(a: Map<string, number>, b: Map<string, number>) {
+  const [small, large] = a.size <= b.size ? [a, b] : [b, a]
+  let dot = 0
+  for (const [term, count] of small) {
+    const other = large.get(term)
+    if (other) dot += count * other
+  }
+  const norm = (vector: Map<string, number>) =>
+    Math.sqrt([...vector.values()].reduce((sum, count) => sum + count * count, 0))
+  return dot / (norm(a) * norm(b) || 1)
+}
+
+// keyed on body lengths too, so a dev-mode content edit refreshes the vector
+const postVectors = new Map<string, Map<string, number>>()
+
+function postVector(post: Post) {
+  const key = `${post.slug}:${post.body.length}:${post.bodyEn.length}`
+  const cached = postVectors.get(key)
+  if (cached) return cached
+  const vector = new Map<string, number>()
+  addTerms(vector, `${post.title} ${post.titleEn}`, 3)
+  addTerms(vector, `${post.body} ${post.bodyEn}`, 1)
+  postVectors.set(key, vector)
+  return vector
+}
+
+export function getRelatedPosts(slug: string, limit = 3): Post[] {
+  const posts = getAllPosts()
+  const current = posts.find((post) => post.slug === slug)
+  if (!current) return []
+  const target = postVector(current)
+
+  return posts
+    .filter((post) => post.slug !== slug)
+    .map((post) => ({ post, score: similarity(target, postVector(post)) }))
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        b.post.publishedAt.getTime() - a.post.publishedAt.getTime(),
+    )
+    .slice(0, limit)
+    .map((entry) => entry.post)
+}
+
 export function getAllPosts(): Post[] {
   return publishedPostSlugs
     .map((slug) => getPost(slug))

@@ -452,12 +452,16 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
   faded `//` drawn in CSS with empty alt text so it never reaches the
   accessible name. Homepage section headers and in-page h2s keep the plain
   14px treatment; the comment mark stays rare.
-- **Adjacent-post plate** (`.post-adjacent`): wayfinding at the article
-  foot in the plate register — a hairline-top two-column grid, mono
-  uppercase labels (older ←, newer →) over two-line clamped titles.
-  Arrows rest at 60% opacity and shift 1.5px outward on a fine-pointer
-  hover (180ms ease), mirroring the external-mark treatment; titles deepen
-  to full ink. Ordinary link navigation — no route morph.
+- **Posts like this** (`.post-related`): the article foot carries up to
+  three related posts as standard catalog rows — the blog-index row
+  reused whole (dithered print thumb, title, dotted leader, tabular
+  date), shared morph elements and selective-focus dimming included —
+  under a hairline-top mono plate label (相关阅读 / Posts like this).
+  Relatedness is lexical similarity computed at build time
+  (`lib/content.ts` `getRelatedPosts`): CJK bigrams and Latin words over
+  title and body, title terms weighted triple, cosine-scored with recency
+  breaking ties — no tags to maintain. Below-the-fold chrome: no entrance
+  animation.
 - **Nameplate** (`.spec-nameplate`): the boxed variant of the spec plate —
   label and value cells separated by hairline rules inside a hairline
   frame, like an equipment serial plate. Used where the data is a
