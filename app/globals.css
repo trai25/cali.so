@@ -3408,6 +3408,13 @@ html[data-locale='en'] [data-en-block] {
   pointer-events: auto;
 }
 
+@media (min-width: 40rem) {
+  .post-minimap-utilities-bottom,
+  .post-minimap-back-to-top {
+    justify-content: flex-start;
+  }
+}
+
 .post-minimap-node {
   display: flex;
   height: 1px;
