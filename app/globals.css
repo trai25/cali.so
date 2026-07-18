@@ -3663,13 +3663,17 @@ html[data-locale='en'] [data-en-block] {
     max-height: calc(100dvh - 10.25rem - env(safe-area-inset-bottom));
     flex-direction: column;
     padding: 2.75rem 1rem 0;
+    border-radius: 1rem;
+    box-shadow:
+      0 0 0 var(--border-hairline) color-mix(in oklab, var(--foreground) 14%, transparent),
+      0 16px 40px -18px rgb(0 0 0 / 0.42);
     opacity: 0;
     visibility: hidden;
     overflow: hidden;
     pointer-events: none;
     transform: translateY(-0.75rem) scale(0.96);
     transform-origin: top center;
-    transition: visibility 1ms linear 200ms;
+    transition: visibility 1ms linear 280ms;
   }
 
   .post-minimap-root[data-open] .post-minimap {
@@ -3687,10 +3691,11 @@ html[data-locale='en'] [data-en-block] {
     display: block;
     border-radius: 1rem;
     background: color-mix(in oklab, var(--popover) 94%, transparent);
-    box-shadow:
-      0 0 0 var(--border-hairline) color-mix(in oklab, var(--foreground) 14%, transparent),
-      0 16px 40px -18px rgb(0 0 0 / 0.42);
     pointer-events: none;
+  }
+
+  .post-minimap-root:not([data-open]) .post-minimap-node {
+    filter: blur(2px);
   }
 
   .post-minimap-clip {
@@ -3779,11 +3784,12 @@ html[data-locale='en'] [data-en-block] {
     stroke-linecap: round;
     stroke-linejoin: round;
     transform-origin: center;
-    transition: transform 200ms var(--ease-swift);
+    transition: transform 260ms var(--ease-swift);
   }
 
   .post-minimap-root[data-open] .post-minimap-island-chevron {
     transform: rotate(180deg);
+    transition-duration: 280ms;
   }
 }
 
