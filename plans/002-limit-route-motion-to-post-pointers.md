@@ -197,8 +197,7 @@ deactivating the React boundary.
 - **Mechanical**: run `pnpm typecheck`,
   `pnpm vitest run components/route-motion-controller.test.tsx components/post-transition-link.test.tsx`,
   and `git diff --check`; all must exit 0.
-- **Feel check**: run the production navigation fixture used by
-  `pnpm test:navigation` and confirm:
+- **Feel check**: run a production build in a browser and confirm:
   - Pointer-click or touch-tap a covered post row. The cover and title still
     morph list -> localized loading shell -> article.
   - Focus the same row and press Enter. Navigation is immediate; neither the

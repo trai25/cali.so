@@ -1,15 +1,17 @@
 import 'server-only'
 
-import { neon } from '@neondatabase/serverless'
-import { drizzle } from 'drizzle-orm/neon-http'
+import { attachDatabasePool } from '@vercel/functions'
+import { drizzle } from 'drizzle-orm/node-postgres'
+import { Pool } from 'pg'
 
 import { getServerEnv } from '~/lib/ama/server-env'
 
 let database: ReturnType<typeof createDatabase> | undefined
 
 function createDatabase() {
-  const sql = neon(getServerEnv().DATABASE_URL)
-  return drizzle({ client: sql })
+  const pool = new Pool({ connectionString: getServerEnv().DATABASE_URL })
+  attachDatabasePool(pool)
+  return drizzle({ client: pool })
 }
 
 export function getDatabase() {

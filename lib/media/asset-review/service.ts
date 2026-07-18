@@ -21,6 +21,7 @@ export type MediaAssetReviewRecord = {
   aperture: number | null
   shutterSpeedSeconds: number | null
   iso: number | null
+  hasCaptureLocation: boolean
   locationLabelZhHans: string | null
   locationLabelEn: string | null
   focalPoint: { x: number; y: number } | null

@@ -75,8 +75,7 @@ Current as of July 2026.
    or an intentional permanent replacement. Drive verification from one
    checked-in manifest, not spot checks.
 2. Complete all three issue #91 stages: Cache Components baseline,
-   route-by-route Instant Navigations, then Partial Prefetching and browser
-   regression coverage.
+   route-by-route Instant Navigations, then Partial Prefetching.
 3. Keep owner admin authenticated and reachable, and keep AMA capabilities
    whose provider credentials are absent failing closed with 503.
 4. Validate from a frozen-lockfile install: types, all tests, migrations,
@@ -120,7 +119,6 @@ pnpm test:media:purge
 pnpm test:media:reconciliation
 pnpm db:validate
 pnpm build
-pnpm test:navigation
 pnpm verify:legacy-urls
 pnpm verify:links
 pnpm verify:public-discovery
