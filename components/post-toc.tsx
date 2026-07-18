@@ -324,7 +324,7 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
     island.style.willChange = 'transform, opacity'
     const animation = animate(
       island,
-      { opacity: Number(targetOpacity), transform: targetTransform },
+      { opacity: visible ? 1 : 0, transform: targetTransform },
       {
         duration: visible ? PHONE_ENTER_DURATION : PHONE_EXIT_DURATION,
         ease: EASE_SWIFT,

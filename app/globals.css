@@ -3565,9 +3565,12 @@ html[data-locale='en'] [data-en-block] {
 @media (min-width: 64rem) {
   .post-minimap-progress {
     position: absolute;
+    top: 50%;
+    left: 50%;
     display: block;
     width: 1.5rem;
     height: 1.5rem;
+    transform: translate(-50%, -50%) rotate(-90deg);
   }
 
   .post-minimap-toggle-icon {
