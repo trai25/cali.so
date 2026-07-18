@@ -17,6 +17,8 @@ const PHONE_ENTER_DURATION = 0.2
 const PHONE_ENTER_STAGGER_WINDOW = 0.06
 const PHONE_EXIT_DURATION = 0.16
 const PHONE_EXIT_STAGGER_WINDOW = 0.04
+const PHONE_ISLAND_ENTER_DURATION = 0.28
+const PHONE_ISLAND_EXIT_DURATION = 0.26
 const PHONE_ISLAND_HIDDEN_TRANSFORM = 'translate(-50%, -16px) scale(0.96)'
 const PHONE_ISLAND_VISIBLE_TRANSFORM = 'translate(-50%, 0px) scale(1)'
 const PHONE_PANEL_HIDDEN_TRANSFORM = 'translateY(-12px) scale(0.96)'
@@ -326,7 +328,9 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
       island,
       { opacity: visible ? 1 : 0, transform: targetTransform },
       {
-        duration: visible ? PHONE_ENTER_DURATION : PHONE_EXIT_DURATION,
+        duration: visible
+          ? PHONE_ISLAND_ENTER_DURATION
+          : PHONE_ISLAND_EXIT_DURATION,
         ease: EASE_SWIFT,
       },
     )
