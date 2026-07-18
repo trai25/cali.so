@@ -3,7 +3,9 @@
 ## Status
 
 Accepted. This supersedes ADR-0004 and the immutable-user-ID allowlist direction
-previously recorded in issue #93.
+previously recorded in issue #93. ADR-0011 supersedes the provider capability
+switch requirement, and ADR-0012 supersedes the step-up verification
+requirement below.
 
 Clerk is the sole runtime authentication system for owner admin. Signed-out
 requests for `/admin` redirect directly to Clerk sign-in. After sign-in, every

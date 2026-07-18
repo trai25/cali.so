@@ -6,7 +6,8 @@ credentials or user identifiers. Perform each hosted change in one Clerk
 environment at a time and verify the matching Vercel environment before moving
 on.
 
-The application authorization contract is ADR-0009: every admin page and API
+The application authorization contract is ADR-0009 as superseded by ADR-0012:
+every admin page and API
 loads the authoritative Clerk user on the server and requires
 `publicMetadata.siteOwner` to equal the exact string `"yes"`. Email addresses,
 browser state, unsafe metadata, and the durable `ADMIN_EMAIL` data namespace

@@ -18,7 +18,10 @@ found that its runtime contract, including the database and media provider
 configuration, was not ready for v3. Required checks on `main`, Staging runtime
 grant and signed-in owner verification, Production database and provider proof,
 Vercel dashboard checks, Analytics ingestion proof, and rollback proof remain
-open.
+open. The final complete-diff reviews also found unresolved motion and layer
+standards plus two literal issue-acceptance gaps: the repository has no
+automated browser-test command, and the reviewed custom Staging environment has
+not been explicitly accepted as the issue's requested feature Preview.
 
 Unknown hosted state is not counted as passed. This report does not authorize
 merging to `main`, changing production settings, accessing production data, or
@@ -50,13 +53,14 @@ Renditions. The retired static photo fallback has been removed.
 | Gate | Status | Evidence or blocker |
 | --- | --- | --- |
 | Frozen install | PASS | `pnpm install --frozen-lockfile` completed from the audited commit. |
-| Repository validation | PASS | Every command and count in the automated evidence section passed. |
+| Repository validation | PARTIAL | Every existing command and count in the automated evidence section passed, but the repository no longer has an automated browser-test command. Issue #107 explicitly requires browser tests in addition to its manual browser matrix. |
 | Public browser behavior | PASS | Local and Staging review covered desktop and mobile, both locales, light and dark appearance, reduced motion, keyboard navigation, metadata, overflow, feeds, generated social images, and Instant Navigation. |
 | Owner admin boundary | PASS (Staging signed-out path) / AWAITING OWNER AND PRODUCTION PROOF | A clean browser navigation to Staging `/admin` completes Clerk's development-instance handshake and reaches the isolated sign-in UI. The complete remote security-boundary verifier passes. Signed-in owner reads and mutations still require authorized operator access and the database gate below; confirm the Production Clerk keys and owner metadata at cutover. |
-| Complete diff Standards review | PASS | Portal layering and admin typography findings were fixed. The Media `lifecycle` vocabulary breach was resolved by PR #138 (issue #134 closed): Catalog State is the glossary term, and additive migration `0009` renames the column. |
-| Complete diff Spec review | PASS | No scope creep, incorrect PASS treatment, or missing local evidence was found; the unresolved hosted and production requirements below correctly keep the verdict at NOT READY. |
-| Production-like Staging | PASS (public and signed-out boundaries) | `https://beta.cali.so` serves `dev@8802607`. The complete public route, link, discovery, legacy-URL, security-boundary, and browser matrix passed. Signed-in owner operations and provider-backed workflows remain separate gates. |
-| Vercel Web Analytics | AWAITING DASHBOARD CONFIRMATION | Chinese and English Staging routes load the first-party Insights client; owner-admin navigation does not load it before the Clerk redirect. Confirm fresh Staging pageviews are visible in the existing `cali-so` Analytics dashboard. |
+| Complete diff Standards review | FAIL | The final review found outdated AMA capability and owner step-up decisions, keyboard animation in Preview cards, undocumented global/local layer values, and a judgement-level divergent-change smell in `app/globals.css`. ADR-0011, ADR-0012, and the security baseline now resolve the first two conflicts. Preview-card keyboard motion remains tracked by [#184](https://github.com/CaliCastle/cali.so/issues/184); the layer-scale finding still needs a fix, a dedicated issue, or explicit maintainer rejection. |
+| Complete diff Spec review | PARTIAL | No scope creep was found. Automated browser tests are absent, the issue literally requests feature Preview evidence while the current matrix used Staging, Analytics dashboard proof remains absent, and Domain evidence was overstated. The Clerk redirect-shape verifier intentionally stops at the first 307, but the separate clean-browser matrix completed the development handshake and rendered Clerk sign-in. |
+| Production-like Staging | PASS (public and signed-out boundaries) | `https://beta.cali.so` serves `dev@8802607`. The complete public route, link, discovery, legacy-URL, security-boundary, and manual browser matrix passed. Signed-in owner operations and provider-backed workflows remain separate gates. |
+| Issue #107 feature Preview evidence | PARTIAL | The accepted deployment architecture promotes `dev` continuously to a stable custom Staging environment, which is a stronger repeatable target than an ephemeral feature Preview. The issue text still says Preview; obtain an explicit maintainer acceptance of Staging as the substitute or repeat the complete matrix on a recorded feature Preview URL and SHA. |
+| Vercel Web Analytics | AWAITING DASHBOARD CONFIRMATION | Chinese and English Staging routes load the first-party Insights client; owner-admin navigation does not load it before the Clerk redirect. Confirm fresh pageviews from the accepted production-like target in the existing `cali-so` Analytics dashboard: Staging if the maintainer accepts it as the Preview substitute, otherwise the recorded feature Preview. |
 | GitHub security settings | PASS | Secret scanning, push protection, Dependabot security updates, read-only Actions defaults, and full-SHA action policy are enabled. |
 | Required GitHub checks | PARTIAL | The `dev` ruleset requires `Quality` and `CodeQL`; `main` branch protection still requires neither. The maintainer-operated command is in `docs/v3-cutover-ops-runbook.md`. |
 | Deployment environments | PASS | GitHub has Preview, Staging, `production-migration-review`, and Production environments with the intended branch policies; the last two require maintainer review. |
@@ -70,7 +74,7 @@ Renditions. The retired static photo fallback has been removed.
 | Media provider and publication | FAIL | Production has no Bunny or media configuration at all, so the provider boundary, live storage contract, and the two-photo Published Photo Selection cannot exist yet. Provisioning precedes verification. |
 | Other external providers | PASS (name level) | No Google, Tencent, payment, or booking-finalization credentials exist in Production. Legacy-era variables (Clerk, Sanity, Edge Config, a three-year-old Upstash pair) remain for the current `main` site and need pruning or rotation at cutover. |
 | Logs and drains | UNKNOWN | Not exposed through the CLI; verify access, retention, drains, and the privacy allowlist in the Vercel dashboard. |
-| Domain cutover | PASS (partial) | `cali.so` is assigned to the correct team with third-party DNS pointing at Vercel and the production alias intact. The production-branch mapping and certificate still need a dashboard check before merge. |
+| Domain cutover | PARTIAL / AWAITING DASHBOARD CONFIRMATION | `cali.so` was assigned to the correct team with third-party DNS pointing at Vercel and the production alias intact at the last authorized audit. The Production-branch mapping and certificate still need a dashboard check before merge. |
 | Rollback | AWAITING CONFIRMATION | The last known-good production deployment is recorded in the audit baseline. An operator must still confirm promotion or merge-revert works without reversing additive migrations. |
 
 ## Automated evidence
@@ -169,16 +173,16 @@ Final review artifacts after the accessibility corrections:
   internal targets, and live-check external targets. A repeated 404 or 410 is
   a failure; transient provider or TLS failures remain visible as inconclusive
   rather than making repository release status depend on another service's
-  uptime. The final run had no inconclusive targets.
-- The keyboard-coverage gap is closed by replacing the Preferences menu with
-  the correct popover semantics. Shared
-  controls now follow the 44-pixel target, 14-pixel chrome, reduced-motion,
-  and motion-token contracts.
-- The remaining design-contract findings are closed. Shared product controls
-  now change selection and focus without decorative
-  motion, keep selected and unselected labels at one weight, and preserve
-  selected-label contrast. Scroll reveals and public chrome typography use the
-  documented timing and type tokens.
+  uptime. The final aggregate run had one inconclusive X/Twitter fetch; a direct
+  retry returned HTTP 200.
+- The Preferences keyboard path and reduced-motion behavior pass, but the final
+  review found that Preview-card keyboard focus still runs its card and cell
+  animations. Issue #184 owns that defect. The same keyboard hard rule is
+  already tracked for lightbox and article-map actions in issues #185 and #186.
+- Earlier design-contract findings around selection weight, contrast, scroll
+  reveals, and chrome typography are closed. The final review newly found that
+  the implementation uses local and page-level numeric stacking values beyond
+  the design language's closed layer scale; that finding remains open.
 - The Media Library is now part of the v3 launch surface. Owner routes cover
   ingestion, review, recovery, and Photo Selection curation; public routes read
   an immutable Published Photo Selection from Bunny Renditions. The six static
@@ -192,12 +196,14 @@ Final review artifacts after the accessibility corrections:
   State and aligning the schema, repositories, admin surfaces, tests, and
   glossary. State transitions and publication behavior are unchanged, and the
   Standards breach is closed.
-- The complete-diff Standards review also found arbitrary `z-50` portal layers
-  and widened letter spacing in admin chrome. Those findings are fixed with
-  the existing `--z-card` layer and the shared `-0.011em` chrome tracking.
-- The complete-diff Spec review found no scope creep or incorrect PASS
-  treatment. Its incomplete requirements are the same hosted and production
-  blockers recorded in the gate table and remaining actions.
+- The final complete-diff Standards review found two stale decision conflicts.
+  ADR-0011 now records credential-driven AMA capabilities, ADR-0012 records the
+  removal of owner step-up prompts, and the superseded ADR and security-baseline
+  text is explicit. The motion and layer findings above still fail this gate.
+- The final complete-diff Spec review found no scope creep. It did find missing
+  automated browser tests, Staging substituted for the issue's literal Preview
+  requirement, and the overstated Domain row corrected above. Production and
+  dashboard blockers remain unchanged.
 - Remaining type below 14 pixels is limited to the design language's explicit
   13-pixel code exception and text printed onto physical craft objects such as
   polaroids, record sleeves, book covers, and the illustrated envelope. It is
@@ -254,33 +260,45 @@ operator before cutover.
 
 ## Remaining manual actions
 
-The maintainer-operated commands for actions 1 through 4 are collected in
+Maintainer-operated commands for the hosted actions below are collected in
 `docs/v3-cutover-ops-runbook.md`.
 
-1. With two fresh confirmations, verify Staging migrations `0010` and `0011`,
+1. Resolve or explicitly reject the remaining Standards blockers with recorded
+   reasoning: complete keyboard-instant issues #184 through #186 and reconcile
+   the implementation with the documented closed layer scale. The
+   judgement-level `app/globals.css` divergent-change finding may remain a
+   follow-up only if the maintainer records that disposition.
+2. Restore an automated browser-test command and CI gate, or explicitly revise
+   issue #107's browser-test acceptance criterion with maintainer reasoning.
+3. Either record maintainer acceptance that the stable custom Staging
+   environment supersedes the issue's ephemeral Preview wording, or repeat the
+   full matrix on a recorded feature Preview URL and SHA.
+4. With two fresh confirmations, verify Staging migrations `0010` and `0011`,
    Media and AMA tables, and the runtime role's CRUD-only grants. Then sign in
    as the marked owner and prove one non-destructive read plus the required
    mutation boundaries. Until then, treat signed-in Staging admin operations as
    unvalidated.
-2. Provision the Production environment for the v3 contract: replace the
+5. Provision the Production environment for the v3 contract: replace the
    legacy `DATABASE_URL` with the CRUD-only Neon runtime role and add the
    missing secrets, rate limits, intended AMA provider credential pairs, and
    complete Bunny and media configuration.
-3. Add required `Quality` and `CodeQL` checks to protected `main`; `dev` already
+6. Add required `Quality` and `CodeQL` checks to protected `main`; `dev` already
    requires both.
-4. In the Vercel dashboard, verify logs, drains, retention, firewall rules,
+7. In the Vercel dashboard, verify logs, drains, retention, firewall rules,
    the production-branch mapping, and the certificate.
-5. With two fresh confirmations, verify Production runtime grants and the
+8. With two fresh confirmations, verify Production runtime grants and the
    reviewed initial migration baseline. Configure and approve the no-secret
    `production-migration-review` environment first, then approve the protected
    `production` environment only after confirming the workflow will migrate
    before deploy.
-6. Verify the production Bunny and Neon Media boundary, run the protected live
+9. Verify the production Bunny and Neon Media boundary, run the protected live
    storage contract, and publish the intended two-photo Published Photo
    Selection through the owner admin.
-7. Confirm the fresh Chinese and English Staging pageviews are visible in the
-   existing `cali-so` Analytics dashboard.
-8. Confirm the rollback procedure against the recorded known-good deployment.
-9. Only after every blocker above is passed, merge `dev` to `main`, approve
+10. Confirm fresh Chinese and English pageviews from the accepted
+    production-like target are visible in the existing `cali-so` Analytics
+    dashboard: Staging if action 3 accepts it as the substitute, otherwise the
+    recorded feature Preview.
+11. Confirm the rollback procedure against the recorded known-good deployment.
+12. Only after every blocker above is passed, merge `dev` to `main`, approve
     both Production deployment gates in order, and complete the cutover smoke
     tests.
