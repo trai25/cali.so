@@ -11,6 +11,7 @@ import {
   XCard,
   YouTubeCard,
 } from '~/components/social-cards'
+import { brailleText } from '~/lib/braille'
 import { T } from '~/lib/i18n'
 import { localePath, type Locale } from '~/lib/locale-route'
 
@@ -94,6 +95,11 @@ export function SiteFooter({
             </Link>
           </li>
           <li>
+            <Link href={localePath(locale, '/ama')} className="footer-tree-link">
+              <T zh="一对一" en="AMA" />
+            </Link>
+          </li>
+          <li>
             <a href="/feed.xml" className="footer-tree-link" data-zh>
               RSS
             </a>
@@ -103,10 +109,30 @@ export function SiteFooter({
           </li>
         </Tree>
         <div className="footer-colophon col-span-2 sm:order-first sm:col-span-1">
-          <p>
-            © <CopyrightYear /> Cali Castle
-          </p>
-          <FooterClock />
+          <div>
+            <p>
+              © <CopyrightYear /> Cali Castle
+            </p>
+            {/* the name echoed in braille — a printer's mark on the sheet */}
+            <p className="footer-braille" aria-hidden>
+              {brailleText('cali castle')}
+            </p>
+          </div>
+          <div className="flex flex-col gap-2.5">
+            <FooterClock />
+            {/* geo stamp: the colophon's location line, a decorative twin of the clock */}
+            <div className="footer-geo" aria-hidden>
+              <svg className="footer-geo-globe" viewBox="0 0 20 20">
+                <circle cx="10" cy="10" r="9" />
+                <ellipse cx="10" cy="10" rx="4" ry="9" />
+                <path d="M1 10h18M1.9 6h16.2M1.9 14h16.2" />
+              </svg>
+              <span className="footer-geo-lines">
+                <span>22.4820° N</span>
+                <span>113.9247° E</span>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </footer>

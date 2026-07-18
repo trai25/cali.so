@@ -98,8 +98,25 @@ export function ZoomImage({
     // Nothing to reverse if the enter transition never started, and
     // reduced motion never fires transitionend — unmount directly.
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (reduced || stateRef.current === 'opening') unmount()
-    else if (stateRef.current === 'open') setState('closing')
+    if (reduced || stateRef.current === 'opening') {
+      unmount()
+      return
+    }
+    if (stateRef.current !== 'open') return
+    // The page may have moved since open (keyboard scroll, scrollbar drag):
+    // re-measure the inline spot so the return flight lands where it now is.
+    const img = triggerRef.current?.querySelector('img')
+    if (img) {
+      const rect = img.getBoundingClientRect()
+      setZoom((prev) => {
+        if (!prev) return prev
+        const s = rect.width / prev.target.width
+        const tx = rect.left + rect.width / 2 - (prev.target.left + prev.target.width / 2)
+        const ty = rect.top + rect.height / 2 - (prev.target.top + prev.target.height / 2)
+        return { ...prev, from: `translate(${tx}px, ${ty}px) scale(${s})` }
+      })
+    }
+    setState('closing')
   }, [unmount])
 
   // Promote opening -> open one frame later so the transform transition runs
@@ -125,15 +142,26 @@ export function ZoomImage({
       // image-only dialog: the overlay is the sole focusable — keep Tab inside
       if (e.key === 'Tab') e.preventDefault()
     }
+    // A scroll gesture still dismisses the print, but never moves the page:
+    // the sheet stays frozen while the photo is up (and through its return
+    // flight), so the FLIP landing spot stays honest.
+    const onGesture = (e: Event) => {
+      e.preventDefault()
+      close()
+    }
+    // Scrolls that bypass wheel/touch (keyboard, scrollbar drag) still close;
+    // close() re-measures the landing spot, so the flight stays correct.
     const onScroll = () => close()
     window.addEventListener('keydown', onKey)
-    window.addEventListener('wheel', onScroll, { passive: true })
-    window.addEventListener('touchmove', onScroll, { passive: true })
+    window.addEventListener('wheel', onGesture, { passive: false })
+    window.addEventListener('touchmove', onGesture, { passive: false })
+    window.addEventListener('scroll', onScroll)
     window.addEventListener('resize', onScroll)
     return () => {
       window.removeEventListener('keydown', onKey)
-      window.removeEventListener('wheel', onScroll)
-      window.removeEventListener('touchmove', onScroll)
+      window.removeEventListener('wheel', onGesture)
+      window.removeEventListener('touchmove', onGesture)
+      window.removeEventListener('scroll', onScroll)
       window.removeEventListener('resize', onScroll)
     }
   }, [zoom, close])
@@ -209,6 +237,19 @@ export function ZoomImage({
                 transform: floating ? 'none' : zoom.from,
               }}
               onTransitionEnd={settle}
+            />
+            <div
+              aria-hidden
+              className="zoom-overlay-marks calibration-corners"
+              style={
+                {
+                  left: zoom.target.left - 10,
+                  top: zoom.target.top - 10,
+                  width: zoom.target.width + 20,
+                  height: zoom.target.height + 20,
+                  '--corner-arm': '11px',
+                } as React.CSSProperties
+              }
             />
             {expandedContent && (
               <div className="zoom-overlay-details">{expandedContent}</div>

@@ -148,15 +148,15 @@ export function XCardBody({ data }: { data: SocialSnapshot }) {
       />
       {(data.followers || data.following) && (
         <span className="service-card-stat">
-          {data.followers && (
-            <span>
-              <b>{data.followers}</b> <T zh="关注者" en="followers" />
-            </span>
-          )}
-          {data.followers && data.following && <span aria-hidden>·</span>}
           {data.following && (
             <span>
               <b>{data.following}</b> <T zh="正在关注" en="following" />
+            </span>
+          )}
+          {data.followers && data.following && <span aria-hidden>·</span>}
+          {data.followers && (
+            <span>
+              <b>{data.followers}</b> <T zh="关注者" en="followers" />
             </span>
           )}
         </span>
@@ -194,7 +194,13 @@ export function XiaohongshuCardBody() {
         <span>@佐玩 Zolplay 创始人 CEO</span>
       </span>
       <span className="service-card-stat">
-        <b>10+</b> 粉丝 · <b>1千+</b> 获赞与收藏
+        <span>
+          <b>10+</b> 粉丝
+        </span>
+        <span aria-hidden>·</span>
+        <span>
+          <b>1千+</b> 获赞与收藏
+        </span>
       </span>
     </span>
   )
@@ -243,12 +249,17 @@ export function GitHubCardBody({ data }: { data: GitHubSnapshot }) {
         ))}
       </span>
       <span className="service-card-stat">
+        <span>
+          <b>{data.total.toLocaleString()}</b> <T zh="次贡献" en="contributions" />
+        </span>
         {data.followers != null && (
           <>
-            <b>{data.followers}</b> <T zh="关注者" en="followers" /> ·{' '}
+            <span aria-hidden>·</span>
+            <span>
+              <b>{data.followers}</b> <T zh="关注者" en="followers" />
+            </span>
           </>
         )}
-        <b>{data.total.toLocaleString()}</b> <T zh="次贡献" en="contributions" />
         <Glyph service="github" />
       </span>
     </>

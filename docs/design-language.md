@@ -82,6 +82,9 @@ Hard rules:
 - **Chrome stays compact.** Navigation, footer, dates, section labels, and
   utility controls remain 14px with letter-spacing −0.011em. Compact chrome
   provides contrast against the editorial content instead of flattening it.
+  The exception is the page eyebrow (see Technical print): index and
+  service page h1s drop to 12px tracked uppercase mono with the faded
+  comment prefix.
 - **Editorial scale.** The scale is based on 14px body copy. List titles and
   project rows are 15px. Homepage and introductory paragraphs are 14px/1.7.
   Post bodies are 14px/1.72, with CJK at 1.9. Post titles scale from 28px to
@@ -106,9 +109,26 @@ Hard rules:
 - Text selection uses a translucent yellow-green highlighter token and never
   changes the selected text color. The dark token lowers opacity so it reads
   as marker on dark paper rather than a luminous block.
+- **The signal accent.** `--signal` is the one chromatic mark in the system —
+  a burnt safety orange (`oklch(0.62 0.17 45)` on light paper,
+  `oklch(0.7 0.17 48)` on dark). Discipline is the point: the signal only ever
+  appears as **one small filled shape — the lit dither cell**. It recurs
+  deliberately, always as that same 5px square: the masthead stamp (the pixel
+  cluster, once per page, see Technical print) is its home, and on posts the
+  spec plate's edition cell repeats it. Protocol state is the third
+  sanctioned role: a status ladder's current step and the confirmation
+  stamp each carry the same lit cell. It never colors text, borders,
+  controls, or links, never rides a hover state, and never appears as a
+  free-floating mark outside those roles. The repetition reads as one
+  recurring stamp, not as scattered accents — which is exactly why it can
+  recur without cheapening.
 - 1px borders are the exception: prefer `box-shadow: 0 0 0 1px` for card
   edges (blends with any background) and hairline dividers via
   `--border-hairline` (0.5px on retina, 1px otherwise).
+- The surface ladder (`--surface-1…8`, `lib/surface-classes.ts`) is
+  warm-tuned on the public site so elevated sheets sit on the same paper
+  as everything else; the neutral values remain only as the
+  pre-hydration fallback. Code sheets rest on `--surface-1`.
 - Focus rings stay neutral (gray/black/white), visible on `:focus-visible`,
   and are never removed.
 - Z-index scale: `--z-nav: 100; --z-card: 200; --z-toast: 300`. Nothing else.
@@ -184,6 +204,16 @@ open rich hover cards. The contract:
   `scale(0.95)` + `opacity: 0`, `transform-origin` at the trigger,
   `backface-visibility: hidden`. Exit faster than enter. Built on the fluid
   hover-card primitive so pointer exit mid-animation reverses smoothly.
+- **Chrome in the print register.** The card shell is a printed label:
+  the register's 2px corner, elevation from the surface ladder
+  (`--surface-3`), hairline ring plus the shadow scale. Machine text goes
+  mono — handles (`@handle`, account numbers) and the preview card's
+  domain line at 12px — while names and bios stay in the human sans. The
+  stat row is the card's ruled plate foot (hairline-top, 11px mono,
+  tabular); each stat is a no-break unit, so a long locale wraps at the
+  separators instead of overflowing the fixed-width card. Per-service composition is untouched, and the envelope card
+  stays exempt: it is already a physical object. Fixed-height cards size
+  for the ruled foot.
 - **Fixed dimensions per service card type** — service-card content loads
   into a fixed-size card (skeleton first). External-link preview cards are
   instead fixed-width with content-driven height, settled at render. Either
@@ -258,8 +288,22 @@ open rich hover cards. The contract:
 Post images zoom on click: the photo is picked up off the page (FLIP,
 transform-only, 300ms `--ease-swift`) and floats centered over the dimmed
 sheet at no more than its intrinsic size, gaining `--shadow-large`. Esc,
-click, or the first scroll puts it back. The inline image keeps its spot
-(zero layout shift); reduced motion swaps instantly. `components/zoom-image.tsx`.
+click, or the first scroll gesture puts it back — but a gesture never moves
+the page: wheel and touch scrolling are prevented while the photo is up (and
+through its return flight), so the sheet stays frozen underneath. Scrolls
+that bypass those gestures (keyboard, scrollbar drag) also dismiss, and
+closing re-measures the inline spot so the return flight always lands where
+the image actually is. The inline image keeps its spot (zero layout shift);
+reduced motion swaps instantly. `components/zoom-image.tsx`.
+
+When the lightbox carries a caption sheet (the photo details and their
+plate), its items are physical-object motion: each springs in from
+`translateY(10px) scale(0.97)` over 350ms `--ease-spring`, staggered 45ms
+apart after a 120ms head start for the photo's flight; the plate frame
+fades without transform. On close they slip away on the swift curve —
+150ms with a 15ms forward stagger, sized to finish inside the image's
+300ms return. Items carry their order as `--detail-index`; reduced motion
+renders the sheet instantly with no transform.
 
 ## Portrait & avatar
 
@@ -322,6 +366,12 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
   paper. Captions on covers are
   braille numerals (`lib/braille.ts`); readable dates stay for assistive
   tech.
+- **Braille** (`lib/braille.ts`): the print's dot medium. Post covers caption
+  their date in braille numerals (`brailleDate`); the footer colophon carries
+  the name in braille cells (`brailleText`, `.footer-braille`) as a printer's
+  mark beneath the copyright. Always decorative and `aria-hidden` — the
+  readable value lives elsewhere. Dot-based, so treat it like the other marks:
+  quiet, and never stacked with a full raster.
 - **Blog index rows**: one catalog row per post — 64×44 dithered print thumb
   (still the shared morph element) resting over two quiet paper sheets, title,
   dotted leader (the typewriter TOC register), tabular date. The sheets are
@@ -390,6 +440,153 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
   shadow that expands with its visible width but stays on the wood when the
   jacket lifts on hover. The annotation below the plank is the only link to its
   official author or publisher page.
+- **Spec plates** (`.spec-plate`): metadata stamped like an engraved data
+  plate — label/value pairs between hairline top and bottom rules, set in
+  the mono stack (Geist Mono, CJK fallback), labels 11px uppercase at
+  +0.08em in faded ink, values 13px tabular below them. The post header
+  plate carries No. (chronological edition — the first post is 001
+  forever), Date (locale-neutral `YYYY.MM.DD`), Length (localized reading
+  minutes), and Words (tabular count of CJK characters + Latin words). The
+  No. cell holds the page's single signal cell — a 5px square, the same
+  cell the prose list marker uses, lit `--signal`. Four columns from 28rem,
+  a 2×2 grid below. Plates are chrome: `user-select: none`, and the post
+  plate keeps the established metadata develop timing. The lightbox's
+  capture details are the same register (`.spec-plate-flow`, cells wrapping
+  to content): Camera, Lens, Focal, Aperture, Shutter, ISO — capture data
+  was always plate content. The footer clock readout is the smallest plate.
+- **Calibration marks** (`.calibration-corners`): hairline viewfinder
+  corner brackets (9px arms; 11px around the lightbox photo). On photo
+  tiles they develop under fine-pointer hover or focus-within (opacity
+  150ms ease, settling from `scale(1.05)` over 300ms `--ease-swift`,
+  62% ink); in the lightbox they fade in 10px outside the settled photo,
+  delayed 140ms so the pick-up lands first. Reduced motion renders them
+  statically. Registration crosses — 9px hairline `+` marks — ride each
+  column guide 14px from the top, marking where the intentionally absent
+  top rule would cross; they live inside the guide layer and inherit its
+  missability contract.
+- **Ghost line art** (`components/ghost-schematic.tsx`): a single
+  precise-stroke schematic drawn in `--ghost-ink` (5% foreground on light,
+  6.5% on dark) — currently a drafting compass mid-arc behind the project
+  index (hidden below 40rem). Unlike illustration accents, ghost drawings
+  have no hand-drawn waver: they belong to the drafting instruments, not
+  the hand. Ambient rules apply — absolute, inert, behind the content,
+  noticed on the second visit; never more than one per page, and never on
+  a page already carrying a raster instrument.
+- **Pixel cluster / masthead stamp** (`.pixel-cluster`,
+  `components/pixel-cluster.tsx`): three 5px dither cells on a 1px seam —
+  one lit `--signal`, two in fading foreground ink, the fourth position
+  empty. It is the site's recurring masthead stamp: exactly one per page,
+  pinned top-right of the content column on the title/eyebrow line, and the
+  single home of the signal accent (see Color). It appears on every public
+  view — the home masthead (as a wordmark mark beside the name), the
+  writing / projects / photos / AMA eyebrows, and the post title line. A
+  mark, never a control (`aria-hidden`, out of the accessibility tree). On
+  the projects page it sits over the faint ghost schematic, which stays
+  behind it as an ambient layer — the stamp is a mark, exempt from the
+  one-instrument rule that governs full rasters. The arrangement varies per
+  page (a `variant` picks which corner is lit and how the ink cells fall) so
+  no two stamps read identically; every variant still keeps exactly one lit
+  signal cell. Posts derive their variant from the slug, stable per post.
+- **Page eyebrows** (`.page-eyebrow`): page h1s on the index and service
+  surfaces (writing, projects, photos, the AMA family) are set as mono
+  section marks — 12px, +0.08em tracking, uppercase Latin — prefixed by a
+  faded `//` drawn in CSS with empty alt text so it never reaches the
+  accessible name. Homepage section headers and in-page h2s keep the plain
+  14px treatment; the comment mark stays rare.
+- **Posts like this** (`.post-related`): the article foot carries up to
+  three related posts as standard catalog rows — the blog-index row
+  reused whole (dithered print thumb, title, dotted leader, tabular
+  date), shared morph elements and selective-focus dimming included —
+  under a hairline-top mono plate label (相关阅读 / Posts like this).
+  Relatedness is lexical similarity computed at build time
+  (`lib/content.ts` `getRelatedPosts`): CJK bigrams and Latin words over
+  title and body, title terms weighted triple, cosine-scored with recency
+  breaking ties — no tags to maintain. Below-the-fold chrome: no entrance
+  animation.
+- **Nameplate** (`.spec-nameplate`): the boxed variant of the spec plate —
+  label and value cells separated by hairline rules inside a hairline
+  frame, like an equipment serial plate. Used where the data is a
+  product's own specification (the AMA session specs). Same mono
+  typography as the plate; labels uppercase at 11px, values tabular.
+- **Status ladder** (`.status-ladder`): journey steps as mono rows —
+  two-digit index, label, and a 5px state cell at the row's end. Done is
+  filled ink, pending is a hairline outline, and the current step carries
+  the lit signal cell. Decorative reinforcement only (`aria-hidden`): the
+  prose beside it always announces the same state. Lives on the AMA
+  confirmation, driven by the server's real hold state — a ladder must
+  never show state the page cannot prove.
+- **Certification stamp** (`.cert-stamp`): a hairline-bordered mono
+  uppercase chip ("已确认 / Confirmed +") with the lit cell, for terminal
+  confirmed states. A stamp is applied once, at the end — never as a
+  badge on lists or previews.
+- **Section tags** (`.section-tag`): section h2s on the homepage and the
+  AMA page are set as index tags — a boxed two-digit number, a
+  hazard-hatch chip (fine diagonal strokes in a bordered cell), and a
+  tracked uppercase mono label. Numbering follows render order so
+  conditional sections never leave gaps; the number and hatch are
+  `aria-hidden`, so the accessible name is just the label. Prose h2s carry
+  the same tag as a leading ornament: a single `::before` draws the boxed
+  counter ordinal and hatch strip (one pseudo, layered backgrounds) while
+  the heading text keeps its editorial size — chrome labels join the
+  register wholesale, content headings only wear its mark. The ordinal is
+  excluded from the accessible name; h3s stay unmarked.
+- **Boxed step ordinals** (`.step-index`): manual/how-it-works lists carry
+  their two-digit ordinals in small hairline boxes, tying numbered prose
+  steps to the nameplate register. Prose ordered lists share the same
+  recipe globally: `.prose ol` draws the boxed `01` ordinal from a CSS
+  counter (`decimal-leading-zero`), replacing the native decimal marker.
+- **Figure prints**: post images are square-cornered on the register's
+  2px radius with a hairline ring, keeping their deterministic scatter
+  tilt; the floating lightbox photo and the photo-masonry tiles share the
+  same corner. Prints (inline and floating) rest on `--surface-1` — a
+  floor for transparent images and loading frames. Captions are plate annotations — left-set mono prefixed
+  with an auto-counted figure number (`FIG. 01 — ` / `图 01 — `, keyed
+  off `html[data-locale]`, excluded from accessible names).
+- **Code nameplates**: prose code blocks render as nameplates — the
+  pretty-code figure carries the hairline frame; a titled block gets a
+  ruled head row (the filename in 11px mono at 88% ink) with a boxed
+  uppercase language tag drawn from `data-language`; the code sheet below
+  is square-cornered inside the frame. Untitled blocks keep the bare
+  frame. The copy button and inline code chips sit on the register's 2px
+  radius. The sheet's background comes from the surface ladder
+  (`--surface-1`), not the highlighter theme — shiki contributes token
+  colors only. Horizontal overflow goes through the fluid scroll area
+  (`components/ui/scroll-area.tsx`): edge fades tinted with the sheet's
+  own surface appear only while content continues in that direction,
+  updated on scroll and resize — the fade is information, not
+  decoration. Fade visibility is an opacity swap (150ms ease, instant
+  under reduced motion).
+- **Quotation bar**: prose blockquotes swap the plain rule for the hazard
+  hatch set vertically — a bordered 6px strip of fine diagonal strokes
+  down the left edge. Quoted text keeps its muted ink; the strip marks it
+  as material brought in from elsewhere.
+- **Archived-post card** (`.tweet-card`, `components/mdx/tweet.tsx`): the
+  static social snapshot renders as a specimen label in the nameplate
+  register — a hairline frame with ruled head/body/foot rows resting on
+  `--surface-1` (a fine-pointer hover lifts it one step to
+  `--surface-2`), the handle in mono, and a plate-style foot: stamped `yyyy.mm.dd` date, the like
+  count (read from the public syndication endpoint at build/revalidate,
+  falling back to the snapshot's archived `likes`, hidden when neither
+  exists), notes, and the northeast mark resting at 60% opacity
+  (deepening and shifting 1.5px outward on hover, per the external-mark
+  treatment). The avatar is the plate's one round exception — a face is
+  a face. Snapshots
+  stay fully static, and so does the avatar: a committed
+  `tweet-<id>-avatar.(jpg|png)` beside the JSON wins; otherwise the
+  server fetches the author avatar once at build/revalidate time and
+  inlines it as a data URI in the static HTML (bounded to 200KB,
+  image content-types only). The visitor never contacts a third party,
+  and a failed fetch degrades to the initial-letter tile.
+- **Barcode** (`components/barcode.tsx`): a decorative label-graphic
+  barcode whose bar widths derive deterministically from its code string
+  (stable across SSR), with the human-readable code beneath. It scans as
+  ornament, not data (`aria-hidden`). One per surface, currently the
+  error proof sheets (`ERR-404-CALI-SO`, `ERR-500-CALI-SO`) at 38% ink.
+- **Ghost folio numerals** (`.ghost-folio`): the writing index's year
+  sections carry the year's last two digits as an oversized pixel-face
+  numeral in `--ghost-ink`, top-right behind the rows — the folio-number
+  device in the ambient register, following the same missability contract
+  as the ghost schematic.
 - Future candidates: ascii-on-hover for photos, dithered media
   placeholders, line-screen section dividers. One instrument per page —
   never stack rasters over each other.
@@ -488,7 +685,15 @@ links carried forward from the earlier dual-DOM implementation.
 The leftmost desktop colophon puts the copyright at the top and Cali's local
 clock at the bottom. The clock shows the `UTC+8` timezone, a muted tabular live
 Asia/Taipei time in 12-hour `h:mm AM/PM` format without seconds, and a small
-redundant analog face. The digital `<time>` is the accessible source; the clock
+redundant analog face. The readout is set as a small spec plate: the `UTC+8`
+label in 11px tracked uppercase mono over the 13px mono time value. Below the
+clock sits the geo stamp (`.footer-geo`): a hairline graticule globe beside a
+pinned coordinate (`22.4820° N / 113.9247° E`) — a quiet easter egg for anyone
+who plots it. The globe shares the clock face's size and left edge, and the
+coordinate shares the digital clock's 13px mono size and colour, so the two
+rows read as one instrument. Decorative and `aria-hidden`. The colophon also
+carries the name in braille (`.footer-braille`) beneath the copyright as a
+printer's mark. The digital `<time>` is the accessible source; the clock
 face is decorative and deliberately quieter than the footer trees. Its fixed
 placeholder dimensions avoid hydration shift, and the second-aligned timer
 pauses while the page is hidden. On mobile, contact and index remain a
@@ -521,6 +726,10 @@ neutral focus ring without motion, and reduced motion keeps every artifact
 still.
 
 ## Photo index
+
+Photo tiles are quiet objects: no hover captions or overlays — location and
+capture data appear only in the lightbox details, and the only fine-pointer
+response is the calibration corner brackets.
 
 The photo route keeps its title in the prefetched static shell and streams the
 active Published Photo Selection into a page-level masonry boundary. While the
@@ -657,8 +866,12 @@ The page reads as a sheet of working paper, not a void:
 
 Few interactions, disproportionate care:
 
-- Buttons: `transform: scale(0.97)` on `:active`, 100ms. 44px minimum hit
-  area (pseudo-element if visually smaller).
+- Buttons are pills (`border-radius: 999px` / `rounded-full`) and kept
+  vertically compact — the shared `Button` (`components/ui/button.tsx`, on
+  the Base UI primitive) and the `.btn-cta` primary call-to-action share
+  that shape. `transform: scale(0.97)` on `:active`, 100ms. 44px minimum hit
+  area, restored with a pseudo-element when the visible pill is shorter (as
+  `.btn-cta` does at its 36px height).
 - Copy buttons on every code block; copied state swaps icon for 1.5s with no
   layout shift (fixed-width slot).
 - Anchored headings scroll with `scroll-margin-top` matching the nav height.

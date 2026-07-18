@@ -27,45 +27,70 @@ function captureDate(date: Date, locale: 'zh' | 'en') {
   }).format(new Date(date))
 }
 
-function cameraDetails(photo: PublishedPhoto) {
+// The capture data as spec-plate fields — EXIF was always plate content
+function cameraFields(photo: PublishedPhoto) {
   if (!photo.camera) return []
-  return [
-    [photo.camera.make, photo.camera.model].filter(Boolean).join(' ') || null,
-    photo.camera.lens,
-    photo.camera.focalLengthMillimeters
-      ? `${photo.camera.focalLengthMillimeters} mm`
-      : null,
-    photo.camera.aperture ? `ƒ/${photo.camera.aperture}` : null,
-    photo.camera.shutterSpeedSeconds
-      ? photo.camera.shutterSpeedSeconds < 1
-        ? `1/${Math.round(1 / photo.camera.shutterSpeedSeconds)} s`
-        : `${photo.camera.shutterSpeedSeconds} s`
-      : null,
-    photo.camera.iso ? `ISO ${photo.camera.iso}` : null,
-  ].filter((value): value is string => Boolean(value))
+  const camera = photo.camera
+  const fields: { zh: string; en: string; value: string }[] = []
+  const body = [camera.make, camera.model].filter(Boolean).join(' ')
+
+  if (body) fields.push({ zh: '相机', en: 'Camera', value: body })
+  if (camera.lens) fields.push({ zh: '镜头', en: 'Lens', value: camera.lens })
+  if (camera.focalLengthMillimeters)
+    fields.push({
+      zh: '焦距',
+      en: 'Focal',
+      value: `${camera.focalLengthMillimeters} mm`,
+    })
+  if (camera.aperture)
+    fields.push({ zh: '光圈', en: 'Aperture', value: `ƒ/${camera.aperture}` })
+  if (camera.shutterSpeedSeconds)
+    fields.push({
+      zh: '快门',
+      en: 'Shutter',
+      value:
+        camera.shutterSpeedSeconds < 1
+          ? `1/${Math.round(1 / camera.shutterSpeedSeconds)} s`
+          : `${camera.shutterSpeedSeconds} s`,
+    })
+  if (camera.iso)
+    fields.push({ zh: '感光度', en: 'ISO', value: String(camera.iso) })
+
+  return fields
 }
 
 function PhotoDetails({ photo }: { photo: PublishedPhoto }) {
   const locale = useLocale()
   const location = photo.locationLabel?.[locale === 'zh' ? 'zhHans' : 'en']
   const captured = photo.capturedAt ? captureDate(photo.capturedAt, locale) : null
-  const camera = cameraDetails(photo)
-  if (!location && !captured && camera.length === 0) return null
+  const fields = cameraFields(photo)
+  if (!location && !captured && fields.length === 0) return null
 
+  // The caption sheet staggers in behind the print: each item carries its
+  // order so the overlay's open state can spring them in one by one.
   return (
     <div className="mx-auto w-full max-w-xl px-5 text-foreground">
       {(location || captured) && (
-        <p className="text-sm font-medium tabular-nums">
+        <p
+          className="zoom-detail-item text-sm font-medium tabular-nums"
+          style={{ '--detail-index': 0 } as React.CSSProperties}
+        >
           {[location, captured].filter(Boolean).join(' · ')}
         </p>
       )}
-      {camera.length > 0 && (
-        <dl className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-          <dt className="sr-only">
-            <T zh="相机参数" en="Camera details" />
-          </dt>
-          {camera.map((detail, index) => (
-            <dd key={`${index}:${detail}`}>{detail}</dd>
+      {fields.length > 0 && (
+        <dl className="spec-plate spec-plate-flow zoom-detail-frame mt-3">
+          {fields.map((field, index) => (
+            <div
+              key={field.en}
+              className="zoom-detail-item"
+              style={{ '--detail-index': index + 1 } as React.CSSProperties}
+            >
+              <dt>
+                <T zh={field.zh} en={field.en} />
+              </dt>
+              <dd>{field.value}</dd>
+            </div>
           ))}
         </dl>
       )}
@@ -84,13 +109,12 @@ function PublishedPhotoItem({
 }) {
   const locale = useLocale()
   const alt = localize(locale, photo.altText.zhHans, photo.altText.en)
-  const location = photo.locationLabel?.[locale === 'zh' ? 'zhHans' : 'en']
-  const captured = photo.capturedAt ? captureDate(photo.capturedAt, locale) : null
   const rendition = photo.renditions.at(-1)!
   const srcSet = photo.renditions
     .map(({ src, profileWidth }) => `${src} ${profileWidth}w`)
     .join(', ')
 
+  // Tiles stay quiet: location and capture data live in the lightbox details.
   return (
     <div
       className="photo-item enter-swing"
@@ -101,7 +125,7 @@ function PublishedPhotoItem({
         } as React.CSSProperties
       }
     >
-      <div className="group relative overflow-hidden rounded-md">
+      <div className="photo-frame relative overflow-hidden">
         <ZoomImage
           native
           src={rendition.src}
@@ -110,14 +134,9 @@ function PublishedPhotoItem({
           width={photo.width}
           height={photo.height}
           sizes="(max-width: 704px) 50vw, 288px"
-          className="rounded-md"
           expandedContent={<PhotoDetails photo={photo} />}
         />
-        {(location || captured) && (
-          <p className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-1 bg-background/90 px-3 py-2 text-sm leading-5 tabular-nums opacity-0 backdrop-blur-sm transition-[opacity,transform] duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 motion-reduce:transform-none motion-reduce:transition-none">
-            {[location, captured].filter(Boolean).join(' · ')}
-          </p>
-        )}
+        <span className="calibration-corners" aria-hidden />
       </div>
     </div>
   )
