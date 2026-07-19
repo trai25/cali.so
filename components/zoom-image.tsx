@@ -1,16 +1,29 @@
 'use client'
 
-import Image from 'next/image'
+import Image, { type ImageLoader } from 'next/image'
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
 
 import { localize, useLocale } from '~/lib/locale-client'
 
 const VIEWPORT_PAD = 32
+const DEFAULT_ROOT_FONT_SIZE = 16
+const DETAIL_SPACE_REM = 4.5
+const MOBILE_DETAIL_SPACE_REM = 7
+const MOBILE_BREAKPOINT_REM = 40
+
+type ZoomImageRendition = { src: string; width: number }
 type CloseReason = 'escape' | 'overlay' | 'viewport'
 
 function prefersReducedMotion() {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+}
+
+function rootFontSizePixels() {
+  const rootFontSize = Number.parseFloat(
+    window.getComputedStyle(document.documentElement).fontSize,
+  )
+  return Number.isFinite(rootFontSize) ? rootFontSize : DEFAULT_ROOT_FONT_SIZE
 }
 
 interface ZoomImageProps {
@@ -21,9 +34,32 @@ interface ZoomImageProps {
   sizes?: string
   className?: string
   style?: React.CSSProperties
-  native?: boolean
-  srcSet?: string
+  renditions?: ReadonlyArray<ZoomImageRendition>
   expandedContent?: React.ReactNode
+}
+
+function largestRendition(
+  renditions: ZoomImageProps['renditions'],
+) {
+  return renditions?.reduce<ZoomImageRendition | undefined>(
+    (largest, rendition) =>
+      !largest || rendition.width > largest.width ? rendition : largest,
+    undefined,
+  )
+}
+
+function renditionForWidth(
+  renditions: ZoomImageProps['renditions'],
+  requestedWidth: number,
+) {
+  return renditions?.reduce<ZoomImageRendition | undefined>(
+    (best, rendition) =>
+      rendition.width >= requestedWidth &&
+      (!best || rendition.width < best.width)
+        ? rendition
+        : best,
+    undefined,
+  )
 }
 
 // Click-to-zoom for post images: the photo is picked up off the page and
@@ -37,15 +73,15 @@ export function ZoomImage({
   sizes,
   className,
   style,
-  native = false,
-  srcSet,
+  renditions,
   expandedContent,
 }: ZoomImageProps) {
   const locale = useLocale()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
+  const preloadedSrcRef = useRef<string | null>(null)
   const [zoom, setZoom] = useState<{
-    currentSrc: string
+    expandedSrc: string
     target: { left: number; top: number; width: number; height: number }
     from: string
   } | null>(null)
@@ -55,6 +91,24 @@ export function ZoomImage({
     stateRef.current = state
   }, [state])
 
+  const expandedSrc = largestRendition(renditions)?.src ?? src
+  // Next Image owns responsive selection and layout, while Bunny remains the
+  // encoder/cache layer. Selecting an immutable Rendition here avoids a second
+  // quality pass through Next's optimizer.
+  const renditionLoader = useCallback<ImageLoader>(
+    ({ width: requestedWidth }) =>
+      renditionForWidth(renditions, requestedWidth)?.src ?? expandedSrc,
+    [expandedSrc, renditions],
+  )
+
+  const preloadExpanded = useCallback(() => {
+    if (expandedSrc === src || preloadedSrcRef.current === expandedSrc) return
+    const preload = document.createElement('img')
+    preload.decoding = 'async'
+    preload.src = expandedSrc
+    preloadedSrcRef.current = expandedSrc
+  }, [expandedSrc, src])
+
   const open = useCallback((event: MouseEvent<HTMLButtonElement>) => {
     const img = triggerRef.current?.querySelector('img')
     if (!img) return
@@ -63,7 +117,12 @@ export function ZoomImage({
     // Fit within the viewport but never beyond the intrinsic size —
     // zoom means "actual size", not "stretch".
     const maxW = Math.min(window.innerWidth - VIEWPORT_PAD * 2, width)
-    const detailSpace = expandedContent ? 152 : 0
+    const rootFontSize = rootFontSizePixels()
+    const detailSpace = expandedContent
+      ? (window.innerWidth < MOBILE_BREAKPOINT_REM * rootFontSize
+          ? MOBILE_DETAIL_SPACE_REM
+          : DETAIL_SPACE_REM) * rootFontSize
+      : 0
     const maxH = Math.max(
       1,
       Math.min(
@@ -76,7 +135,7 @@ export function ZoomImage({
     const h = Math.round(height * scale)
     const target = {
       left: Math.round((window.innerWidth - w) / 2),
-      top: Math.round((window.innerHeight - h) / 2),
+      top: Math.round((window.innerHeight - detailSpace - h) / 2),
       width: w,
       height: h,
     }
@@ -86,13 +145,13 @@ export function ZoomImage({
     const tx = rect.left + rect.width / 2 - (target.left + w / 2)
     const ty = rect.top + rect.height / 2 - (target.top + h / 2)
     setZoom({
-      currentSrc: img.currentSrc || src,
+      expandedSrc,
       target,
       from: `translate(${tx}px, ${ty}px) scale(${s})`,
     })
     const reduced = prefersReducedMotion()
     setState(event.detail === 0 || reduced ? 'open' : 'opening')
-  }, [src, width, height, expandedContent])
+  }, [expandedSrc, width, height, expandedContent])
 
   const unmount = useCallback(() => {
     setZoom(null)
@@ -194,32 +253,19 @@ export function ZoomImage({
             : localize(locale, '放大图片', 'Zoom image')
         }
         data-zoomed={zoom ? '' : undefined}
+        onPointerEnter={preloadExpanded}
+        onFocus={preloadExpanded}
         onClick={open}
       >
-        {native ? (
-          // Bunny is the public binary cache layer for Published Photo Selections.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={src}
-            srcSet={srcSet}
-            alt={alt}
-            width={width}
-            height={height}
-            sizes={sizes}
-            className={className}
-            loading="lazy"
-            decoding="async"
-          />
-        ) : (
-          <Image
-            src={src}
-            alt={alt}
-            width={width}
-            height={height}
-            sizes={sizes}
-            className={className}
-          />
-        )}
+        <Image
+          loader={renditions ? renditionLoader : undefined}
+          src={src}
+          alt={alt}
+          width={width}
+          height={height}
+          sizes={sizes}
+          className={className}
+        />
       </button>
       {zoom &&
         createPortal(
@@ -234,10 +280,14 @@ export function ZoomImage({
             onClick={() => close('overlay')}
           >
             <div className="zoom-overlay-backdrop" />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={zoom.currentSrc}
+            <Image
+              unoptimized
+              src={zoom.expandedSrc}
               alt={alt}
+              width={width}
+              height={height}
+              loading="eager"
+              fetchPriority="high"
               style={{
                 left: zoom.target.left,
                 top: zoom.target.top,

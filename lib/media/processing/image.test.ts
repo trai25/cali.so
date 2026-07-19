@@ -8,6 +8,7 @@ vi.mock('server-only', () => ({}))
 import {
   MediaImageError,
   processOriginalImage,
+  RENDITION_JPEG_QUALITY,
   RENDITION_PROFILE_WIDTHS,
 } from './image'
 
@@ -71,6 +72,7 @@ describe('Media Library image processing', () => {
   it('produces every no-upscale progressive JPEG Rendition without metadata', async () => {
     const result = await processOriginalImage(await orientedPhoto())
 
+    expect(RENDITION_JPEG_QUALITY).toBe(90)
     expect(result.renditions.map((rendition) => rendition.profileWidth)).toEqual(
       RENDITION_PROFILE_WIDTHS,
     )
@@ -95,6 +97,7 @@ describe('Media Library image processing', () => {
         height: 120,
         space: 'srgb',
         isProgressive: true,
+        chromaSubsampling: '4:4:4',
       })
       expect(publicMetadata.exif).toBeUndefined()
       expect(publicMetadata.xmp).toBeUndefined()

@@ -4,7 +4,7 @@ import type { MediaAssetReviewRecord } from './service'
  * Client-side mirror of the publish-eligibility invariant the server
  * enforces on Photo Selection save and publish: active, processed, with a
  * preview Rendition and approved bilingual Alt Text. The server remains
- * the authority (it additionally requires all three Rendition profiles);
+ * the authority (it additionally requires all three baseline Rendition profiles);
  * this pre-filter only decides what the admin UI offers.
  */
 export function isMediaAssetEligible(asset: MediaAssetReviewRecord) {

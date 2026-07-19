@@ -18,15 +18,6 @@ const LOADING_ASPECT_RATIOS = [
   '1 / 1',
 ]
 
-function captureDate(date: Date, locale: 'zh' | 'en') {
-  return new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    timeZone: 'UTC',
-  }).format(new Date(date))
-}
-
 // The capture data as spec-plate fields — EXIF was always plate content
 function cameraFields(photo: PublishedPhoto) {
   if (!photo.camera) return []
@@ -62,38 +53,32 @@ function cameraFields(photo: PublishedPhoto) {
 function PhotoDetails({ photo }: { photo: PublishedPhoto }) {
   const locale = useLocale()
   const location = photo.locationLabel?.[locale === 'zh' ? 'zhHans' : 'en']
-  const captured = photo.capturedAt ? captureDate(photo.capturedAt, locale) : null
-  const fields = cameraFields(photo)
-  if (!location && !captured && fields.length === 0) return null
+  const fields = [
+    ...(location
+      ? [{ zh: '地点', en: 'Location', value: location }]
+      : []),
+    ...cameraFields(photo),
+  ]
+  if (fields.length === 0) return null
 
   // The caption sheet staggers in behind the print: each item carries its
   // order so the overlay's open state can spring them in one by one.
   return (
     <div className="mx-auto w-full max-w-xl px-5 text-foreground">
-      {(location || captured) && (
-        <p
-          className="zoom-detail-item text-sm font-medium tabular-nums"
-          style={{ '--detail-index': 0 } as React.CSSProperties}
-        >
-          {[location, captured].filter(Boolean).join(' · ')}
-        </p>
-      )}
-      {fields.length > 0 && (
-        <dl className="spec-plate spec-plate-flow zoom-detail-frame mt-3">
-          {fields.map((field, index) => (
-            <div
-              key={field.en}
-              className="zoom-detail-item"
-              style={{ '--detail-index': index + 1 } as React.CSSProperties}
-            >
-              <dt>
-                <T zh={field.zh} en={field.en} />
-              </dt>
-              <dd>{field.value}</dd>
-            </div>
-          ))}
-        </dl>
-      )}
+      <dl className="spec-plate spec-plate-flow zoom-detail-frame">
+        {fields.map((field, index) => (
+          <div
+            key={field.en}
+            className="zoom-detail-item"
+            style={{ '--detail-index': index } as React.CSSProperties}
+          >
+            <dt>
+              <T zh={field.zh} en={field.en} />
+            </dt>
+            <dd>{field.value}</dd>
+          </div>
+        ))}
+      </dl>
     </div>
   )
 }
@@ -110,9 +95,6 @@ function PublishedPhotoItem({
   const locale = useLocale()
   const alt = localize(locale, photo.altText.zhHans, photo.altText.en)
   const rendition = photo.renditions.at(-1)!
-  const srcSet = photo.renditions
-    .map(({ src, profileWidth }) => `${src} ${profileWidth}w`)
-    .join(', ')
 
   // Tiles stay quiet: location and capture data live in the lightbox details.
   return (
@@ -127,9 +109,8 @@ function PublishedPhotoItem({
     >
       <div className="photo-frame relative overflow-hidden">
         <ZoomImage
-          native
           src={rendition.src}
-          srcSet={srcSet}
+          renditions={photo.renditions}
           alt={alt}
           width={photo.width}
           height={photo.height}

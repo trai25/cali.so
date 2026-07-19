@@ -5,8 +5,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ZoomImage } from './zoom-image'
 
+type MockImageProps = React.ImgHTMLAttributes<HTMLImageElement> & {
+  loader?: unknown
+  unoptimized?: boolean
+}
+
 vi.mock('next/image', () => ({
-  default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
+  default: ({
+    loader: _loader,
+    unoptimized: _unoptimized,
+    ...props
+  }: MockImageProps) => (
     // eslint-disable-next-line @next/next/no-img-element
     <img {...props} />
   ),
@@ -30,6 +39,7 @@ beforeEach(() => {
 
   Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1200 })
   Object.defineProperty(window, 'innerHeight', { configurable: true, value: 900 })
+  document.documentElement.style.fontSize = ''
   vi.spyOn(HTMLImageElement.prototype, 'getBoundingClientRect').mockReturnValue({
     bottom: 300,
     height: 200,
@@ -47,9 +57,59 @@ afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
+  document.documentElement.style.fontSize = ''
 })
 
 describe('ZoomImage', () => {
+  it('preloads the largest rendition only once across hover and focus', () => {
+    render(
+      <ZoomImage
+        src="/photo-640.jpg"
+        alt="Taipei"
+        width={800}
+        height={600}
+        renditions={[
+          { src: '/photo-640.jpg', width: 640 },
+          { src: '/photo-2560.jpg', width: 2560 },
+        ]}
+      />,
+    )
+    const createElement = vi.spyOn(document, 'createElement')
+    const trigger = screen.getByRole('button', { name: 'Zoom image: Taipei' })
+
+    fireEvent.pointerEnter(trigger)
+    fireEvent.pointerEnter(trigger)
+    fireEvent.focus(trigger)
+
+    expect(
+      createElement.mock.calls.filter(([tagName]) => tagName === 'img'),
+    ).toHaveLength(1)
+  })
+
+  it('scales the detail reservation and mobile breakpoint with rem', () => {
+    document.documentElement.style.fontSize = '20px'
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 700 })
+    render(
+      <ZoomImage
+        src="/photo.jpg"
+        alt="Taipei"
+        width={800}
+        height={1600}
+        expandedContent={<p>Details</p>}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Zoom image: Taipei' }), {
+      detail: 0,
+    })
+
+    const expandedImage = screen
+      .getByRole('dialog', { name: 'Taipei' })
+      .querySelector('img')!
+    expect(expandedImage.style.height).toBe('696px')
+    expect(expandedImage.style.top).toBe('32px')
+  })
+
   it('opens keyboard activation in its settled state without scheduling motion', () => {
     render(<ZoomImage src="/photo.jpg" alt="Taipei" width={800} height={600} />)
 

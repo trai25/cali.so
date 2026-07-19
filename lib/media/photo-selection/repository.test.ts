@@ -20,6 +20,7 @@ describe('Photo Selection repository', () => {
     '0006_photo_selection.sql',
     '0007_photo_publication_revision.sql',
     '0009_media_catalog_state.sql',
+    '0012_high_fidelity_photo_renditions.sql',
   ])
   let client: PGlite
   let repository: ReturnType<typeof createPhotoSelectionRepository>
@@ -104,7 +105,7 @@ describe('Photo Selection repository', () => {
         archivedAt,
       ],
     )
-    for (const profileWidth of overrides.renditionProfiles ?? [640, 1024, 1600]) {
+    for (const profileWidth of overrides.renditionProfiles ?? [640, 1024, 1600, 2560]) {
       await client.query(
         `INSERT INTO media_renditions
           (media_asset_id, profile_width, object_key, checksum_sha256,
@@ -256,6 +257,7 @@ describe('Photo Selection repository', () => {
             },
             expect.objectContaining({ profileWidth: 1024 }),
             expect.objectContaining({ profileWidth: 1600 }),
+            expect.objectContaining({ profileWidth: 2560 }),
           ],
         },
         expect.objectContaining({ width: 4032, height: 3024 }),
@@ -274,6 +276,29 @@ describe('Photo Selection repository', () => {
     ]) {
       expect(serialized).not.toContain(privateField)
     }
+  })
+
+  it('keeps a legacy three-profile publication readable', async () => {
+    const asset = await createAsset('owner_01', {
+      renditionProfiles: [640, 1024, 1600],
+    })
+    await repository.saveDraft({
+      ownerUserId: 'owner_01',
+      expectedRevision: 0,
+      mediaAssetIds: [asset],
+      updatedAt: new Date('2026-07-15T08:00:00.000Z'),
+    })
+    await repository.publishDraft({
+      ownerUserId: 'owner_01',
+      expectedDraftRevision: 1,
+      idempotencyKey: 'publish_legacy',
+      publishedAt: new Date('2026-07-15T09:00:00.000Z'),
+    })
+
+    const selection = await publicRepository.getPublishedSelection()
+
+    expect(selection?.items[0]?.renditions.map(({ profileWidth }) => profileWidth))
+      .toEqual([640, 1024, 1600])
   })
 
   it('publishes exactly two selected Media Assets without changing an unrelated asset', async () => {

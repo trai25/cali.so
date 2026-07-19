@@ -27,6 +27,8 @@ type PhotoSelectionTransaction = Parameters<
   Parameters<PhotoSelectionDatabase['transaction']>[0]
 >[0]
 
+// The original public baseline remains readable while newly processed assets
+// can carry additional high-density Renditions such as the 2560px profile.
 const requiredProfiles = [640, 1024, 1600] as const
 export const PUBLIC_PHOTO_SELECTION_CACHE_TAG = 'media:published-photo-selection'
 
@@ -621,7 +623,7 @@ export function createPublicPhotoSelectionRepository(
         items: entries.map((entry) => {
           const renditions = renditionsByEntry.get(entry.id) ?? []
           if (
-            renditions.length !== requiredProfiles.length ||
+            renditions.length < requiredProfiles.length ||
             !requiredProfiles.every((profile) =>
               renditions.some(({ profileWidth }) => profileWidth === profile),
             )

@@ -29,7 +29,7 @@ function selection(count = 4): PublicPhotoSelection {
         zhHans: `第 ${index + 1} 张城市照片`,
         en: `City photograph ${index + 1}`,
       },
-      renditions: [640, 1024, 1600].map((profileWidth) => ({
+      renditions: [640, 1024, 1600, 2560].map((profileWidth) => ({
         profileWidth,
         src: `https://media.example.com/${index + 1}/${profileWidth}.jpg`,
         width: profileWidth,
@@ -67,7 +67,7 @@ describe('Published Photo Selection UI', () => {
     expect(html).toContain('width="4032"')
     expect(html).toContain('height="3024"')
     expect(html).toContain('alt="第 1 张城市照片"')
-    expect(html).toContain('https://media.example.com/1/1600.jpg')
+    expect(html).toContain('https://media.example.com/1/2560.jpg')
     expect(html).toContain('640w')
     // tiles stay quiet — location/capture data render only in the lightbox
     expect(html).not.toContain('台北')
@@ -95,13 +95,18 @@ describe('Published Photo Selection UI', () => {
 
     const dialog = getByRole('dialog', { name: 'City photograph 1' })
     expect(dialog).toBeTruthy()
-    expect(within(dialog).getByText(/Taipei · May 8, 2025/)).toBeTruthy()
+    expect(within(dialog).getByText('Location')).toBeTruthy()
+    expect(within(dialog).getByText('Taipei')).toBeTruthy()
+    expect(within(dialog).queryByText(/May 8, 2025/)).toBeNull()
     expect(within(dialog).getByText('Apple iPhone 16 Pro')).toBeTruthy()
     expect(within(dialog).getByText('24 mm')).toBeTruthy()
     // capture details render as spec-plate label/value cells
     expect(within(dialog).getByText('ISO')).toBeTruthy()
     expect(within(dialog).getByText('80')).toBeTruthy()
     expect(dialog.querySelector('.spec-plate-flow')).toBeTruthy()
+    expect(within(dialog).getByRole('img').getAttribute('src')).toBe(
+      'https://media.example.com/1/2560.jpg',
+    )
   })
 
   it('uses the first three photos and full count for the homepage card', () => {

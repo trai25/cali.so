@@ -22,6 +22,7 @@ liveDescribe('Media Library local image contract', () => {
         [640, 480],
         [1024, 768],
         [1600, 1200],
+        [2560, 1920],
       ],
     },
     {
@@ -34,6 +35,7 @@ liveDescribe('Media Library local image contract', () => {
         [640, 859],
         [1024, 1375],
         [1600, 2148],
+        [1770, 2376],
       ],
     },
   ])('processes the approved $format Original without changing it', async (fixture) => {
@@ -52,7 +54,7 @@ liveDescribe('Media Library local image contract', () => {
     expect(result.original.cameraMake).toBeTruthy()
     expect(result.original.cameraModel).toBeTruthy()
     expect(result.original.captureLocation).not.toBeNull()
-    expect(result.renditions).toHaveLength(3)
+    expect(result.renditions).toHaveLength(4)
     expect(
       result.renditions.map((rendition) => [rendition.width, rendition.height]),
     ).toEqual(fixture.renditions)
