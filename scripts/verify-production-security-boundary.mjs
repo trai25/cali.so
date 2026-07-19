@@ -291,7 +291,19 @@ async function verifyPublicAmaApiBoundary(baseUrl) {
     const outcome = outcomes.find(({ status }) => response.status === status)
     assert.ok(outcome, `${path} boundary status ${response.status}`)
     if (outcome.error) {
-      assert.deepEqual(JSON.parse(responseBody), { error: outcome.error })
+      let parsedBody
+      try {
+        parsedBody = JSON.parse(responseBody)
+      } catch {
+        assert.fail(
+          `${path} response body is not JSON: ${responseBody.slice(0, 200)}`,
+        )
+      }
+      assert.deepEqual(
+        parsedBody,
+        { error: outcome.error },
+        `${path} boundary body`,
+      )
     }
     assert.equal(response.headers.get('cache-control'), 'no-store')
     assert.equal(response.headers.get('set-cookie'), null)
