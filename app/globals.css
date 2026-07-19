@@ -5918,7 +5918,7 @@ html[data-locale='en'] [data-en-block] {
 
 .ama-conversation-static {
   color: var(--foreground);
-  opacity: 0.055;
+  opacity: 0.045;
   transition: opacity 350ms var(--ease-swift);
 }
 
@@ -5943,13 +5943,13 @@ html[data-locale='en'] [data-en-block] {
 
 .ama-introduction-stage[data-shader-ready='true']
   .ama-conversation-shader-layer {
-  opacity: 0.12;
+  opacity: 0.1;
 }
 
 .dark
   .ama-introduction-stage[data-shader-ready='true']
   .ama-conversation-shader-layer {
-  opacity: 0.15;
+  opacity: 0.12;
 }
 
 .ama-introduction-content {

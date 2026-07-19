@@ -122,26 +122,26 @@ export function AmaPageView() {
           </header>
           <PixelCluster variant={5} className="enter shrink-0" />
         </div>
-
-        <section
-          className="enter mt-10"
-          style={{ '--enter-delay': '120ms' } as React.CSSProperties}
-          aria-label="AMA Session"
-        >
-          <dl className="spec-nameplate">
-            {SPEC_ROWS.map((row) => (
-              <div key={row.enLabel}>
-                <dt>
-                  <T zh={row.zhLabel} en={row.enLabel} />
-                </dt>
-                <dd>
-                  <T zh={row.zhValue} en={row.enValue} />
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </section>
       </AmaIntroductionStage>
+
+      <section
+        className="enter mt-6 pb-4"
+        style={{ '--enter-delay': '120ms' } as React.CSSProperties}
+        aria-label="AMA Session"
+      >
+        <dl className="spec-nameplate">
+          {SPEC_ROWS.map((row) => (
+            <div key={row.enLabel}>
+              <dt>
+                <T zh={row.zhLabel} en={row.enLabel} />
+              </dt>
+              <dd>
+                <T zh={row.zhValue} en={row.enValue} />
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </section>
 
       <section className="mt-12" aria-labelledby="ama-who-heading">
         <div id="ama-who-heading">

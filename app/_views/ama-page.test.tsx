@@ -42,8 +42,12 @@ describe('AmaPageView', () => {
       '[data-ama-introduction-stage]',
     )
     expect(introductionStage?.textContent).toContain('A focused hour with Cali')
-    expect(introductionStage?.textContent).toContain('US$99')
+    expect(introductionStage?.textContent).not.toContain('US$99')
     expect(introductionStage?.textContent).not.toContain('Who you are talking to')
+
+    const nameplate = container.querySelector('.spec-nameplate')
+    expect(nameplate?.textContent).toContain('US$99')
+    expect(introductionStage?.contains(nameplate)).toBe(false)
   })
 
   it('lists all six topics in both languages', () => {
