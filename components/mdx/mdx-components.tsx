@@ -41,7 +41,9 @@ function PostImage({ slug, src, alt, title }: { slug: string; src: string; alt?:
 export function mdxComponents(slug: string, locale: Locale = 'zh'): MDXComponents {
   return {
     pre: (props) => <CodeBlockPre {...props} />,
-    MermaidDiagram,
+    MermaidDiagram: (props: { code: string; caption?: string }) => (
+      <MermaidDiagram {...props} locale={locale} />
+    ),
     Tweet: ({ id }: { id: string }) => <Tweet slug={slug} id={id} />,
     img: (props) => (
       <PostImage slug={slug} src={props.src as string} alt={props.alt} title={props.title} />
