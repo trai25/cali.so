@@ -1,37 +1,31 @@
-import { type MetadataRoute } from 'next'
+import type { MetadataRoute } from 'next'
 
-import { url } from '~/lib'
-import { getAllLatestBlogPostSlugs } from '~/sanity/queries'
+import { getAllPosts } from '~/lib/content'
+import { localeRoutePair } from '~/lib/locale-metadata'
+import { archivedNewsletterIds } from '~/lib/newsletters'
 
-export default async function sitemap() {
-  const staticMap = [
-    {
-      url: url('/').href,
-      lastModified: new Date(),
-    },
-    {
-      url: url('/blog').href,
-      lastModified: new Date(),
-    },
-    {
-      url: url('/projects').href,
-      lastModified: new Date(),
-    },
-    {
-      url: url('/guestbook').href,
-      lastModified: new Date(),
-    },
-  ] satisfies MetadataRoute.Sitemap
+export default function sitemap(): MetadataRoute.Sitemap {
+  const posts = getAllPosts()
+  // newest first per getAllPosts — the site "changed" when the latest post landed
+  const latest = posts[0]?.publishedAt
 
-  const slugs = await getAllLatestBlogPostSlugs()
+  const pairedEntry = (path: string, lastModified?: Date): MetadataRoute.Sitemap => {
+    const pair = localeRoutePair(path)
+    const alternates = { languages: pair.languages }
 
-  const dynamicMap = slugs.map((slug) => ({
-    url: url(`/blog/${slug}`).href,
-    lastModified: new Date(),
-  })) satisfies MetadataRoute.Sitemap
+    return [
+      { url: pair.zh.href, lastModified, alternates },
+      { url: pair.en.href, lastModified, alternates },
+    ]
+  }
 
-  return [...staticMap, ...dynamicMap]
+  return [
+    ...pairedEntry('/', latest),
+    ...pairedEntry('/blog', latest),
+    ...pairedEntry('/photos', latest),
+    ...pairedEntry('/projects', latest),
+    ...pairedEntry('/ama'),
+    ...archivedNewsletterIds.flatMap((id) => pairedEntry(`/newsletters/${id}`)),
+    ...posts.flatMap((post) => pairedEntry(`/blog/${post.slug}`, post.publishedAt)),
+  ]
 }
-
-export const runtime = 'edge'
-export const revalidate = 60

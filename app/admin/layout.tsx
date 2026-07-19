@@ -1,29 +1,28 @@
-import { currentUser } from '@clerk/nextjs'
-import { redirect } from 'next/navigation'
+import '../globals.css'
+import type { Metadata } from 'next'
 
-import { Container } from '~/components/ui/Container'
+import { rootMetadata, SiteDocument } from '../_components/site-document'
+import {
+  nonPublicDescriptions,
+  nonPublicRobots,
+} from '~/lib/non-public-metadata'
 
-import { Sidebar } from './Sidebar'
+export const metadata: Metadata = {
+  ...rootMetadata,
+  description: nonPublicDescriptions.admin,
+  robots: nonPublicRobots,
+}
 
-export default async function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const user = await currentUser()
-  if (!user || !user.publicMetadata.siteOwner) {
-    redirect('/')
-  }
-
+// The admin document is a static shell (July 2026): the paper, column, and
+// owner dock prerender and prefetch, while everything the owner actually
+// sees streams from per-request loaders behind each page's Suspense
+// boundary. Ownership is enforced by clerkMiddleware plus requireOwnerPage
+// inside those loaders — no client-side Clerk remains, so there is no
+// provider here.
+export default function AdminRootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <div>
-      <Sidebar />
-
-      <main className="py-10 lg:pl-72">
-        <div className="px-4 sm:px-6 lg:px-8">
-          <Container className="py-12">{children}</Container>
-        </div>
-      </main>
-    </div>
+    <SiteDocument isAdmin locale="zh" restoreLocale>
+      {children}
+    </SiteDocument>
   )
 }
