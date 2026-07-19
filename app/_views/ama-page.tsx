@@ -96,47 +96,43 @@ const AMA_TOPIC_PAGE_COPY: Record<
 > = {
   engineering: {
     zhLabel: 'Web、iOS 与全栈工程',
-    zhDescription: '技术选择、架构、实现，以及怎么和 agents 一起把东西做出来。',
+    zhDescription: '技术选择、架构，以及怎么和 agents 一起 ship。',
     enLabel: 'Web, iOS, and full-stack engineering',
     enDescription: 'Technical choices, architecture, and shipping with agents.',
   },
   'product-design': {
     zhLabel: '产品判断与产品设计',
-    zhDescription:
-      '当答案越来越容易得到，怎么判断什么值得做，也把自己的品味落到产品和界面细节里。',
+    zhDescription: '做什么、怎么做，以及界面应该是什么感觉。',
     enLabel: 'Product strategy and design',
     enDescription: 'What to build, how to shape it, and how the interface should feel.',
   },
   'ai-workflows': {
     zhLabel: 'AI 工作流与 Coding Agents',
-    zhDescription:
-      '从 Prompt、Memory 到多 agent 协作，怎么搭一套真的能跑、也真的能 ship 的 workflow。',
+    zhDescription: 'Prompt、Memory 和真正能 ship 的多 agent workflow。',
     enLabel: 'AI workflows and coding agents',
     enDescription: 'Prompts, memory, and multi-agent workflows that actually ship.',
   },
   career: {
     zhLabel: '职业、出海与英语学习',
-    zhDescription: '怎么选机会、进入新的市场和语境，也更快建立自己的优势。',
+    zhDescription: '选机会、换赛道、出海，也把英语真正用起来。',
     enLabel: 'Career moves and cross-disciplinary work',
     enDescription: 'Choosing opportunities, changing fields, and learning fast.',
   },
   'indie-business': {
     zhLabel: '独立开发、创业与 GTM',
-    zhDescription:
-      '从一个模糊的 idea 到 MVP、验证、定价，再决定下一步往哪里走。',
+    zhDescription: '策略、MVP、验证、定价，以及下一步怎么走。',
     enLabel: 'Startups, product building, and GTM',
     enDescription: 'Strategy, MVPs, validation, pricing, and what comes next.',
   },
   'team-leadership': {
     zhLabel: '团队、协作与带人',
-    zhDescription:
-      '怎么把个人经验变成团队可以复用的系统，而不是每件事都重新来一次。',
+    zhDescription: '把个人经验变成团队可以复用的系统。',
     enLabel: 'Teams, collaboration, and leadership',
     enDescription: 'Turning personal experience into systems the team can reuse.',
   },
   'something-else': {
     zhLabel: '其他你正在想的',
-    zhDescription: '不属于上面任何一类也没关系。',
+    zhDescription: '只要是你在想的，都可以聊。',
     enLabel: 'Anything else on your mind',
     enDescription: 'If it’s on your mind, it’s fair game.',
   },
@@ -247,25 +243,19 @@ export function AmaPageView() {
               style={{ '--enter-delay': '70ms' } as React.CSSProperties}
             >
               <div data-zh-block className="flex flex-col gap-3">
-                <p>AI 让答案越来越便宜，真正值钱的，反而是你怎么判断。</p>
+                <p>答案越来越便宜，判断越来越值钱。</p>
                 <p>
-                  这几年，我一边做产品设计、工程和独立开发，一边折腾创业、出海，也在重新搭自己的 AI
-                  工作方式。用 Codex、Claude Code 或 Cursor
-                  写代码，只是最表面的一层。再往下，是把经验沉淀成 Prompt、Workflow、Memory 和
-                  Agent，让一个人的能力可以被放大，也让想法更快走到 ship 和验证。
+                  这几年，我一直在做产品设计、工程、独立开发、创业和出海。一路下来，我也把自己的工作方式围着
+                  AI 重新搭了一遍。
                 </p>
                 <p>
-                  但工具终究只是工具。真正拉开差距的，可能是另外几件事：对未知还有没有好奇心，面对共识能不能保留自己的判断，会不会借
-                  AI
-                  放大自己，遇到新东西学得够不够快，以及能不能把一个领域的方法带到另一个领域。
+                  AI 工具是最简单的一层。真正花时间的，是把经验变成 Prompt、Workflow、Memory 和
+                  Agent。
                 </p>
                 <p>
-                  这些听起来像在聊 AI Native，其实最后都会落到很具体的选择：工作怎么选，产品值不值得做，独立开发和创业下一步往哪里走，怎么出海，怎么把自己、团队和
-                  agents 连成一套真正能跑起来的系统。
+                  这样确实能放大一个人的能力。但做什么、不做什么、下一步往哪里走，最后还是得靠判断。
                 </p>
-                <p>
-                  如果你也正好在想这些，不妨来试试。说不定聊着聊着，就会看到一个原来没想到的角度。
-                </p>
+                <p>如果你也在想这些，不妨聊聊。</p>
               </div>
               <div data-en-block>
                 <div className="flex flex-col gap-4">
@@ -324,29 +314,28 @@ export function AmaPageView() {
         <div className="mt-4">
           <div data-zh-block className="flex flex-col gap-3 page-introduction">
             <p>
-              我是 Cali，佐玩（Zolplay）的创始人。Web、iOS、产品设计和独立产品都亲手做过，也一路做过团队、创业和出海。
+              我是 Cali，佐玩（Zolplay）的创始人。Web、iOS、工程、产品设计和独立产品都亲手做过。通过佐玩，我也帮
+              Apple、Insta360 和多家 YC 创业公司做过策略、产品设计和产品落地。
             </p>
             <p>
-              现在我最感兴趣的，不是再多学一个 AI
-              工具，而是怎么把产品判断、设计、工程和公司的日常运转重新连起来。我给自己搭了一套 software factory：从{' '}
-              <AmaProductName name="Linear" /> 里的想法和 issue 出发，让{' '}
+              更早之前，我在西雅图的游戏工作室参与过 Niantic、Microsoft 和 Google 的大型项目。
+            </p>
+            <p>
+              现在，我把产品判断、设计、工程和运营连成了一套 software factory。想法从{' '}
+              <AmaProductName name="Linear" /> 里的 issue 开始，
               <AmaProductName name="Codex" />、<AmaProductName name="Claude Code" /> 和{' '}
               <AmaProductName name="Cursor" /> 参与调研、拆 scope、实现和 review，最后回到{' '}
-              <AmaProductName name="Slack" />，跟团队继续往前走。
+              <AmaProductName name="Slack" />，跟团队继续推进。
             </p>
             <p>
-              除此之外，我还自己部署了一套 OpenClaw，负责调度多个 agents。我把
-              PM、财务和日常运营的工作分给不同的 agents，再由 OpenClaw
-              统一调度。很多原本需要人盯着一步步做的事情，现在已经可以从头到尾自动跑完。
+              我也自己部署了一套 OpenClaw，调度负责 PM、财务和日常运营的
+              agents。很多流程已经可以从头到尾自己跑完。
             </p>
             <p>
-              我当然不是严格意义上的 OPC，公司也不是只有我一个人。但我确实在践行很多 OPC
-              的方法：把经验留进系统，把重复工作交给 agents，把人的注意力放回方向、取舍和品味。
+              佐玩不是一人公司，但我会借用这套模式里好用的部分：把经验留进系统，把重复工作交给
+              agents，把人的注意力留给判断和品味。
             </p>
-            <p>
-              我越来越相信，AI Native
-              最后不会只是一套工具栈，而会成为公司文化里必不可少的一部分。怎么做产品、怎么协作、怎么分配工作，都会跟着改变。
-            </p>
+            <p>我相信，AI Native 最后会变成公司文化里少不了的一部分。</p>
           </div>
           <div data-en-block className="page-introduction">
             <div className="flex flex-col gap-4">
@@ -389,9 +378,9 @@ export function AmaPageView() {
           <SectionHeading index="02" zh="聊什么" en="Topics" delay={200} />
         </div>
         <div data-zh-block className="page-introduction mt-4 flex flex-col gap-3">
-          <p>不一定要从 AI 开始。</p>
+          <p>不一定非要从 AI 开始。</p>
           <p>
-            职业、产品、工程、出海，看起来是不同的问题，背后经常都在判断同一件事：什么值得做，什么可以交给系统，什么必须由你自己决定。
+            职业、产品、工程和出海，看起来是不同的问题，最后经常都落到同一个判断上：什么值得做，什么可以交给系统，什么还是得自己来。
           </p>
         </div>
         <div data-en-block className="page-introduction mt-4">

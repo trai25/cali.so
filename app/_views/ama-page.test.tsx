@@ -28,8 +28,8 @@ describe('AmaPageView', () => {
 
     expect(screen.getByText('一对一')).toBeTruthy()
     expect(screen.getByText('AMA')).toBeTruthy()
-    expect(screen.getByText(/AI 让答案越来越便宜/)).toBeTruthy()
-    expect(screen.getByText(/不妨来试试/)).toBeTruthy()
+    expect(screen.getByText(/答案越来越便宜/)).toBeTruthy()
+    expect(screen.getByText(/不妨聊聊/)).toBeTruthy()
     expect(container.textContent).not.toContain(
       '这个 AMA，就是留出一小时，把这些事聊清楚。',
     )
@@ -92,8 +92,8 @@ describe('AmaPageView', () => {
     expect(container.textContent).toContain('software factory')
     expect(container.textContent).toContain('OpenClaw')
     expect(container.textContent).toContain('PM、财务和日常运营')
-    expect(container.textContent).toContain('严格意义上的 OPC')
-    expect(container.textContent).toContain('公司文化里必不可少的一部分')
+    expect(container.textContent).toContain('佐玩不是一人公司')
+    expect(container.textContent).toContain('公司文化里少不了的一部分')
     expect(container.textContent).toContain('self-hosted OpenClaw')
     expect(container.textContent).toContain('teams at Apple, Insta360')
     expect(container.textContent).toContain('game studios in Seattle')
