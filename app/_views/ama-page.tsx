@@ -80,7 +80,7 @@ const TESTIMONIALS = [
   {
     zh: '非常感谢您今天 AMA 的分享，听完之后收获很多，也觉得您的经验和建议很真诚、很有启发，解答了我很多问题 😁😁',
     en: 'Thank you so much for today’s AMA. I learned a lot, and your experience and advice felt sincere and insightful. You answered so many of my questions.',
-    zhAttribution: '一位来访者，2026',
+    zhAttribution: '一位大学生，2026',
     enAttribution: 'An AMA guest, 2026',
   },
 ] as const
