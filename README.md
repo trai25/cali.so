@@ -1,9 +1,9 @@
 # cali.so
 
-Source for [Cali Castle's personal site](https://cali.so). The ground-up
-rewrite is the v3 release. The 2024 site remains the historical v2 release,
-Git `dev` is the long-lived Staging and integration branch, and `main` is
-Production.
+Source for [Cali Castle's personal site](https://cali.so). The ground-up v3
+source release reached `main` on July 20, 2026. The 2024 site remains the
+historical v2 release, Git `dev` is the protected long-lived Staging and
+integration branch, and `main` is Production.
 
 This repository documents and builds cali.so itself. It is not maintained as a
 general-purpose blog template.
@@ -19,17 +19,19 @@ general-purpose blog template.
   snapshots
 - An always-available owner admin for Media and AMA operations, protected by
   Clerk authentication, exact owner metadata, origin checks, and rate limits;
-  public AMA transactions remain disabled for the v3 production launch
+  provider-backed AMA capabilities follow complete credential pairs and fail
+  closed when their pair is absent
 - A Bunny-backed Media Library with owner review and curation in admin; its
   active Published Photo Selection powers `/photos` and the homepage preview
   while private Originals remain server-only
 - CSP, same-origin mutation checks, rate limits, fail-closed provider controls,
   security automation, and isolated Staging, Preview, and Production credentials
 
-The public route and launch contract is tracked in
-[issue #98](https://github.com/CaliCastle/cali.so/issues/98). Merging the
-finished release into `main` is the production cutover, not an ordinary
-integration step.
+The public route and launch contract is preserved in closed
+[issue #98](https://github.com/CaliCastle/cali.so/issues/98) and the
+[cutover record](docs/v3-cutover-readiness.md). PR
+[#195](https://github.com/CaliCastle/cali.so/pull/195) promoted v3 to `main`;
+future releases continue through reviewed `dev` to `main` pull requests.
 
 ## Local development
 
@@ -44,8 +46,8 @@ cp .env.example .env.local
 pnpm dev
 ```
 
-`.env.example` documents the runtime variables and fail-closed capability
-switches. The application database credential must be a CRUD-only runtime
+`.env.example` documents the runtime variables and fail-closed provider
+boundaries. The application database credential must be a CRUD-only runtime
 role. Supply `MIGRATION_DATABASE_URL` only to an explicit migration command;
 do not store it in `.env.local` or Vercel.
 
@@ -93,9 +95,10 @@ pnpm audit:prod
 - `dev` automatically migrates and deploys persistent Staging. Internal feature
   branches receive persistent Neon `preview/<git-branch>` children of Staging;
   fork pull requests receive code-only CI.
-- Production uses a separate Neon project. Two sequential protected GitHub
-  environments approve the migration review and database access before GitHub
-  deploys the exact `main` commit.
+- Production uses a separate Neon project and a `main`-only GitHub environment
+  for its migration and deployment credentials. After required pull-request
+  checks pass and a commit reaches `main`, GitHub automatically migrates and
+  deploys that exact commit.
 - Next.js preview versions stay pinned exactly and require explicit review,
   a lockfile update, and the complete validation suite.
 - Staging and Previews use a separate non-production Neon project and disposable
@@ -111,9 +114,9 @@ pnpm audit:prod
 - Owner admin remains available in every environment and relies on
   Clerk authentication plus the server-checked
   `publicMetadata.siteOwner = "yes"` marker rather than an environment switch.
-  Public AMA mutations, payments, booking finalization, Google, and Tencent
-  remain disabled in Production until their later product and security gates
-  are complete.
+  Public AMA mutations are enabled by default. Payments, booking finalization,
+  Google, and Tencent turn on only when their complete Production credential
+  pairs are configured and otherwise fail closed with 503.
 - The public photo surfaces depend on migrations `0005` through `0008`, the
   private Originals and public Renditions boundary, and an active Published
   Photo Selection. The retired static photo fallback is not part of v3.
@@ -141,8 +144,8 @@ not describe v3.
 
 ## Release history
 
-- **v3.0** (in development): ground-up, repository-owned rewrite described by
-  issue #98
+- **v3.0** (July 20, 2026): ground-up, repository-owned source release promoted
+  through PR #195 and described by issue #98
 - **v2.0** (2024-03-13): legacy Sanity and Next.js 14 site
 - **v1.1** (2024-03-10): migrated the legacy database from PlanetScale to Neon
 
