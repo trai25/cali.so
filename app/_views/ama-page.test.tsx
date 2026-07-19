@@ -28,7 +28,7 @@ describe('AmaPageView', () => {
 
     expect(screen.getByText('一对一')).toBeTruthy()
     expect(screen.getByText('AMA')).toBeTruthy()
-    expect(screen.getByText(/我们缺的往往不是更多建议/)).toBeTruthy()
+    expect(screen.getByText(/AI 让答案越来越便宜/)).toBeTruthy()
     expect(screen.getByText(/不妨来试试/)).toBeTruthy()
     expect(container.textContent).not.toContain(
       '这个 AMA，就是留出一小时，把这些事聊清楚。',
@@ -64,11 +64,26 @@ describe('AmaPageView', () => {
     expect(AMA_TOPICS.length).toBe(7)
     for (const topic of AMA_TOPICS) {
       const label = AMA_TOPIC_LABELS[topic]
-      expect(screen.getAllByText(label.zh).length).toBeGreaterThanOrEqual(1)
       expect(screen.getAllByText(label.en).length).toBeGreaterThanOrEqual(1)
     }
 
+    for (const zhLabel of [
+      'Web、iOS 与全栈工程',
+      '产品判断与产品设计',
+      'AI 工作流与 Coding Agents',
+      '职业、出海与英语学习',
+      '独立开发、创业与 GTM',
+      '团队、协作与带人',
+      '其他你正在想的',
+    ]) {
+      expect(screen.getByText(zhLabel)).toBeTruthy()
+    }
+
     expect(container.textContent).toContain('software factory')
+    expect(container.textContent).toContain('OpenClaw')
+    expect(container.textContent).toContain('PM、财务和日常运营')
+    expect(container.textContent).toContain('严格意义上的 OPC')
+    expect(container.textContent).toContain('公司文化里必不可少的一部分')
     for (const tool of ['Linear', 'Codex', 'Claude Code', 'Slack', 'Cursor']) {
       expect(container.textContent).toContain(tool)
       expect(

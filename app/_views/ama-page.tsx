@@ -6,7 +6,11 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { AmaIntroductionStage } from '~/components/ama/ama-introduction-stage'
 import { Favicon } from '~/components/favicon'
 import { PixelCluster } from '~/components/pixel-cluster'
-import { AMA_TOPIC_LABELS, AMA_TOPICS } from '~/lib/ama/booking/topics'
+import {
+  AMA_TOPIC_LABELS,
+  AMA_TOPICS,
+  type AmaTopic,
+} from '~/lib/ama/booking/topics'
 import { T } from '~/lib/i18n'
 import { faviconUrl } from '~/lib/link-previews'
 import { localeMetadata } from '~/lib/locale-metadata'
@@ -84,6 +88,44 @@ const TESTIMONIALS = [
     enAttribution: 'An AMA guest, 2026',
   },
 ] as const
+
+const AMA_TOPIC_PAGE_COPY: Record<
+  AmaTopic,
+  { zhLabel: string; zhDescription: string }
+> = {
+  engineering: {
+    zhLabel: 'Web、iOS 与全栈工程',
+    zhDescription: '技术选择、架构、实现，以及怎么和 agents 一起把东西做出来。',
+  },
+  'product-design': {
+    zhLabel: '产品判断与产品设计',
+    zhDescription:
+      '当答案越来越容易得到，怎么判断什么值得做，也把自己的品味落到产品和界面细节里。',
+  },
+  'ai-workflows': {
+    zhLabel: 'AI 工作流与 Coding Agents',
+    zhDescription:
+      '从 Prompt、Memory 到多 agent 协作，怎么搭一套真的能跑、也真的能 ship 的 workflow。',
+  },
+  career: {
+    zhLabel: '职业、出海与英语学习',
+    zhDescription: '怎么选机会、进入新的市场和语境，也更快建立自己的优势。',
+  },
+  'indie-business': {
+    zhLabel: '独立开发、创业与 GTM',
+    zhDescription:
+      '从一个模糊的 idea 到 MVP、验证、定价，再决定下一步往哪里走。',
+  },
+  'team-leadership': {
+    zhLabel: '团队、协作与带人',
+    zhDescription:
+      '怎么把个人经验变成团队可以复用的系统，而不是每件事都重新来一次。',
+  },
+  'something-else': {
+    zhLabel: '其他你正在想的',
+    zhDescription: '不属于上面任何一类也没关系。',
+  },
+}
 
 const AMA_PRODUCTS = {
   Linear: 'https://linear.app',
@@ -185,15 +227,39 @@ export function AmaPageView() {
             <h1 className="page-eyebrow enter">
               <T zh="一对一" en="AMA" />
             </h1>
-            <p
+            <div
               className="page-introduction enter mt-4 text-balance"
               style={{ '--enter-delay': '70ms' } as React.CSSProperties}
             >
-              <T
-                zh="这些年做产品设计、工程、独立开发，也折腾创业、出海和 AI 工作流，我越来越觉得，我们缺的往往不是更多建议，而是一个能把事情看清楚的角度。看起来完全不同的问题，最后其实都绕不开三件事：怎么判断，怎么取舍，下一步先做什么。如果你也正好在想这些事，不妨来试试，说不定聊着聊着，下一步就清楚了。"
-                en="After years in product design, engineering, indie development, startups, going global, and now AI workflows, I’ve learned that more advice usually isn’t the answer. What helps is a clearer way to see the situation. Different problems tend to come back to the same three questions: what matters, what are the tradeoffs, and what should happen next. This AMA gives us an hour to get clear on them."
-              />
-            </p>
+              <div data-zh-block className="flex flex-col gap-3">
+                <p>AI 让答案越来越便宜，真正值钱的，反而是你怎么判断。</p>
+                <p>
+                  这几年，我一边做产品设计、工程和独立开发，一边折腾创业、出海，也在重新搭自己的 AI
+                  工作方式。用 Codex、Claude Code 或 Cursor
+                  写代码，只是最表面的一层。再往下，是把经验沉淀成 Prompt、Workflow、Memory 和
+                  Agent，让一个人的能力可以被放大，也让想法更快走到 ship 和验证。
+                </p>
+                <p>
+                  但工具终究只是工具。真正拉开差距的，可能是另外几件事：对未知还有没有好奇心，面对共识能不能保留自己的判断，会不会借
+                  AI
+                  放大自己，遇到新东西学得够不够快，以及能不能把一个领域的方法带到另一个领域。
+                </p>
+                <p>
+                  这些听起来像在聊 AI Native，其实最后都会落到很具体的选择：工作怎么选，产品值不值得做，独立开发和创业下一步往哪里走，怎么出海，怎么把自己、团队和
+                  agents 连成一套真正能跑起来的系统。
+                </p>
+                <p>
+                  如果你也正好在想这些，不妨来试试。说不定聊着聊着，就会看到一个原来没想到的角度。
+                </p>
+              </div>
+              <p data-en-block>
+                After years in product design, engineering, indie development, startups, going
+                global, and now AI workflows, I’ve learned that more advice usually isn’t the
+                answer. What helps is a clearer way to see the situation. Different problems tend
+                to come back to the same three questions: what matters, what are the tradeoffs, and
+                what should happen next. This AMA gives us an hour to get clear on them.
+              </p>
+            </div>
           </header>
           <PixelCluster variant={5} className="enter shrink-0" />
         </div>
@@ -229,45 +295,52 @@ export function AmaPageView() {
         <div id="ama-who-heading">
           <SectionHeading index="01" zh="关于我" en="About me" delay={170} />
         </div>
-        <div className="mt-4 flex flex-col gap-3">
-          <p className="page-introduction">
-            <T
-              zh="我是 Cali，佐玩（Zolplay）的创始人。Web、iOS、产品设计和独立产品都亲手做过。"
-              en="I’m Cali, founder of Zolplay. I’ve worked hands-on across web, iOS, product design, and my own products."
-            />
-          </p>
-          <p className="page-introduction">
-            <T
-              zh={
-                <>
-                  现在，我更感兴趣的是，怎么把产品判断、设计、工程和团队协作，连成一套真正能跑起来的系统。我给自己搭了一套 software factory：从{' '}
-                  <AmaProductName name="Linear" /> 里的想法和 issue 出发，让{' '}
-                  <AmaProductName name="Codex" />、<AmaProductName name="Claude Code" /> 和{' '}
-                  <AmaProductName name="Cursor" /> 参与调研、拆 scope、实现和 review，最后回到{' '}
-                  <AmaProductName name="Slack" />，和团队一起继续往前走。重点不只是「用 AI
-                  写代码更快」，而是重新设计做产品的方式，让一个模糊的念头更快变成能 ship、能验证的东西。你想聊具体
-                  workflow、coding agents
-                  的实践，还是产品方向、创业、职业、独立开发、出海或英语学习，都可以。中文、英文，混着聊也行。
-                </>
-              }
-              en={
-                <>
-                  These days, I’m more interested in how product judgment, design, engineering, and
-                  team collaboration can work as one system that actually ships. I’ve built a
-                  software factory that starts with ideas and issues in <AmaProductName name="Linear" />,
-                  then brings{' '}
-                  <AmaProductName name="Codex" />, <AmaProductName name="Claude Code" />, and{' '}
-                  <AmaProductName name="Cursor" /> into research, scoping, implementation, and review
-                  before the work comes back to <AmaProductName name="Slack" /> and the team. The
-                  point isn’t just to get AI to write code faster. It’s to redesign how
-                  products get made, so a rough idea can become something real, testable, and shipped
-                  with less friction. We can get specific about the workflow and coding-agent
-                  practices, or talk through a product decision, startup, career move, indie project,
-                  or something you’re taking global. We can talk in English, Chinese, or both.
-                </>
-              }
-            />
-          </p>
+        <div className="mt-4">
+          <div data-zh-block className="flex flex-col gap-3 page-introduction">
+            <p>
+              我是 Cali，佐玩（Zolplay）的创始人。Web、iOS、产品设计和独立产品都亲手做过，也一路做过团队、创业和出海。
+            </p>
+            <p>
+              现在我最感兴趣的，不是再多学一个 AI
+              工具，而是怎么把产品判断、设计、工程和公司的日常运转重新连起来。我给自己搭了一套 software factory：从{' '}
+              <AmaProductName name="Linear" /> 里的想法和 issue 出发，让{' '}
+              <AmaProductName name="Codex" />、<AmaProductName name="Claude Code" /> 和{' '}
+              <AmaProductName name="Cursor" /> 参与调研、拆 scope、实现和 review，最后回到{' '}
+              <AmaProductName name="Slack" />，跟团队继续往前走。
+            </p>
+            <p>
+              除此之外，我还自己部署了一套 OpenClaw，负责调度多个 agents。我把
+              PM、财务和日常运营的工作分给不同的 agents，再由 OpenClaw
+              统一调度。很多原本需要人盯着一步步做的事情，现在已经可以从头到尾自动跑完。
+            </p>
+            <p>
+              我当然不是严格意义上的 OPC，公司也不是只有我一个人。但我确实在践行很多 OPC
+              的方法：把经验留进系统，把重复工作交给 agents，把人的注意力放回方向、取舍和品味。
+            </p>
+            <p>
+              我越来越相信，AI Native
+              最后不会只是一套工具栈，而会成为公司文化里必不可少的一部分。怎么做产品、怎么协作、怎么分配工作，都会跟着改变。
+            </p>
+          </div>
+          <div data-en-block className="flex flex-col gap-3 page-introduction">
+            <p>
+              I’m Cali, founder of Zolplay. I’ve worked hands-on across web, iOS, product design,
+              and my own products.
+            </p>
+            <p>
+              These days, I’m more interested in how product judgment, design, engineering, and
+              team collaboration can work as one system that actually ships. I’ve built a software
+              factory that starts with ideas and issues in <AmaProductName name="Linear" />, then
+              brings <AmaProductName name="Codex" />, <AmaProductName name="Claude Code" />, and{' '}
+              <AmaProductName name="Cursor" /> into research, scoping, implementation, and review
+              before the work comes back to <AmaProductName name="Slack" /> and the team. The point
+              isn’t just to get AI to write code faster. It’s to redesign how products get made, so
+              a rough idea can become something real, testable, and shipped with less friction. We
+              can get specific about the workflow and coding-agent practices, or talk through a
+              product decision, startup, career move, indie project, or something you’re taking
+              global. We can talk in English, Chinese, or both.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -275,12 +348,25 @@ export function AmaPageView() {
         <div id="ama-topics-heading">
           <SectionHeading index="02" zh="聊什么" en="Topics" delay={200} />
         </div>
+        <div data-zh-block className="page-introduction mt-4 flex flex-col gap-3">
+          <p>不一定要从 AI 开始。</p>
+          <p>
+            职业、产品、工程、出海，看起来是不同的问题，背后经常都在判断同一件事：什么值得做，什么可以交给系统，什么必须由你自己决定。
+          </p>
+        </div>
         <ul className="mt-4 text-sm">
           {AMA_TOPICS.map((topic) => {
             const label = AMA_TOPIC_LABELS[topic]
+            const pageCopy = AMA_TOPIC_PAGE_COPY[topic]
             return (
-              <li key={topic} className="hairline-top py-2.5 first:border-t-0">
-                <T zh={label.zh} en={label.en} />
+              <li key={topic} className="hairline-top py-3 first:border-t-0">
+                <span data-zh-block className="block">
+                  <span className="block">{pageCopy.zhLabel}</span>
+                  <span className="mt-1 block text-[13px] leading-5 text-muted-foreground">
+                    {pageCopy.zhDescription}
+                  </span>
+                </span>
+                <span data-en-block>{label.en}</span>
               </li>
             )
           })}
