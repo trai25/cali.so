@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 
 import { AmaIntroductionStage } from '~/components/ama/ama-introduction-stage'
+import { PixelCluster } from '~/components/pixel-cluster'
 import { AMA_TOPIC_LABELS, AMA_TOPICS } from '~/lib/ama/booking/topics'
 import { T } from '~/lib/i18n'
 import { localeMetadata } from '~/lib/locale-metadata'
@@ -70,20 +71,28 @@ const TESTIMONIALS = [
 ] as const
 
 function SectionHeading({
+  index,
   zh,
   en,
   delay,
 }: {
+  index: string
   zh: string
   en: string
   delay: number
 }) {
   return (
     <h2
-      className="enter text-sm font-medium text-muted-foreground"
+      className="section-tag enter"
       style={{ '--enter-delay': `${delay}ms` } as React.CSSProperties}
     >
-      <T zh={zh} en={en} />
+      <span className="section-tag-index" aria-hidden>
+        {index}
+      </span>
+      <span className="section-tag-hatch" aria-hidden />
+      <span className="section-tag-label">
+        <T zh={zh} en={en} />
+      </span>
     </h2>
   )
 }
@@ -96,36 +105,36 @@ export function AmaPageView() {
   return (
     <div className="mx-auto w-full max-w-[37.5rem] px-6">
       <AmaIntroductionStage>
-        <header className="max-w-[34rem]">
-          <h1 className="enter text-sm font-medium text-muted-foreground">
-            <T zh="一对一" en="AMA" />
-          </h1>
-          <p
-            className="page-introduction enter mt-4 text-balance"
-            style={{ '--enter-delay': '70ms' } as React.CSSProperties}
-          >
-            <T
-              zh="与 Cali 的专注一小时。一场 60 分钟的一对一 AMA，你带着问题来，我们把它聊透。"
-              en="A focused hour with Cali. One 60 minute one-to-one AMA Session: you bring the questions, we work through them properly."
-            />
-          </p>
-        </header>
+        <div className="flex items-start justify-between gap-4">
+          <header className="max-w-[34rem]">
+            <h1 className="page-eyebrow enter">
+              <T zh="一对一" en="AMA" />
+            </h1>
+            <p
+              className="page-introduction enter mt-4 text-balance"
+              style={{ '--enter-delay': '70ms' } as React.CSSProperties}
+            >
+              <T
+                zh="与 Cali 的专注一小时。一场 60 分钟的一对一 AMA，你带着问题来，我们把它聊透。"
+                en="A focused hour with Cali. One 60 minute one-to-one AMA Session: you bring the questions, we work through them properly."
+              />
+            </p>
+          </header>
+          <PixelCluster variant={5} className="enter shrink-0" />
+        </div>
 
         <section
           className="enter mt-10"
           style={{ '--enter-delay': '120ms' } as React.CSSProperties}
           aria-label="AMA Session"
         >
-          <dl className="text-sm">
+          <dl className="spec-nameplate">
             {SPEC_ROWS.map((row) => (
-              <div
-                key={row.enLabel}
-                className="hairline-top grid grid-cols-[7.5rem_minmax(0,1fr)] gap-4 py-2.5 first:border-t-0"
-              >
-                <dt className="text-muted-foreground">
+              <div key={row.enLabel}>
+                <dt>
                   <T zh={row.zhLabel} en={row.enLabel} />
                 </dt>
-                <dd className="tabular-nums">
+                <dd>
                   <T zh={row.zhValue} en={row.enValue} />
                 </dd>
               </div>
@@ -136,7 +145,7 @@ export function AmaPageView() {
 
       <section className="mt-12" aria-labelledby="ama-who-heading">
         <div id="ama-who-heading">
-          <SectionHeading zh="这一小时和谁聊" en="Who you are talking to" delay={170} />
+          <SectionHeading index="01" zh="这一小时和谁聊" en="Who you are talking to" delay={170} />
         </div>
         <p className="page-introduction mt-4">
           <T
@@ -148,7 +157,7 @@ export function AmaPageView() {
 
       <section className="mt-12" aria-labelledby="ama-topics-heading">
         <div id="ama-topics-heading">
-          <SectionHeading zh="可以聊的话题" en="Topics" delay={200} />
+          <SectionHeading index="02" zh="可以聊的话题" en="Topics" delay={200} />
         </div>
         <ul className="mt-4 text-sm">
           {AMA_TOPICS.map((topic) => {
@@ -164,13 +173,16 @@ export function AmaPageView() {
 
       <section className="mt-12" aria-labelledby="ama-process-heading">
         <div id="ama-process-heading">
-          <SectionHeading zh="预订流程" en="How it works" delay={230} />
+          <SectionHeading index="03" zh="预订流程" en="How it works" delay={230} />
         </div>
         <ol className="mt-4 flex flex-col gap-3 text-sm">
           {STEPS.map((step, index) => (
-            <li key={step.en} className="grid grid-cols-[1.5rem_minmax(0,1fr)] gap-2 leading-6">
-              <span aria-hidden className="tabular-nums text-muted-foreground">
-                {index + 1}
+            <li
+              key={step.en}
+              className="grid grid-cols-[1.5rem_minmax(0,1fr)] items-baseline gap-2 leading-6"
+            >
+              <span aria-hidden className="step-index">
+                {String(index + 1).padStart(2, '0')}
               </span>
               <span className="text-balance">
                 <T zh={step.zh} en={step.en} />
@@ -182,7 +194,7 @@ export function AmaPageView() {
 
       <section className="mt-12" aria-labelledby="ama-policy-heading">
         <div id="ama-policy-heading">
-          <SectionHeading zh="改期与退款" en="Rescheduling and refunds" delay={260} />
+          <SectionHeading index="04" zh="改期与退款" en="Rescheduling and refunds" delay={260} />
         </div>
         <p className="page-introduction mt-4">
           <T
@@ -194,11 +206,16 @@ export function AmaPageView() {
 
       <section className="mt-12" aria-labelledby="ama-notes-heading">
         <div id="ama-notes-heading">
-          <SectionHeading zh="来自聊过的人" en="From past sessions" delay={290} />
+          <SectionHeading index="05" zh="来自聊过的人" en="From past sessions" delay={290} />
         </div>
         <div className="mt-4 flex flex-col gap-6">
-          {TESTIMONIALS.map((testimonial) => (
-            <figure key={testimonial.en} className="hairline-top pt-4 first:border-t-0 first:pt-0">
+          {TESTIMONIALS.map((testimonial, index) => (
+            // `.hairline-top` is unlayered, so a Tailwind `first:border-t-0`
+            // utility can't override it — apply the divider by index instead.
+            <figure
+              key={testimonial.en}
+              className={index === 0 ? '' : 'hairline-top pt-4'}
+            >
               <blockquote className="text-sm leading-6">
                 <T zh={`「${testimonial.zh}」`} en={`"${testimonial.en}"`} />
               </blockquote>
@@ -215,18 +232,12 @@ export function AmaPageView() {
         style={{ '--enter-delay': '320ms' } as React.CSSProperties}
       >
         <span data-zh-block>
-          <Link
-            href={localePath('zh', '/ama/book')}
-            className="inline-flex min-h-11 touch-manipulation items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background outline-none transition-transform duration-100 ease-[ease] active:scale-[0.97] focus-visible:ring-1 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transform-none motion-reduce:transition-none"
-          >
+          <Link href={localePath('zh', '/ama/book')} className="btn-cta">
             预订时间
           </Link>
         </span>
         <span data-en-block>
-          <Link
-            href={localePath('en', '/ama/book')}
-            className="inline-flex min-h-11 touch-manipulation items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background outline-none transition-transform duration-100 ease-[ease] active:scale-[0.97] focus-visible:ring-1 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transform-none motion-reduce:transition-none"
-          >
+          <Link href={localePath('en', '/ama/book')} className="btn-cta">
             Book a time
           </Link>
         </span>

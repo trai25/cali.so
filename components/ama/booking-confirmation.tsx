@@ -27,6 +27,34 @@ function isTerminal(state: ConfirmationState) {
   return state.kind === 'missing' || state.kind === 'paid' || state.kind === 'expired' || state.kind === 'cancelled'
 }
 
+const JOURNEY = [
+  { zh: '时间', en: 'Slot' },
+  { zh: '简介', en: 'Brief' },
+  { zh: '支付', en: 'Payment' },
+  { zh: '确认', en: 'Confirmed' },
+] as const
+
+// Decorative reinforcement of the state the prose already announces —
+// steps before `current` are done, `current` carries the lit signal cell.
+function StatusLadder({ current }: { current: number }) {
+  return (
+    <ol className="status-ladder mt-2" aria-hidden>
+      {JOURNEY.map((step, index) => (
+        <li
+          key={step.en}
+          data-state={index < current ? 'done' : index === current ? 'current' : 'pending'}
+        >
+          <span className="status-ladder-index">{String(index + 1).padStart(2, '0')}</span>
+          <span>
+            <T zh={step.zh} en={step.en} />
+          </span>
+          <span className="status-ladder-cell" />
+        </li>
+      ))}
+    </ol>
+  )
+}
+
 /**
  * The post-checkout landing. It never claims success it cannot prove: the
  * page reflects the server's hold state and keeps polling while payment is
@@ -140,6 +168,7 @@ export function BookingConfirmation() {
             en="This usually takes a few seconds. The page updates by itself; there is no need to pay again."
           />
         </p>
+        <StatusLadder current={2} />
       </div>
     )
   }
@@ -156,6 +185,7 @@ export function BookingConfirmation() {
             en="You do not need to keep this page open. Once it settles, the confirmation email and your Manage Link will arrive in your inbox."
           />
         </p>
+        <StatusLadder current={2} />
       </div>
     )
   }
@@ -215,13 +245,22 @@ export function BookingConfirmation() {
             en="Sorry about that. An email with your private Manage Link is on its way so you can pick a new time at no charge. If nothing fits, the same link cancels with a full refund."
           />
         </p>
+        <StatusLadder current={3} />
       </div>
     )
   }
 
+  const confirmed = state.bookingStatus === 'confirmed'
+
   return (
     <BookingSuccessStage>
       <div role="status" className="flex flex-col gap-3">
+        {confirmed && (
+          <p className="cert-stamp self-start" aria-hidden>
+            <span className="spec-signal" />
+            <T zh="已确认" en="Confirmed" /> +
+          </p>
+        )}
         <p className="text-sm font-medium">
           <T zh="付款已确认。" en="Payment confirmed." />
         </p>
@@ -240,6 +279,7 @@ export function BookingConfirmation() {
             />
           </p>
         )}
+        <StatusLadder current={confirmed ? 4 : 3} />
       </div>
     </BookingSuccessStage>
   )

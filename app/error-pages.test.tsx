@@ -39,7 +39,7 @@ describe('public error recovery', () => {
     render(<NotFoundPageView />)
 
     expect(screen.getByText('错误 / 404')).toBeTruthy()
-    expect(screen.getByText('页面偏离网格')).toBeTruthy()
+    expect(screen.getByText('这页走丢了。')).toBeTruthy()
     expect(screen.getByText('无印迹')).toBeTruthy()
   })
 

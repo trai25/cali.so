@@ -19,19 +19,17 @@ npx vercel project inspect cali-so $SCOPE
 If the repo is not yet linked, run `npx vercel link` once and pick the team
 and the `cali-so` project.
 
-## 1. Activate the controlled deployment topology
+## 1. Preserve the controlled deployment topology
 
-These hosted changes are shared state. Obtain an action-time confirmation
-before the Git branch rename, and two fresh confirmations before inspecting or
-changing either Neon project.
+The topology below was activated on 2026-07-18. Treat future changes as shared
+state, and obtain two fresh confirmations before inspecting or changing either
+Neon project.
 
-1. Rename the Git integration branch from `v2` to `dev` through GitHub's branch
-   rename operation. Do not create a second unrelated branch or delete `v2`
-   manually. Verify open pull requests, local tracking branches, and the
-   existing ruleset now target `dev`.
-2. In the non-production Neon project, rename the persistent `preview` branch
-   to `staging`. Preserve its data, migration history, migration role, and
-   SQL-created CRUD-only runtime role. Configure the migration role's default
+1. Keep `dev` as the Git integration branch. Verify open pull requests, local
+   tracking branches, and ruleset `18920686` continue to target `dev`.
+2. Keep `staging` as the persistent non-production Neon branch. Preserve its
+   data, migration history, migration role, and SQL-created CRUD-only runtime
+   role. Configure the migration role's default
    privileges so new tables and sequences grant only the required CRUD and
    sequence access to the runtime role; grant the same access explicitly on
    existing objects. The runtime role must not own objects or inherit DDL.
@@ -39,8 +37,8 @@ changing either Neon project.
    those roles and grants are copied into every Preview.
 3. Keep Production in a separate Neon project. Its API key and migration URL
    must never be stored in the Preview or Staging GitHub environments.
-4. Create a Vercel custom environment named `staging`. Set `SITE_URL` to its
-   stable custom alias (currently `https://beta.cali.so`) so browser mutation
+4. Keep the Vercel custom environment named `staging`. Set `SITE_URL` to its
+   stable custom alias (`https://beta.cali.so`) so browser mutation
    checks match the URL maintainers use. Copy only approved non-production
    application settings into it; database URLs are supplied per deployment by
    GitHub Actions.
@@ -55,15 +53,13 @@ changing either Neon project.
 
 The committed `vercel.json` disables Vercel Git deployments. Do not re-enable
 them in the dashboard: GitHub must create or select the Neon branch, migrate it,
-and only then call Vercel. Configure the hosted environments and rename the
-branch before merging this automation change into `dev`. That merge is the
-first Staging workflow run and applies all pending migrations, including
-`0010` and `0011`, before deploying. Use GitHub's job rerun for a failed
-activation; the manual Staging dispatch becomes available after the workflow
-reaches the default branch.
+and only then call Vercel. Run `29644176180` successfully applied the Staging
+migrations and deployed `dev@8802607`; use GitHub's job rerun for a later failed
+deployment.
 
-Verify the unified `/admin/media` workflow on Staging after the workflow is
-green, including that `/admin/photos` redirects to `/admin/media#publish`.
+Verify both owner surfaces on Staging after the workflow is green:
+`/admin/media` is the upload-to-archive library, while `/admin/photos` is the
+separate Photo Selection curation room. Neither redirects to the other.
 Feature pushes should create `preview/<git-branch>` once, preserve it across
 subsequent pushes, and delete both Neon and Vercel Preview resources when the
 Git branch is deleted. `Refresh Preview` is the explicit destructive reset path.
@@ -73,10 +69,9 @@ from the isolated `target/` working directory.
 
 ## 2. Require Quality and CodeQL on both branches
 
-The historical `v2` ruleset (`18920686`) already requires `Quality` and
-`CodeQL` alongside its deletion, non-fast-forward, and pull-request rules.
-After the branch rename, inspect the ruleset and verify its ref condition now
-targets `dev`; do not append a duplicate required-check rule.
+The `dev` ruleset (`18920686`) already requires `Quality` and `CodeQL`
+alongside its deletion, non-fast-forward, and pull-request rules. Do not append
+a duplicate required-check rule.
 
 Protect `main` as well (PUT replaces the whole protection object; force pushes
 and deletions stay disabled by default):
@@ -116,13 +111,16 @@ JSON
   variables are already absent, do not count mutation checks as passed
   until this migration and grant verification succeeds.
 
-- Add a Preview-only `CLERK_SECRET_KEY` from the non-production Clerk
-  environment. Never copy the Production Clerk secret into Preview.
+- Keep the non-production Clerk keys isolated to Preview and Staging. Never
+  copy the Production Clerk secret into either environment.
 
-- Remove the dead capability switch left behind by ADR-0008:
+- Verify the dead capability switch removed under ADR-0008 stays absent:
 
   ```bash
-  npx vercel env rm AMA_ADMIN_ENABLED preview $SCOPE
+  if npx vercel env ls preview $SCOPE | rg -q '^AMA_ADMIN_ENABLED\b'; then
+    echo 'ERROR: remove AMA_ADMIN_ENABLED from Preview' >&2
+    exit 1
+  fi
   ```
 
 ## 4. Provision the Production environment
@@ -215,8 +213,10 @@ to `main` then starts `Deploy Production`. The no-secret
 after it succeeds can the separately protected `production` environment expose
 the migration credential and record the second approval.
 
-The workflow hash-locks reviewed migrations `0001` through `0011` and rejects
-any modification or deletion. Future migrations fail closed unless every SQL
+The workflow hash-locks the immutable legacy baseline `0000` and reviewed v3
+migrations `0001` through `0011`, rejecting any modification or deletion.
+Migration `0000` stays outside the v3 Drizzle journal and is not rerun. Future
+migrations fail closed unless every SQL
 statement is an explicitly allowed expand operation: create a new table, type,
 sequence, view, function, or non-unique index; add a nullable column; add a
 non-null column with a statically proven non-null default; validate a named

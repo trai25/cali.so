@@ -1,4 +1,7 @@
+import { GeistPixelSquare } from 'geist/font/pixel'
+
 import { WritingInkStage } from '~/components/hidden-list-stage'
+import { PixelCluster } from '~/components/pixel-cluster'
 import { PostRow } from '~/components/post-row'
 import { RevealScope } from '~/components/reveal-scope'
 import { getAllPosts } from '~/lib/content'
@@ -19,15 +22,22 @@ export function BlogIndexPageView({ locale }: { locale: Locale }) {
 
   return (
     <div className="mx-auto w-full max-w-[37.5rem] px-6">
-      <h1 className="enter text-sm font-medium text-muted-foreground">
-        <T zh="写作" en="Writing" />
-      </h1>
+      <header className="enter flex items-center justify-between">
+        <h1 className="page-eyebrow">
+          <T zh="写作" en="Writing" />
+        </h1>
+        <PixelCluster variant={1} />
+      </header>
       <WritingInkStage className="mt-6" contentClassName="flex flex-col gap-8">
         {[...postsByYear].map(([year, yearPosts]) => {
           const center = (yearPosts.length - 1) / 2
 
           return (
-            <section key={year} aria-labelledby={`posts-${year}`}>
+            <section key={year} aria-labelledby={`posts-${year}`} className="relative">
+              {/* ghost folio: the year as a print folio numeral, at the edge of perception */}
+              <span aria-hidden className={`ghost-folio ${GeistPixelSquare.className}`}>
+                {String(year).slice(2)}
+              </span>
               <h2
                 id={`posts-${year}`}
                 className="enter text-sm font-medium text-muted-foreground tabular-nums"

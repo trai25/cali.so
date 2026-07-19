@@ -24,6 +24,11 @@ vi.mock('~/components/dock', () => ({
 vi.mock('~/components/locale-restorer', () => ({
   LocaleRestorer: () => null,
 }))
+vi.mock('~/components/preview-card-timing', () => ({
+  PreviewCardTimingProvider: ({ children }: { children: React.ReactNode }) => (
+    <div data-public-preview-cards="">{children}</div>
+  ),
+}))
 vi.mock('~/components/site-footer', () => ({
   SiteFooter: () => <span data-public-footer="" />,
 }))
@@ -68,6 +73,7 @@ describe('SiteDocument analytics', () => {
       expect(html).toContain('data-public-dock')
       expect(html).toContain('data-public-footer')
       expect(html).toContain('data-public-route-transition')
+      expect(html).toContain('data-public-preview-cards')
     }
   })
 
@@ -85,6 +91,7 @@ describe('SiteDocument analytics', () => {
     expect(html).not.toContain('data-public-footer')
     expect(html).not.toContain('data-public-route-motion')
     expect(html).not.toContain('data-public-route-transition')
+    expect(html).not.toContain('data-public-preview-cards')
     expect(html).toContain('Owner admin')
     // The admin shares the warm working-paper palette (July 2026 decision)
     // while staying outside analytics and social reads.

@@ -1,5 +1,10 @@
 # Retire comments, reactions, and guestbook; archive then drop their data
 
+## Status
+
+Accepted. The public-AMA launch-disable sentence below is superseded by
+ADR-0011; the retired-content decisions remain in force.
+
 v3 keeps the public blog, projects, photos, feeds, and published newsletter editions, but deliberately retires comments, reactions, and the guestbook. Newsletter editions become static read-only archives; newsletter signup, sending, and administration do not ship. Public AMA transactions remain disabled for the production launch. Owner admin availability is governed separately by ADR-0008. These absences are scope decisions, not oversights.
 
 Legacy comments, reactions, and guestbook records are exported to a private JSON archive (kept out of this public repo, alongside the Sanity `_id → slug` map so the archive stays interpretable) before their production tables are retired.

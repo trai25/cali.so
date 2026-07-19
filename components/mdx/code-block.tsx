@@ -3,6 +3,7 @@
 import { Check, Copy } from 'lucide-react'
 import { useRef, useState } from 'react'
 
+import { ScrollAreaX } from '~/components/ui/scroll-area'
 import { localize, useLocale } from '~/lib/locale-client'
 
 export function CodeBlockPre(props: React.HTMLAttributes<HTMLPreElement>) {
@@ -20,7 +21,9 @@ export function CodeBlockPre(props: React.HTMLAttributes<HTMLPreElement>) {
 
   return (
     <div className="code-frame">
-      <pre ref={preRef} {...props} />
+      <ScrollAreaX>
+        <pre ref={preRef} {...props} />
+      </ScrollAreaX>
       <button
         type="button"
         onClick={copy}

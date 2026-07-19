@@ -2,7 +2,7 @@
 
 import { animate, stagger } from 'motion'
 import Link from 'next/link'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 
 import type { PostRailNode } from '~/lib/content'
@@ -29,6 +29,7 @@ const PHONE_PANEL_VISIBLE_TRANSFORM = 'translateY(0px) scale(1)'
 const PHONE_QUERY = '(max-width: 39.99rem)'
 const TARGET_OFFSET = 100
 const RAIL_ID = 'post-document-minimap'
+type OpenMotion = 'animated' | 'instant'
 
 function getReadingTop(target: HTMLElement) {
   const rectTop = target.getBoundingClientRect().top
@@ -101,6 +102,9 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
   const [backToTopVisible, setBackToTopVisible] = useState(false)
   const [active, setActive] = useState(landmarks[0]?.id)
   const activeRef = useRef(active)
+  const openRef = useRef(open)
+  const desktopRef = useRef(desktop)
+  const phoneRef = useRef(phone)
   const islandRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLElement>(null)
   const progressCircleRef = useRef<SVGCircleElement>(null)
@@ -111,6 +115,16 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
   const panelAnimationRef = useRef<ReturnType<typeof animate> | null>(null)
   const desktopEntrancePlayedRef = useRef(false)
   const phoneIslandInitializedRef = useRef(false)
+  const pointerFocusPendingRef = useRef(false)
+  const measureNowRef = useRef<(() => void) | null>(null)
+  const pendingInstantMeasurementRef = useRef(false)
+  const phoneQueryRef = useRef(false)
+  const phoneIslandVisibleRef = useRef(false)
+  const instantIslandTargetRef = useRef<boolean | null>(null)
+
+  openRef.current = open
+  desktopRef.current = desktop
+  phoneRef.current = phone
 
   useEffect(() => {
     activeRef.current = active
@@ -122,115 +136,127 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
     setActive(first)
   }, [landmarks])
 
-  function animateOpenState(nextOpen: boolean) {
-    if (nextOpen === open) return
+  const animateOpenState = useCallback(
+    (nextOpen: boolean, motion: OpenMotion = 'animated') => {
+      const currentOpen = openRef.current
+      const isDesktop = desktopRef.current
+      const isPhone = phoneRef.current
 
-    const items = rootRef.current?.querySelectorAll<HTMLElement>('.post-minimap-node')
-    const panel = panelRef.current
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
-    if (reducedMotion) {
-      nodeAnimationRef.current?.cancel()
-      nodeAnimationRef.current = null
-      panelAnimationRef.current?.cancel()
-      panelAnimationRef.current = null
-      for (const item of items ?? []) {
-        item.style.removeProperty('filter')
-        item.style.removeProperty('opacity')
-        item.style.removeProperty('transform')
+      if (motion === 'instant') {
+        rootRef.current?.setAttribute('data-toggle-motion', 'instant')
+      } else {
+        rootRef.current?.removeAttribute('data-toggle-motion')
       }
-      panel?.style.removeProperty('opacity')
-      panel?.style.removeProperty('transform')
-      panel?.style.removeProperty('will-change')
-      setOpen(nextOpen)
-      return
-    }
 
-    nodeAnimationRef.current?.stop()
-    panelAnimationRef.current?.stop()
-    if (!items?.length) {
-      nodeAnimationRef.current = null
-      panelAnimationRef.current = null
-      setOpen(nextOpen)
-      return
-    }
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      if (motion === 'animated' && !reducedMotion && nextOpen === currentOpen) return
 
-    const closingDesktop = desktop && !nextOpen
-    const furthestCenterIndex = Math.ceil((items.length - 1) / 2)
-    const desktopExitStagger =
-      furthestCenterIndex > 0
-        ? Math.min(0.01, DESKTOP_EXIT_STAGGER_WINDOW / furthestCenterIndex)
-        : 0
-    const phoneStaggerWindow = nextOpen
-      ? PHONE_ENTER_STAGGER_WINDOW
-      : PHONE_EXIT_STAGGER_WINDOW
-    const phoneFurthestIndex = items.length - 1
-    const phoneStagger =
-      phoneFurthestIndex > 0 ? phoneStaggerWindow / phoneFurthestIndex : 0
+      const items = rootRef.current?.querySelectorAll<HTMLElement>('.post-minimap-node')
+      const panel = panelRef.current
 
-    // Motion otherwise resolves the first open against the incoming React
-    // state, so phone items jump directly to their final styles. Pinning the
-    // rendered frame also keeps rapid direction changes interruptible.
-    for (const item of items) {
-      const style = window.getComputedStyle(item)
-      if (phone) item.style.filter = style.filter
-      item.style.opacity = style.opacity
-      item.style.transform = style.transform
-    }
-    if (phone && panel) {
-      const style = window.getComputedStyle(panel)
-      panel.style.opacity = style.opacity
-      panel.style.transform = style.transform
-      panel.style.willChange = 'transform, opacity'
-    }
-
-    flushSync(() => setOpen(nextOpen))
-
-    if (phone && panel) {
-      const panelAnimation = animate(
-        panel,
-        {
-          opacity: nextOpen ? 1 : 0,
-          transform: nextOpen ? PHONE_PANEL_VISIBLE_TRANSFORM : PHONE_PANEL_HIDDEN_TRANSFORM,
-        },
-        {
-          duration: nextOpen ? PHONE_PANEL_ENTER_DURATION : PHONE_PANEL_EXIT_DURATION,
-          ease: EASE_SWIFT,
-        },
-      )
-      panelAnimationRef.current = panelAnimation
-      void panelAnimation.finished
-        .then(() => {
-          if (panelAnimationRef.current !== panelAnimation) return
-          panelAnimation.cancel()
-          panelAnimationRef.current = null
-          panel.style.removeProperty('opacity')
-          panel.style.removeProperty('transform')
-          panel.style.removeProperty('will-change')
-        })
-        .catch(() => undefined)
-    }
-
-    const itemTransform = nextOpen
-      ? 'translateY(0) rotate(0deg)'
-      : 'translateY(-8px) rotate(2deg)'
-    const itemKeyframes = phone
-      ? {
-          filter: nextOpen ? 'blur(0px)' : PHONE_NODE_HIDDEN_FILTER,
-          opacity: nextOpen ? 1 : 0,
-          transform: itemTransform,
+      if (motion === 'instant' || reducedMotion) {
+        nodeAnimationRef.current?.cancel()
+        nodeAnimationRef.current = null
+        panelAnimationRef.current?.cancel()
+        panelAnimationRef.current = null
+        for (const item of items ?? []) {
+          item.style.removeProperty('filter')
+          item.style.removeProperty('opacity')
+          item.style.removeProperty('transform')
         }
-      : {
-          opacity: nextOpen ? 1 : 0,
-          transform: itemTransform,
-        }
-    const animation = animate(
-      items,
-      itemKeyframes,
-      {
+        panel?.style.removeProperty('opacity')
+        panel?.style.removeProperty('transform')
+        panel?.style.removeProperty('will-change')
+        if (nextOpen !== currentOpen) flushSync(() => setOpen(nextOpen))
+        return
+      }
+
+      nodeAnimationRef.current?.stop()
+      panelAnimationRef.current?.stop()
+      if (!items?.length) {
+        nodeAnimationRef.current = null
+        panelAnimationRef.current = null
+        setOpen(nextOpen)
+        return
+      }
+
+      const closingDesktop = isDesktop && !nextOpen
+      const furthestCenterIndex = Math.ceil((items.length - 1) / 2)
+      const desktopExitStagger =
+        furthestCenterIndex > 0
+          ? Math.min(0.01, DESKTOP_EXIT_STAGGER_WINDOW / furthestCenterIndex)
+          : 0
+      const phoneStaggerWindow = nextOpen
+        ? PHONE_ENTER_STAGGER_WINDOW
+        : PHONE_EXIT_STAGGER_WINDOW
+      const phoneFurthestIndex = items.length - 1
+      const phoneStagger =
+        phoneFurthestIndex > 0 ? phoneStaggerWindow / phoneFurthestIndex : 0
+
+      // Motion otherwise resolves the first open against the incoming React
+      // state, so phone items jump directly to their final styles. Pinning the
+      // rendered frame also keeps rapid direction changes interruptible.
+      for (const item of items) {
+        const style = window.getComputedStyle(item)
+        if (isPhone) item.style.filter = style.filter
+        item.style.opacity = style.opacity
+        item.style.transform = style.transform
+      }
+      if (isPhone && panel) {
+        const style = window.getComputedStyle(panel)
+        panel.style.opacity = style.opacity
+        panel.style.transform = style.transform
+        panel.style.willChange = 'transform, opacity'
+      }
+
+      flushSync(() => setOpen(nextOpen))
+
+      if (isPhone && panel) {
+        const panelAnimation = animate(
+          panel,
+          {
+            opacity: nextOpen ? 1 : 0,
+            transform: nextOpen
+              ? PHONE_PANEL_VISIBLE_TRANSFORM
+              : PHONE_PANEL_HIDDEN_TRANSFORM,
+          },
+          {
+            duration: nextOpen
+              ? PHONE_PANEL_ENTER_DURATION
+              : PHONE_PANEL_EXIT_DURATION,
+            ease: EASE_SWIFT,
+          },
+        )
+        panelAnimationRef.current = panelAnimation
+        void panelAnimation.finished
+          .then(() => {
+            if (panelAnimationRef.current !== panelAnimation) return
+            panelAnimation.cancel()
+            panelAnimationRef.current = null
+            panel.style.removeProperty('opacity')
+            panel.style.removeProperty('transform')
+            panel.style.removeProperty('will-change')
+          })
+          .catch(() => undefined)
+      }
+
+      const itemTransform = nextOpen
+        ? 'translateY(0) rotate(0deg)'
+        : 'translateY(-8px) rotate(2deg)'
+      const itemKeyframes = isPhone
+        ? {
+            filter: nextOpen ? 'blur(0px)' : PHONE_NODE_HIDDEN_FILTER,
+            opacity: nextOpen ? 1 : 0,
+            transform: itemTransform,
+          }
+        : {
+            opacity: nextOpen ? 1 : 0,
+            transform: itemTransform,
+          }
+      const animation = animate(items, itemKeyframes, {
         duration: closingDesktop
           ? DESKTOP_EXIT_DURATION
-          : phone
+          : isPhone
             ? nextOpen
               ? PHONE_NODE_ENTER_DURATION
               : PHONE_NODE_EXIT_DURATION
@@ -238,26 +264,46 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
               ? 0.26
               : 0.2,
         delay: stagger(
-          closingDesktop ? desktopExitStagger : phone ? phoneStagger : nextOpen ? 0.012 : 0.01,
-          { from: phone ? (nextOpen ? 'first' : 'last') : 'center' },
+          closingDesktop
+            ? desktopExitStagger
+            : isPhone
+              ? phoneStagger
+              : nextOpen
+                ? 0.012
+                : 0.01,
+          { from: isPhone ? (nextOpen ? 'first' : 'last') : 'center' },
         ),
         ease: EASE_SWIFT,
-      },
-    )
-    nodeAnimationRef.current = animation
-
-    void animation.finished
-      .then(() => {
-        if (nodeAnimationRef.current !== animation) return
-        animation.cancel()
-        nodeAnimationRef.current = null
-        for (const item of items) {
-          item.style.removeProperty('filter')
-          item.style.removeProperty('opacity')
-          item.style.removeProperty('transform')
-        }
       })
-      .catch(() => undefined)
+      nodeAnimationRef.current = animation
+
+      void animation.finished
+        .then(() => {
+          if (nodeAnimationRef.current !== animation) return
+          animation.cancel()
+          nodeAnimationRef.current = null
+          for (const item of items) {
+            item.style.removeProperty('filter')
+            item.style.removeProperty('opacity')
+            item.style.removeProperty('transform')
+          }
+        })
+        .catch(() => undefined)
+    },
+    [],
+  )
+
+  function settlePhoneIsland(visible: boolean) {
+    islandAnimationRef.current?.cancel()
+    islandAnimationRef.current = null
+    const island = islandRef.current
+    if (!island) return
+    island.style.opacity = visible ? '1' : '0'
+    island.style.transform = visible
+      ? PHONE_ISLAND_VISIBLE_TRANSFORM
+      : PHONE_ISLAND_HIDDEN_TRANSFORM
+    island.style.removeProperty('will-change')
+    phoneIslandInitializedRef.current = true
   }
 
   useEffect(
@@ -299,11 +345,12 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
       query.removeEventListener('change', sync)
       if (frame) window.cancelAnimationFrame(frame)
     }
-  }, [])
+  }, [animateOpenState])
 
   useEffect(() => {
     const query = window.matchMedia(PHONE_QUERY)
     const sync = () => {
+      phoneQueryRef.current = query.matches
       setPhone(query.matches)
       setPhoneQueryReady(true)
     }
@@ -316,7 +363,14 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
     const island = islandRef.current
     if (!phoneQueryReady || !island) return
 
+    if (instantIslandTargetRef.current === phoneIslandVisible) {
+      instantIslandTargetRef.current = null
+      settlePhoneIsland(phoneIslandVisible)
+      return
+    }
+
     if (!phone) {
+      instantIslandTargetRef.current = null
       islandAnimationRef.current?.stop()
       islandAnimationRef.current = null
       phoneIslandInitializedRef.current = false
@@ -351,10 +405,7 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
     }
 
     if (reducedMotion) {
-      islandAnimationRef.current = null
-      island.style.opacity = targetOpacity
-      island.style.transform = targetTransform
-      island.style.removeProperty('will-change')
+      settlePhoneIsland(visible)
       return
     }
 
@@ -386,7 +437,8 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
     if (!open || desktop) return
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
-      animateOpenState(false)
+      event.preventDefault()
+      animateOpenState(false, 'instant')
       toggleRef.current?.focus()
     }
     const onPointerDown = (event: PointerEvent) => {
@@ -399,12 +451,12 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('pointerdown', onPointerDown)
     }
-  }, [desktop, open])
+  }, [animateOpenState, desktop, open])
 
   useEffect(() => {
     if (!phone || phoneIslandVisible || !open) return
     animateOpenState(false)
-  }, [open, phone, phoneIslandVisible])
+  }, [animateOpenState, open, phone, phoneIslandVisible])
 
   useEffect(() => {
     const targets = landmarks
@@ -418,11 +470,43 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
       const scrollable = document.documentElement.scrollHeight - window.innerHeight
       const progress = scrollable > 0 ? Math.min(1, Math.max(0, window.scrollY / scrollable)) : 0
       progressCircleRef.current?.setAttribute('stroke-dasharray', `${progress} 1`)
-      setBackToTopVisible(window.scrollY >= window.innerHeight * 0.75)
+      const nextBackToTopVisible = window.scrollY >= window.innerHeight * 0.75
       const titleCard = document.querySelector('.post-title-card')
-      setPhoneIslandVisible(
-        titleCard ? titleCard.getBoundingClientRect().bottom <= TARGET_OFFSET : window.scrollY > 1,
-      )
+      const nextPhoneIslandVisible = titleCard
+        ? titleCard.getBoundingClientRect().bottom <= TARGET_OFFSET
+        : window.scrollY > 1
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      const settleVisibility = pendingInstantMeasurementRef.current || reducedMotion
+
+      if (settleVisibility) {
+        islandAnimationRef.current?.cancel()
+        islandAnimationRef.current = null
+        const island = islandRef.current
+        island?.style.removeProperty('opacity')
+        island?.style.removeProperty('transform')
+        island?.style.removeProperty('will-change')
+
+        const islandVisibilityChanged =
+          nextPhoneIslandVisible !== phoneIslandVisibleRef.current
+        instantIslandTargetRef.current =
+          phoneQueryRef.current && islandVisibilityChanged
+            ? nextPhoneIslandVisible
+            : null
+        phoneIslandVisibleRef.current = nextPhoneIslandVisible
+        const updateVisibility = () => {
+          setBackToTopVisible(nextBackToTopVisible)
+          setPhoneIslandVisible(nextPhoneIslandVisible)
+        }
+        flushSync(updateVisibility)
+        if (phoneQueryRef.current) settlePhoneIsland(nextPhoneIslandVisible)
+        void rootRef.current?.offsetHeight
+        rootRef.current?.removeAttribute('data-scroll-motion')
+        pendingInstantMeasurementRef.current = false
+      } else {
+        phoneIslandVisibleRef.current = nextPhoneIslandVisible
+        setBackToTopVisible(nextBackToTopVisible)
+        setPhoneIslandVisible(nextPhoneIslandVisible)
+      }
 
       let current = targets[0].id
       for (const target of targets) {
@@ -438,14 +522,22 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
     const requestMeasure = () => {
       if (!frame) frame = window.requestAnimationFrame(measure)
     }
+    const measureNow = () => {
+      if (frame) window.cancelAnimationFrame(frame)
+      frame = 0
+      measure()
+    }
 
-    measure()
+    measureNowRef.current = measureNow
+    measureNow()
     window.addEventListener('scroll', requestMeasure, { passive: true })
     window.addEventListener('resize', requestMeasure)
     return () => {
       window.removeEventListener('scroll', requestMeasure)
       window.removeEventListener('resize', requestMeasure)
       if (frame) window.cancelAnimationFrame(frame)
+      measureNowRef.current = null
+      pendingInstantMeasurementRef.current = false
     }
   }, [landmarks])
 
@@ -453,22 +545,65 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
     event.preventDefault()
     const target = document.getElementById(id)
     if (!target) return
+    const keyboard = event.detail === 0
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-    setActive(id)
-    if (!desktop) animateOpenState(false)
+    if (keyboard) {
+      animateOpenState(desktop ? open : false, 'instant')
+      setActive(id)
+    } else {
+      // A same-state animated call clears the persistent keyboard CSS gate.
+      // Under reduced motion it also settles controls without changing open.
+      animateOpenState(open, 'animated')
+      setActive(id)
+      if (!desktop) animateOpenState(false, 'animated')
+    }
 
     window.requestAnimationFrame(() => {
       if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1')
       target.focus({ preventScroll: true })
+      if (keyboard) {
+        rootRef.current?.setAttribute('data-scroll-motion', 'instant')
+        pendingInstantMeasurementRef.current = true
+      }
       window.scrollTo({ top: window.scrollY + getReadingTop(target) - TARGET_OFFSET })
+      if (keyboard || reducedMotion) measureNowRef.current?.()
       history.replaceState(null, '', `#${id}`)
     })
   }
 
-  function returnToTop() {
+  function returnToTop(event: React.MouseEvent<HTMLButtonElement>) {
+    const keyboard = event.detail === 0
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (!desktop) animateOpenState(false)
-    window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' })
+    animateOpenState(desktop ? open : false, keyboard ? 'instant' : 'animated')
+    if (keyboard) {
+      rootRef.current?.setAttribute('data-scroll-motion', 'instant')
+      pendingInstantMeasurementRef.current = true
+    }
+    window.scrollTo({
+      top: 0,
+      behavior: keyboard || reducedMotion ? 'auto' : 'smooth',
+    })
+    if (keyboard || reducedMotion) measureNowRef.current?.()
+  }
+
+  function markPointerFocusPending() {
+    pointerFocusPendingRef.current = true
+    queueMicrotask(() => {
+      pointerFocusPendingRef.current = false
+    })
+  }
+
+  function settleKeyboardFocus(event: React.FocusEvent<HTMLDivElement>) {
+    const pointerCreated = pointerFocusPendingRef.current
+    pointerFocusPendingRef.current = false
+    if (pointerCreated) return
+    if (!(event.target as HTMLElement).matches(':focus-visible')) return
+
+    animateOpenState(open, 'instant')
+    if (phoneQueryRef.current) {
+      settlePhoneIsland(phoneIslandVisibleRef.current)
+    }
   }
 
   if (landmarks.length < 2) return null
@@ -482,6 +617,9 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
       className="post-minimap-root"
       data-island-visible={phoneIslandVisible || undefined}
       data-open={open || undefined}
+      onPointerDownCapture={markPointerFocusPending}
+      onFocusCapture={settleKeyboardFocus}
+      onPointerMove={() => rootRef.current?.removeAttribute('data-toggle-motion')}
     >
       <div className="post-minimap-backdrop backdrop-blur-[8px]" aria-hidden />
       <div
@@ -501,7 +639,9 @@ export function PostToc({ nodes, nodesEn }: { nodes: PostRailNode[]; nodesEn: Po
           }
           aria-expanded={open}
           aria-controls={RAIL_ID}
-          onClick={() => animateOpenState(!open)}
+          onClick={(event) =>
+            animateOpenState(!open, event.detail === 0 ? 'instant' : 'animated')
+          }
         >
           <svg
             className="post-minimap-progress"

@@ -1,9 +1,9 @@
 'use client'
 
-import { PreviewCard } from '@base-ui/react/preview-card'
 import Image from 'next/image'
 
 import { ExternalLabel } from '~/components/external-mark'
+import { SitePreviewCard } from '~/components/preview-card-timing'
 import { T } from '~/lib/i18n'
 
 export interface SocialSnapshot {
@@ -75,25 +75,18 @@ function Card({
   triggerClassName?: string
 }) {
   return (
-    <PreviewCard.Root>
-      {/* Base UI's trigger renders the <a> itself; delays live on the
-          trigger (defaults 600/300 are too sleepy for chrome links) */}
-      <PreviewCard.Trigger
-        href={href}
-        target="_blank"
-        rel="noreferrer"
-        className={triggerClassName}
-        delay={300}
-        closeDelay={120}
-      >
-        <ExternalLabel>{trigger}</ExternalLabel>
-      </PreviewCard.Trigger>
-      <PreviewCard.Portal>
-        <PreviewCard.Positioner side="top" sideOffset={8} collisionPadding={16} className="pointer-events-none z-[var(--z-card)]">
-          <PreviewCard.Popup className={className}>{children}</PreviewCard.Popup>
-        </PreviewCard.Positioner>
-      </PreviewCard.Portal>
-    </PreviewCard.Root>
+    <SitePreviewCard
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      triggerClassName={triggerClassName}
+      closeDelay={120}
+      popupClassName={className}
+      popup={children}
+      side="top"
+    >
+      <ExternalLabel>{trigger}</ExternalLabel>
+    </SitePreviewCard>
   )
 }
 
@@ -148,15 +141,15 @@ export function XCardBody({ data }: { data: SocialSnapshot }) {
       />
       {(data.followers || data.following) && (
         <span className="service-card-stat">
-          {data.followers && (
-            <span>
-              <b>{data.followers}</b> <T zh="关注者" en="followers" />
-            </span>
-          )}
-          {data.followers && data.following && <span aria-hidden>·</span>}
           {data.following && (
             <span>
               <b>{data.following}</b> <T zh="正在关注" en="following" />
+            </span>
+          )}
+          {data.followers && data.following && <span aria-hidden>·</span>}
+          {data.followers && (
+            <span>
+              <b>{data.followers}</b> <T zh="关注者" en="followers" />
             </span>
           )}
         </span>
@@ -194,7 +187,13 @@ export function XiaohongshuCardBody() {
         <span>@佐玩 Zolplay 创始人 CEO</span>
       </span>
       <span className="service-card-stat">
-        <b>10+</b> 粉丝 · <b>1千+</b> 获赞与收藏
+        <span>
+          <b>10+</b> 粉丝
+        </span>
+        <span aria-hidden>·</span>
+        <span>
+          <b>1千+</b> 获赞与收藏
+        </span>
       </span>
     </span>
   )
@@ -243,12 +242,17 @@ export function GitHubCardBody({ data }: { data: GitHubSnapshot }) {
         ))}
       </span>
       <span className="service-card-stat">
+        <span>
+          <b>{data.total.toLocaleString()}</b> <T zh="次贡献" en="contributions" />
+        </span>
         {data.followers != null && (
           <>
-            <b>{data.followers}</b> <T zh="关注者" en="followers" /> ·{' '}
+            <span aria-hidden>·</span>
+            <span>
+              <b>{data.followers}</b> <T zh="关注者" en="followers" />
+            </span>
           </>
         )}
-        <b>{data.total.toLocaleString()}</b> <T zh="次贡献" en="contributions" />
         <Glyph service="github" />
       </span>
     </>
@@ -345,45 +349,40 @@ export function EmailCard({
   triggerClassName?: string
 }) {
   return (
-    <PreviewCard.Root>
-      <PreviewCard.Trigger
-        href={`mailto:${address}`}
-        className={triggerClassName}
-        delay={300}
-        closeDelay={120}
-      >
-        {trigger}
-      </PreviewCard.Trigger>
-      <PreviewCard.Portal>
-        <PreviewCard.Positioner side="top" sideOffset={8} collisionPadding={16} className="pointer-events-none z-[var(--z-card)]">
-          <PreviewCard.Popup className="link-card email-envelope-card">
-            <span className="email-envelope" aria-hidden>
-              <span className="email-envelope-flap" />
-              <span className="email-envelope-return">
-                <span>FROM</span>
-                CALI CASTLE
-                <br />
-                TAIPEI
-              </span>
-              <span className="email-envelope-stamps">
-                <span className="email-envelope-stamp email-envelope-stamp-portrait">
-                  <Image src="/images/avatar.png" alt="" width={32} height={32} />
-                  <span>CALI · 20</span>
-                </span>
-                <span className="email-envelope-stamp email-envelope-stamp-mark">
-                  <span className="email-envelope-stamp-star">✦</span>
-                  <span>POST · 26</span>
-                </span>
-              </span>
-              <span className="email-envelope-postmark" />
-              <span className="email-envelope-address">
-                <span><T zh="收" en="TO" /></span>
-                {address}
-              </span>
+    <SitePreviewCard
+      href={`mailto:${address}`}
+      triggerClassName={triggerClassName}
+      closeDelay={120}
+      popupClassName="link-card email-envelope-card"
+      side="top"
+      popup={
+        <span className="email-envelope" aria-hidden>
+          <span className="email-envelope-flap" />
+          <span className="email-envelope-return">
+            <span>FROM</span>
+            CALI CASTLE
+            <br />
+            TAIPEI
+          </span>
+          <span className="email-envelope-stamps">
+            <span className="email-envelope-stamp email-envelope-stamp-portrait">
+              <Image src="/images/avatar.png" alt="" width={32} height={32} />
+              <span>CALI · 20</span>
             </span>
-          </PreviewCard.Popup>
-        </PreviewCard.Positioner>
-      </PreviewCard.Portal>
-    </PreviewCard.Root>
+            <span className="email-envelope-stamp email-envelope-stamp-mark">
+              <span className="email-envelope-stamp-star">✦</span>
+              <span>POST · 26</span>
+            </span>
+          </span>
+          <span className="email-envelope-postmark" />
+          <span className="email-envelope-address">
+            <span><T zh="收" en="TO" /></span>
+            {address}
+          </span>
+        </span>
+      }
+    >
+      {trigger}
+    </SitePreviewCard>
   )
 }

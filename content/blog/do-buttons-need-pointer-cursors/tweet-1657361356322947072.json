@@ -5,5 +5,6 @@
   "author": { "name": "Adam Pietrasiak", "handle": "pie6k" },
   "createdAt": "2023-05-13T12:25:14.000Z",
   "text": "Tip for creating a desktop app with web technologies:\n\nDon't use the \"pointing hand\" cursor for clickable elements. Pointing hand patterns is popular only on the web. Desktop apps rarely use it.\n\nIf you use a pointer cursor in a desktop app, it will feel like a website.",
-  "media": "video"
+  "media": "video",
+  "likes": 130
 }

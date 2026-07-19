@@ -1,12 +1,17 @@
 'use client'
 
 import Image from 'next/image'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
 
 import { localize, useLocale } from '~/lib/locale-client'
 
 const VIEWPORT_PAD = 32
+type CloseReason = 'escape' | 'overlay' | 'viewport'
+
+function prefersReducedMotion() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+}
 
 interface ZoomImageProps {
   src: string
@@ -50,7 +55,7 @@ export function ZoomImage({
     stateRef.current = state
   }, [state])
 
-  const open = useCallback(() => {
+  const open = useCallback((event: MouseEvent<HTMLButtonElement>) => {
     const img = triggerRef.current?.querySelector('img')
     if (!img) return
     const rect = img.getBoundingClientRect()
@@ -85,7 +90,8 @@ export function ZoomImage({
       target,
       from: `translate(${tx}px, ${ty}px) scale(${s})`,
     })
-    setState('opening')
+    const reduced = prefersReducedMotion()
+    setState(event.detail === 0 || reduced ? 'open' : 'opening')
   }, [src, width, height, expandedContent])
 
   const unmount = useCallback(() => {
@@ -94,12 +100,29 @@ export function ZoomImage({
     triggerRef.current?.focus({ preventScroll: true })
   }, [])
 
-  const close = useCallback(() => {
+  const close = useCallback((reason: CloseReason) => {
     // Nothing to reverse if the enter transition never started, and
     // reduced motion never fires transitionend — unmount directly.
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (reduced || stateRef.current === 'opening') unmount()
-    else if (stateRef.current === 'open') setState('closing')
+    const reduced = prefersReducedMotion()
+    if (reason === 'escape' || reduced || stateRef.current === 'opening') {
+      unmount()
+      return
+    }
+    if (stateRef.current !== 'open') return
+    // The page may have moved since open (keyboard scroll, scrollbar drag):
+    // re-measure the inline spot so the return flight lands where it now is.
+    const img = triggerRef.current?.querySelector('img')
+    if (img) {
+      const rect = img.getBoundingClientRect()
+      setZoom((prev) => {
+        if (!prev) return prev
+        const s = rect.width / prev.target.width
+        const tx = rect.left + rect.width / 2 - (prev.target.left + prev.target.width / 2)
+        const ty = rect.top + rect.height / 2 - (prev.target.top + prev.target.height / 2)
+        return { ...prev, from: `translate(${tx}px, ${ty}px) scale(${s})` }
+      })
+    }
+    setState('closing')
   }, [unmount])
 
   // Promote opening -> open one frame later so the transform transition runs
@@ -121,20 +144,34 @@ export function ZoomImage({
   useEffect(() => {
     if (!zoom) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close()
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        close('escape')
+      }
       // image-only dialog: the overlay is the sole focusable — keep Tab inside
       if (e.key === 'Tab') e.preventDefault()
     }
-    const onScroll = () => close()
+    // A scroll gesture still dismisses the print, but never moves the page:
+    // the sheet stays frozen while the photo is up (and through its return
+    // flight), so the FLIP landing spot stays honest.
+    const onGesture = (e: Event) => {
+      e.preventDefault()
+      close('viewport')
+    }
+    // Scrolls that bypass wheel/touch (keyboard, scrollbar drag) still close;
+    // close() re-measures the landing spot, so the flight stays correct.
+    const onViewportChange = () => close('viewport')
     window.addEventListener('keydown', onKey)
-    window.addEventListener('wheel', onScroll, { passive: true })
-    window.addEventListener('touchmove', onScroll, { passive: true })
-    window.addEventListener('resize', onScroll)
+    window.addEventListener('wheel', onGesture, { passive: false })
+    window.addEventListener('touchmove', onGesture, { passive: false })
+    window.addEventListener('scroll', onViewportChange)
+    window.addEventListener('resize', onViewportChange)
     return () => {
       window.removeEventListener('keydown', onKey)
-      window.removeEventListener('wheel', onScroll)
-      window.removeEventListener('touchmove', onScroll)
-      window.removeEventListener('resize', onScroll)
+      window.removeEventListener('wheel', onGesture)
+      window.removeEventListener('touchmove', onGesture)
+      window.removeEventListener('scroll', onViewportChange)
+      window.removeEventListener('resize', onViewportChange)
     }
   }, [zoom, close])
 
@@ -194,7 +231,7 @@ export function ZoomImage({
             role="dialog"
             aria-modal="true"
             aria-label={alt || localize(locale, '图片', 'Image')}
-            onClick={close}
+            onClick={() => close('overlay')}
           >
             <div className="zoom-overlay-backdrop" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -209,6 +246,19 @@ export function ZoomImage({
                 transform: floating ? 'none' : zoom.from,
               }}
               onTransitionEnd={settle}
+            />
+            <div
+              aria-hidden
+              className="zoom-overlay-marks calibration-corners"
+              style={
+                {
+                  left: zoom.target.left - 10,
+                  top: zoom.target.top - 10,
+                  width: zoom.target.width + 20,
+                  height: zoom.target.height + 20,
+                  '--corner-arm': '11px',
+                } as React.CSSProperties
+              }
             />
             {expandedContent && (
               <div className="zoom-overlay-details">{expandedContent}</div>

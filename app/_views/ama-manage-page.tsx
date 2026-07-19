@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 
 import { ManageBooking } from '~/components/ama/manage-booking'
+import { PixelCluster } from '~/components/pixel-cluster'
 import { T } from '~/lib/i18n'
 import { localeMetadata } from '~/lib/locale-metadata'
 import type { Locale } from '~/lib/locale-route'
@@ -24,10 +25,11 @@ export function amaManageMetadata(locale: Locale): Metadata {
 export function AmaManagePageView({ token }: { token: string }) {
   return (
     <div className="mx-auto w-full max-w-[37.5rem] px-6">
-      <header className="max-w-[34rem]">
-        <h1 className="enter text-sm font-medium text-muted-foreground">
+      <header className="flex items-center justify-between gap-4">
+        <h1 className="page-eyebrow enter">
           <T zh="管理你的预订" en="Manage your booking" />
         </h1>
+        <PixelCluster variant={2} className="enter shrink-0" />
       </header>
 
       <div className="enter mt-10 pb-4" style={{ '--enter-delay': '70ms' } as React.CSSProperties}>

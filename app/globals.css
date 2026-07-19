@@ -284,6 +284,10 @@
   --gray-12: oklch(0.23 0.0045 70);
   --selection-highlight: oklch(0.9 0.17 105 / 0.58);
 
+  /* the signal accent — one mark per view, never a text color */
+  --signal: oklch(0.62 0.17 45);
+  --ghost-ink: color-mix(in oklab, var(--foreground) 5%, transparent);
+
   --background: var(--gray-1);
   --foreground: var(--gray-12);
   --card: var(--gray-2);
@@ -302,6 +306,10 @@
   --input: var(--gray-4);
   --ring: var(--gray-8);
   --focus-ring: var(--gray-9);
+
+  /* the surface ladder, warm-tuned: elevated sheets stay on the paper */
+  --surface-1: oklch(0.968 0.0018 95);
+  --surface-2: oklch(0.978 0.0016 95);
 }
 
 .dark.public-site {
@@ -318,6 +326,17 @@
   --gray-11: oklch(0.87 0.007 90);
   --gray-12: oklch(0.94 0.006 92);
   --selection-highlight: oklch(0.8 0.14 105 / 0.28);
+  --signal: oklch(0.7 0.17 48);
+  --ghost-ink: color-mix(in oklab, var(--foreground) 6.5%, transparent);
+
+  /* warm surface ladder, dark: each step lifts off the sheet */
+  --surface-1: oklch(0.185 0.0065 80);
+  --surface-2: oklch(0.205 0.007 80);
+  --surface-4: oklch(0.235 0.008 80);
+  --surface-5: oklch(0.255 0.0085 80);
+  --surface-6: oklch(0.275 0.009 80);
+  --surface-7: oklch(0.295 0.009 80);
+  --surface-8: oklch(0.315 0.0095 80);
 }
 
 .public-site ::selection {
@@ -728,7 +747,8 @@
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  color: var(--foreground);
+  /* quiet registration marks — 30% ink, matching the plate-label register */
+  color: color-mix(in oklab, var(--foreground) 30%, transparent);
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 0.875rem;
   letter-spacing: -0.011em;
@@ -887,13 +907,6 @@
   margin-top: 4rem;
 }
 
-.error-kicker {
-  margin-bottom: 0.5rem;
-  color: var(--muted-foreground);
-  font-size: 0.875rem;
-  letter-spacing: -0.011em;
-}
-
 .error-actions {
   position: relative;
   z-index: 2;
@@ -990,6 +1003,75 @@
 
 .column-guide-v:last-of-type {
   right: max(16px, calc((100% - 37.5rem) / 2));
+}
+
+/* registration cross where the (intentionally absent) top rule would
+   meet each guide — same missability contract as the guides */
+.column-guide-v::after {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: -4px;
+  width: 9px;
+  height: 9px;
+  color: color-mix(in oklab, var(--muted-foreground) 45%, transparent);
+  background:
+    linear-gradient(currentColor, currentColor) center / 9px var(--border-hairline) no-repeat,
+    linear-gradient(currentColor, currentColor) center / var(--border-hairline) 9px no-repeat;
+}
+
+/* ── Calibration marks: viewfinder corner brackets ────────────────── */
+
+.calibration-corners {
+  --corner-arm: 9px;
+  pointer-events: none;
+  user-select: none;
+  color: var(--foreground);
+  background:
+    linear-gradient(currentColor, currentColor) left top / var(--corner-arm) var(--border-hairline) no-repeat,
+    linear-gradient(currentColor, currentColor) left top / var(--border-hairline) var(--corner-arm) no-repeat,
+    linear-gradient(currentColor, currentColor) right top / var(--corner-arm) var(--border-hairline) no-repeat,
+    linear-gradient(currentColor, currentColor) right top / var(--border-hairline) var(--corner-arm) no-repeat,
+    linear-gradient(currentColor, currentColor) left bottom / var(--corner-arm) var(--border-hairline) no-repeat,
+    linear-gradient(currentColor, currentColor) left bottom / var(--border-hairline) var(--corner-arm) no-repeat,
+    linear-gradient(currentColor, currentColor) right bottom / var(--corner-arm) var(--border-hairline) no-repeat,
+    linear-gradient(currentColor, currentColor) right bottom / var(--border-hairline) var(--corner-arm) no-repeat;
+}
+
+/* photo tiles: brackets develop only under a fine-pointer attention */
+.photo-frame .calibration-corners {
+  position: absolute;
+  inset: 6px;
+  opacity: 0;
+  transform: scale(1.05);
+  transition:
+    opacity 150ms ease,
+    transform 300ms var(--ease-swift);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .photo-frame:hover .calibration-corners,
+  .photo-frame:focus-within .calibration-corners {
+    opacity: 0.62;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .photo-frame .calibration-corners {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* ── Ghost line art: a schematic at the edge of perception ────────── */
+
+.ghost-schematic {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  user-select: none;
+  color: var(--ghost-ink);
 }
 
 /* ── Selective focus: hovering a row defocuses its siblings ───────── */
@@ -1094,6 +1176,10 @@
   margin-top: 1.25em;
 }
 
+.prose {
+  counter-reset: prose-section prose-figure;
+}
+
 .prose h2 {
   margin-top: 2.5em;
   color: var(--gray-12, var(--foreground));
@@ -1102,6 +1188,40 @@
   font-weight: var(--font-weight-semibold);
   letter-spacing: -0.02em;
   text-wrap: balance;
+  counter-increment: prose-section;
+}
+
+/* prose h2s open with the section tag — a boxed counter ordinal and hatch
+   strip in one pseudo (the .section-tag register, sized for the heading
+   line); the heading text itself keeps its editorial size */
+.prose h2::before {
+  content: counter(prose-section, decimal-leading-zero) / '';
+  display: inline-block;
+  margin-right: 0.625rem;
+  padding: 0.1875rem 1.1875rem 0.1875rem 0.4375rem;
+  border: var(--border-hairline) solid color-mix(in oklab, var(--muted-foreground) 45%, transparent);
+  background:
+    repeating-linear-gradient(
+        -45deg,
+        color-mix(in oklab, var(--muted-foreground) 55%, transparent) 0,
+        color-mix(in oklab, var(--muted-foreground) 55%, transparent) 1px,
+        transparent 1px,
+        transparent 3.5px
+      )
+      right center / 0.75rem 100% no-repeat,
+    linear-gradient(
+        color-mix(in oklab, var(--muted-foreground) 45%, transparent),
+        color-mix(in oklab, var(--muted-foreground) 45%, transparent)
+      )
+      calc(100% - 0.75rem) 0 / var(--border-hairline) 100% no-repeat;
+  color: var(--muted-foreground);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-normal);
+  letter-spacing: 0.08em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  vertical-align: 0.125em;
 }
 
 .prose h3 {
@@ -1153,9 +1273,371 @@
   color: var(--gray-8, var(--muted-foreground));
 }
 
-.prose ul,
-.prose ol {
+/* the post plate breathes under the title (wins over .spec-plate margin: 0) */
+.post-title-card .spec-plate {
+  margin-top: 1.5rem;
+}
+
+/* ── Spec plate: stamped label/value meta (technical print register) ── */
+
+.spec-plate {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.625rem 1rem;
+  margin: 0;
+  padding: 0.625rem 0;
+  border-top: var(--border-hairline) solid var(--border);
+  border-bottom: var(--border-hairline) solid var(--border);
+  font-family: var(--font-geist-mono), var(--font-frex-gb), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+@media (min-width: 28rem) {
+  .spec-plate {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.spec-plate dt {
+  color: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.spec-plate dd {
+  margin: 0.1875rem 0 0;
+  color: var(--gray-9, var(--muted-foreground));
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* the lit cell — the plate carries this page's single signal mark */
+.spec-signal {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-right: 0.375rem;
+  vertical-align: 0.09em;
+  background: var(--signal);
+}
+
+/* flow variant: cells wrap to their content instead of the fixed grid */
+.spec-plate-flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+}
+
+/* ── Nameplate: the boxed data-plate variant ──────────────────────── */
+
+.spec-nameplate {
+  margin: 0;
+  border: var(--border-hairline) solid var(--border);
+  font-family: var(--font-geist-mono), var(--font-frex-gb), ui-monospace, monospace;
+  font-size: 0.8125rem;
+}
+
+.spec-nameplate > div {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+}
+
+.spec-nameplate > div + div {
+  border-top: var(--border-hairline) solid var(--border);
+}
+
+.spec-nameplate dt {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border-right: var(--border-hairline) solid var(--border);
+  color: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.spec-nameplate dd {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Status ladder: journey steps as state cells ──────────────────── */
+
+/* Decorative reinforcement of state the prose already announces:
+   done = filled ink, current = the lit signal cell, pending = outline. */
+.status-ladder {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  font-family: var(--font-geist-mono), var(--font-frex-gb), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
+  user-select: none;
+}
+
+.status-ladder li {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.status-ladder-index {
+  font-variant-numeric: tabular-nums;
+}
+
+.status-ladder-cell {
+  width: 5px;
+  height: 5px;
+  margin-left: auto;
+}
+
+.status-ladder [data-state='done'] .status-ladder-cell {
+  background: color-mix(in oklab, var(--foreground) 62%, transparent);
+}
+
+.status-ladder [data-state='current'] {
+  color: var(--gray-10, var(--foreground));
+}
+
+.status-ladder [data-state='current'] .status-ladder-cell {
+  background: var(--signal);
+}
+
+.status-ladder [data-state='pending'] .status-ladder-cell {
+  box-shadow: inset 0 0 0 var(--border-hairline) color-mix(in oklab, var(--muted-foreground) 55%, transparent);
+}
+
+/* ── Certification stamp ──────────────────────────────────────────── */
+
+.cert-stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border: var(--border-hairline) solid color-mix(in oklab, var(--foreground) 55%, transparent);
+  color: var(--gray-11, var(--foreground));
+  font-family: var(--font-geist-mono), var(--font-frex-gb), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+/* ── Section tags: index cell + hatch chip + label ────────────────── */
+
+.section-tag {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 0;
+  color: var(--gray-8, var(--muted-foreground));
+  font-family: var(--font-geist-mono), var(--font-frex-gb), ui-monospace, monospace;
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-normal);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.section-tag-index {
+  display: flex;
+  align-items: center;
+  padding: 0.0625rem 0.375rem;
+  border: var(--border-hairline) solid color-mix(in oklab, var(--muted-foreground) 45%, transparent);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* hazard hatch: fine diagonal strokes in a bordered chip */
+.section-tag-hatch {
+  width: 0.75rem;
+  border: var(--border-hairline) solid color-mix(in oklab, var(--muted-foreground) 45%, transparent);
+  border-left: none;
+  background: repeating-linear-gradient(
+    -45deg,
+    color-mix(in oklab, var(--muted-foreground) 55%, transparent) 0,
+    color-mix(in oklab, var(--muted-foreground) 55%, transparent) 1px,
+    transparent 1px,
+    transparent 3.5px
+  );
+}
+
+.section-tag-label {
+  align-self: center;
+  padding-left: 0.625rem;
+}
+
+/* boxed ordinal for manual steps (the how-it-works list). The box aligns
+   to the text baseline so the number reads as part of the first line. */
+.step-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  padding: 0.125rem 0;
+  border: var(--border-hairline) solid color-mix(in oklab, var(--muted-foreground) 40%, transparent);
+  color: var(--muted-foreground);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* ── Footer geo stamp ─────────────────────────────────────────────── */
+
+/* mirrors the clock row: a 1.375rem glyph + a two-line mono readout, so the
+   globe and clock face share size and the coords sit on the clock's grid */
+.footer-geo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: color-mix(in oklab, var(--muted-foreground) 88%, transparent);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+.footer-geo-globe {
+  width: 1.375rem;
+  height: 1.375rem;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 0.7;
+  opacity: 0.5;
+}
+
+/* coords share the digital clock text's size and color */
+.footer-geo-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.0625rem;
+  color: color-mix(in oklab, var(--muted-foreground) 90%, transparent);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* braille signature: the name echoed in dots along the colophon */
+.footer-braille {
+  margin-top: 0.25rem;
+  color: color-mix(in oklab, var(--muted-foreground) 55%, transparent);
+  font-size: 0.75rem;
+  line-height: 1;
+  letter-spacing: 0.05em;
+}
+
+/* ── Print ephemera: barcode and ghost folio numerals ─────────────── */
+
+.barcode {
+  display: inline-block;
+  color: currentColor;
+  user-select: none;
+}
+
+.barcode svg {
+  display: block;
+  height: 1.5rem;
+}
+
+.barcode-label {
+  display: block;
+  margin-top: 0.25rem;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+}
+
+.error-barcode {
+  position: absolute;
+  bottom: 3.25rem;
+  left: 1.25rem;
+  z-index: 2;
+  color: color-mix(in oklab, var(--foreground) 38%, transparent);
+}
+
+.ghost-folio {
+  position: absolute;
+  top: -0.75rem;
+  right: 0;
+  z-index: -1;
+  color: var(--ghost-ink);
+  font-size: 4.5rem;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── Pixel cluster: dither cells as a site mark, one lit ──────────── */
+
+.pixel-cluster {
+  display: grid;
+  grid-template-columns: 5px 5px;
+  grid-template-rows: 5px 5px;
+  gap: 1px;
+  user-select: none;
+}
+
+.pixel-cluster .pc-cell {
+  display: block;
+}
+
+.pixel-cluster .pc-s {
+  background: var(--signal);
+}
+
+.pixel-cluster .pc-a {
+  background: color-mix(in oklab, var(--foreground) 26%, transparent);
+}
+
+.pixel-cluster .pc-b {
+  background: color-mix(in oklab, var(--foreground) 11%, transparent);
+}
+
+/* ── Page eyebrows: mono section marks with a comment prefix ─────── */
+
+.page-eyebrow {
+  color: var(--gray-8, var(--muted-foreground));
+  font-family: var(--font-geist-mono), var(--font-frex-gb), ui-monospace, monospace;
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-normal);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.page-eyebrow::before {
+  content: '// ' / '';
+  color: color-mix(in oklab, var(--muted-foreground) 55%, transparent);
+}
+
+/* ── Posts like this: catalog rows at the article foot ────────────── */
+
+.post-related {
+  margin-top: 4rem;
+  padding-top: 1rem;
+}
+
+.post-related-label {
+  color: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
+  font-family: var(--font-geist-mono), var(--font-frex-gb), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-normal);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.prose ul {
   padding-left: 1.375rem;
+}
+
+.prose ol {
+  padding-left: 1.75rem;
 }
 
 .prose ul > li {
@@ -1174,13 +1656,33 @@
   background: var(--muted-foreground);
 }
 
+/* ordered lists share the manual register: boxed two-digit ordinals
+   (the same recipe as .step-index), drawn from a CSS counter */
 .prose ol {
-  list-style: decimal;
+  list-style: none;
+  counter-reset: prose-step;
 }
 
-.prose ol > li::marker {
+.prose ol > li {
+  position: relative;
+  counter-increment: prose-step;
+}
+
+.prose ol > li::before {
+  content: counter(prose-step, decimal-leading-zero);
+  position: absolute;
+  top: 0.1875rem;
+  left: -1.75rem;
+  display: inline-grid;
+  min-width: 1.25rem;
+  padding: 0.125rem 0;
+  place-items: center;
+  border: var(--border-hairline) solid color-mix(in oklab, var(--muted-foreground) 40%, transparent);
   color: var(--muted-foreground);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
   font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
 .prose li + li {
@@ -1193,22 +1695,68 @@
 }
 
 .prose blockquote {
-  border-left: 2px solid var(--border);
-  padding-left: 1rem;
+  position: relative;
+  padding-left: 1.25rem;
   color: var(--muted-foreground);
 }
 
+/* quotation bar: the hazard hatch set vertically — quoted text is
+   material brought in from elsewhere, so it wears the annotation strip */
+.prose blockquote::before {
+  content: '';
+  position: absolute;
+  top: 0.25em;
+  bottom: 0.25em;
+  left: 0;
+  width: 0.375rem;
+  border: var(--border-hairline) solid color-mix(in oklab, var(--muted-foreground) 45%, transparent);
+  background: repeating-linear-gradient(
+    -45deg,
+    color-mix(in oklab, var(--muted-foreground) 55%, transparent) 0,
+    color-mix(in oklab, var(--muted-foreground) 55%, transparent) 1px,
+    transparent 1px,
+    transparent 3.5px
+  );
+}
+
+/* post images are figure prints: square-cornered on a hairline ring,
+   resting on the surface ladder (a floor for transparent images and
+   loading frames), keeping their deterministic scatter tilt */
+.prose .zoom-trigger img {
+  border-radius: 2px;
+  background: var(--surface-1);
+  box-shadow: 0 0 0 var(--border-hairline) var(--border);
+}
+
+/* captions are plate annotations: left-set mono with a FIG. number */
 .prose figcaption,
 .prose .post-figcaption {
-  margin-top: 0.5rem;
-  text-align: center;
-  font-size: 0.875rem;
+  margin-top: 0.625rem;
+  text-align: left;
+  font-family: var(--font-geist-mono), var(--font-frex-gb), ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
   color: var(--muted-foreground);
+}
+
+.prose .post-figure {
+  counter-increment: prose-figure;
+}
+
+.prose .post-figcaption::before {
+  content: 'FIG. ' counter(prose-figure, decimal-leading-zero) ' — ' / '';
+  color: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
+  letter-spacing: 0.08em;
+}
+
+[data-locale='zh'] .prose .post-figcaption::before {
+  content: '图 ' counter(prose-figure, decimal-leading-zero) ' — ' / '';
 }
 
 .prose code:not(pre code) {
   background: var(--muted);
-  border-radius: 0.25rem;
+  border-radius: 2px;
   padding: 0.125rem 0.375rem;
   font-size: 0.875em;
 }
@@ -1224,36 +1772,114 @@
 
 /* ── Code blocks (rehype-pretty-code + shiki dual themes) ─────────── */
 
+/* the code block is a nameplate: a hairline frame, a ruled filename row
+   with a boxed language tag, and the sheet of code below */
+figure[data-rehype-pretty-code-figure] {
+  border: var(--border-hairline) solid var(--border);
+}
+
+/* the code sheet rests one step up the surface ladder; the fade strips
+   tint with the same surface so continuation reads seamlessly */
 .code-frame {
   position: relative;
+  background: var(--surface-1);
+  --scroll-fade-surface: var(--surface-1);
 }
 
 .code-frame pre {
-  overflow-x: auto;
-  border-radius: 0.5rem;
+  width: max-content;
+  min-width: 100%;
   padding: 1rem;
   font-size: 0.8125rem;
   line-height: 1.6;
-  box-shadow: 0 0 0 1px var(--border);
 }
 
-.code-frame pre::-webkit-scrollbar {
+/* ── Fluid horizontal scroll area (components/ui/scroll-area.tsx) ── */
+
+.scroll-area-x {
+  position: relative;
+}
+
+.scroll-area-x-viewport {
+  overflow-x: auto;
+}
+
+.scroll-area-x-viewport::-webkit-scrollbar {
   height: 8px;
 }
 
-.code-frame pre::-webkit-scrollbar-thumb {
+.scroll-area-x-viewport::-webkit-scrollbar-thumb {
   background: color-mix(in oklab, var(--foreground) 20%, transparent);
   border-radius: 4px;
 }
 
+/* edge fades: visible only while content continues in that direction */
+.scroll-area-x-fade {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2.5rem;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.scroll-area-x-fade-start {
+  left: 0;
+  background: linear-gradient(
+    to right,
+    var(--scroll-fade-surface, var(--background)),
+    transparent
+  );
+}
+
+.scroll-area-x-fade-end {
+  right: 0;
+  background: linear-gradient(
+    to left,
+    var(--scroll-fade-surface, var(--background)),
+    transparent
+  );
+}
+
+.scroll-area-x-fade[data-visible] {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-area-x-fade {
+    transition: none;
+  }
+}
+
 figure[data-rehype-pretty-code-figure] figcaption[data-rehype-pretty-code-title] {
-  margin: 0 0 0.5rem;
-  padding: 0 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0.5rem 1rem;
+  border-bottom: var(--border-hairline) solid var(--border);
   text-align: left;
   font-family: var(--font-mono, monospace);
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
   line-height: 1.4;
-  color: var(--muted-foreground);
+  color: color-mix(in oklab, var(--muted-foreground) 88%, transparent);
+}
+
+/* boxed language tag, from the pretty-code attribute */
+figure[data-rehype-pretty-code-figure]
+  figcaption[data-rehype-pretty-code-title][data-language]::after {
+  content: attr(data-language);
+  margin-left: auto;
+  padding: 0.0625rem 0.375rem;
+  border: var(--border-hairline) solid color-mix(in oklab, var(--muted-foreground) 45%, transparent);
+  color: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  user-select: none;
 }
 
 code[data-theme] span {
@@ -1264,12 +1890,11 @@ code[data-theme] span {
   color: var(--shiki-dark);
 }
 
-pre[data-theme] {
-  background: var(--shiki-light-bg);
-}
-
+/* the sheet's background comes from the surface ladder, not the theme —
+   shiki keeps the token colors, the paper keeps the elevation */
+pre[data-theme],
 .dark pre[data-theme] {
-  background: var(--shiki-dark-bg);
+  background: transparent;
 }
 
 .code-copy {
@@ -1280,7 +1905,7 @@ pre[data-theme] {
   place-items: center;
   width: 1.75rem;
   height: 1.75rem;
-  border-radius: 0.375rem;
+  border-radius: 2px;
   color: var(--muted-foreground);
   background: transparent;
   transition: color 150ms ease, background-color 150ms ease;
@@ -1310,19 +1935,23 @@ pre[data-theme] {
 
 /* ── Tweet cards (static snapshots, no embeds — components/mdx/tweet.tsx) */
 
+/* the archived snapshot as a specimen label: a hairline nameplate frame
+   with ruled head / body / foot rows */
 .tweet-card {
   display: block;
-  border-radius: var(--radius);
-  padding: 1rem 1.25rem 0.875rem;
-  box-shadow: 0 0 0 1px var(--border);
+  border: var(--border-hairline) solid var(--border);
+  background: var(--surface-1);
   text-decoration: none !important;
-  transition: box-shadow 150ms ease, background-color 150ms ease;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
 }
 
+/* hover lifts the specimen one step up the surface ladder */
 @media (hover: hover) and (pointer: fine) {
   .tweet-card:hover {
-    box-shadow: 0 0 0 1px color-mix(in oklab, var(--foreground) 18%, transparent);
-    background: color-mix(in oklab, var(--foreground) 2%, transparent);
+    border-color: color-mix(in oklab, var(--foreground) 25%, transparent);
+    background: var(--surface-2);
   }
 }
 
@@ -1330,13 +1959,16 @@ pre[data-theme] {
   display: flex;
   align-items: center;
   gap: 0.625rem;
+  padding: 0.75rem 1rem;
+  border-bottom: var(--border-hairline) solid var(--border);
 }
 
+/* the one round exception on the plate: a face is a face */
 .tweet-card-avatar {
   display: grid;
   place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: 999px;
   background: var(--muted);
   box-shadow: inset 0 0 0 1px var(--border);
@@ -1348,6 +1980,7 @@ pre[data-theme] {
 
 img.tweet-card-avatar {
   background: none;
+  object-fit: cover;
 }
 
 .tweet-card-names {
@@ -1355,7 +1988,7 @@ img.tweet-card-avatar {
   flex-direction: column;
   flex: 1;
   min-width: 0;
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
 .tweet-card-name {
@@ -1365,8 +1998,10 @@ img.tweet-card-avatar {
 }
 
 .tweet-card-handle {
-  font-size: 0.875rem;
-  color: var(--muted-foreground);
+  color: color-mix(in oklab, var(--muted-foreground) 85%, transparent);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
 }
 
 .tweet-card-x {
@@ -1382,7 +2017,7 @@ img.tweet-card-avatar {
 
 .tweet-card-body {
   display: block;
-  margin-top: 0.75rem;
+  padding: 0.875rem 1rem;
   font-size: 0.875rem;
   letter-spacing: -0.011em;
   line-height: 1.6;
@@ -1393,13 +2028,40 @@ img.tweet-card-avatar {
   margin-top: 0.75em;
 }
 
+/* the foot is a plate row: stamped date, notes, and the northeast mark */
 .tweet-card-foot {
   display: flex;
-  gap: 0.375rem;
-  margin-top: 0.75rem;
-  font-size: 0.875rem;
-  color: var(--muted-foreground);
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-top: var(--border-hairline) solid var(--border);
+  color: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
+  font-family: var(--font-geist-mono), var(--font-frex-gb), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   font-variant-numeric: tabular-nums;
+}
+
+.tweet-card-mark {
+  margin-left: auto;
+  opacity: 0.6;
+  transition:
+    opacity 180ms ease,
+    translate 180ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tweet-card:hover .tweet-card-mark {
+    opacity: 0.95;
+    translate: 1.5px -1.5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tweet-card-mark {
+    transition: none;
+  }
 }
 
 /* ── Theme tri-toggle (footer chrome — components/theme-toggle.tsx) ── */
@@ -1482,7 +2144,8 @@ img.tweet-card-avatar {
 
 .zoom-overlay img {
   position: fixed;
-  border-radius: 0.5rem;
+  border-radius: 2px;
+  background: var(--surface-1);
   will-change: transform;
   transition: transform 300ms var(--ease-swift), box-shadow 300ms var(--ease-swift);
 }
@@ -1491,9 +2154,22 @@ img.tweet-card-avatar {
   box-shadow: var(--shadow-large);
 }
 
+/* viewfinder brackets develop just outside the settled photo */
+.zoom-overlay-marks {
+  position: fixed;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.zoom-overlay[data-state='open'] .zoom-overlay-marks {
+  opacity: 0.55;
+  transition: opacity 200ms ease 140ms;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .zoom-overlay-backdrop,
-  .zoom-overlay img {
+  .zoom-overlay img,
+  .zoom-overlay-marks {
     transition: none;
   }
 }
@@ -2061,20 +2737,6 @@ a:focus-visible .external-label .external-mark {
   user-select: none;
 }
 
-@keyframes link-card-in {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-}
-
-@keyframes link-card-out {
-  to {
-    opacity: 0;
-    transform: scale(0.97);
-  }
-}
-
 .link-card {
   /* informational only: never selectable, never a pointer target */
   pointer-events: none;
@@ -2084,13 +2746,19 @@ a:focus-visible .external-label .external-mark {
   gap: 0.375rem;
   width: 16rem;
   padding: 0.625rem 0.75rem;
-  border-radius: var(--radius);
-  background: var(--popover);
+  /* a printed label: the register's corner, elevation from the ladder */
+  border-radius: 2px;
+  background: var(--surface-3);
   box-shadow: 0 0 0 1px var(--border), var(--shadow-tooltip), var(--shadow-medium);
   /* set by the Base UI positioner, inherited by the popup */
   transform-origin: var(--transform-origin);
   backface-visibility: hidden;
   z-index: var(--z-card);
+  opacity: 1;
+  transform: scale(1);
+  transition:
+    opacity 200ms var(--ease-swift),
+    transform 200ms var(--ease-swift);
 }
 
 /* Image-enabled preview cards: height comes from the content (the 16:9
@@ -2098,7 +2766,6 @@ a:focus-visible .external-label .external-mark {
    the frame's corners run concentric with the card's. */
 .link-card-with-image {
   padding: 0.625rem;
-  border-radius: var(--radius-2xl);
 }
 
 .link-card-image-frame {
@@ -2107,8 +2774,7 @@ a:focus-visible .external-label .external-mark {
   width: 100%;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  /* concentric with the card: outer radius minus the padding inset */
-  border-radius: calc(var(--radius-2xl) - 0.625rem);
+  border-radius: 2px;
   background: color-mix(in oklch, var(--muted) 72%, var(--paper));
   box-shadow: inset 0 0 0 1px var(--border);
 }
@@ -2169,24 +2835,38 @@ a:focus-visible .external-label .external-mark {
   box-shadow: none;
 }
 
-.link-card[data-open] {
-  animation: link-card-in 200ms var(--ease-swift);
+.link-card[data-starting-style] {
+  opacity: 0;
+  transform: scale(0.95);
 }
 
 .link-card[data-ending-style] {
-  animation: link-card-out 130ms var(--ease-swift);
+  opacity: 0;
+  transform: scale(0.97);
+  transition-duration: 130ms;
 }
 
+.link-card.preview-card-instant,
+.link-card.preview-card-instant[data-starting-style],
+.link-card.preview-card-instant[data-ending-style] {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+/* the domain is machine text: mono, one step down */
 .link-card-site {
   display: flex;
   align-items: center;
   gap: 0.375rem;
-  font-size: 0.875rem;
   color: var(--muted-foreground);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
 }
 
 .link-card-site img {
-  border-radius: 3px;
+  border-radius: 2px;
 }
 
 .link-card-title {
@@ -2208,14 +2888,6 @@ a:focus-visible .external-label .external-mark {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .link-card[data-open],
-  .link-card[data-ending-style],
-  .service-card[data-open] {
-    animation: none;
-  }
 }
 
 /* ── Halftone portrait (components/halftone-portrait.tsx) ─────────── */
@@ -2614,7 +3286,23 @@ a:focus-visible .external-label .external-mark {
 /* ── Room shelves: records and books rest on a real wooden plank ──── */
 
 .room-shelf {
+  --room-shelf-shadow-rgb: 27 22 17;
+  --room-shelf-wood-front-bottom: oklch(0.61 0.065 64);
+  --room-shelf-wood-front-top: oklch(0.79 0.05 74);
+  --room-shelf-wood-grain: rgb(71 42 17 / 0.08);
+  --room-shelf-wood-top-back: oklch(0.77 0.045 75);
+  --room-shelf-wood-top-front: oklch(0.84 0.04 78);
+
   position: relative;
+}
+
+.dark .room-shelf {
+  --room-shelf-shadow-rgb: 0 0 0;
+  --room-shelf-wood-front-bottom: oklch(0.29 0.035 49);
+  --room-shelf-wood-front-top: oklch(0.43 0.04 59);
+  --room-shelf-wood-grain: rgb(0 0 0 / 0.15);
+  --room-shelf-wood-top-back: oklch(0.38 0.035 56);
+  --room-shelf-wood-top-front: oklch(0.47 0.035 62);
 }
 
 .shelf-annotation {
@@ -2656,48 +3344,68 @@ a:focus-visible .external-label .external-mark {
   outline-offset: 3px;
 }
 
-/* the plank's front face: edge grain drawn with layered streaks over an
-   oak tone; a wall shadow hangs beneath */
+/* One wooden material and upper-left light source ground both collections. */
 .room-shelf-plank {
   display: block;
   position: relative;
+  z-index: 1;
   height: 12px;
-  border-radius: 2px;
+  border-radius: 1px 1px 2px 2px;
   background:
-    repeating-linear-gradient(0deg, rgb(60 34 12 / 0.09) 0 1px, transparent 1px 4px),
-    repeating-linear-gradient(0deg, transparent 0 5px, rgb(60 34 12 / 0.06) 5px 6px, transparent 6px 13px),
-    linear-gradient(180deg, oklch(0.8 0.055 75), oklch(0.7 0.065 70) 45%, oklch(0.62 0.07 65));
+    radial-gradient(ellipse 22% 38% at 12% 22%, transparent 0 92%, var(--room-shelf-wood-grain) 93% 95%, transparent 96%),
+    radial-gradient(ellipse 32% 42% at 67% 70%, transparent 0 93%, var(--room-shelf-wood-grain) 94% 96%, transparent 97%),
+    linear-gradient(92deg, transparent 0 8%, var(--room-shelf-wood-grain) 14%, transparent 22% 54%, var(--room-shelf-wood-grain) 61%, transparent 72%),
+    linear-gradient(180deg, var(--room-shelf-wood-front-top), var(--room-shelf-wood-front-bottom));
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.35),
-    inset 0 -1px 0 rgb(0 0 0 / 0.18),
-    0 7px 14px -4px rgb(0 0 0 / 0.25),
-    0 2px 3px rgb(0 0 0 / 0.12);
+    inset 0 1px 0 rgb(255 255 255 / 0.28),
+    inset 0 -1px 0 rgb(51 28 10 / 0.2),
+    1px 3px 3px -2px rgb(var(--room-shelf-shadow-rgb) / 0.24),
+    3px 10px 16px -8px rgb(var(--room-shelf-shadow-rgb) / 0.34),
+    6px 24px 34px -18px rgb(var(--room-shelf-shadow-rgb) / 0.28);
+}
+
+.room-shelf-plank::before,
+.room-shelf-plank::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.room-shelf-plank::before {
+  top: -6px;
+  height: 6px;
+  clip-path: polygon(0.8% 0, 99.2% 0, 100% 100%, 0 100%);
+  background:
+    radial-gradient(ellipse 28% 70% at 23% 45%, transparent 0 90%, var(--room-shelf-wood-grain) 91% 93%, transparent 94%),
+    linear-gradient(91deg, transparent 0 16%, var(--room-shelf-wood-grain) 25%, transparent 34% 67%, var(--room-shelf-wood-grain) 75%, transparent 83%),
+    linear-gradient(180deg, var(--room-shelf-wood-top-front), var(--room-shelf-wood-top-back));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.32),
+    inset 0 -1px 0 rgb(52 29 11 / 0.18);
+}
+
+.room-shelf-plank::after {
+  bottom: -2px;
+  height: 2px;
+  border-radius: 0 0 2px 2px;
+  background: linear-gradient(180deg, rgb(var(--room-shelf-shadow-rgb) / 0.24), rgb(var(--room-shelf-shadow-rgb) / 0.08));
 }
 
 .dark .room-shelf-plank {
-  /* walnut after dark */
-  background:
-    repeating-linear-gradient(0deg, rgb(0 0 0 / 0.22) 0 1px, transparent 1px 4px),
-    repeating-linear-gradient(0deg, transparent 0 5px, rgb(0 0 0 / 0.16) 5px 6px, transparent 6px 13px),
-    linear-gradient(180deg, oklch(0.44 0.045 60), oklch(0.36 0.045 55) 45%, oklch(0.3 0.04 50));
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.09),
-    inset 0 -1px 0 rgb(0 0 0 / 0.45),
-    0 7px 14px -4px rgb(0 0 0 / 0.55),
-    0 2px 3px rgb(0 0 0 / 0.3);
+    inset 0 1px 0 rgb(255 255 255 / 0.1),
+    inset 0 -1px 0 rgb(0 0 0 / 0.48),
+    1px 3px 3px -2px rgb(var(--room-shelf-shadow-rgb) / 0.45),
+    3px 10px 16px -8px rgb(var(--room-shelf-shadow-rgb) / 0.62),
+    6px 24px 34px -18px rgb(var(--room-shelf-shadow-rgb) / 0.5);
 }
 
-/* contact shadows where things meet the wood */
-.room-shelf .vinyl::after,
-.room-shelf .book3::after {
-  content: '';
-  position: absolute;
-  left: 7%;
-  right: 7%;
-  bottom: -2px;
-  height: 5px;
-  background: radial-gradient(50% 100% at 50% 100%, rgb(0 0 0 / 0.3), transparent 78%);
-  pointer-events: none;
+.dark .room-shelf-plank::before {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.1),
+    inset 0 -1px 0 rgb(0 0 0 / 0.4);
 }
 
 /* ── Post images: scattered prints that straighten on attention ───── */
@@ -2787,13 +3495,23 @@ a:focus-visible .external-label .external-mark {
 /* ── Vinyl shelf (components/vinyl-shelf.tsx) ─────────────────────── */
 
 .vinyl-room {
+  --vinyl-depth: 3px;
+  --vinyl-motion-duration: 330ms;
+  --vinyl-shadow-rgb: var(--room-shelf-shadow-rgb);
+
   left: 50%;
   width: min(37.5rem, calc(100vw - 2rem));
+  isolation: isolate;
   transform: translateX(-50%);
+}
+
+.vinyl-annotation {
+  z-index: 2;
 }
 
 .vinyl-viewport {
   position: relative;
+  z-index: 2;
   overflow: clip;
   cursor: grab;
 }
@@ -2808,7 +3526,7 @@ a:focus-visible .external-label .external-mark {
   display: grid;
   place-items: end center;
   margin: 0;
-  padding: 2.5rem 0 0;
+  padding: 2.5rem 0 4px;
   list-style: none;
   overflow: visible;
   isolation: isolate;
@@ -2838,11 +3556,14 @@ a:focus-visible .external-label .external-mark {
   pointer-events: none;
   touch-action: manipulation;
   transform: translateX(calc(var(--vinyl-offset) * var(--vinyl-spread)))
+    translateY(calc(var(--vinyl-rest-offset) * 1px))
+    translateZ(calc(var(--vinyl-forward) * 1px))
+    rotateZ(calc(var(--vinyl-rest-tilt) * 1deg))
     rotateY(calc(var(--vinyl-direction) * var(--vinyl-inward-angle) * -1deg))
     scale(var(--vinyl-scale));
-  transform-origin: bottom center;
+  transform-origin: var(--vinyl-origin-x) bottom;
   transform-style: preserve-3d;
-  transition: transform 330ms var(--ease-spring);
+  transition: transform var(--vinyl-motion-duration) var(--ease-spring);
   will-change: transform;
 }
 
@@ -2878,33 +3599,62 @@ a:focus-visible .external-label .external-mark {
   left: 0;
 }
 
-.vinyl[data-position='before'] .vinyl-trigger {
-  transform-origin: right bottom;
-}
-
-.vinyl[data-position='after'] .vinyl-trigger {
-  transform-origin: left bottom;
-}
-
 .vinyl-object {
   position: relative;
+  z-index: 1;
   display: block;
   width: 100%;
   transform: translate(0, 0);
   transform-style: preserve-3d;
-  transition: transform 300ms var(--ease-spring);
+  transition: transform var(--vinyl-motion-duration) var(--ease-spring);
+}
+
+.vinyl-contact-shadow {
+  position: absolute;
+  z-index: 0;
+  top: calc(100% - 5px);
+  right: 8%;
+  left: 8%;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgb(var(--vinyl-shadow-rgb) / 0.4) 0%,
+    rgb(var(--vinyl-shadow-rgb) / 0.18) 46%,
+    transparent 84%
+  );
+  opacity: var(--vinyl-contact-opacity);
+  pointer-events: none;
+  transform: translateZ(-1px)
+    rotateY(calc(var(--vinyl-direction) * var(--vinyl-inward-angle) * 1deg))
+    rotateX(62deg)
+    scaleX(var(--vinyl-contact-scale));
+  transform-origin: center;
+  transition:
+    transform var(--vinyl-motion-duration) var(--ease-spring),
+    opacity var(--vinyl-motion-duration) var(--ease-spring);
 }
 
 .vinyl-room[data-vinyl-interaction='panning'] .vinyl-trigger,
 .vinyl-room[data-vinyl-interaction='panning'] .vinyl-object,
+.vinyl-room[data-vinyl-interaction='panning'] .vinyl-contact-shadow,
 .vinyl-room[data-vinyl-interaction='instant'] .vinyl-trigger,
-.vinyl-room[data-vinyl-interaction='instant'] .vinyl-object {
+.vinyl-room[data-vinyl-interaction='instant'] .vinyl-object,
+.vinyl-room[data-vinyl-interaction='instant'] .vinyl-contact-shadow {
   transition: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .vinyl-trigger:not([data-active])[data-pointer-owned] .vinyl-object {
-    transform: translateX(calc(var(--vinyl-direction) * 2px)) translateY(-5px);
+    transform: translateX(calc(var(--vinyl-direction) * 2px)) translateY(-4px);
+  }
+
+  .vinyl-trigger:not([data-active])[data-pointer-owned] .vinyl-contact-shadow {
+    opacity: calc(var(--vinyl-contact-opacity) * 0.55);
+    transform: translateZ(-1px)
+      rotateY(calc(var(--vinyl-direction) * var(--vinyl-inward-angle) * 1deg))
+      rotateX(62deg)
+      scaleX(calc(var(--vinyl-contact-scale) * 1.08));
   }
 }
 
@@ -2921,15 +3671,24 @@ a:focus-visible .external-label .external-mark {
   aspect-ratio: 1;
   background: var(--paper);
   box-shadow:
-    0 0 0 1px rgb(0 0 0 / 0.08),
-    0 2px 4px -1px rgb(0 0 0 / 0.16),
-    0 9px 16px -9px rgb(0 0 0 / 0.28);
+    0 0 0 var(--border-hairline) rgb(0 0 0 / 0.09),
+    1px 2px 3px -1px rgb(var(--vinyl-shadow-rgb) / 0.2),
+    4px 9px 16px -9px rgb(var(--vinyl-shadow-rgb) / 0.3);
   overflow: hidden;
   backface-visibility: hidden;
-  transform: translateZ(7px);
+  transform: translateZ(var(--vinyl-depth));
 }
 
-/* Real 3D side faces: the cover sits 7px forward and these planes bridge
+.vinyl-sleeve::after {
+  content: '';
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  background: linear-gradient(118deg, rgb(255 255 255 / 0.12), transparent 28% 70%, rgb(25 16 9 / 0.11));
+  pointer-events: none;
+}
+
+/* Real 3D side faces: the cover sits forward and these planes bridge
    the depth. The face revealed by each inward turn becomes the sleeve spine. */
 .vinyl-spine {
   position: absolute;
@@ -2937,15 +3696,13 @@ a:focus-visible .external-label .external-mark {
   top: 0;
   bottom: 0;
   left: 0;
-  width: 7px;
+  width: var(--vinyl-depth);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   color: var(--vinyl-spine-ink, oklch(0.28 0.012 95));
-  background:
-    linear-gradient(to right, rgb(0 0 0 / 0.18), transparent 35%, rgb(255 255 255 / 0.14) 70%, rgb(0 0 0 / 0.12)),
-    var(--vinyl-spine-color, var(--paper));
+  background: var(--vinyl-spine-color, var(--paper));
   box-shadow:
     inset 1px 0 rgb(255 255 255 / 0.16),
     inset -1px 0 rgb(0 0 0 / 0.18);
@@ -2957,7 +3714,7 @@ a:focus-visible .external-label .external-mark {
   max-height: calc(100% - 10px);
   overflow: hidden;
   font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 5px;
+  font-size: 4px;
   line-height: 1;
   letter-spacing: 0.04em;
   text-overflow: ellipsis;
@@ -2966,6 +3723,9 @@ a:focus-visible .external-label .external-mark {
 }
 
 .vinyl-spine-left {
+  background:
+    linear-gradient(to right, rgb(255 255 255 / 0.16), transparent 45%, rgb(0 0 0 / 0.16)),
+    var(--vinyl-spine-color, var(--paper));
   transform: rotateY(-90deg);
   transform-origin: left center;
 }
@@ -2973,6 +3733,9 @@ a:focus-visible .external-label .external-mark {
 .vinyl-spine-right {
   right: 0;
   left: auto;
+  background:
+    linear-gradient(to right, rgb(0 0 0 / 0.24), transparent 55%, rgb(255 255 255 / 0.08)),
+    var(--vinyl-spine-color, var(--paper));
   transform: rotateY(90deg);
   transform-origin: right center;
 }
@@ -2991,16 +3754,39 @@ a:focus-visible .external-label .external-mark {
 /* seeded crease streaks (inline background) + paper grain overlay */
 .vinyl-creases {
   position: absolute;
+  z-index: 2;
   inset: 0;
+  background-image: var(--vinyl-crease-image);
+  background-position: var(--vinyl-crease-position);
+  background-repeat: no-repeat;
+  background-size: var(--vinyl-crease-size);
+  opacity: 0.55;
+  pointer-events: none;
 }
 
 .vinyl-paper {
   position: absolute;
+  z-index: 3;
   inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='96' height='96' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 96px 96px;
-  mix-blend-mode: overlay;
-  opacity: 0.55;
+  background-image:
+    radial-gradient(circle at var(--vinyl-wear-x) var(--vinyl-wear-y), rgb(70 42 20 / 0.24) 0 0.5px, rgb(70 42 20 / 0.08) 1px 4%, transparent 9%),
+    linear-gradient(118deg, rgb(255 255 255 / 0.15), transparent 24% 72%, rgb(30 18 10 / 0.12)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='108' height='108'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.55 0 0 0 0 0.52 0 0 0 0 0.46 0.06 0.06 0.06 0 -0.03'/%3E%3C/filter%3E%3Crect width='108' height='108' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-position:
+    center,
+    center,
+    var(--vinyl-paper-x) var(--vinyl-paper-y);
+  background-repeat: no-repeat, no-repeat, repeat;
+  background-size:
+    100% 100%,
+    100% 100%,
+    var(--vinyl-paper-size) var(--vinyl-paper-size);
+  box-shadow:
+    inset 1px 1px 0 rgb(255 255 255 / 0.22),
+    inset -1px -1px 0 rgb(45 27 13 / 0.14);
+  mix-blend-mode: soft-light;
+  opacity: var(--vinyl-wear-opacity);
+  pointer-events: none;
 }
 
 .vinyl-sleeve-raster {
@@ -3046,18 +3832,29 @@ a:focus-visible .external-label .external-mark {
 @media (prefers-reduced-motion: reduce) {
   .vinyl-trigger,
   .vinyl-sleeve,
-  .vinyl-object {
+  .vinyl-object,
+  .vinyl-contact-shadow {
     transition: none;
   }
 
   .vinyl-trigger:not([data-active])[data-pointer-owned] .vinyl-object {
     transform: none;
   }
+
+  .vinyl-trigger:not([data-active])[data-pointer-owned] .vinyl-contact-shadow {
+    opacity: var(--vinyl-contact-opacity);
+    transform: translateZ(-1px)
+      rotateY(calc(var(--vinyl-direction) * var(--vinyl-inward-angle) * 1deg))
+      rotateX(62deg)
+      scaleX(var(--vinyl-contact-scale));
+  }
 }
 
 /* ── Bookshelf: 3D accordion (components/bookshelf.tsx) ───────────── */
 
 .bookshelf-viewport {
+  position: relative;
+  z-index: 2;
   width: 100%;
   height: 216px;
   overflow: clip;
@@ -3082,8 +3879,30 @@ a:focus-visible .external-label .external-mark {
   flex-shrink: 0;
 }
 
+.book3-contact-shadow {
+  position: absolute;
+  z-index: 0;
+  bottom: -3px;
+  left: 0;
+  width: var(--book-contact-width);
+  height: 9px;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgb(var(--room-shelf-shadow-rgb) / 0.38) 0%,
+    rgb(var(--room-shelf-shadow-rgb) / 0.16) 48%,
+    transparent 84%
+  );
+  opacity: 0.9;
+  pointer-events: none;
+  transform: scaleX(var(--book-contact-scale));
+  transform-origin: left center;
+  will-change: transform;
+}
+
 .book3 {
   position: relative;
+  z-index: 1;
   display: block;
   width: 100%;
   height: 100%;
@@ -3139,7 +3958,10 @@ a:focus-visible .external-label .external-mark {
   backface-visibility: hidden;
   overflow: hidden;
   border-radius: 2px 4px 4px 2px;
-  filter: drop-shadow(2px 4px 15px rgb(0 0 0 / 0.14));
+  box-shadow:
+    0 0 0 var(--border-hairline) rgb(0 0 0 / 0.09),
+    1px 2px 3px -1px rgb(var(--room-shelf-shadow-rgb) / 0.2),
+    4px 9px 16px -9px rgb(var(--room-shelf-shadow-rgb) / 0.3);
   user-select: none;
 }
 
@@ -3253,23 +4075,18 @@ a:focus-visible .external-label .external-mark {
   gap: 0.5rem;
 }
 
-/* Service cards are UI chrome: quick and decisive, without overshoot. */
-.service-card[data-open] {
-  animation: service-pop 200ms var(--ease-swift);
+.service-card[data-starting-style] {
+  transform: scale(0.92) translateY(4px);
 }
 
-/* this rule sits after the reduced-motion block above, so it needs its
-   own guard — source order would otherwise resurrect the animation */
 @media (prefers-reduced-motion: reduce) {
-  .service-card[data-open] {
-    animation: none;
-  }
-}
-
-@keyframes service-pop {
-  from {
-    opacity: 0;
-    transform: scale(0.92) translateY(4px);
+  .link-card,
+  .link-card[data-starting-style],
+  .link-card[data-ending-style],
+  .service-card[data-starting-style] {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }
 
@@ -3310,9 +4127,12 @@ a:focus-visible .external-label .external-mark {
   color: var(--foreground);
 }
 
+/* handles are machine text */
 .service-card-sub {
-  font-size: 0.875rem;
   color: var(--muted-foreground);
+  font-family: var(--font-geist-mono), var(--font-frex-gb), ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
 }
 
 .service-card-bio {
@@ -3322,13 +4142,25 @@ a:focus-visible .external-label .external-mark {
   white-space: pre-line;
 }
 
+/* the stat row is the card's plate foot: ruled, mono, tabular. Units
+   never break internally — long locales wrap at the separators. */
 .service-card-stat {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.25rem;
-  font-size: 0.875rem;
+  gap: 0.125rem 0.25rem;
+  margin-top: 0.125rem;
+  padding-top: 0.5rem;
+  border-top: var(--border-hairline) solid var(--border);
   color: var(--muted-foreground);
+  font-family: var(--font-geist-mono), var(--font-frex-gb), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
+}
+
+.service-card-stat > span {
+  white-space: nowrap;
 }
 
 .service-card-stat b {
@@ -3338,7 +4170,8 @@ a:focus-visible .external-label .external-mark {
 
 .xiaohongshu-card {
   box-sizing: border-box;
-  height: 10.25rem;
+  /* fixed card dimensions; sized for the ruled stat foot */
+  height: 10.875rem;
 }
 
 .xiaohongshu-card-content {
@@ -3393,6 +4226,10 @@ a:focus-visible .external-label .external-mark {
   animation-delay: calc(var(--ci, 0) * 2ms);
 }
 
+.link-card.preview-card-instant .contrib-grid i {
+  animation: none;
+}
+
 .contrib-grid i[data-level='1'] {
   background: color-mix(in oklab, var(--foreground) 30%, transparent);
 }
@@ -3423,6 +4260,12 @@ a:focus-visible .external-label .external-mark {
   gap: 0.75rem;
   padding: 0.5rem 0;
   font-size: 0.9375rem;
+}
+
+/* the date is quiet metadata — one step down from the row's title */
+.blog-row-date {
+  font-size: 0.8125rem;
+  letter-spacing: 0.01em;
 }
 
 .print-pile {
@@ -3508,6 +4351,64 @@ a:focus-visible .external-label .external-mark {
       transparent 0.5px
     )
     0 0 / 6px 1px repeat-x;
+}
+
+/* ── Primary call-to-action: a compact pill ───────────────────────── */
+
+/* Trim visual height with a pill silhouette; a pseudo-element restores the
+   44px hit target (design language: 44px minimum, pseudo if visually smaller). */
+.btn-cta {
+  position: relative;
+  display: inline-flex;
+  height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding-inline: 1.125rem;
+  background: var(--foreground);
+  color: var(--background);
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium);
+  touch-action: manipulation;
+  outline: none;
+  transition:
+    transform 100ms ease,
+    background-color 150ms ease;
+}
+
+.btn-cta::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  height: 2.75rem;
+  transform: translateY(-50%);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn-cta:hover {
+    background: color-mix(in oklab, var(--foreground) 90%, var(--background));
+  }
+}
+
+.btn-cta:active {
+  transform: scale(0.97);
+}
+
+.btn-cta:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--background),
+    0 0 0 3px var(--focus-ring, var(--foreground));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-cta {
+    transition: none;
+  }
+
+  .btn-cta:active {
+    transform: none;
+  }
 }
 
 /* ── Bilingual chrome (lib/i18n.tsx) — CSS-swapped, no hydration ──── */
@@ -4121,6 +5022,21 @@ html[data-locale='en'] [data-en-block] {
   }
 }
 
+.post-minimap-root[data-toggle-motion='instant'] .post-minimap-backdrop,
+.post-minimap-root[data-toggle-motion='instant'] .post-minimap,
+.post-minimap-root[data-toggle-motion='instant'] .post-minimap-toggle-panel,
+.post-minimap-root[data-toggle-motion='instant'] .post-minimap-toggle-chevron,
+.post-minimap-root[data-toggle-motion='instant'] .post-minimap-island-chevron,
+.post-minimap-root[data-toggle-motion='instant'] .post-minimap-node > a,
+.post-minimap-root[data-toggle-motion='instant'] .post-minimap-tick,
+.post-minimap-root[data-toggle-motion='instant'] .post-minimap-label {
+  transition: none;
+}
+
+.post-minimap-root[data-scroll-motion='instant'] .post-minimap-back-to-top {
+  transition: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .post-minimap-backdrop,
   .post-minimap,
@@ -4161,11 +5077,16 @@ html[data-locale='en'] [data-en-block] {
   margin-bottom: 0.75rem;
 }
 
+/* tiles sit on the register's 2px corner, matching the loading shell */
+.photo-frame {
+  border-radius: 2px;
+}
+
 .photo-masonry-placeholder {
   display: block;
   width: 100%;
   min-height: 7rem;
-  border-radius: 0.375rem;
+  border-radius: 2px;
   background: color-mix(in oklab, var(--foreground) 7%, var(--background));
   box-shadow: 0 0 0 1px var(--border);
 }
@@ -4184,6 +5105,44 @@ html[data-locale='en'] [data-en-block] {
 @media (max-width: 39.999rem) {
   .zoom-overlay-details {
     bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* The caption sheet follows the print: items spring in one by one once the
+   photo is up, and slip away just ahead of its return flight. The base
+   state doubles as the exit — a quick swift drop with a mild stagger that
+   finishes inside the image's 300ms close. */
+.zoom-detail-item {
+  opacity: 0;
+  transform: translateY(10px) scale(0.97);
+  transition:
+    opacity 150ms ease calc(var(--detail-index, 0) * 15ms),
+    transform 150ms var(--ease-swift) calc(var(--detail-index, 0) * 15ms);
+}
+
+.zoom-detail-frame {
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.zoom-overlay[data-state='open'] .zoom-detail-item {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 200ms ease calc(120ms + var(--detail-index, 0) * 45ms),
+    transform 350ms var(--ease-spring) calc(120ms + var(--detail-index, 0) * 45ms);
+}
+
+.zoom-overlay[data-state='open'] .zoom-detail-frame {
+  opacity: 1;
+  transition: opacity 200ms ease 120ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zoom-detail-item,
+  .zoom-detail-frame {
+    transform: none;
+    transition: none;
   }
 }
 
@@ -4357,14 +5316,19 @@ html[data-locale='en'] [data-en-block] {
   gap: 0.125rem;
 }
 
+/* the readout is a small spec plate: stamped label above a mono value */
 .footer-time-readout > span {
   color: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
-  font-size: 0.875rem;
-  letter-spacing: -0.011em;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
 }
 
 .footer-time-readout time {
   color: color-mix(in oklab, var(--muted-foreground) 90%, transparent);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
 }
 
 .footer-time-readout time {

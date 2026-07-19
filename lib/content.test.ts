@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { getAllPosts, isPostSlug } from './content'
+import { getAllPosts, getRelatedPosts, isPostSlug } from './content'
 
 describe('post slug allowlist', () => {
   it('accepts published slugs and rejects unknown or traversal-shaped values', () => {
@@ -8,6 +8,25 @@ describe('post slug allowlist', () => {
 
     expect(isPostSlug('not-a-published-post')).toBe(false)
     expect(isPostSlug('../newsletters')).toBe(false)
+  })
+})
+
+describe('posts like this', () => {
+  it('returns up to three published posts, never the post itself, deterministically', () => {
+    for (const post of getAllPosts()) {
+      const related = getRelatedPosts(post.slug)
+
+      expect(related.length).toBeGreaterThan(0)
+      expect(related.length).toBeLessThanOrEqual(3)
+      expect(related.map((entry) => entry.slug)).not.toContain(post.slug)
+      expect(new Set(related.map((entry) => entry.slug)).size).toBe(related.length)
+      // stable ranking: the same input always yields the same list
+      expect(getRelatedPosts(post.slug).map((entry) => entry.slug)).toEqual(
+        related.map((entry) => entry.slug),
+      )
+    }
+
+    expect(getRelatedPosts('not-a-published-post')).toEqual([])
   })
 })
 

@@ -8,17 +8,21 @@ import remarkGfm from 'remark-gfm'
 
 import { BrailleDate } from '~/components/braille-date'
 import { mdxComponents } from '~/components/mdx/mdx-components'
+import { PixelCluster } from '~/components/pixel-cluster'
 import { PolaroidCover } from '~/components/polaroid-cover'
+import { PostRow } from '~/components/post-row'
 import { PostToc } from '~/components/post-toc'
 import { RevealScope } from '~/components/reveal-scope'
 import {
   buildPostRail,
   getAllPosts,
   getPost,
+  getRelatedPosts,
   isPostSlug,
   POST_ARTICLE_START_ID,
 } from '~/lib/content'
-import { LocalDate, T } from '~/lib/i18n'
+import { SITE_TIME_ZONE } from '~/lib/date'
+import { T } from '~/lib/i18n'
 import { localeMetadata } from '~/lib/locale-metadata'
 import type { Locale } from '~/lib/locale-route'
 import rehypePrefixIds from '~/lib/rehype-prefix-ids'
@@ -90,7 +94,7 @@ function BlogPostLoadingShell({ locale }: { locale: Locale }) {
         </div>
         <div aria-hidden className="mt-10 h-24 space-y-3">
           <div className="post-loading-title h-7 w-4/5 bg-muted/60" />
-          <div className="h-3 w-32 bg-muted/45" />
+          <div className="h-[3.25rem] w-full bg-muted/45" />
         </div>
         <div aria-hidden className="mt-10 space-y-3">
           <div className="h-3 w-full bg-muted/35" />
@@ -145,11 +149,28 @@ async function CachedPostBody({
   )
 }
 
+// Plate values are stamped, not written: locale-neutral tabular digits
+const plateDateFormat = new Intl.DateTimeFormat('en-CA', {
+  timeZone: SITE_TIME_ZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+})
+
 export async function BlogPostPageView({ slug, locale }: { slug: string; locale: Locale }) {
   const post = getPost(requirePostSlug(slug))
   const rail = buildPostRail(post.title, post.body)
   const railEn = buildPostRail(post.titleEn, post.bodyEn, 'en-')
   const english = locale === 'en'
+
+  // edition number: chronological, so the first post is 001 forever
+  const posts = getAllPosts()
+  const postIndex = posts.findIndex((entry) => entry.slug === post.slug)
+  const edition = String(posts.length - postIndex).padStart(3, '0')
+  const plateDate = plateDateFormat.format(post.publishedAt).replaceAll('-', '.')
+  const related = getRelatedPosts(post.slug)
+  // stamp variant derives from the slug: stable per post, varied across them
+  const clusterVariant = [...post.slug].reduce((sum, ch) => sum + ch.charCodeAt(0), 0)
 
   return (
     <>
@@ -169,28 +190,84 @@ export async function BlogPostPageView({ slug, locale }: { slug: string; locale:
             />
           )}
           <div className="post-title-card">
-            <h1
-              id={POST_ARTICLE_START_ID}
-              className="mt-10 text-2xl font-semibold tracking-tight text-balance"
-              style={{ viewTransitionName: postViewTransitionName('title', post.slug) } as React.CSSProperties}
-            >
-              <T zh={post.title} en={post.titleEn} />
-            </h1>
-            <p className="post-title-meta mt-3 text-sm text-muted-foreground tabular-nums">
-              <time dateTime={post.publishedAt.toISOString()}>
-                <LocalDate date={post.publishedAt} />
-              </time>
-              <span aria-hidden> · </span>
-              <T
-                zh={`${post.readingMinutes} 分钟阅读`}
-                en={`${post.readingMinutesEn} min read`}
-              />
-            </p>
+            <div className="mt-10 flex items-start justify-between gap-4">
+              <h1
+                id={POST_ARTICLE_START_ID}
+                className="text-2xl font-semibold tracking-tight text-balance"
+                style={{ viewTransitionName: postViewTransitionName('title', post.slug) } as React.CSSProperties}
+              >
+                <T zh={post.title} en={post.titleEn} />
+              </h1>
+              <PixelCluster variant={clusterVariant} className="mt-1.5 shrink-0" />
+            </div>
+            <dl className="post-title-meta spec-plate">
+              <div>
+                <dt>
+                  <T zh="编号" en="No." />
+                </dt>
+                <dd>
+                  <span className="spec-signal" aria-hidden />
+                  {edition}
+                </dd>
+              </div>
+              <div>
+                <dt>
+                  <T zh="日期" en="Date" />
+                </dt>
+                <dd>
+                  <time dateTime={post.publishedAt.toISOString()}>{plateDate}</time>
+                </dd>
+              </div>
+              <div>
+                <dt>
+                  <T zh="时长" en="Length" />
+                </dt>
+                <dd>
+                  <T
+                    zh={`${post.readingMinutes} 分钟`}
+                    en={`${post.readingMinutesEn} min`}
+                  />
+                </dd>
+              </div>
+              <div>
+                <dt>
+                  <T zh="字数" en="Words" />
+                </dt>
+                <dd>
+                  <T
+                    zh={post.bodyUnits.toLocaleString('en-US')}
+                    en={post.bodyUnitsEn.toLocaleString('en-US')}
+                  />
+                </dd>
+              </div>
+            </dl>
           </div>
         </header>
         <RevealScope lang={english ? 'en' : 'zh-CN'} className="post-body-stage prose enter mt-10">
           <CachedPostBody slug={post.slug} locale={locale} />
         </RevealScope>
+        {related.length > 0 && (
+          <aside
+            className="post-related hairline-top"
+            aria-labelledby="post-related-heading"
+          >
+            <h2 id="post-related-heading" className="post-related-label">
+              <T zh="相关阅读" en="Posts like this" />
+            </h2>
+            <ul className="focus-list mt-3 flex flex-col">
+              {related.map((entry) => (
+                <li key={entry.slug}>
+                  <PostRow
+                    post={entry}
+                    headingLevel="h3"
+                    dateStyle="short"
+                    locale={locale}
+                  />
+                </li>
+              ))}
+            </ul>
+          </aside>
+        )}
       </article>
     </>
   )

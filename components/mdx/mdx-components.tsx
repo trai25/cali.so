@@ -22,7 +22,6 @@ function PostImage({ slug, src, alt, title }: { slug: string; src: string; alt?:
       alt={alt ?? ''}
       width={+width}
       height={+height}
-      className="rounded-lg"
       sizes="(max-width: 704px) 100vw, 656px"
       style={{ '--img-tilt': `${tilt.toFixed(2)}deg` } as React.CSSProperties}
     />
