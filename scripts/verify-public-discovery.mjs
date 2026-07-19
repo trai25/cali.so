@@ -98,16 +98,16 @@ const publicPages = [
     {
       title: '一对一',
       description:
-        '从 product design、工程、职业到独立开发、出海与 AI 工作流，用一小时聊清楚怎么判断、怎么取舍、下一步做什么。',
+        '从 product design、工程、职业到独立开发、创业、出海、英语学习与 AI 工作流，用一小时聊清楚怎么判断、怎么取舍、下一步做什么。',
     },
     {
       title: 'AMA',
       description:
-        'One hour to get clear on product design, engineering, career, indie development, going global, or AI workflows.',
+        'One hour to get clear on product design, engineering, career, indie development, startups, going global, or AI workflows.',
     },
     {
-      zh: '一对一 · Cali Castle。从 product design、工程、职业到独立开发、出海与 AI 工作流，用一小时聊清楚怎么判断、怎么取舍、下一步做什么。',
-      en: 'AMA · Cali Castle. One hour to get clear on product design, engineering, career, indie development, going global, or AI workflows.',
+      zh: '一对一 · Cali Castle。从 product design、工程、职业到独立开发、创业、出海、英语学习与 AI 工作流，用一小时聊清楚怎么判断、怎么取舍、下一步做什么。',
+      en: 'AMA · Cali Castle. One hour to get clear on product design, engineering, career, indie development, startups, going global, or AI workflows.',
     },
   ),
 ]
