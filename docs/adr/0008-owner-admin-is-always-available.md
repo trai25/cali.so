@@ -3,7 +3,8 @@
 ## Status
 
 Accepted. This supersedes the admin launch-disable portions of ADR-0003 and
-ADR-0004.
+ADR-0004. ADR-0011 supersedes this ADR's independent capability-switch
+requirement.
 
 The owner must be able to curate photos and manage AMA operations in every
 deployed environment, so `/admin` and its authentication endpoints have no

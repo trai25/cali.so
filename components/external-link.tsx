@@ -2,10 +2,9 @@
 
 import { useState } from 'react'
 
-import { PreviewCard } from '@base-ui/react/preview-card'
-
 import { ExternalLabel } from '~/components/external-mark'
 import { classifyFaviconTone } from '~/components/favicon-tone'
+import { SitePreviewCard } from '~/components/preview-card-timing'
 import { ogImageUrl, type LinkPreview } from '~/lib/link-previews'
 import { useLocale } from '~/lib/locale-client'
 
@@ -80,50 +79,44 @@ export function ExternalLink({
   }
 
   return (
-    <PreviewCard.Root>
-      {/* Base UI's trigger renders the <a> itself; delays live here, not on
-          the root (Base UI defaults are 600/300 — far too slow for prose) */}
-      <PreviewCard.Trigger
-        href={href}
-        target="_blank"
-        rel="noreferrer"
-        className="external-link"
-        delay={300}
-        closeDelay={100}
-      >
-        {icon}
-        <ExternalLabel>{children}</ExternalLabel>
-      </PreviewCard.Trigger>
-      <PreviewCard.Portal>
-        <PreviewCard.Positioner sideOffset={8} collisionPadding={16} className="pointer-events-none z-[var(--z-card)]">
-          <PreviewCard.Popup className={`link-card${image ? ' link-card-with-image' : ''}`}>
-            {image && (
-              <span className="link-card-image-frame" aria-hidden>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  className="link-card-image"
-                  src={image}
-                  alt=""
-                  width={236}
-                  height={133}
-                  loading="eager"
-                  onError={() => setImageFailed(true)}
-                />
-              </span>
-            )}
-            <span className="link-card-site">
-              <Favicon src={favicon} size={16} />
-              {domain}
+    <SitePreviewCard
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      triggerClassName="external-link"
+      closeDelay={100}
+      popupClassName={`link-card${image ? ' link-card-with-image' : ''}`}
+      popup={
+        <>
+          {image && (
+            <span className="link-card-image-frame" aria-hidden>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                className="link-card-image"
+                src={image}
+                alt=""
+                width={236}
+                height={133}
+                loading="eager"
+                onError={() => setImageFailed(true)}
+              />
             </span>
-            <span className="link-card-title">{title}</span>
-            {/* the image already says what the page is — description text
-                only earns its rows on image-less cards */}
-            {!image && description && (
-              <span className="link-card-description">{description}</span>
-            )}
-          </PreviewCard.Popup>
-        </PreviewCard.Positioner>
-      </PreviewCard.Portal>
-    </PreviewCard.Root>
+          )}
+          <span className="link-card-site">
+            <Favicon src={favicon} size={16} />
+            {domain}
+          </span>
+          <span className="link-card-title">{title}</span>
+          {/* the image already says what the page is — description text
+              only earns its rows on image-less cards */}
+          {!image && description && (
+            <span className="link-card-description">{description}</span>
+          )}
+        </>
+      }
+    >
+      {icon}
+      <ExternalLabel>{children}</ExternalLabel>
+    </SitePreviewCard>
   )
 }

@@ -2543,20 +2543,6 @@ a:focus-visible .external-label .external-mark {
   user-select: none;
 }
 
-@keyframes link-card-in {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-}
-
-@keyframes link-card-out {
-  to {
-    opacity: 0;
-    transform: scale(0.97);
-  }
-}
-
 .link-card {
   /* informational only: never selectable, never a pointer target */
   pointer-events: none;
@@ -2574,6 +2560,11 @@ a:focus-visible .external-label .external-mark {
   transform-origin: var(--transform-origin);
   backface-visibility: hidden;
   z-index: var(--z-card);
+  opacity: 1;
+  transform: scale(1);
+  transition:
+    opacity 200ms var(--ease-swift),
+    transform 200ms var(--ease-swift);
 }
 
 /* Image-enabled preview cards: height comes from the content (the 16:9
@@ -2650,12 +2641,23 @@ a:focus-visible .external-label .external-mark {
   box-shadow: none;
 }
 
-.link-card[data-open] {
-  animation: link-card-in 200ms var(--ease-swift);
+.link-card[data-starting-style] {
+  opacity: 0;
+  transform: scale(0.95);
 }
 
 .link-card[data-ending-style] {
-  animation: link-card-out 130ms var(--ease-swift);
+  opacity: 0;
+  transform: scale(0.97);
+  transition-duration: 130ms;
+}
+
+.link-card.preview-card-instant,
+.link-card.preview-card-instant[data-starting-style],
+.link-card.preview-card-instant[data-ending-style] {
+  opacity: 1;
+  transform: none;
+  transition: none;
 }
 
 /* the domain is machine text: mono, one step down */
@@ -2692,14 +2694,6 @@ a:focus-visible .external-label .external-mark {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .link-card[data-open],
-  .link-card[data-ending-style],
-  .service-card[data-open] {
-    animation: none;
-  }
 }
 
 /* ── Halftone portrait (components/halftone-portrait.tsx) ─────────── */
@@ -3887,23 +3881,18 @@ a:focus-visible .external-label .external-mark {
   gap: 0.5rem;
 }
 
-/* Service cards are UI chrome: quick and decisive, without overshoot. */
-.service-card[data-open] {
-  animation: service-pop 200ms var(--ease-swift);
+.service-card[data-starting-style] {
+  transform: scale(0.92) translateY(4px);
 }
 
-/* this rule sits after the reduced-motion block above, so it needs its
-   own guard — source order would otherwise resurrect the animation */
 @media (prefers-reduced-motion: reduce) {
-  .service-card[data-open] {
-    animation: none;
-  }
-}
-
-@keyframes service-pop {
-  from {
-    opacity: 0;
-    transform: scale(0.92) translateY(4px);
+  .link-card,
+  .link-card[data-starting-style],
+  .link-card[data-ending-style],
+  .service-card[data-starting-style] {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }
 
@@ -4041,6 +4030,10 @@ a:focus-visible .external-label .external-mark {
   background: color-mix(in oklab, var(--foreground) 7%, transparent);
   animation: contrib-cell-in 480ms var(--ease-swift) backwards;
   animation-delay: calc(var(--ci, 0) * 2ms);
+}
+
+.link-card.preview-card-instant .contrib-grid i {
+  animation: none;
 }
 
 .contrib-grid i[data-level='1'] {
@@ -4833,6 +4826,21 @@ html[data-locale='en'] [data-en-block] {
   .post-minimap-node > a::after {
     inset-block: -1.34375rem;
   }
+}
+
+.post-minimap-root[data-toggle-motion='instant'] .post-minimap-backdrop,
+.post-minimap-root[data-toggle-motion='instant'] .post-minimap,
+.post-minimap-root[data-toggle-motion='instant'] .post-minimap-toggle-panel,
+.post-minimap-root[data-toggle-motion='instant'] .post-minimap-toggle-chevron,
+.post-minimap-root[data-toggle-motion='instant'] .post-minimap-island-chevron,
+.post-minimap-root[data-toggle-motion='instant'] .post-minimap-node > a,
+.post-minimap-root[data-toggle-motion='instant'] .post-minimap-tick,
+.post-minimap-root[data-toggle-motion='instant'] .post-minimap-label {
+  transition: none;
+}
+
+.post-minimap-root[data-scroll-motion='instant'] .post-minimap-back-to-top {
+  transition: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

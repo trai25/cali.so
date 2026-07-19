@@ -5,6 +5,10 @@ import { pathToFileURL } from 'node:url'
 
 const reviewedMigrationDigests = new Map([
   [
+    'db/migrations/0000_shallow_iron_fist.sql',
+    '932eb3131df58e17e75e89bf5b0754e5d6766bdd933d3fe3ef8e66223e6cd34a',
+  ],
+  [
     'db/migrations/0001_ama_owner_auth.sql',
     '839932b28e9c4bf079a03b911f93a17ee52ca9360989d57f5b9bb19dfe07885b',
   ],

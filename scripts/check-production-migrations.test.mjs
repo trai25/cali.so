@@ -197,6 +197,18 @@ test('admits exact reviewed migration baselines without weakening future checks'
   )
 })
 
+test('preserves the applied legacy migration byte-for-byte', async () => {
+  const path = 'db/migrations/0000_shallow_iron_fist.sql'
+  const sql = await readFile(path, 'utf8')
+
+  assert.deepEqual(productionMigrationFindings(path, sql), [])
+  assert.throws(
+    () =>
+      productionMigrationFindings(path, `${sql}\n-- changed after review\n`),
+    /immutable/,
+  )
+})
+
 test('checks every migration still present, not only files in the latest push', () => {
   assert.deepEqual(
     migrationPathsInRepository([
