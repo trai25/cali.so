@@ -1,6 +1,10 @@
 import { expect, test } from '@playwright/test'
 
-import { prepareBrowserPage, watchBrowserErrors } from './support'
+import {
+  gotoBrowserArticleFixture,
+  prepareBrowserPage,
+  watchBrowserErrors,
+} from './support'
 
 async function runningAnimationCount(pageOrLocator: {
   evaluate<Result>(callback: () => Result): Promise<Result>
@@ -40,7 +44,7 @@ test('keyboard lightbox opens and closes immediately with focus restoration', as
 }) => {
   await prepareBrowserPage(page)
   const browserErrors = watchBrowserErrors(page)
-  await page.goto('/en/blog/how-to-protect-your-site-with-upstash')
+  await gotoBrowserArticleFixture(page)
   await expect(page.getByRole('button', { name: 'Preferences' })).toBeEnabled()
 
   const trigger = page.locator('.zoom-trigger:visible').first()
@@ -69,7 +73,7 @@ test('keyboard lightbox opens and closes immediately with focus restoration', as
 test('keyboard article-map toggles settle without transition motion', async ({ page }) => {
   await prepareBrowserPage(page)
   const browserErrors = watchBrowserErrors(page)
-  await page.goto('/en/blog/how-to-protect-your-site-with-upstash')
+  await gotoBrowserArticleFixture(page)
   await expect(page.getByRole('button', { name: 'Preferences' })).toBeEnabled()
 
   const root = page.locator('.post-minimap-root')

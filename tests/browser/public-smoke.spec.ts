@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import {
+  browserArticleFixture,
   expectHealthyPublicDocument,
   prepareBrowserPage,
   watchBrowserErrors,
@@ -49,7 +50,7 @@ const profiles = [
   },
   {
     name: 'English article on desktop',
-    path: '/en/blog/how-to-protect-your-site-with-upstash',
+    path: browserArticleFixture.path,
     lang: 'en' as const,
     viewport: { width: 1440, height: 900 },
     colorScheme: 'light' as const,

@@ -1,5 +1,10 @@
 import { expect, type Page } from '@playwright/test'
 
+export const browserArticleFixture = {
+  description: 'English article with a zoomable image and article map',
+  path: '/en/blog/how-to-protect-your-site-with-upstash',
+} as const
+
 export async function prepareBrowserPage(page: Page) {
   if (process.env.PLAYWRIGHT_BASE_URL) return
 
@@ -19,7 +24,7 @@ export function watchBrowserErrors(page: Page) {
     const text = message.text()
     const isBlockedVercelFeedbackToolbar =
       Boolean(process.env.PLAYWRIGHT_BASE_URL) &&
-      text.includes('https://vercel.live/_next-live/feedback/feedback.js') &&
+      text.includes('vercel.live') &&
       text.includes('Content Security Policy')
 
     // Vercel injects its Preview feedback toolbar outside the application.
@@ -31,6 +36,16 @@ export function watchBrowserErrors(page: Page) {
   return errors
 }
 
+export async function gotoBrowserArticleFixture(page: Page) {
+  const response = await page.goto(browserArticleFixture.path)
+
+  expect(
+    response?.status(),
+    `Browser fixture is missing: ${browserArticleFixture.description} at ${browserArticleFixture.path}`,
+  ).toBe(200)
+  await expect(page.locator('article h1')).toBeVisible()
+}
+
 export async function expectHealthyPublicDocument(
   page: Page,
   path: string,
@@ -38,7 +53,7 @@ export async function expectHealthyPublicDocument(
 ) {
   const response = await page.goto(path)
 
-  expect(response?.status()).toBe(200)
+  expect(response?.status(), `Browser test route must return 200: ${path}`).toBe(200)
   await expect(page.locator('html')).toHaveAttribute('lang', lang)
   await expect(page.locator('main h1')).toBeVisible()
   await expect(page.locator('nav.dock button:not([disabled])')).toHaveCount(1)
