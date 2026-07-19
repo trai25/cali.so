@@ -1518,7 +1518,7 @@
   flex-direction: column;
   gap: 0.0625rem;
   color: color-mix(in oklab, var(--muted-foreground) 90%, transparent);
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -5338,14 +5338,14 @@ html[data-locale='en'] [data-en-block] {
 .footer-time-readout > span {
   color: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
   font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   letter-spacing: 0.08em;
 }
 
 .footer-time-readout time {
   color: color-mix(in oklab, var(--muted-foreground) 90%, transparent);
   font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   letter-spacing: 0.02em;
 }
 
