@@ -160,8 +160,8 @@ export function AmaPageView() {
         </div>
         <p className="page-introduction mt-4">
           <T
-            zh="我是 Cali，佐玩（Zolplay）的创始人。Web、iOS、product design 和独立产品都亲手做过。现在大部分工作跑在自己搭的 software factory 里，Linear、Codex、Claude Code、Slack 和 Cursor 串在一起，从想法一路做到 ship。你想聊具体 workflow，还是产品方向、职业、独立开发或出海，都可以。中文、英文，混着聊也行。"
-            en="I’m Cali, founder of Zolplay. I’ve built across web, iOS, product design, and my own products. These days, most of that work runs through a software factory I built around Linear, Codex, Claude Code, Slack, and Cursor, from the first idea through shipping. We can get specific about a workflow, a product decision, a career move, an indie project, or something you’re trying to take global. We can talk in English, Chinese, or both."
+            zh="我是 Cali，佐玩（Zolplay）的创始人。Web、iOS、product design 和独立产品都亲手做过。现在大部分工作跑在自己搭的 software factory 里，Linear、Codex、Claude Code、Slack 和 Cursor 串在一起，从想法一路做到 ship。你想聊具体 workflow，还是产品方向、创业、职业、独立开发、出海，或者英语学习，都可以。中文、英文，混着聊也行。"
+            en="I’m Cali, founder of Zolplay. I’ve built across web, iOS, product design, and my own products. These days, most of that work runs through a software factory I built around Linear, Codex, Claude Code, Slack, and Cursor, from the first idea through shipping. We can get specific about a workflow, a product decision, a startup, a career move, an indie project, or something you’re trying to take global. We can talk in English, Chinese, or both."
           />
         </p>
       </section>
