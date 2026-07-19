@@ -29,6 +29,10 @@ describe('AmaPageView', () => {
     expect(screen.getByText('一对一')).toBeTruthy()
     expect(screen.getByText('AMA')).toBeTruthy()
     expect(screen.getByText(/我们缺的往往不是更多建议/)).toBeTruthy()
+    expect(screen.getByText(/不妨来试试/)).toBeTruthy()
+    expect(container.textContent).not.toContain(
+      '这个 AMA，就是留出一小时，把这些事聊清楚。',
+    )
     expect(screen.getByText(/more advice usually isn’t the answer/)).toBeTruthy()
 
     // Price and duration read straight off the spec sheet.

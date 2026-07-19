@@ -190,7 +190,7 @@ export function AmaPageView() {
               style={{ '--enter-delay': '70ms' } as React.CSSProperties}
             >
               <T
-                zh="这些年做产品设计、工程、独立开发，也折腾创业、出海和 AI 工作流，我越来越觉得，我们缺的往往不是更多建议，而是一个能把事情看清楚的角度。看起来完全不同的问题，最后其实都绕不开三件事：怎么判断，怎么取舍，下一步先做什么。这个 AMA，就是留出一小时，把这些事聊清楚。"
+                zh="这些年做产品设计、工程、独立开发，也折腾创业、出海和 AI 工作流，我越来越觉得，我们缺的往往不是更多建议，而是一个能把事情看清楚的角度。看起来完全不同的问题，最后其实都绕不开三件事：怎么判断，怎么取舍，下一步先做什么。如果你也正好在想这些事，不妨来试试，说不定聊着聊着，下一步就清楚了。"
                 en="After years in product design, engineering, indie development, startups, going global, and now AI workflows, I’ve learned that more advice usually isn’t the answer. What helps is a clearer way to see the situation. Different problems tend to come back to the same three questions: what matters, what are the tradeoffs, and what should happen next. This AMA gives us an hour to get clear on them."
               />
             </p>
