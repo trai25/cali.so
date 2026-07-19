@@ -31,6 +31,7 @@ test('extracts visible document text without regex-based HTML filtering', () => 
     <script >manifest-secret</script >
     <style>.manifest-secret { color: red }</style>
     <template>manifest-secret</template>
+    <noscript>manifest-secret</noscript>
   `
 
   assert.match(visibleDocumentText(html), /Confirmation retired/)

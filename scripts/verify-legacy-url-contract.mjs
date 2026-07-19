@@ -68,7 +68,7 @@ export function visibleDocumentText(html) {
 
   try {
     const document = dom.window.document
-    for (const element of document.querySelectorAll('script, style, template')) {
+    for (const element of document.querySelectorAll('script, style, template, noscript')) {
       element.remove()
     }
     return document.body?.textContent ?? ''

@@ -14,11 +14,13 @@ function renderInlineCode(text) {
 }
 
 function renderSpan(span, markDefs) {
+  const marks = span.marks ?? []
+  if (marks.includes('code')) return renderInlineCode(span.text)
+
   let text = escapeText(span.text)
-  for (const mark of span.marks ?? []) {
+  for (const mark of marks) {
     if (mark === 'strong') text = `**${text}**`
     else if (mark === 'em') text = `*${text}*`
-    else if (mark === 'code') text = renderInlineCode(span.text)
     else {
       const def = markDefs?.find((candidate) => candidate._key === mark)
       if (def?._type === 'link') text = `[${text}](${def.href})`

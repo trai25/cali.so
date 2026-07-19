@@ -80,6 +80,20 @@ test('escapes MDX backslashes and chooses safe inline-code delimiters', () => {
   )
 })
 
+test('treats code as a literal mark regardless of mark order', () => {
+  const block = {
+    _type: 'block',
+    style: 'normal',
+    children: [
+      span('literal', ['strong', 'code']),
+      span(' '),
+      span('literal', ['code', 'strong']),
+    ],
+  }
+
+  assert.equal(renderTextBlockGroup(block), '`literal` `literal`')
+})
+
 test('converts a complete Portable Text body without flattening list groups', async () => {
   const body = [
     { _type: 'block', style: 'normal', children: [span('Before')] },
