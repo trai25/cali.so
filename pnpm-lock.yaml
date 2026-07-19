@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  typegpu@0.11.9:
+    hash: 73830f6db95f6bf18e659e522e37e95c9af1b512af37cac7cc1171e5aeb456c2
+    path: patches/typegpu@0.11.9.patch
+
 importers:
 
   .:
@@ -7714,7 +7719,7 @@ snapshots:
 
   shaders@3.0.440(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
     dependencies:
-      typegpu: 0.11.9
+      typegpu: 0.11.9(patch_hash=73830f6db95f6bf18e659e522e37e95c9af1b512af37cac7cc1171e5aeb456c2)
     optionalDependencies:
       react: 19.2.7
       react-dom: 19.2.7(react@19.2.7)
@@ -7968,7 +7973,7 @@ snapshots:
 
   typed-binary@4.3.3: {}
 
-  typegpu@0.11.9:
+  typegpu@0.11.9(patch_hash=73830f6db95f6bf18e659e522e37e95c9af1b512af37cac7cc1171e5aeb456c2):
     dependencies:
       tinyest: 0.3.2
       tsover-runtime: 0.0.7
