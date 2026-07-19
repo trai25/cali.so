@@ -1,12 +1,17 @@
 'use client'
 
 import Image from 'next/image'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
 
 import { localize, useLocale } from '~/lib/locale-client'
 
 const VIEWPORT_PAD = 32
+type CloseReason = 'escape' | 'overlay' | 'viewport'
+
+function prefersReducedMotion() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+}
 
 interface ZoomImageProps {
   src: string
@@ -50,7 +55,7 @@ export function ZoomImage({
     stateRef.current = state
   }, [state])
 
-  const open = useCallback(() => {
+  const open = useCallback((event: MouseEvent<HTMLButtonElement>) => {
     const img = triggerRef.current?.querySelector('img')
     if (!img) return
     const rect = img.getBoundingClientRect()
@@ -85,7 +90,8 @@ export function ZoomImage({
       target,
       from: `translate(${tx}px, ${ty}px) scale(${s})`,
     })
-    setState('opening')
+    const reduced = prefersReducedMotion()
+    setState(event.detail === 0 || reduced ? 'open' : 'opening')
   }, [src, width, height, expandedContent])
 
   const unmount = useCallback(() => {
@@ -94,11 +100,11 @@ export function ZoomImage({
     triggerRef.current?.focus({ preventScroll: true })
   }, [])
 
-  const close = useCallback(() => {
+  const close = useCallback((reason: CloseReason) => {
     // Nothing to reverse if the enter transition never started, and
     // reduced motion never fires transitionend — unmount directly.
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (reduced || stateRef.current === 'opening') {
+    const reduced = prefersReducedMotion()
+    if (reason === 'escape' || reduced || stateRef.current === 'opening') {
       unmount()
       return
     }
@@ -138,7 +144,10 @@ export function ZoomImage({
   useEffect(() => {
     if (!zoom) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close()
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        close('escape')
+      }
       // image-only dialog: the overlay is the sole focusable — keep Tab inside
       if (e.key === 'Tab') e.preventDefault()
     }
@@ -147,22 +156,22 @@ export function ZoomImage({
     // flight), so the FLIP landing spot stays honest.
     const onGesture = (e: Event) => {
       e.preventDefault()
-      close()
+      close('viewport')
     }
     // Scrolls that bypass wheel/touch (keyboard, scrollbar drag) still close;
     // close() re-measures the landing spot, so the flight stays correct.
-    const onScroll = () => close()
+    const onViewportChange = () => close('viewport')
     window.addEventListener('keydown', onKey)
     window.addEventListener('wheel', onGesture, { passive: false })
     window.addEventListener('touchmove', onGesture, { passive: false })
-    window.addEventListener('scroll', onScroll)
-    window.addEventListener('resize', onScroll)
+    window.addEventListener('scroll', onViewportChange)
+    window.addEventListener('resize', onViewportChange)
     return () => {
       window.removeEventListener('keydown', onKey)
       window.removeEventListener('wheel', onGesture)
       window.removeEventListener('touchmove', onGesture)
-      window.removeEventListener('scroll', onScroll)
-      window.removeEventListener('resize', onScroll)
+      window.removeEventListener('scroll', onViewportChange)
+      window.removeEventListener('resize', onViewportChange)
     }
   }, [zoom, close])
 
@@ -222,7 +231,7 @@ export function ZoomImage({
             role="dialog"
             aria-modal="true"
             aria-label={alt || localize(locale, '图片', 'Image')}
-            onClick={close}
+            onClick={() => close('overlay')}
           >
             <div className="zoom-overlay-backdrop" />
             {/* eslint-disable-next-line @next/next/no-img-element */}

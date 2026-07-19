@@ -1,9 +1,9 @@
 'use client'
 
-import { PreviewCard } from '@base-ui/react/preview-card'
 import Image from 'next/image'
 
 import { ExternalLabel } from '~/components/external-mark'
+import { SitePreviewCard } from '~/components/preview-card-timing'
 import { T } from '~/lib/i18n'
 
 export interface SocialSnapshot {
@@ -75,25 +75,18 @@ function Card({
   triggerClassName?: string
 }) {
   return (
-    <PreviewCard.Root>
-      {/* Base UI's trigger renders the <a> itself; delays live on the
-          trigger (defaults 600/300 are too sleepy for chrome links) */}
-      <PreviewCard.Trigger
-        href={href}
-        target="_blank"
-        rel="noreferrer"
-        className={triggerClassName}
-        delay={300}
-        closeDelay={120}
-      >
-        <ExternalLabel>{trigger}</ExternalLabel>
-      </PreviewCard.Trigger>
-      <PreviewCard.Portal>
-        <PreviewCard.Positioner side="top" sideOffset={8} collisionPadding={16} className="pointer-events-none z-[var(--z-card)]">
-          <PreviewCard.Popup className={className}>{children}</PreviewCard.Popup>
-        </PreviewCard.Positioner>
-      </PreviewCard.Portal>
-    </PreviewCard.Root>
+    <SitePreviewCard
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      triggerClassName={triggerClassName}
+      closeDelay={120}
+      popupClassName={className}
+      popup={children}
+      side="top"
+    >
+      <ExternalLabel>{trigger}</ExternalLabel>
+    </SitePreviewCard>
   )
 }
 
@@ -356,45 +349,40 @@ export function EmailCard({
   triggerClassName?: string
 }) {
   return (
-    <PreviewCard.Root>
-      <PreviewCard.Trigger
-        href={`mailto:${address}`}
-        className={triggerClassName}
-        delay={300}
-        closeDelay={120}
-      >
-        {trigger}
-      </PreviewCard.Trigger>
-      <PreviewCard.Portal>
-        <PreviewCard.Positioner side="top" sideOffset={8} collisionPadding={16} className="pointer-events-none z-[var(--z-card)]">
-          <PreviewCard.Popup className="link-card email-envelope-card">
-            <span className="email-envelope" aria-hidden>
-              <span className="email-envelope-flap" />
-              <span className="email-envelope-return">
-                <span>FROM</span>
-                CALI CASTLE
-                <br />
-                TAIPEI
-              </span>
-              <span className="email-envelope-stamps">
-                <span className="email-envelope-stamp email-envelope-stamp-portrait">
-                  <Image src="/images/avatar.png" alt="" width={32} height={32} />
-                  <span>CALI · 20</span>
-                </span>
-                <span className="email-envelope-stamp email-envelope-stamp-mark">
-                  <span className="email-envelope-stamp-star">✦</span>
-                  <span>POST · 26</span>
-                </span>
-              </span>
-              <span className="email-envelope-postmark" />
-              <span className="email-envelope-address">
-                <span><T zh="收" en="TO" /></span>
-                {address}
-              </span>
+    <SitePreviewCard
+      href={`mailto:${address}`}
+      triggerClassName={triggerClassName}
+      closeDelay={120}
+      popupClassName="link-card email-envelope-card"
+      side="top"
+      popup={
+        <span className="email-envelope" aria-hidden>
+          <span className="email-envelope-flap" />
+          <span className="email-envelope-return">
+            <span>FROM</span>
+            CALI CASTLE
+            <br />
+            TAIPEI
+          </span>
+          <span className="email-envelope-stamps">
+            <span className="email-envelope-stamp email-envelope-stamp-portrait">
+              <Image src="/images/avatar.png" alt="" width={32} height={32} />
+              <span>CALI · 20</span>
             </span>
-          </PreviewCard.Popup>
-        </PreviewCard.Positioner>
-      </PreviewCard.Portal>
-    </PreviewCard.Root>
+            <span className="email-envelope-stamp email-envelope-stamp-mark">
+              <span className="email-envelope-stamp-star">✦</span>
+              <span>POST · 26</span>
+            </span>
+          </span>
+          <span className="email-envelope-postmark" />
+          <span className="email-envelope-address">
+            <span><T zh="收" en="TO" /></span>
+            {address}
+          </span>
+        </span>
+      }
+    >
+      {trigger}
+    </SitePreviewCard>
   )
 }

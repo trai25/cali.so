@@ -7,6 +7,7 @@ import { Suspense } from 'react'
 import { AmbientBackground } from '~/components/ambient-background'
 import { Dock, DockFallback } from '~/components/dock'
 import { LocaleRestorer } from '~/components/locale-restorer'
+import { PreviewCardTimingProvider } from '~/components/preview-card-timing'
 import {
   RouteMotionController,
   RouteViewTransition,
@@ -89,20 +90,22 @@ export async function SiteDocument({
       </head>
       <body className="antialiased">
         <ThemeProvider>
-          <RouteMotionController />
-          {restoreLocale && <LocaleRestorer />}
-          <AmbientBackground />
-          <div className="flex min-h-screen flex-col pb-20">
-            <main className="flex-1 pt-14">
-              {/* The non-none default isolates route content while keeping the
-                  CSS-named list → loading shell → article groups active. */}
-              <RouteViewTransition>{children}</RouteViewTransition>
-            </main>
-            <SiteFooter social={social} github={github} locale={locale} />
-          </div>
-          <Suspense fallback={<DockFallback locale={locale} />}>
-            <Dock />
-          </Suspense>
+          <PreviewCardTimingProvider>
+            <RouteMotionController />
+            {restoreLocale && <LocaleRestorer />}
+            <AmbientBackground />
+            <div className="flex min-h-screen flex-col pb-20">
+              <main className="flex-1 pt-14">
+                {/* The non-none default isolates route content while keeping the
+                    CSS-named list → loading shell → article groups active. */}
+                <RouteViewTransition>{children}</RouteViewTransition>
+              </main>
+              <SiteFooter social={social} github={github} locale={locale} />
+            </div>
+            <Suspense fallback={<DockFallback locale={locale} />}>
+              <Dock />
+            </Suspense>
+          </PreviewCardTimingProvider>
         </ThemeProvider>
         <Analytics />
       </body>

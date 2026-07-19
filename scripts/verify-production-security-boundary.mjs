@@ -48,6 +48,16 @@ function visibleText(body) {
   return document.body?.textContent ?? ''
 }
 
+function expectedMutationOrigin(baseUrl) {
+  if (process.env.SECURITY_BOUNDARY_EXPECTED_ORIGIN) {
+    return new URL(process.env.SECURITY_BOUNDARY_EXPECTED_ORIGIN).origin
+  }
+  if (process.env.SECURITY_BOUNDARY_BASE_URL) {
+    return new URL(baseUrl).origin
+  }
+  return new URL(process.env.SITE_URL ?? 'https://cali.so').origin
+}
+
 async function fetchBoundary(baseUrl, path, init, options = {}) {
   const response = await fetch(new URL(path, baseUrl), {
     redirect: 'manual',
@@ -93,11 +103,21 @@ async function verifyAdminPages(baseUrl) {
     '/admin/login',
     '/admin/photos?view=draft',
   ]) {
-    const { response } = await fetchBoundary(baseUrl, path)
+    // Clerk redirects document navigations to sign-in, but deliberately
+    // rewrites non-page requests to 404. Model the browser boundary here.
+    const { response } = await fetchBoundary(baseUrl, path, {
+      headers: {
+        accept: 'text/html',
+        'sec-fetch-dest': 'document',
+      },
+    })
     assert.equal(response.status, 307, `${path} Clerk redirect status`)
     const location = new URL(response.headers.get('location'))
     assert.equal(location.protocol, 'https:')
-    assert.match(location.pathname, /\/sign-in(?:\/|$)/)
+    assert.match(
+      location.pathname,
+      /(?:\/sign-in(?:\/|$)|\/v1\/client\/handshake$)/,
+    )
     const returnUrl = new URL(location.searchParams.get('redirect_url'))
     const requestedUrl = new URL(path, baseUrl)
     assert.equal(returnUrl.origin, requestedUrl.origin, `${path} Clerk return origin`)
@@ -111,7 +131,7 @@ async function verifyAdminPages(baseUrl) {
 
 async function verifyAdminApiSecurity(baseUrl) {
   const sameOriginHeaders = {
-    origin: 'https://cali.so',
+    origin: expectedMutationOrigin(baseUrl),
     'sec-fetch-site': 'same-origin',
   }
 
@@ -174,7 +194,7 @@ async function verifyAdminApiSecurity(baseUrl) {
 
 async function verifyProviderApiAuthentication(baseUrl) {
   const sameOriginHeaders = {
-    origin: 'https://cali.so',
+    origin: expectedMutationOrigin(baseUrl),
     'sec-fetch-site': 'same-origin',
   }
   // Google is configured in this environment, so the owner provider routes
@@ -210,7 +230,7 @@ async function verifyProviderApiAuthentication(baseUrl) {
 
 async function verifyPublicAmaApiBoundary(baseUrl) {
   const sameOriginHeaders = {
-    origin: 'https://cali.so',
+    origin: expectedMutationOrigin(baseUrl),
     'sec-fetch-site': 'same-origin',
     'content-type': 'application/json',
   }

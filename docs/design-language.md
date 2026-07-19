@@ -199,11 +199,15 @@ open rich hover cards. The contract:
   - Social card: avatar, name + verified mark, bio, follower and following stats in
     `tabular-nums`.
   - Music card: current/last track with artwork.
-- **Behavior.** ~256px fixed-width card, 300ms open intent delay (0ms when
-  moving between adjacent triggers), enter 200ms `--ease-swift` from
-  `scale(0.95)` + `opacity: 0`, `transform-origin` at the trigger,
-  `backface-visibility: hidden`. Exit faster than enter. Built on the fluid
-  hover-card primitive so pointer exit mid-animation reverses smoothly.
+- **Behavior.** ~256px fixed-width card, 300ms open intent delay. One public
+  preview surface stays warm while open and for 300ms after closing, so the
+  next eligible trigger opens at 0ms; cold intent always returns to 300ms.
+  Generic cards enter over 200ms `--ease-swift` from `scale(0.95)` +
+  `opacity: 0`; service cards preserve their tighter
+  `scale(0.92) translateY(4px)` start. Both use `transform-origin` at the
+  trigger and `backface-visibility: hidden`, with a faster exit. The shared
+  fluid hover-card surface retargets from its current frame when pointer
+  direction reverses or the active payload changes.
 - **Chrome in the print register.** The card shell is a printed label:
   the register's 2px corner, elevation from the surface ladder
   (`--surface-3`), hairline ring plus the shadow scale. Machine text goes
@@ -211,9 +215,9 @@ open rich hover cards. The contract:
   domain line at 12px — while names and bios stay in the human sans. The
   stat row is the card's ruled plate foot (hairline-top, 11px mono,
   tabular); each stat is a no-break unit, so a long locale wraps at the
-  separators instead of overflowing the fixed-width card. Per-service composition is untouched, and the envelope card
-  stays exempt: it is already a physical object. Fixed-height cards size
-  for the ruled foot.
+  separators instead of overflowing the fixed-width card. Per-service
+  composition is untouched, and the envelope card stays exempt: it is
+  already a physical object. Fixed-height cards size for the ruled foot.
 - **Fixed dimensions per service card type** — service-card content loads
   into a fixed-size card (skeleton first). External-link preview cards are
   instead fixed-width with content-driven height, settled at render. Either
@@ -654,13 +658,17 @@ clearance, and the map scrolls internally when its fixed rhythm exceeds the
 available height. Larger layouts remain transparent and borderless.
 
 Every toggle exposes `aria-expanded`/`aria-controls` and morphs its chevron
-between directions. Map items remain mounted inside the clipped shell and
-animate through Motion's DOM animator with a tiny center-out stagger, vertical
-develop, and two-degree swing. Avoid native view-transition snapshots here:
-they live above the island's clipping boundary. A closed map is inert and hidden
-from assistive technology. Escape closes a compact map and restores toggle
-focus. Reduced motion removes island, rail, content, tick, icon, and staggered
-item transitions.
+between directions. Map items remain mounted inside the clipped shell and use
+Motion's DOM animator for opacity, vertical develop, and a two-degree swing.
+Tablet and desktop nodes sequence from the center out. On phones, the island
+and panel enter over 280ms and exit over 260ms; nodes enter over 180ms from the
+first item and exit over 160ms from the last, spanning a 100ms stagger window.
+Phone nodes use a restrained 2px develop blur. Avoid native view-transition
+snapshots here: they live above the island's clipping boundary. A closed map is
+inert and hidden from assistive technology. Escape closes a compact map and
+restores toggle focus. Keyboard actions and reduced motion cancel and settle
+the island, panel, nodes, tick, and icon before paint. Touch keeps the same
+directional timing, and no map motion changes width, height, or layout geometry.
 
 ## Bilingual content
 

@@ -25,9 +25,10 @@ an attacker can read the implementation.
 - Give each integration a distinct credential and the narrowest scopes it
   supports. Rotate on suspected exposure and remove old credentials after a
   verified cutover.
-- Keep public mutations, payments, booking finalization, Google, and Tencent
-  behind independent server-side kill switches that fail closed. Client-only
-  flags are not controls.
+- AMA capabilities follow ADR-0011: public mutations are available by default,
+  while each provider-backed capability requires its complete
+  environment-scoped credential pair. Missing pairs fail closed and half pairs
+  fail deployment validation. Client-only flags are not controls.
 - Owner admin is always reachable and has no environment switch. Every admin
   page, data read, and mutation must enforce Clerk authentication and require
   the authoritative user record to contain the exact public metadata marker
@@ -98,17 +99,17 @@ recording their sensitive payloads.
   rotate the credential first, then remove it from current code and, where
   appropriate, rewrite history through a separately approved process.
 
-The public production CSP keeps `script-src 'unsafe-inline'` because Next.js
+The public Production CSP keeps `script-src 'unsafe-inline'` because Next.js
 static, ISR, and partial-prerendered output includes inline hydration payloads.
 A per-request nonce would disable those rendering modes. Next.js SRI is enabled
 for supported build assets, `unsafe-eval` is development-only, script
 attributes are blocked, and all other directives remain restricted. The
-dynamic `/admin` surface receives a fresh nonce CSP through `proxy.ts` and does
-not inherit the public production script exception. Its owned pre-paint
-bootstrap is limited by a tested hash, while framework scripts receive the
-request nonce. Inline styles remain allowed because shared React UI emits style
-attributes. Revisit the public script and shared style exceptions when Next.js
-and the UI can remove them without giving up static shells or functionality.
+partially prerendered `/admin` surface uses the same static script policy so its
+Instant Navigation shells remain cacheable; it has no client-side Clerk
+provider or provider-origin allowance. Inline styles remain allowed because
+shared React UI emits style attributes. Revisit the script and shared style
+exceptions when Next.js and the UI can remove them without giving up static
+shells or functionality.
 
 Configuration committed to this repository does not prove that a hosted
 setting is enabled. Track hosted verification separately in
