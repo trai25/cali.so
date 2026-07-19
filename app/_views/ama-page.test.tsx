@@ -1,12 +1,26 @@
 // @vitest-environment jsdom
 
 import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { AmaPageView } from './ama-page'
 import { AMA_TOPIC_LABELS, AMA_TOPICS } from '~/lib/ama/booking/topics'
 
-afterEach(cleanup)
+beforeEach(() => {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn(() => ({
+      matches: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })),
+  )
+})
+
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
 
 describe('AmaPageView', () => {
   it('presents the AMA Session spec sheet in both languages', () => {
@@ -23,6 +37,13 @@ describe('AmaPageView', () => {
     expect(screen.getByText('60 分钟')).toBeTruthy()
     expect(container.textContent).toContain('24 hours')
     expect(container.textContent).toContain('Next 30 days')
+
+    const introductionStage = container.querySelector(
+      '[data-ama-introduction-stage]',
+    )
+    expect(introductionStage?.textContent).toContain('A focused hour with Cali')
+    expect(introductionStage?.textContent).toContain('US$99')
+    expect(introductionStage?.textContent).not.toContain('Who you are talking to')
   })
 
   it('lists all six topics in both languages', () => {

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
+import { AmaIntroductionStage } from '~/components/ama/ama-introduction-stage'
 import { AMA_TOPIC_LABELS, AMA_TOPICS } from '~/lib/ama/booking/topics'
 import { T } from '~/lib/i18n'
 import { localeMetadata } from '~/lib/locale-metadata'
@@ -94,42 +95,44 @@ function SectionHeading({
 export function AmaPageView() {
   return (
     <div className="mx-auto w-full max-w-[37.5rem] px-6">
-      <header className="max-w-[34rem]">
-        <h1 className="enter text-sm font-medium text-muted-foreground">
-          <T zh="一对一" en="AMA" />
-        </h1>
-        <p
-          className="page-introduction enter mt-4 text-balance"
-          style={{ '--enter-delay': '70ms' } as React.CSSProperties}
-        >
-          <T
-            zh="与 Cali 的专注一小时。一场 60 分钟的一对一 AMA，你带着问题来，我们把它聊透。"
-            en="A focused hour with Cali. One 60 minute one-to-one AMA Session: you bring the questions, we work through them properly."
-          />
-        </p>
-      </header>
+      <AmaIntroductionStage>
+        <header className="max-w-[34rem]">
+          <h1 className="enter text-sm font-medium text-muted-foreground">
+            <T zh="一对一" en="AMA" />
+          </h1>
+          <p
+            className="page-introduction enter mt-4 text-balance"
+            style={{ '--enter-delay': '70ms' } as React.CSSProperties}
+          >
+            <T
+              zh="与 Cali 的专注一小时。一场 60 分钟的一对一 AMA，你带着问题来，我们把它聊透。"
+              en="A focused hour with Cali. One 60 minute one-to-one AMA Session: you bring the questions, we work through them properly."
+            />
+          </p>
+        </header>
 
-      <section
-        className="enter mt-10"
-        style={{ '--enter-delay': '120ms' } as React.CSSProperties}
-        aria-label="AMA Session"
-      >
-        <dl className="text-sm">
-          {SPEC_ROWS.map((row) => (
-            <div
-              key={row.enLabel}
-              className="hairline-top grid grid-cols-[7.5rem_minmax(0,1fr)] gap-4 py-2.5 first:border-t-0"
-            >
-              <dt className="text-muted-foreground">
-                <T zh={row.zhLabel} en={row.enLabel} />
-              </dt>
-              <dd className="tabular-nums">
-                <T zh={row.zhValue} en={row.enValue} />
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </section>
+        <section
+          className="enter mt-10"
+          style={{ '--enter-delay': '120ms' } as React.CSSProperties}
+          aria-label="AMA Session"
+        >
+          <dl className="text-sm">
+            {SPEC_ROWS.map((row) => (
+              <div
+                key={row.enLabel}
+                className="hairline-top grid grid-cols-[7.5rem_minmax(0,1fr)] gap-4 py-2.5 first:border-t-0"
+              >
+                <dt className="text-muted-foreground">
+                  <T zh={row.zhLabel} en={row.enLabel} />
+                </dt>
+                <dd className="tabular-nums">
+                  <T zh={row.zhValue} en={row.enValue} />
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      </AmaIntroductionStage>
 
       <section className="mt-12" aria-labelledby="ama-who-heading">
         <div id="ama-who-heading">

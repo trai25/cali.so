@@ -518,6 +518,22 @@ plate, touch preserves direct first-tap navigation, and reduced motion,
 unavailable WebGPU, or initialization failure stay static. The field fades
 away and unmounts only after the pointer leaves the full list.
 
+## AMA introduction
+
+The public AMA route opens with one bounded **conversation field** behind its
+introduction and session specification. Two monochrome sine traces move slowly
+toward and through one another, reading as a conversation without becoming an
+illustration or previewing the paid confirmation treatment. The field is
+visible immediately at very low contrast and has no pointer interaction.
+
+The content keeps its normal editorial alignment and contrast while the field
+fades softly at its edges instead of becoming a card. A matching static pair
+of traces is present in the server-rendered page and fades out once the live
+canvas is ready, so the pair is replaced rather than doubled. The live canvas
+mounts only after WebGPU preflight, unmounts when the bounded field leaves the
+viewport, and returns when it re-enters. Reduced motion, unavailable WebGPU,
+or shader initialization failure retain only the static traces.
+
 ## AMA confirmation
 
 The public confirmation route reserves its full celebration for a server-proven
