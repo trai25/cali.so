@@ -39,9 +39,11 @@ Neon project.
    must never be stored in the Preview or Staging GitHub environments.
 4. Keep the Vercel custom environment named `staging`. Set `SITE_URL` to its
    stable custom alias (`https://beta.cali.so`) so browser mutation
-   checks match the URL maintainers use. Copy only approved non-production
-   application settings into it; database URLs are supplied per deployment by
-   GitHub Actions.
+   checks match the URL maintainers use. Public discovery uses the independent
+   `PUBLIC_SITE_URL` origin and stays canonical to `https://cali.so`; it must
+   not inherit the Staging alias. Copy only approved non-production application
+   settings into Staging; database URLs are supplied per deployment by GitHub
+   Actions.
 5. Create these GitHub deployment environments:
 
 | Environment | Variables | Secrets | Protection |
@@ -138,6 +140,7 @@ npx vercel env rm DATABASE_URL production $SCOPE
 add DATABASE_URL
 
 # Identity and runtime ownership.
+add PUBLIC_SITE_URL          # https://cali.so
 add SITE_URL                 # https://cali.so
 add ADMIN_EMAIL
 add NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
