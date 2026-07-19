@@ -7,15 +7,23 @@ import { createPortal } from 'react-dom'
 import { localize, useLocale } from '~/lib/locale-client'
 
 const VIEWPORT_PAD = 32
-const DETAIL_SPACE = 72
-const MOBILE_DETAIL_SPACE = 112
-const MOBILE_BREAKPOINT = 640
+const DEFAULT_ROOT_FONT_SIZE = 16
+const DETAIL_SPACE_REM = 4.5
+const MOBILE_DETAIL_SPACE_REM = 7
+const MOBILE_BREAKPOINT_REM = 40
 
 type ZoomImageRendition = { src: string; width: number }
 type CloseReason = 'escape' | 'overlay' | 'viewport'
 
 function prefersReducedMotion() {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+}
+
+function rootFontSizePixels() {
+  const rootFontSize = Number.parseFloat(
+    window.getComputedStyle(document.documentElement).fontSize,
+  )
+  return Number.isFinite(rootFontSize) ? rootFontSize : DEFAULT_ROOT_FONT_SIZE
 }
 
 interface ZoomImageProps {
@@ -71,6 +79,7 @@ export function ZoomImage({
   const locale = useLocale()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
+  const preloadedSrcRef = useRef<string | null>(null)
   const [zoom, setZoom] = useState<{
     expandedSrc: string
     target: { left: number; top: number; width: number; height: number }
@@ -93,10 +102,11 @@ export function ZoomImage({
   )
 
   const preloadExpanded = useCallback(() => {
-    if (expandedSrc === src) return
+    if (expandedSrc === src || preloadedSrcRef.current === expandedSrc) return
     const preload = document.createElement('img')
     preload.decoding = 'async'
     preload.src = expandedSrc
+    preloadedSrcRef.current = expandedSrc
   }, [expandedSrc, src])
 
   const open = useCallback((event: MouseEvent<HTMLButtonElement>) => {
@@ -107,10 +117,11 @@ export function ZoomImage({
     // Fit within the viewport but never beyond the intrinsic size —
     // zoom means "actual size", not "stretch".
     const maxW = Math.min(window.innerWidth - VIEWPORT_PAD * 2, width)
+    const rootFontSize = rootFontSizePixels()
     const detailSpace = expandedContent
-      ? window.innerWidth < MOBILE_BREAKPOINT
-        ? MOBILE_DETAIL_SPACE
-        : DETAIL_SPACE
+      ? (window.innerWidth < MOBILE_BREAKPOINT_REM * rootFontSize
+          ? MOBILE_DETAIL_SPACE_REM
+          : DETAIL_SPACE_REM) * rootFontSize
       : 0
     const maxH = Math.max(
       1,
