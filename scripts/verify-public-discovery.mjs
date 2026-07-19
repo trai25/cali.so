@@ -103,11 +103,11 @@ const publicPages = [
     {
       title: 'AMA',
       description:
-        'A one-to-one conversation about AI-native work, product judgment, engineering, indie development, startups, careers, and going global.',
+        'A one-to-one conversation about AI-native work, product strategy, engineering, startups, career moves, and building products.',
     },
     {
       zh: '一对一 · Cali Castle。从产品设计、工程、职业到独立开发、创业、出海、英语学习与 AI 工作流，用一小时聊清楚怎么判断、怎么取舍、下一步做什么。',
-      en: 'AMA · Cali Castle. A one-to-one conversation about AI-native work, product judgment, engineering, indie development, startups, careers, and going global.',
+      en: 'AMA · Cali Castle. A one-to-one conversation about AI-native work, product strategy, engineering, startups, career moves, and building products.',
     },
   ),
 ]

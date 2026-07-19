@@ -105,9 +105,9 @@ const AMA_TOPIC_PAGE_COPY: Record<
     zhLabel: '产品判断与产品设计',
     zhDescription:
       '当答案越来越容易得到，怎么判断什么值得做，也把自己的品味落到产品和界面细节里。',
-    enLabel: 'Product judgment and design',
+    enLabel: 'Product strategy and design',
     enDescription:
-      'When answers are everywhere, how do you decide what’s worth building and turn your taste into product and interface details?',
+      'How to decide what’s worth building, shape the product, and carry the idea through interface and implementation.',
   },
   'ai-workflows': {
     zhLabel: 'AI 工作流与 Coding Agents',
@@ -120,16 +120,17 @@ const AMA_TOPIC_PAGE_COPY: Record<
   career: {
     zhLabel: '职业、出海与英语学习',
     zhDescription: '怎么选机会、进入新的市场和语境，也更快建立自己的优势。',
-    enLabel: 'Career growth and going global',
-    enDescription: 'How to choose opportunities, enter new markets, and build an edge quickly.',
+    enLabel: 'Career moves and cross-disciplinary work',
+    enDescription:
+      'How to choose opportunities, move across disciplines, and keep learning when the work changes.',
   },
   'indie-business': {
     zhLabel: '独立开发、创业与 GTM',
     zhDescription:
       '从一个模糊的 idea 到 MVP、验证、定价，再决定下一步往哪里走。',
-    enLabel: 'Indie development, startups, and GTM',
+    enLabel: 'Startups, product building, and GTM',
     enDescription:
-      'From a rough idea to an MVP, validation, pricing, and the decision about what comes next.',
+      'From early strategy and product design to an MVP, validation, pricing, and what comes next.',
   },
   'team-leadership': {
     zhLabel: '团队、协作与带人',
@@ -277,8 +278,7 @@ export function AmaPageView() {
                   <p>Answers are getting cheaper. Judgment is getting more valuable.</p>
                   <p>
                     I’ve spent the last few years across product design, engineering, indie
-                    development, startups, and going global. Along the way, I’ve rebuilt how I work
-                    around AI.
+                    development, and startups. Along the way, I’ve rebuilt how I work around AI.
                   </p>
                   <p>
                     The deeper shift is turning experience into prompts, workflows, memory, and
@@ -362,8 +362,14 @@ export function AmaPageView() {
           <div data-en-block className="page-introduction">
             <div className="flex flex-col gap-4">
               <p>
-                I’m Cali, founder of Zolplay. I’ve worked hands-on across web, iOS, product design,
-                indie products, teams, and going global.
+                I’m Cali, founder of Zolplay. My work spans web, iOS, engineering, product design,
+                and indie products. Through Zolplay, I’ve helped teams at Apple, Insta360, and
+                YC-backed startups with strategy, product design, and turning ideas into working
+                products.
+              </p>
+              <p>
+                Before that, I worked at game studios in Seattle on large projects with Niantic,
+                Microsoft, and Google.
               </p>
               <p>
                 My software factory connects product judgment, design, engineering, and operations.
@@ -377,9 +383,9 @@ export function AmaPageView() {
                 and day-to-day operations. Many processes now run end to end on their own.
               </p>
               <p>
-                I’m not literally building a one-person company (OPC), but I use much of the
-                playbook: put knowledge into systems, give repetitive work to agents, and keep
-                human attention on judgment and taste.
+                Zolplay isn’t a one-person company. But I borrow the useful part of that model: put
+                knowledge into systems, hand repetitive work to agents, and keep human attention
+                on judgment and taste.
               </p>
               <p>
                 I believe an AI-native approach will become an essential part of company culture.
@@ -403,9 +409,9 @@ export function AmaPageView() {
           <div className="flex flex-col gap-3">
             <p>AI doesn’t have to be the starting point.</p>
             <p>
-              Careers, products, engineering, and going global can look like separate problems.
-              Often they come down to the same judgment: what’s worth doing, what a system can
-              handle, and what still needs your judgment.
+              Careers, products, and engineering can look like separate problems. Often they come
+              down to the same judgment: what’s worth doing, what a system can handle, and what
+              still needs your judgment.
             </p>
           </div>
         </div>

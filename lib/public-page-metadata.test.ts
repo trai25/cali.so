@@ -58,7 +58,7 @@ describe('public page metadata copy', () => {
       en: {
         title: 'AMA',
         description:
-          'A one-to-one conversation about AI-native work, product judgment, engineering, indie development, startups, careers, and going global.',
+          'A one-to-one conversation about AI-native work, product strategy, engineering, startups, career moves, and building products.',
       },
     })
   })

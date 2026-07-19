@@ -79,10 +79,10 @@ describe('AmaPageView', () => {
 
     for (const enLabel of [
       'Web, iOS, and full-stack engineering',
-      'Product judgment and design',
+      'Product strategy and design',
       'AI workflows and coding agents',
-      'Career growth and going global',
-      'Indie development, startups, and GTM',
+      'Career moves and cross-disciplinary work',
+      'Startups, product building, and GTM',
       'Teams, collaboration, and leadership',
       'Anything else on your mind',
     ]) {
@@ -95,7 +95,11 @@ describe('AmaPageView', () => {
     expect(container.textContent).toContain('严格意义上的 OPC')
     expect(container.textContent).toContain('公司文化里必不可少的一部分')
     expect(container.textContent).toContain('self-hosted OpenClaw')
-    expect(container.textContent).toContain('one-person company (OPC)')
+    expect(container.textContent).toContain('teams at Apple, Insta360')
+    expect(container.textContent).toContain('game studios in Seattle')
+    expect(container.textContent).toContain('Niantic, Microsoft, and Google')
+    expect(container.textContent).toContain('Zolplay isn’t a one-person company')
+    expect(container.textContent).not.toContain('one-person company (OPC)')
     expect(container.textContent).toContain('essential part of company culture')
     for (const tool of ['Linear', 'Codex', 'Claude Code', 'Slack', 'Cursor']) {
       expect(container.textContent).toContain(tool)
