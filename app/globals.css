@@ -4420,7 +4420,12 @@ a:focus-visible .external-label .external-mark {
   }
 }
 
-/* ── Bilingual chrome (lib/i18n.tsx) — CSS-swapped, no hydration ──── */
+/* ── Bilingual chrome (lib/i18n.tsx) — CSS-swapped, no hydration ────
+   Public routes render a single language per segment, so only the inline
+   [data-zh]/[data-en] pair from <T> appears there. The block variant
+   survives solely for admin, which swaps locale in place (no route
+   change) and needs both DOM branches present — e.g. the dual weekday
+   selects in AvailabilityWindowForm. */
 
 [data-en] {
   display: none;

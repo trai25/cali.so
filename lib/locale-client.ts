@@ -6,6 +6,7 @@ import { useSyncExternalStore } from 'react'
 import { localeFromPathname, type Locale } from '~/lib/locale-route'
 
 export type { Locale } from '~/lib/locale-route'
+export { localize } from '~/lib/locale-route'
 
 export const LOCALE_CHANGE_EVENT = 'cali:locale-change'
 
@@ -30,6 +31,3 @@ export function useLocale(): Locale {
   return localeFromPathname(pathname)
 }
 
-export function localize(locale: Locale, zh: string, en: string) {
-  return locale === 'en' ? en : zh
-}
