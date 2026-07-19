@@ -15,12 +15,21 @@ Quality, and CodeQL.
 The first Deploy Production run
 [#29696010332](https://github.com/CaliCastle/cali.so/actions/runs/29696010332)
 passed its no-secret review but received an empty `MIGRATION_DATABASE_URL`, so
-Drizzle stopped before connecting and Vercel deployment was skipped. The
-follow-up hotfix configures dedicated Production migration and CRUD-only runtime
-roles, makes each `main` push migrate and deploy automatically, and keeps the
-credentials isolated to their GitHub and Vercel consumers. Its merge triggers
-the replacement Production run; this record does not claim success until that
-run and its smoke checks pass.
+Drizzle stopped before connecting and Vercel deployment was skipped.
+[PR #206](https://github.com/CaliCastle/cali.so/pull/206) then added dedicated
+Production migration and CRUD-only runtime roles, made each `main` push migrate
+and deploy automatically, and kept each credential isolated to its GitHub or
+Vercel consumer.
+
+PR #206 merged as `d891463`. Attempt 3 of
+[Deploy Production run #29707454879](https://github.com/CaliCastle/cali.so/actions/runs/29707454879)
+passed the expand-only check, applied migrations `0001` through `0012`, and
+deployed that exact commit to
+`https://cali-nnstyrz6o-cali.vercel.app`. The exact deployment and
+`https://cali.so` return 200. The post-deploy security-boundary verifier and all
+13 hosted browser cases pass against Production; the signed-out Media API now
+returns 401 instead of the pre-fix 500. Automated Production deployment and
+public smoke proof are complete.
 
 ## Pre-cutover verdict (historical)
 
@@ -63,7 +72,7 @@ Production deployment status.
 | Repository validation | PASS (LOCAL AND FEATURE PREVIEW) / AWAITING QUALITY AND STAGING | The new `pnpm test:browser` production-build gate passes 19 Chromium behavior cases plus six WebKit smoke executions locally. Feature Preview run [29671775136](https://github.com/CaliCastle/cali.so/actions/runs/29671775136) passed all 13 read-only `@hosted` cases against `https://cali-lonkhb5df-cali.vercel.app` for `2336124`. `Quality` and the Staging deployment remain pending. |
 | Public browser behavior | PASS | Local and Staging review covered desktop and mobile, both locales, light and dark appearance, reduced motion, keyboard navigation, metadata, overflow, feeds, generated social images, and Instant Navigation. |
 | Owner admin boundary | PASS (Staging signed-out path) / AWAITING OWNER AND PRODUCTION PROOF | A clean browser navigation to Staging `/admin` completes Clerk's development-instance handshake and reaches the isolated sign-in UI. The complete remote security-boundary verifier passes. Signed-in owner reads and mutations still require authorized operator access and the database gate below; confirm the Production Clerk keys and owner metadata at cutover. |
-| Complete diff Standards review | PARTIAL / AWAITING RE-REVIEW | PR #189 landed the credential-driven AMA and owner-auth decisions plus keyboard-instant Preview-card, lightbox, and article-map behavior. The browser gate now verifies those motion paths. Issues #184 through #186 remain open because their PR merged to `dev`, not the default branch; the layer-scale finding and judgement-level `app/globals.css` disposition still need a recorded resolution before the refreshed review can pass. |
+| Complete diff Standards review | PARTIAL / AWAITING RE-REVIEW | PR #189 landed the credential-driven AMA and owner-auth decisions plus keyboard-instant Preview-card, lightbox, and article-map behavior. The browser gate now verifies those motion paths. At this snapshot, issues #184 through #186 remained open because their PR had merged to `dev`, not the default branch; the layer-scale finding and judgement-level `app/globals.css` disposition still needed a recorded resolution before the refreshed review could pass. |
 | Complete diff Spec review | PARTIAL / AWAITING RE-REVIEW | No scope creep was found, and the missing automated browser-test command plus automated feature Preview evidence are now implemented. Analytics dashboard proof remains absent, and Domain evidence was overstated. The Clerk redirect-shape verifier intentionally stops at the first 307, but the separate clean-browser matrix completed the development handshake and rendered Clerk sign-in. |
 | Production-like Staging | PASS (public and signed-out boundaries) | `https://beta.cali.so` serves `dev@8802607`. The complete public route, link, discovery, legacy-URL, security-boundary, and manual browser matrix passed. Signed-in owner operations and provider-backed workflows remain separate gates. |
 | Issue #107 feature Preview evidence | PASS (AUTOMATED MATRIX) / AWAITING MANUAL HOSTED EVIDENCE | The exact feature Preview for `2336124` passed the 13-case hosted matrix across both locales, appearance and viewport profiles, reduced motion, metadata, feeds, social images, Instant Navigation, public Analytics inclusion, and the signed-out admin boundary. Fresh Analytics dashboard proof and signed-in owner evidence remain separate manual gates. |
@@ -204,8 +213,8 @@ Final review artifacts after the accessibility corrections:
   paths. The Playwright production-build gate now verifies zero card and cell
   motion on keyboard Preview-card focus, synchronous lightbox open and Escape
   focus restoration, instant article-map toggles, and zero running Web
-  Animations under reduced motion. Issues #184 through #186 remain open because
-  their PR merged to `dev` rather than the default branch.
+  Animations under reduced motion. Issues #184 through #186 shipped on `main`
+  through PR #189 and were closed during the release-record cleanup.
 - Earlier design-contract findings around selection weight, contrast, scroll
   reveals, and chrome typography are closed. The final review newly found that
   the implementation uses local and page-level numeric stacking values beyond
@@ -258,18 +267,17 @@ configuration, and an active Published Photo Selection. Git remains
 authoritative for writing and ordinary site content, but not for the curated
 photo wall.
 
-Before accepting a successful Production deployment, an authorized operator
-must:
+For the v3.0 deployment, the authorized operator confirmed the Production
+runtime role has only the required CRUD grants, confirmed Vercel has no
+migration credential, and isolated the direct migration credential in the
+`main`-restricted GitHub Production environment. Run #29707454879 applied the
+complete additive migration history before deploying the exact commit. Public
+site, discovery, URL, link, security-boundary, and signed-out admin checks pass
+against Production.
 
-1. confirm the production runtime role has only the required CRUD grants;
-2. confirm Vercel has no migration credential;
-3. apply the separately approved pending Media migrations with the migration
-   role, preserving the additive migration history;
-4. verify private Originals, public Renditions, and the active Published Photo
-   Selection against the production Bunny and Neon boundary;
-5. verify each configured AMA provider uses a complete Production-only
-   credential pair; and
-6. smoke-test the public site and every configured AMA provider workflow.
+Signed-in owner verification, the private Originals and public Renditions
+storage contract, the active Published Photo Selection, and complete
+end-to-end exercises for each configured AMA provider remain operator checks.
 
 Production database or sensitive cloud-data inspection requires two fresh,
 explicit confirmations immediately before access.
@@ -290,36 +298,29 @@ remain in place during application rollback; destructive down migrations are
 not part of the procedure. Record the known-good deployment identifier and an
 operator before accepting a Production deployment.
 
-## Unverified or deferred at merge
+## Post-release follow-ups
 
 Maintainer-operated commands for the hosted actions below are collected in
 `docs/v3-cutover-ops-runbook.md`.
 
-1. Refresh the complete-diff Standards and Spec reviews, record the disposition
-   of issues #184 through #186 now that their implementation is on `main`, and
-   reconcile the implementation with the documented closed layer scale. The
+1. Refresh the complete-diff Standards and Spec reviews and reconcile the
+   implementation with the documented closed layer scale. Issues #184 through
+   #186 are shipped and closed. The
    judgement-level `app/globals.css` divergent-change finding may remain a
    follow-up only if the maintainer records that disposition.
-2. Review and accept the recorded automated Feature Preview evidence for
-   `2336124`, then use that exact deployment for the remaining Analytics
-   dashboard and other manual hosted evidence.
+2. Confirm fresh Chinese and English Production pageviews are visible in the
+   existing `cali-so` Analytics dashboard.
 3. With two fresh confirmations, verify Staging migrations `0010` and `0011`,
    Media and AMA tables, and the runtime role's CRUD-only grants. Then sign in
    as the marked owner and prove one non-destructive read plus the required
    mutation boundaries. Until then, treat signed-in Staging admin operations as
    unvalidated.
-4. Verify the configured Production migration role, CRUD-only runtime role,
-   required secrets, rate limits, intended AMA provider credential pairs, and
-   complete Bunny and media configuration against the deployed application.
-5. In the Vercel dashboard, verify logs, drains, retention, firewall rules,
+4. In the Vercel dashboard, verify logs, drains, retention, firewall rules,
    the production-branch mapping, and the certificate.
-6. Verify the automatic Production workflow applies the reviewed migration
-   baseline before deploying the exact `main` commit. Direct operator database
-   inspection still requires two fresh confirmations.
-7. Verify the production Bunny and Neon Media boundary, run the protected live
+5. Verify the Production Bunny and Neon Media boundary, run the protected live
    storage contract, and publish the intended two-photo Published Photo
    Selection through the owner admin.
-8. Confirm fresh Chinese and English pageviews from the recorded Feature
-    Preview are visible in the existing `cali-so` Analytics dashboard.
-9. Confirm the rollback procedure against the recorded known-good deployment.
-10. Complete the automatic Production deployment and post-deploy smoke tests.
+6. Sign in as the marked Production owner and exercise each configured AMA
+   provider workflow without exposing customer or credential data.
+7. Confirm the rollback procedure against the now-recorded Production
+   deployment.

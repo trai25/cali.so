@@ -236,32 +236,63 @@ async function verifyPublicAmaApiBoundary(baseUrl) {
   }
   const holdId = '00000000-0000-4000-8000-000000000000'
   // Public mutations are enabled by default: empty submissions stop at
-  // validation, while routes whose provider (Stripe, Resend) is not
-  // configured in this environment keep failing closed with 503.
+  // validation. Provider-backed routes have two exact safe outcomes: a
+  // configured provider rejects the synthetic resource or signature, while
+  // an unconfigured provider fails closed with 503.
   const requests = [
-    { path: '/api/ama/holds', body: '{}', status: 400 },
-    { path: `/api/ama/holds/${holdId}/checkout`, body: '{}', status: 503 },
-    { path: '/api/ama/stripe/webhook', body: '{}', status: 503 },
-    { path: '/api/ama/alternate-time-requests', body: '{}', status: 400 },
+    {
+      path: '/api/ama/holds',
+      requestBody: '{}',
+      outcomes: [{ status: 400 }],
+    },
+    {
+      path: `/api/ama/holds/${holdId}/checkout`,
+      requestBody: '{}',
+      outcomes: [
+        { status: 404, error: 'not_found' },
+        { status: 503 },
+      ],
+    },
+    {
+      path: '/api/ama/stripe/webhook',
+      requestBody: '{}',
+      outcomes: [
+        { status: 400, error: 'invalid_signature' },
+        { status: 503 },
+      ],
+    },
+    {
+      path: '/api/ama/alternate-time-requests',
+      requestBody: '{}',
+      outcomes: [{ status: 400 }],
+    },
     {
       path: '/api/ama/manage/security-boundary-token/cancel',
-      body: '{}',
-      status: 503,
+      requestBody: '{}',
+      outcomes: [{ status: 503 }],
     },
     {
       path: '/api/ama/manage/security-boundary-token/reschedule',
-      body: '{}',
-      status: 503,
+      requestBody: '{}',
+      outcomes: [{ status: 503 }],
     },
   ]
 
-  for (const { path, body, status } of requests) {
-    const { response } = await fetchBoundary(baseUrl, path, {
-      method: 'POST',
-      headers: sameOriginHeaders,
-      body,
-    })
-    assert.equal(response.status, status, `${path} boundary status`)
+  for (const { path, requestBody, outcomes } of requests) {
+    const { response, body: responseBody } = await fetchBoundary(
+      baseUrl,
+      path,
+      {
+        method: 'POST',
+        headers: sameOriginHeaders,
+        body: requestBody,
+      },
+    )
+    const outcome = outcomes.find(({ status }) => response.status === status)
+    assert.ok(outcome, `${path} boundary status ${response.status}`)
+    if (outcome.error) {
+      assert.deepEqual(JSON.parse(responseBody), { error: outcome.error })
+    }
     assert.equal(response.headers.get('cache-control'), 'no-store')
     assert.equal(response.headers.get('set-cookie'), null)
   }

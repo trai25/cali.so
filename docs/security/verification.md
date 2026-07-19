@@ -121,9 +121,14 @@ Project API checks refreshed on 2026-07-20 verified:
   Production environment; Vercel stores only the pooled CRUD runtime URL. The
   runtime role cannot create schema, and the migration role cannot manage roles
   or databases.
-- [ ] Confirm the automatic Production workflow applies migrations `0001`
-  through `0012`, deploys the exact `main` commit, and passes smoke checks.
+- [x] Attempt 3 of
+  [Deploy Production run #29707454879](https://github.com/CaliCastle/cali.so/actions/runs/29707454879)
+  passed the expand-only policy, applied migrations `0001` through `0012`, and
+  deployed the exact `main@d891463` commit automatically. Post-deploy checks
+  verified the public security boundary, all 13 hosted browser cases, and a
+  signed-out `401` from `/api/admin/media/assets` rather than a server error.
 
 Clerk provider configuration and owner recovery remain tracked by issue #93.
-Production provider values remain a post-merge deployment and verification
-concern until the automatic Production workflow and smoke checks complete.
+Signed-in owner operations and end-to-end checks for each configured external
+provider remain separate operational follow-ups; they are not deployment
+workflow blockers.

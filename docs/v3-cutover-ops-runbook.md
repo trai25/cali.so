@@ -7,6 +7,12 @@ Production workflow itself runs automatically after a reviewed commit reaches
 `main`. Nothing in this file contains a secret; commands that need one prompt
 for it interactively.
 
+The v3.0 Production deployment completed on July 20, 2026. Attempt 3 of
+[Deploy Production run #29707454879](https://github.com/CaliCastle/cali.so/actions/runs/29707454879)
+applied migrations and deployed `main@d891463` without a manual approval step.
+Treat the provisioning commands below as a rebuild and rotation reference, not
+as a statement that Production is still unconfigured.
+
 ## Vercel CLI scope
 
 The team slug `cali` collides with the personal account, so slug-based scope
@@ -128,10 +134,11 @@ JSON
 
 ## 4. Provision the Production environment
 
-Production currently satisfies none of the v3 contract in `.env.example`.
-Each `env add` prompts for its value; generate fresh secrets rather than
-copying Preview's, and never add `MIGRATION_DATABASE_URL` to any Vercel
-environment.
+Production satisfied this contract for the v3.0 deployment on July 20, 2026.
+Before rebuilding or rotating it, inventory the live environment and change
+only the intended values. Each `env add` prompts for its value; generate fresh
+secrets rather than copying Preview's, and never add
+`MIGRATION_DATABASE_URL` to any Vercel environment.
 
 ```bash
 add() { npx vercel env add "$1" production $SCOPE; }
@@ -148,10 +155,10 @@ add NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 add CLERK_SECRET_KEY
 add CRON_SECRET              # openssl rand -hex 32
 
-# Server-only key material — generate per environment, never reuse Preview's.
-add AMA_ENCRYPTION_KEY       # openssl rand -hex 32
-add RATE_LIMIT_HASH_KEY      # openssl rand -hex 32
-add MEDIA_ENCRYPTION_KEY     # openssl rand -hex 32
+# Server-only key material — 32 decoded bytes of base64 per environment.
+add AMA_ENCRYPTION_KEY       # openssl rand -base64 32
+add RATE_LIMIT_HASH_KEY      # openssl rand -base64 32
+add MEDIA_ENCRYPTION_KEY     # openssl rand -base64 32
 
 # Rate limits (values from .env.example defaults unless tuned).
 add ADMIN_MUTATION_RATE_LIMIT_MAX_REQUESTS
