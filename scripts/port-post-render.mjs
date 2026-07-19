@@ -1,5 +1,16 @@
 export function escapeText(text) {
-  return text.replace(/([{}<>])/g, '\\$1')
+  return text.replace(/\\/g, '\\\\').replace(/([{}<>])/g, '\\$1')
+}
+
+function renderInlineCode(text) {
+  const longestDelimiter = Math.max(
+    0,
+    ...(text.match(/`+/g) ?? []).map((delimiter) => delimiter.length),
+  )
+  const delimiter = '`'.repeat(longestDelimiter + 1)
+  const padding = text.startsWith('`') || text.endsWith('`') ? ' ' : ''
+
+  return `${delimiter}${padding}${text}${padding}${delimiter}`
 }
 
 function renderSpan(span, markDefs) {
@@ -7,7 +18,7 @@ function renderSpan(span, markDefs) {
   for (const mark of span.marks ?? []) {
     if (mark === 'strong') text = `**${text}**`
     else if (mark === 'em') text = `*${text}*`
-    else if (mark === 'code') text = `\`${span.text.replace(/`/g, '\\`')}\``
+    else if (mark === 'code') text = renderInlineCode(span.text)
     else {
       const def = markDefs?.find((candidate) => candidate._key === mark)
       if (def?._type === 'link') text = `[${text}](${def.href})`

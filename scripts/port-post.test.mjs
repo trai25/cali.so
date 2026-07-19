@@ -65,6 +65,21 @@ test('keeps non-list block rendering unchanged', () => {
   ])
 })
 
+test('escapes MDX backslashes and chooses safe inline-code delimiters', () => {
+  const blocks = [
+    {
+      _type: 'block',
+      style: 'normal',
+      children: [span('C:\\draft {notes}'), span(' '), span('`literal`', ['code'])],
+    },
+  ]
+
+  assert.equal(
+    renderTextBlockGroup(blocks),
+    'C:\\\\draft \\{notes\\} `` `literal` ``',
+  )
+})
+
 test('converts a complete Portable Text body without flattening list groups', async () => {
   const body = [
     { _type: 'block', style: 'normal', children: [span('Before')] },
