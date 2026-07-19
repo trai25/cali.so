@@ -10,11 +10,12 @@ Current as of July 2026.
   [PR #195](https://github.com/CaliCastle/cali.so/pull/195), at merge commit
   `4f071ab`. `dev` was restored at that same commit after GitHub's automatic
   branch cleanup and is protected against deletion and force pushes.
-- The first protected Production run
-  [#29696010332](https://github.com/CaliCastle/cali.so/actions/runs/29696010332)
-  received an empty migration credential and stopped before database access or
-  Vercel deployment. The hotfix provisions split Production roles and makes
-  the replacement run automatic when its reviewed commit reaches `main`.
+- [PR #206](https://github.com/CaliCastle/cali.so/pull/206) completed the
+  Production hotfix at merge commit `d891463`. Attempt 3 of
+  [Deploy Production run #29707454879](https://github.com/CaliCastle/cali.so/actions/runs/29707454879)
+  passed the expand-only check, applied migrations with the dedicated
+  `cali_migrator` role, and deployed that exact commit automatically. The live
+  public and signed-out admin boundaries pass at `https://cali.so`.
 - Git **`dev`** is the long-lived Staging and integration branch. `main` drives
   Production; a reviewed `dev` to `main` pull request is the release path.
 - Release scope and evidence are preserved in closed issues
