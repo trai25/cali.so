@@ -46,13 +46,25 @@ describe('public page metadata copy', () => {
       en: {
         title: 'Projects',
         description:
-          'Products, open-source tools, and small experiments I have made over the years. Some useful, some playful, all made with care.',
+        'Products, open-source tools, and small experiments I have made over the years. Some useful, some playful, all made with care.',
+      },
+    })
+    expect(publicPageMetadata.ama).toEqual({
+      zh: {
+        title: '一对一',
+        description:
+          '带着你最近卡住的问题来。聊 product design、工程、职业，也聊 AI 工作流与 Coding Agents。',
+      },
+      en: {
+        title: 'AMA',
+        description:
+          'Bring the thing you’re stuck on. Talk product design, engineering, career, AI workflows, or coding agents.',
       },
     })
   })
 
   it('keeps section descriptions within social preview budgets', () => {
-    for (const section of ['blog', 'photos', 'projects'] as const) {
+    for (const section of ['blog', 'photos', 'projects', 'ama'] as const) {
       expect(publicPageMetadata[section].zh.description.length, section).toBeLessThanOrEqual(80)
       expect(publicPageMetadata[section].en.description.length, section).toBeLessThanOrEqual(160)
     }

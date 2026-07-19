@@ -28,8 +28,8 @@ describe('AmaPageView', () => {
 
     expect(screen.getByText('一对一')).toBeTruthy()
     expect(screen.getByText('AMA')).toBeTruthy()
-    expect(screen.getByText(/与 Cali 的专注一小时/)).toBeTruthy()
-    expect(screen.getByText(/A focused hour with Cali/)).toBeTruthy()
+    expect(screen.getByText(/带着你最近卡住的问题来/)).toBeTruthy()
+    expect(screen.getByText(/Bring the thing you’re stuck on/)).toBeTruthy()
 
     // Price and duration read straight off the spec sheet.
     expect(screen.getAllByText('US$99').length).toBe(2)
@@ -41,7 +41,7 @@ describe('AmaPageView', () => {
     const introductionStage = container.querySelector(
       '[data-ama-introduction-stage]',
     )
-    expect(introductionStage?.textContent).toContain('A focused hour with Cali')
+    expect(introductionStage?.textContent).toContain('AI workflow you’re building')
     expect(introductionStage?.textContent).not.toContain('US$99')
     expect(introductionStage?.textContent).not.toContain('Who you are talking to')
 
@@ -50,10 +50,10 @@ describe('AmaPageView', () => {
     expect(introductionStage?.contains(nameplate)).toBe(false)
   })
 
-  it('lists all six topics in both languages', () => {
+  it('lists all seven topics in both languages', () => {
     render(<AmaPageView />)
 
-    expect(AMA_TOPICS.length).toBe(6)
+    expect(AMA_TOPICS.length).toBe(7)
     for (const topic of AMA_TOPICS) {
       const label = AMA_TOPIC_LABELS[topic]
       expect(screen.getAllByText(label.zh).length).toBeGreaterThanOrEqual(1)
@@ -64,9 +64,9 @@ describe('AmaPageView', () => {
   it('states the 24 hour policy and carries both testimonials', () => {
     const { container } = render(<AmaPageView />)
 
-    expect(container.textContent).toContain('Until 24 hours before the session')
-    expect(container.textContent).toContain('Inside 24 hours there is no automatic refund')
-    expect(container.textContent).toContain('开始前 24 小时以外')
+    expect(container.textContent).toContain('If we’re at least 24 hours out')
+    expect(container.textContent).toContain('refunds are no longer automatic')
+    expect(container.textContent).toContain('离开始还有 24 小时以上')
 
     expect(
       screen.getByText(/目前我已经拿到了 3 个 offer，选择了一个/),
@@ -84,10 +84,10 @@ describe('AmaPageView', () => {
   it('links both locale CTAs to the booking flow and nothing legacy', () => {
     const { container } = render(<AmaPageView />)
 
-    expect(screen.getByRole('link', { name: '预订时间' }).getAttribute('href')).toBe(
+    expect(screen.getByRole('link', { name: '约个时间' }).getAttribute('href')).toBe(
       '/ama/book',
     )
-    expect(screen.getByRole('link', { name: 'Book a time' }).getAttribute('href')).toBe(
+    expect(screen.getByRole('link', { name: 'Book an hour' }).getAttribute('href')).toBe(
       '/en/ama/book',
     )
 

@@ -253,7 +253,9 @@ describe('Booking service createHold', () => {
   it('creates a 15-minute hold and persists the normalized intent', async () => {
     const f = fixture()
 
-    const result = await f.service.createHold(intake())
+    const result = await f.service.createHold(
+      intake({ topics: ['engineering', 'ai-workflows'] }),
+    )
 
     expect(result).toEqual({
       outcome: 'created',
@@ -268,7 +270,7 @@ describe('Booking service createHold', () => {
       guestName: 'Ada Lovelace',
       guestEmail: 'ada@example.com',
       briefText: 'Discussing engine designs',
-      topics: ['engineering', 'career'],
+      topics: ['engineering', 'ai-workflows'],
       meetingProvider: 'google-meet',
       stripeCheckoutSessionId: null,
     })

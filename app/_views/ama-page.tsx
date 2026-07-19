@@ -28,30 +28,35 @@ const SPEC_ROWS = [
     zhValue: 'Google Meet 或腾讯会议',
     enValue: 'Google Meet or Tencent Meeting',
   },
-  { zhLabel: '提前预订', enLabel: 'Notice', zhValue: '24 小时', enValue: '24 hours' },
-  { zhLabel: '预约范围', enLabel: 'Window', zhValue: '未来 30 天', enValue: 'Next 30 days' },
+  { zhLabel: '需提前', enLabel: 'Notice', zhValue: '24 小时', enValue: '24 hours' },
+  {
+    zhLabel: '可约时间',
+    enLabel: 'Booking window',
+    zhValue: '未来 30 天',
+    enValue: 'Next 30 days',
+  },
 ] as const
 
 const STEPS = [
   {
-    zh: '选一个时间。所有时间都按你的时区显示。',
-    en: 'Pick a time. Every time is shown in your own time zone.',
+    zh: '选个时间，看到的都是你当地的时间。',
+    en: 'Pick a time. The page shows everything in your time zone.',
   },
   {
-    zh: '写一份 Booking Brief，告诉我这一小时怎么用才最值。',
-    en: 'Share a Booking Brief so the hour goes where it matters most.',
+    zh: '写几句话告诉我你想聊什么，相关链接也可以直接丢进来。',
+    en: 'Tell me what you want to work through. Drop in any useful links too.',
   },
   {
-    zh: '通过 Stripe 托管页面付款，银行卡信息不会经过本站。',
-    en: 'Pay through Stripe Checkout. It is hosted by Stripe; card details never touch this site.',
+    zh: '付款走 Stripe Checkout，银行卡信息不会经过本站。',
+    en: 'Pay through Stripe Checkout. Your card details never touch this site.',
   },
   {
-    zh: '日历邀请和会议链接会发到你的邮箱。',
-    en: 'The calendar invite and meeting link arrive by email.',
+    zh: '付款后，日历邀请和会议链接会发到你的邮箱。',
+    en: 'After payment, the calendar invite and meeting link land in your inbox.',
   },
   {
-    zh: '邮件里还有一个专属管理链接，随时可以改期或取消。',
-    en: 'The same email carries a private Manage Link for rescheduling or cancelling any time.',
+    zh: '邮件里也有管理链接。之后要改期或取消，点进去就行。',
+    en: 'That email also includes your Manage Link, where you can reschedule or cancel.',
   },
 ] as const
 
@@ -115,8 +120,8 @@ export function AmaPageView() {
               style={{ '--enter-delay': '70ms' } as React.CSSProperties}
             >
               <T
-                zh="与 Cali 的专注一小时。一场 60 分钟的一对一 AMA，你带着问题来，我们把它聊透。"
-                en="A focused hour with Cali. One 60 minute one-to-one AMA Session: you bring the questions, we work through them properly."
+                zh="带着你最近卡住的问题来。不管是产品、设计、工程、职业，还是你正在搭的 AI 工作流，我们花一小时一起拆。"
+                en="Bring the thing you’re stuck on. Product, design, engineering, career, or the AI workflow you’re building, and we’ll spend an hour working through it together."
               />
             </p>
           </header>
@@ -145,19 +150,19 @@ export function AmaPageView() {
 
       <section className="mt-12" aria-labelledby="ama-who-heading">
         <div id="ama-who-heading">
-          <SectionHeading index="01" zh="这一小时和谁聊" en="Who you are talking to" delay={170} />
+          <SectionHeading index="01" zh="关于我" en="About me" delay={170} />
         </div>
         <p className="page-introduction mt-4">
           <T
-            zh="我是佐玩（Zolplay）的创始人，做了多年产品工程，横跨 Web 与 iOS，也独立做过并上线过自己的产品。中英文都可以聊，一种语言或两种混着来，这一小时都是你的。"
-            en="I founded Zolplay, spent years doing product engineering across web and iOS, and have built and shipped indie products of my own. I work in both English and Chinese; the hour is yours, in one language or both."
+            zh="我是 Cali，佐玩（Zolplay）的创始人。做了很多年 product design 和工程，Web、iOS、独立产品都亲手做过。现在我把 Linear、Codex、Claude Code、Slack 和 Cursor 串成一套自己的 software factory，从想法和设计一路做到 ship。中英文都行，混着聊也行。"
+            en="I’m Cali, founder of Zolplay. I’ve spent years moving between product design and engineering across web, iOS, and my own indie products. These days I do most of that inside my own software factory, with Linear, Codex, Claude Code, Slack, and Cursor taking work from the first product decision through shipping. We can talk in English, Chinese, or both."
           />
         </p>
       </section>
 
       <section className="mt-12" aria-labelledby="ama-topics-heading">
         <div id="ama-topics-heading">
-          <SectionHeading index="02" zh="可以聊的话题" en="Topics" delay={200} />
+          <SectionHeading index="02" zh="聊什么" en="Topics" delay={200} />
         </div>
         <ul className="mt-4 text-sm">
           {AMA_TOPICS.map((topic) => {
@@ -173,7 +178,7 @@ export function AmaPageView() {
 
       <section className="mt-12" aria-labelledby="ama-process-heading">
         <div id="ama-process-heading">
-          <SectionHeading index="03" zh="预订流程" en="How it works" delay={230} />
+          <SectionHeading index="03" zh="怎么预约" en="Booking" delay={230} />
         </div>
         <ol className="mt-4 flex flex-col gap-3 text-sm">
           {STEPS.map((step, index) => (
@@ -198,15 +203,15 @@ export function AmaPageView() {
         </div>
         <p className="page-introduction mt-4">
           <T
-            zh="开始前 24 小时以外，改期和取消都免费，取消自动全额退款；进入 24 小时以内则不再自动退款。这一小时属于你，中文、英文或两种都行。"
-            en="Until 24 hours before the session, rescheduling is free and cancelling refunds you in full, automatically. Inside 24 hours there is no automatic refund. The hour is yours, in one language or both."
+            zh="离开始还有 24 小时以上，改期和取消都免费；取消后会自动全额退款。不到 24 小时就不再自动退款。"
+            en="If we’re at least 24 hours out, you can reschedule or cancel for free. Cancelling triggers a full refund automatically. Inside 24 hours, refunds are no longer automatic."
           />
         </p>
       </section>
 
       <section className="mt-12" aria-labelledby="ama-notes-heading">
         <div id="ama-notes-heading">
-          <SectionHeading index="05" zh="来自聊过的人" en="From past sessions" delay={290} />
+          <SectionHeading index="05" zh="聊过的人说" en="What people said" delay={290} />
         </div>
         <div className="mt-4 flex flex-col gap-6">
           {TESTIMONIALS.map((testimonial, index) => (
@@ -233,12 +238,12 @@ export function AmaPageView() {
       >
         <span data-zh-block>
           <Link href={localePath('zh', '/ama/book')} className="btn-cta">
-            预订时间
+            约个时间
           </Link>
         </span>
         <span data-en-block>
           <Link href={localePath('en', '/ama/book')} className="btn-cta">
-            Book a time
+            Book an hour
           </Link>
         </span>
       </div>
