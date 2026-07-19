@@ -8,7 +8,11 @@ for (const publicPath of ['/', '/en']) {
     const browserErrors = watchBrowserErrors(page)
     await page.goto(publicPath)
 
-    await expect(page.locator('script[src="/_vercel/insights/script.js"]')).toHaveCount(1)
+    const insightsScript = page.locator('script[data-sdkn="@vercel/analytics/next"]')
+    await expect(insightsScript).toHaveCount(1)
+    const insightsUrl = new URL((await insightsScript.getAttribute('src'))!, page.url())
+    expect(insightsUrl.origin).toBe(new URL(page.url()).origin)
+    expect(insightsUrl.pathname).toMatch(/\/script\.js$/)
     await expect(page.locator('script[src*="clerk"]')).toHaveCount(0)
     expect(browserErrors).toEqual([])
   })

@@ -14,7 +14,18 @@ export async function prepareBrowserPage(page: Page) {
 export function watchBrowserErrors(page: Page) {
   const errors: string[] = []
   page.on('console', (message) => {
-    if (message.type() === 'error') errors.push(message.text())
+    if (message.type() !== 'error') return
+
+    const text = message.text()
+    const isBlockedVercelFeedbackToolbar =
+      Boolean(process.env.PLAYWRIGHT_BASE_URL) &&
+      text.includes('https://vercel.live/_next-live/feedback/feedback.js') &&
+      text.includes('Content Security Policy')
+
+    // Vercel injects its Preview feedback toolbar outside the application.
+    // The site's strict first-party CSP intentionally blocks that external
+    // script, so this exact platform warning is not an application failure.
+    if (!isBlockedVercelFeedbackToolbar) errors.push(text)
   })
   page.on('pageerror', (error) => errors.push(error.message))
   return errors
