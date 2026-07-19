@@ -272,32 +272,29 @@ export function AmaPageView() {
                   如果你也正好在想这些，不妨来试试。说不定聊着聊着，就会看到一个原来没想到的角度。
                 </p>
               </div>
-              <div data-en-block className="flex flex-col gap-3">
-                <p>Answers are getting cheaper. Judgment is getting more valuable.</p>
-                <p>
-                  Over the last few years, I’ve worked across product design, engineering, indie
-                  development, startups, and going global, while rebuilding how I work around AI.
-                  Having Codex, Claude Code, or Cursor write code is only the obvious part. The
-                  deeper shift is turning experience into prompts, workflows, memory, and agents,
-                  so one person can operate with much more leverage and move an idea toward
-                  something shipped and testable much faster.
-                </p>
-                <p>
-                  But tools are still tools. The real difference comes down to a different set of
-                  traits: staying curious when the answer isn’t obvious, keeping your own judgment
-                  when consensus is easy to copy, knowing how to use AI as leverage, learning fast
-                  enough to keep up, and carrying useful ideas from one field into another.
-                </p>
-                <p>
-                  That may sound like a conversation about being AI-native, but it ends up in very
-                  concrete decisions: which job to take, whether a product is worth building, where
-                  an indie project or startup should go next, how to enter a new market, and how to
-                  build a system where you, your team, and your agents can actually work together.
-                </p>
-                <p>
-                  If you’re thinking about any of this too, it might be worth a conversation. We
-                  may find an angle you hadn’t seen before.
-                </p>
+              <div data-en-block>
+                <div className="flex flex-col gap-4">
+                  <p>Answers are getting cheaper. Judgment is getting more valuable.</p>
+                  <p>
+                    I’ve spent the last few years across product design, engineering, indie
+                    development, startups, and going global. Along the way, I’ve rebuilt how I work
+                    around AI.
+                  </p>
+                  <p>
+                    The deeper shift is turning experience into prompts, workflows, memory, and
+                    agents, so one person can operate with much more leverage.
+                  </p>
+                  <p>
+                    Tools are still tools. The real difference is curiosity, judgment, leverage,
+                    learning speed, and the ability to carry useful ideas across fields.
+                  </p>
+                  <p>
+                    Those qualities show up in concrete decisions: which job to take, whether a
+                    product is worth building, where a startup should go, or how people and agents
+                    should work together. If any of this feels familiar, it might be worth a
+                    conversation.
+                  </p>
+                </div>
               </div>
             </div>
           </header>
@@ -362,38 +359,32 @@ export function AmaPageView() {
               最后不会只是一套工具栈，而会成为公司文化里必不可少的一部分。怎么做产品、怎么协作、怎么分配工作，都会跟着改变。
             </p>
           </div>
-          <div data-en-block className="flex flex-col gap-3 page-introduction">
-            <p>
-              I’m Cali, founder of Zolplay. I’ve worked hands-on across web, iOS, product design,
-              and indie products, and I’ve also built teams, run a company, and taken products
-              global.
-            </p>
-            <p>
-              What interests me now isn’t learning one more AI tool. It’s reconnecting product
-              judgment, design, engineering, and the day-to-day operation of a company. I’ve built
-              my own software factory around that: ideas and issues start in{' '}
-              <AmaProductName name="Linear" />; <AmaProductName name="Codex" />,{' '}
-              <AmaProductName name="Claude Code" />, and <AmaProductName name="Cursor" /> help with
-              research, scoping, implementation, and review; then the work returns to{' '}
-              <AmaProductName name="Slack" /> and the team keeps it moving.
-            </p>
-            <p>
-              I also run a self-hosted OpenClaw setup that orchestrates multiple agents. PM,
-              finance, and day-to-day operations are assigned to different agents, with OpenClaw
-              coordinating the work. Many processes that used to need someone watching every step
-              can now run end to end on their own.
-            </p>
-            <p>
-              I’m not literally building a one-person company (OPC). There are other people here.
-              But I do follow a lot of the OPC playbook: capture what we know in systems, give
-              repetitive work to agents, and keep human attention on direction, tradeoffs, and
-              taste.
-            </p>
-            <p>
-              I increasingly believe AI-native won’t stay a tool stack. It will become an essential
-              part of company culture. How products get built, how teams collaborate, and how work
-              gets assigned will all change with it.
-            </p>
+          <div data-en-block className="page-introduction">
+            <div className="flex flex-col gap-4">
+              <p>
+                I’m Cali, founder of Zolplay. I’ve worked hands-on across web, iOS, product design,
+                indie products, teams, and going global.
+              </p>
+              <p>
+                My software factory connects product judgment, design, engineering, and operations.
+                Ideas start in <AmaProductName name="Linear" />;{' '}
+                <AmaProductName name="Codex" />, <AmaProductName name="Claude Code" />, and{' '}
+                <AmaProductName name="Cursor" /> help with research, scoping, implementation, and
+                review; the work returns to <AmaProductName name="Slack" /> and the team.
+              </p>
+              <p>
+                I also run a self-hosted OpenClaw setup that orchestrates agents across PM, finance,
+                and day-to-day operations. Many processes now run end to end on their own.
+              </p>
+              <p>
+                I’m not literally building a one-person company (OPC), but I use much of the
+                playbook: put knowledge into systems, give repetitive work to agents, and keep
+                human attention on judgment and taste.
+              </p>
+              <p>
+                I believe an AI-native approach will become an essential part of company culture.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -408,13 +399,15 @@ export function AmaPageView() {
             职业、产品、工程、出海，看起来是不同的问题，背后经常都在判断同一件事：什么值得做，什么可以交给系统，什么必须由你自己决定。
           </p>
         </div>
-        <div data-en-block className="page-introduction mt-4 flex flex-col gap-3">
-          <p>AI doesn’t have to be the starting point.</p>
-          <p>
-            Careers, products, engineering, and going global can look like separate problems. Often
-            they come down to the same judgment: what’s worth doing, what a system can handle, and
-            what still needs your judgment.
-          </p>
+        <div data-en-block className="page-introduction mt-4">
+          <div className="flex flex-col gap-3">
+            <p>AI doesn’t have to be the starting point.</p>
+            <p>
+              Careers, products, engineering, and going global can look like separate problems.
+              Often they come down to the same judgment: what’s worth doing, what a system can
+              handle, and what still needs your judgment.
+            </p>
+          </div>
         </div>
         <ul className="mt-4 text-sm">
           {AMA_TOPICS.map((topic) => {
