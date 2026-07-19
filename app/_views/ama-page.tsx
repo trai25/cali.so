@@ -47,7 +47,7 @@ const STEPS = [
     en: 'Tell me what you want to work through, and drop in any useful links.',
   },
   {
-    zh: '付款会跳到 Stripe Checkout，银行卡信息不会经过本站。',
+    zh: '付款会跳到 Stripe，银行卡信息不会经过本站。',
     en: 'Payment happens in Stripe Checkout, so your card details never touch this site.',
   },
   {
@@ -126,8 +126,8 @@ export function AmaPageView() {
               style={{ '--enter-delay': '70ms' } as React.CSSProperties}
             >
               <T
-                zh="带着你最近卡住的问题来。不管是产品、设计、工程、职业，还是你正在搭的 AI 工作流，我们花一小时一起拆。"
-                en="Bring the thing you’re stuck on. Product, design, engineering, career, or the AI workflow you’re building. We’ll spend an hour working through it together."
+                zh="这些年做 product design、工程、独立开发，也折腾创业、出海和 AI 工作流，我越来越觉得，我们缺的往往不是更多建议，而是一个能把事情看清楚的角度。看起来完全不同的问题，最后其实都绕不开三件事：怎么判断，怎么取舍，下一步先做什么。这个 AMA，就是留出一小时，把这些事聊清楚。"
+                en="After years in product design, engineering, indie development, startups, going global, and now AI workflows, I’ve learned that more advice usually isn’t the answer. What helps is a clearer way to see the situation. Different problems tend to come back to the same three questions: what matters, what are the tradeoffs, and what should happen next. This AMA gives us an hour to get clear on them."
               />
             </p>
           </header>
@@ -160,8 +160,8 @@ export function AmaPageView() {
         </div>
         <p className="page-introduction mt-4">
           <T
-            zh="我是 Cali，佐玩（Zolplay）的创始人。这些年一直在 product design 和工程之间来回切换，Web、iOS、独立产品都亲手做过。现在大部分工作都跑在自己搭的 software factory 里，Linear、Codex、Claude Code、Slack 和 Cursor 串在一起，从想法一路做到 ship。你可以来聊一个具体 workflow，也可以直接把手上的问题带来。中文、英文，混着聊都行。"
-            en="I’m Cali, founder of Zolplay. I’ve spent years moving between product design and engineering across web, iOS, and my own products. These days, most of that work runs through a software factory I built around Linear, Codex, Claude Code, Slack, and Cursor, from the first idea through shipping. We can unpack a specific workflow or work directly on whatever is in front of you, in English, Chinese, or both."
+            zh="我是 Cali，佐玩（Zolplay）的创始人。Web、iOS、product design 和独立产品都亲手做过。现在大部分工作跑在自己搭的 software factory 里，Linear、Codex、Claude Code、Slack 和 Cursor 串在一起，从想法一路做到 ship。你想聊具体 workflow，还是产品方向、职业、独立开发或出海，都可以。中文、英文，混着聊也行。"
+            en="I’m Cali, founder of Zolplay. I’ve built across web, iOS, product design, and my own products. These days, most of that work runs through a software factory I built around Linear, Codex, Claude Code, Slack, and Cursor, from the first idea through shipping. We can get specific about a workflow, a product decision, a career move, an indie project, or something you’re trying to take global. We can talk in English, Chinese, or both."
           />
         </p>
       </section>

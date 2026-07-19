@@ -10,10 +10,10 @@ export const AMA_TOPIC_LABELS: Record<AmaTopic, { zh: string; en: string }> = {
     zh: 'AI 工作流与 Coding Agents',
     en: 'AI workflows and coding agents',
   },
-  career: { zh: '职业选择与海外工作', en: 'Career decisions and working abroad' },
+  career: { zh: '职业发展与出海', en: 'Career growth and going global' },
   'indie-business': {
-    zh: '独立产品、创业与 GTM',
-    en: 'Indie products, startups, and GTM',
+    zh: '独立开发、产品与 GTM',
+    en: 'Indie development, products, and GTM',
   },
   'team-leadership': {
     zh: '团队、协作与带人',

@@ -53,12 +53,12 @@ describe('public page metadata copy', () => {
       zh: {
         title: '一对一',
         description:
-          '带着你最近卡住的问题来。聊 product design、工程、职业，也聊 AI 工作流与 Coding Agents。',
+          '从 product design、工程、职业到独立开发、出海与 AI 工作流，用一小时聊清楚怎么判断、怎么取舍、下一步做什么。',
       },
       en: {
         title: 'AMA',
         description:
-          'Bring the thing you’re stuck on. Talk product design, engineering, career, AI workflows, or coding agents.',
+          'One hour to get clear on product design, engineering, career, indie development, going global, or AI workflows.',
       },
     })
   })

@@ -28,8 +28,8 @@ describe('AmaPageView', () => {
 
     expect(screen.getByText('一对一')).toBeTruthy()
     expect(screen.getByText('AMA')).toBeTruthy()
-    expect(screen.getByText(/带着你最近卡住的问题来/)).toBeTruthy()
-    expect(screen.getByText(/Bring the thing you’re stuck on/)).toBeTruthy()
+    expect(screen.getByText(/我们缺的往往不是更多建议/)).toBeTruthy()
+    expect(screen.getByText(/more advice usually isn’t the answer/)).toBeTruthy()
 
     // Price and duration read straight off the spec sheet.
     expect(screen.getAllByText('US$99').length).toBe(2)
@@ -37,11 +37,15 @@ describe('AmaPageView', () => {
     expect(screen.getByText('60 分钟')).toBeTruthy()
     expect(container.textContent).toContain('24 hours')
     expect(container.textContent).toContain('Next 30 days')
+    expect(
+      screen.getByText('付款会跳到 Stripe，银行卡信息不会经过本站。'),
+    ).toBeTruthy()
+    expect(container.textContent).not.toContain('付款会跳到 Stripe Checkout')
 
     const introductionStage = container.querySelector(
       '[data-ama-introduction-stage]',
     )
-    expect(introductionStage?.textContent).toContain('AI workflow you’re building')
+    expect(introductionStage?.textContent).toContain('same three questions')
     expect(introductionStage?.textContent).not.toContain('US$99')
     expect(introductionStage?.textContent).not.toContain('Who you are talking to')
 
