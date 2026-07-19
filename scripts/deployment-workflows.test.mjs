@@ -158,6 +158,10 @@ test('main uses protected Production credentials and deploys only after migratio
     (step) => step.name === 'Deploy Vercel Production',
   )
   assert.match(deploy.run, /vercel@56\.3\.1 deploy --prod/)
+  assert.match(
+    deploy.run,
+    /--build-env ENABLE_EXPERIMENTAL_COREPACK=1/,
+  )
   assert.match(deploy.run, /GITHUB_STEP_SUMMARY/)
   assert.equal(deploy.env.MIGRATION_DATABASE_URL, undefined)
   assert.equal(deploy.env.DATABASE_URL, undefined)
@@ -305,6 +309,10 @@ test('shared non-production action keeps migration credentials out of Vercel', a
   assert.match(deploy.run, /vercel@56\.3\.1 deploy/)
   assert.match(deploy.run, /--target=/)
   assert.match(deploy.run, /--build-env DATABASE_URL=/)
+  assert.match(
+    deploy.run,
+    /--build-env ENABLE_EXPERIMENTAL_COREPACK=1/,
+  )
   assert.match(deploy.run, /--env DATABASE_URL=/)
   assert.doesNotMatch(deploy.run, /MIGRATION_DATABASE_URL/)
   assert.doesNotMatch(deploy.run, /\$\{\{ inputs\.(?:git-ref|target) \}\}/)
