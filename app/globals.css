@@ -4907,7 +4907,7 @@ html[data-locale='en'] [data-en-block] {
 .zoom-overlay-details::before {
   position: absolute;
   z-index: -1;
-  inset: -6rem 0 calc(-1 * var(--zoom-details-bottom));
+  inset: -10rem 0 calc(-1 * var(--zoom-details-bottom));
   content: '';
   background: var(--background);
   opacity: 0;
@@ -4915,18 +4915,20 @@ html[data-locale='en'] [data-en-block] {
   -webkit-mask-image: linear-gradient(
     to bottom,
     transparent 0,
-    rgb(0 0 0 / 0.08) 1rem,
-    rgb(0 0 0 / 0.28) 2.25rem,
-    rgb(0 0 0 / 0.64) 4rem,
-    black 6rem
+    rgb(0 0 0 / 0.18) 1rem,
+    rgb(0 0 0 / 0.46) 2.5rem,
+    rgb(0 0 0 / 0.72) 4rem,
+    rgb(0 0 0 / 0.92) 5.5rem,
+    black 7rem
   );
   mask-image: linear-gradient(
     to bottom,
     transparent 0,
-    rgb(0 0 0 / 0.08) 1rem,
-    rgb(0 0 0 / 0.28) 2.25rem,
-    rgb(0 0 0 / 0.64) 4rem,
-    black 6rem
+    rgb(0 0 0 / 0.18) 1rem,
+    rgb(0 0 0 / 0.46) 2.5rem,
+    rgb(0 0 0 / 0.72) 4rem,
+    rgb(0 0 0 / 0.92) 5.5rem,
+    black 7rem
   );
   transition: opacity 150ms ease;
 }
