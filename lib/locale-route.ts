@@ -80,3 +80,7 @@ export function localePath(locale: Locale, path: string) {
   const localized = unlocalized === '/' ? ENGLISH_PREFIX : `${ENGLISH_PREFIX}${unlocalized}`
   return `${localized}${suffix}`
 }
+
+export function localize(locale: Locale, zh: string, en: string) {
+  return locale === 'en' ? en : zh
+}
