@@ -1,6 +1,6 @@
 # Security verification
 
-Last checked: 2026-07-16. This note separates repository evidence from hosted
+Last checked: 2026-07-20. This note separates repository evidence from hosted
 settings. Do not paste credentials, scan findings, or exploit details here;
 use GitHub private vulnerability reporting.
 
@@ -52,22 +52,19 @@ must remain private.
 
 ## GitHub
 
-Repository API checks on 2026-07-16 verified:
+Repository API checks refreshed on 2026-07-20 verified:
 
 - [x] Private vulnerability reporting, secret scanning, push protection, and
   Dependabot security updates are enabled.
 - [x] Default Actions workflow permissions are read-only and workflows cannot
   approve pull requests.
 - [x] Actions must be pinned to a full commit SHA.
-- [x] The historical `v2` ruleset requires pull requests, blocks force pushes
-  and branch deletion, and limits the audited emergency bypass to repository
-  administrators. It requires no approving review while the project has one
-  maintainer.
-- [x] The historical `v2` ruleset requires the successful GitHub Actions checks named
+- [x] The `dev` and `main` rulesets require pull requests, block force pushes
+  and branch deletion, and require the successful GitHub Actions checks named
   `Quality` and `CodeQL`.
-- [ ] Rename the hosted `v2` branch and its ruleset target to `dev`, then verify
-  the same PR, deletion, force-push, and required-check protections.
-- [ ] Require `Quality` and `CodeQL` on `main` branch protection.
+- [x] Neither protected branch has a bypass actor. Branch protection and
+  required checks are the human approval boundary before automatic Production
+  deployment.
 - [x] CodeQL default setup is disabled so the committed advanced workflow is
   the single analysis source.
 - [ ] Non-provider secret patterns and validity checks are unavailable in the
@@ -75,23 +72,23 @@ Repository API checks on 2026-07-16 verified:
   change.
 - [x] Fork pull requests cannot receive Vercel secrets, and the GitHub Actions
   workflow uses committed non-secret fixtures instead of repository secrets.
-- [ ] Configure `preview`, `staging`, no-secret
-  `production-migration-review`, and protected `production` GitHub environments
-  with the variables, secrets, branch restrictions, and required Production
-  reviewers documented in the cutover runbook.
+- [x] Configure `preview`, `staging`, and `production` GitHub environments with
+  the variables, secrets, and branch restrictions documented in the cutover
+  runbook. Production runs automatically after required checks pass and a
+  reviewed commit reaches `main`; it has no deployment reviewer.
 
 ## Vercel
 
-Project API checks on 2026-07-16 verified:
+Project API checks refreshed on 2026-07-20 verified:
 
 - [x] `cali-so` is accessible in the `Cali` Pro workspace. Its production
   branch remains `main`, and Git fork protection is enabled.
 - [x] Production and Preview have distinct database variables. Preview uses a
   disposable Neon branch and a pooled CRUD-only runtime role; migrations use a
   separate direct credential that is absent from Vercel.
-- [ ] Rename the persistent non-production Neon branch to `staging`, configure
-  the custom Vercel Staging environment, and verify feature branches receive
-  isolated `preview/<git-branch>` children.
+- [x] The persistent non-production Neon branch is `staging`, the custom Vercel
+  Staging environment is configured, and feature branches receive isolated
+  `preview/<git-branch>` children.
 - [x] Committed Vercel configuration disables Git deployments; hosted proof
   requires a GitHub-controlled Staging and Preview deployment after setup.
 - [x] The former AMA capability switches are absent. Owner admin remains
@@ -119,10 +116,14 @@ Project API checks on 2026-07-16 verified:
   payload-free Preview query confirmed runtime-log access. The Pro workspace
   has Observability Plus enabled for this project, so Vercel's documented
   runtime-log retention is 30 days with a maximum 14-day query window.
-- [ ] At cutover, replace the legacy Production database variable with the
-  verified Neon runtime role and verify its grants under issue #107. Production
-  database inspection still requires two fresh explicit confirmations.
+- [x] Production uses separate `cali_migrator` and `cali_runtime` identities.
+  GitHub stores the direct migration credential only in its `main`-restricted
+  Production environment; Vercel stores only the pooled CRUD runtime URL. The
+  runtime role cannot create schema, and the migration role cannot manage roles
+  or databases.
+- [ ] Confirm the automatic Production workflow applies migrations `0001`
+  through `0012`, deploys the exact `main` commit, and passes smoke checks.
 
 Clerk provider configuration and owner recovery remain tracked by issue #93.
-Production provider values remain a cutover concern until v3 replaces the
-historical site on `main`.
+Production provider values remain a post-merge deployment and verification
+concern until the automatic Production workflow and smoke checks complete.

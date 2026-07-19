@@ -6,14 +6,22 @@ Current as of July 2026.
 
 - The ground-up rewrite is **v3**. The site released in 2024 remains the
   historical v2.
+- v3.0 reached `main` on July 20, 2026 through
+  [PR #195](https://github.com/CaliCastle/cali.so/pull/195), at merge commit
+  `4f071ab`. `dev` was restored at that same commit after GitHub's automatic
+  branch cleanup and is protected against deletion and force pushes.
+- The first protected Production run
+  [#29696010332](https://github.com/CaliCastle/cali.so/actions/runs/29696010332)
+  received an empty migration credential and stopped before database access or
+  Vercel deployment. The hotfix provisions split Production roles and makes
+  the replacement run automatic when its reviewed commit reaches `main`.
 - Git **`dev`** is the long-lived Staging and integration branch. `main` drives
   Production; a reviewed `dev` to `main` pull request is the release path.
-- Release scope and evidence are tracked by
-  [#98](https://github.com/CaliCastle/cali.so/issues/98). Do not merge to
-  `main` until its complete dependency chain and final proof are green.
-- Release slices #99 through #106 are merged into `v2`. Final cutover proof is
-  tracked by #107; those `v2` references are historical evidence from before
-  the branch became `dev`.
+- Release scope and evidence are preserved in closed issues
+  [#98](https://github.com/CaliCastle/cali.so/issues/98) and
+  [#107](https://github.com/CaliCastle/cali.so/issues/107), plus
+  `docs/v3-cutover-readiness.md`. References there to Git `v2` are historical
+  evidence from before the integration branch became `dev`.
 
 ## Current architecture
 
@@ -85,8 +93,8 @@ Current as of July 2026.
 - GitHub Actions owns deployment ordering. `dev` migrates the persistent Neon
   `staging` branch before deploying Vercel Staging. Internal feature branches
   use persistent `preview/<git-branch>` children of Staging. Production lives
-  in a separate Neon project and waits for two sequential protected-environment
-  approvals before database access.
+  in a separate Neon project; every commit reaching `main` automatically uses
+  the `main`-only Production environment to migrate before deploying.
 - Security baseline controls from PR #97 remain mandatory: CSP and security
   headers, same-origin mutation policy, rate limits, kill switches,
   privacy-safe audit events, isolated credentials, and security automation.
@@ -102,7 +110,7 @@ Current as of July 2026.
   and regeneration remain available in the inspector). Location Label
   suggestions follow their provider credential.
 
-## Launch gates
+## Release gates
 
 1. Preserve every legacy public URL through native content, a static archive,
    or an intentional permanent replacement. Drive verification from one

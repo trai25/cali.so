@@ -1,9 +1,11 @@
 # v3 cutover ops runbook
 
 Maintainer-operated commands for the hosted blockers in
-`docs/v3-cutover-readiness.md`. Every step here changes production-adjacent
-state and is intentionally left to a human operator. Nothing in this file
-contains a secret; commands that need one prompt for it interactively.
+`docs/v3-cutover-readiness.md`. Manual commands here change
+production-adjacent state and remain operator-controlled; the committed
+Production workflow itself runs automatically after a reviewed commit reaches
+`main`. Nothing in this file contains a secret; commands that need one prompt
+for it interactively.
 
 ## Vercel CLI scope
 
@@ -50,8 +52,7 @@ Neon project.
 | --- | --- | --- | --- |
 | `preview` | `NEON_PROJECT_ID`, `NEON_MIGRATION_ROLE`, `NEON_RUNTIME_ROLE`, `NEON_DATABASE`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` | project-scoped `NEON_API_KEY`, `VERCEL_TOKEN` | Internal branches only; exclude `dev` and `main` |
 | `staging` | Same non-production variables | Same non-production secrets | `dev` only; no approval |
-| `production-migration-review` | None | None | `main` only; required reviewer |
-| `production` | `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` | `MIGRATION_DATABASE_URL`, `VERCEL_TOKEN` | `main` only; required reviewer |
+| `production` | `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` | `MIGRATION_DATABASE_URL`, `VERCEL_TOKEN` | `main` only; no deployment reviewer |
 
 The committed `vercel.json` disables Vercel Git deployments. Do not re-enable
 them in the dashboard: GitHub must create or select the Neon branch, migrate it,
@@ -208,16 +209,15 @@ results in the readiness report:
 
 ## 6. Production database and migrations
 
-Gated by two fresh explicit confirmations immediately before access. Verify
-the separate Production Neon project, CRUD-only runtime role, and migration-role
-default privileges for both existing and future tables and sequences. A merge
-to `main` then starts `Deploy Production`. The no-secret
-`production-migration-review` environment records the first approval. Only
-after it succeeds can the separately protected `production` environment expose
-the migration credential and record the second approval.
+Direct operator access remains gated by two fresh explicit confirmations.
+Verify the separate Production Neon project, CRUD-only runtime role, and
+migration-role default privileges for both existing and future tables and
+sequences. A reviewed commit reaching `main` starts `Deploy Production`
+automatically. The `main`-only `production` environment exposes the migration
+credential to that workflow without an additional deployment review.
 
 The workflow hash-locks the immutable legacy baseline `0000` and reviewed v3
-migrations `0001` through `0011`, rejecting any modification or deletion.
+migrations `0001` through `0012`, rejecting any modification or deletion.
 Migration `0000` stays outside the v3 Drizzle journal and is not rerun. Future
 migrations fail closed unless every SQL
 statement is an explicitly allowed expand operation: create a new table, type,
@@ -226,10 +226,11 @@ non-null column with a statically proven non-null default; validate a named
 constraint; or set a statically proven non-null column default. New constraints,
 including `NOT VALID` constraints, affect new writes and therefore require an
 explicitly reviewed digest exception. Dynamic blocks, unknown default
-expressions, and every unrecognized statement are rejected. After both
-approvals and that check, the workflow applies pending migrations with the
-GitHub-only credential and deploys the exact commit. Do not approve either
-environment until the migration diff and rollback anchor have been reviewed.
+expressions, and every unrecognized statement are rejected. After the
+credential guards and expand-only check, the workflow applies pending
+migrations with the GitHub-only credential and deploys the exact commit.
+Review the migration diff and rollback anchor in the pull request before
+merging to `main`.
 
 ## 7. Rollback anchor
 

@@ -8,7 +8,7 @@ an attacker can read the implementation.
 
 | Environment | Data and integrations | Secret policy |
 | --- | --- | --- |
-| Production | Production-only accounts and durable data | Available only after two sequential protected-environment approvals |
+| Production | Production-only accounts and durable data | `main`-only GitHub environment; automatic after required pull-request checks and merge |
 | Staging | Persistent non-production baseline and test accounts | Staging-scoped credentials; never production credentials |
 | Preview | Disposable child of Staging for one internal Git branch | Preview-scoped runtime credentials; never production credentials |
 | Local and CI | Local emulators, fixtures, or dedicated test accounts | Developer-local or CI-scoped credentials with the minimum privilege |
@@ -17,8 +17,9 @@ an attacker can read the implementation.
   accounts wherever the provider supports it. Never encode secrets in source,
   build output, client bundles, logs, issue text, or workflow files.
 - Scope Vercel environment variables explicitly. A production secret must not
-  be exposed to Preview or Development. Protect the production deployment and
-  require an audited approval path for exceptional access.
+  be exposed to Preview or Development. Restrict Production credentials to the
+  `main`-only GitHub environment; pull-request checks and branch protection are
+  the human approval boundary before the automatic deployment.
 - Forks and untrusted pull requests receive no sensitive credentials. Workflows
   triggered by pull requests must not use `pull_request_target` to execute
   contributor-controlled code.
