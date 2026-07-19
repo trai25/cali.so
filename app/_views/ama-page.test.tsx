@@ -72,6 +72,11 @@ describe('AmaPageView', () => {
       ).toHaveLength(2)
     }
     expect(container.querySelectorAll('.ama-product-logo')).toHaveLength(10)
+    expect(
+      container.querySelectorAll(
+        '[data-ama-product-name="Codex"] img[src="/images/codex.svg"]',
+      ),
+    ).toHaveLength(2)
   })
 
   it('states the 24 hour policy and carries the testimonials', () => {
@@ -101,11 +106,18 @@ describe('AmaPageView', () => {
   it('links both locale CTAs to the booking flow and nothing legacy', () => {
     const { container } = render(<AmaPageView />)
 
-    expect(screen.getByRole('link', { name: '约个时间' }).getAttribute('href')).toBe(
-      '/ama/book',
-    )
-    expect(screen.getByRole('link', { name: 'Book an hour' }).getAttribute('href')).toBe(
-      '/en/ama/book',
+    const zhCtas = screen.getAllByRole('link', { name: '约个时间' })
+    const enCtas = screen.getAllByRole('link', { name: 'Book an hour' })
+
+    expect(zhCtas).toHaveLength(2)
+    expect(enCtas).toHaveLength(2)
+    for (const link of zhCtas) expect(link.getAttribute('href')).toBe('/ama/book')
+    for (const link of enCtas) expect(link.getAttribute('href')).toBe('/en/ama/book')
+
+    const ctaGroups = container.querySelectorAll('.ama-booking-cta')
+    expect(ctaGroups).toHaveLength(2)
+    expect(ctaGroups[0]?.nextElementSibling?.getAttribute('aria-labelledby')).toBe(
+      'ama-who-heading',
     )
 
     const html = container.innerHTML.toLowerCase()

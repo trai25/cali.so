@@ -2,7 +2,6 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { ClaudeIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { OpenAiLogoIcon } from '@phosphor-icons/react/ssr'
 
 import { AmaIntroductionStage } from '~/components/ama/ama-introduction-stage'
 import { Favicon } from '~/components/favicon'
@@ -100,14 +99,7 @@ function AmaProductName({ name }: { name: AmaProduct }) {
   let logo: React.ReactNode
 
   if (name === 'Codex') {
-    logo = (
-      <OpenAiLogoIcon
-        className="ama-product-logo"
-        size={14}
-        weight="fill"
-        aria-hidden
-      />
-    )
+    logo = <Favicon className="ama-product-logo" src="/images/codex.svg" size={14} />
   } else if (name === 'Claude Code') {
     logo = (
       <HugeiconsIcon
@@ -133,6 +125,23 @@ function AmaProductName({ name }: { name: AmaProduct }) {
       {logo}
       <span>{name}</span>
     </span>
+  )
+}
+
+function AmaBookingCta() {
+  return (
+    <>
+      <span data-zh-block>
+        <Link href={localePath('zh', '/ama/book')} className="btn-cta">
+          约个时间
+        </Link>
+      </span>
+      <span data-en-block>
+        <Link href={localePath('en', '/ama/book')} className="btn-cta">
+          Book an hour
+        </Link>
+      </span>
+    </>
   )
 }
 
@@ -208,6 +217,13 @@ export function AmaPageView() {
           ))}
         </dl>
       </section>
+
+      <div
+        className="ama-booking-cta enter mt-6"
+        style={{ '--enter-delay': '150ms' } as React.CSSProperties}
+      >
+        <AmaBookingCta />
+      </div>
 
       <section className="mt-12" aria-labelledby="ama-who-heading">
         <div id="ama-who-heading">
@@ -328,19 +344,10 @@ export function AmaPageView() {
       </section>
 
       <div
-        className="enter mt-12 pb-4"
+        className="ama-booking-cta enter mt-12 pb-4"
         style={{ '--enter-delay': '320ms' } as React.CSSProperties}
       >
-        <span data-zh-block>
-          <Link href={localePath('zh', '/ama/book')} className="btn-cta">
-            约个时间
-          </Link>
-        </span>
-        <span data-en-block>
-          <Link href={localePath('en', '/ama/book')} className="btn-cta">
-            Book an hour
-          </Link>
-        </span>
+        <AmaBookingCta />
       </div>
     </div>
   )
