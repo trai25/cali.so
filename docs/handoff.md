@@ -25,6 +25,11 @@ Current as of July 2026.
 - Chinese keeps every established unprefixed URL. English uses the matching
   `/en` route family. Locale-specific feeds, metadata, and OG images follow the
   route, not browser-local state.
+- `PUBLIC_SITE_URL` owns the public discovery identity used by canonical links,
+  feeds, alternates, and social metadata. `SITE_URL` is the operational origin
+  for application links, provider callbacks, and same-origin mutation checks;
+  Staging therefore keeps `https://beta.cali.so` without leaking that alias into
+  production discovery output.
 - Public pages are static where possible. GitHub and YouTube social values use
   ISR-backed fetches with committed JSON snapshots as outage fallbacks.
 - Vercel Web Analytics is instrumented to collect first-party page views

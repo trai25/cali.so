@@ -9,8 +9,10 @@ belong in this file, in the repository, or in issue threads.
 
 ## Environment contract
 
-Validation lives in `lib/ama/server-env-schema.ts`; misconfiguration fails at
-startup with field names only. `.env.example` mirrors this table.
+Runtime application validation lives in `lib/ama/server-env-schema.ts`, while
+`PUBLIC_SITE_URL` is validated when `lib/seo.ts` initializes public discovery.
+Misconfiguration fails at startup with field names only. `.env.example`
+mirrors this table.
 
 | Variable | Required when | Purpose |
 | --- | --- | --- |
@@ -18,7 +20,8 @@ startup with field names only. `.env.example` mirrors this table.
 | `ADMIN_EMAIL` | always | Owner data namespace and Google Calendar owner. |
 | `AMA_ENCRYPTION_KEY` | always | 32-byte base64 key: Google refresh-token envelopes and Manage Link token derivation. |
 | `RATE_LIMIT_HASH_KEY` | always | 32-byte base64 key pseudonymizing rate-limit and audit actors, including public booking clients. |
-| `SITE_URL` | Production and custom aliases | Canonical public origin for links, provider return URLs, and same-origin mutation checks. Ordinary Vercel Previews derive it from Vercel's system deployment URL; custom environments such as Staging must set it to their stable alias. |
+| `PUBLIC_SITE_URL` | optional | Public discovery identity for canonical links, feeds, alternates, and social metadata. Production builds default to `https://cali.so`; forks should set their own public origin. |
+| `SITE_URL` | Production and custom aliases | Operational origin for links, provider return URLs, and same-origin mutation checks. Ordinary Vercel Previews derive it from Vercel's system deployment URL; custom environments such as Staging must set it to their stable alias. |
 | `CRON_SECRET` | scheduled work | Bearer secret for `/api/internal/ama/work` (and media reconcile). Vercel injects it for cron invocations. |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | availability + calendar | OAuth client for free/busy and calendar event writes. Slots and meeting creation are unavailable until configured. |
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | payments | Checkout Session and refund API access; the webhook secret signs `/api/ama/stripe/webhook` (the webhook, never the return URL, is authoritative for payment). Checkout and webhook routes return 503 until configured. |
