@@ -49,9 +49,9 @@ describe('AmaPageView', () => {
     const introductionStage = container.querySelector(
       '[data-ama-introduction-stage]',
     )
-    expect(introductionStage?.textContent).toContain(
-      'curiosity, judgment, leverage',
-    )
+    expect(introductionStage?.textContent).toContain('AI tools are the easy part')
+    expect(introductionStage?.textContent).toContain('Judgment still decides')
+    expect(introductionStage?.textContent).not.toContain('Those qualities show up')
     expect(introductionStage?.textContent).not.toContain('US$99')
     expect(introductionStage?.textContent).not.toContain('Who you are talking to')
 

@@ -281,19 +281,14 @@ export function AmaPageView() {
                     development, and startups. Along the way, I’ve rebuilt how I work around AI.
                   </p>
                   <p>
-                    The deeper shift is turning experience into prompts, workflows, memory, and
-                    agents, so one person can operate with much more leverage.
+                    AI tools are the easy part. I spend more time turning what I know into prompts,
+                    workflows, memory, and agents.
                   </p>
                   <p>
-                    Tools are still tools. The real difference is curiosity, judgment, leverage,
-                    learning speed, and the ability to carry useful ideas across fields.
+                    That gives me leverage. Judgment still decides what to build, what to skip, and
+                    where to go next.
                   </p>
-                  <p>
-                    Those qualities show up in concrete decisions: which job to take, whether a
-                    product is worth building, where a startup should go, or how people and agents
-                    should work together. If any of this feels familiar, it might be worth a
-                    conversation.
-                  </p>
+                  <p>If you’re working through questions like that, let’s talk.</p>
                 </div>
               </div>
             </div>
