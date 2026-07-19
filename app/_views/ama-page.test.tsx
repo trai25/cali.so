@@ -61,7 +61,7 @@ describe('AmaPageView', () => {
     }
   })
 
-  it('states the 24 hour policy and carries both testimonials', () => {
+  it('states the 24 hour policy and carries the testimonials', () => {
     const { container } = render(<AmaPageView />)
 
     expect(container.textContent).toContain('If we’re at least 24 hours out')
@@ -78,7 +78,10 @@ describe('AmaPageView', () => {
     expect(
       screen.getByText(/skipping the three month probation/),
     ).toBeTruthy()
+    expect(screen.getByText(/解答了我很多问题/)).toBeTruthy()
+    expect(screen.getByText(/The ¥300 was well worth it/)).toBeTruthy()
     expect(screen.getAllByText('An engineer, 2023').length).toBe(2)
+    expect(screen.getByText('An AMA guest, 2026')).toBeTruthy()
   })
 
   it('links both locale CTAs to the booking flow and nothing legacy', () => {
