@@ -72,14 +72,14 @@ function PhotoDetails({ photo }: { photo: PublishedPhoto }) {
     <div className="mx-auto w-full max-w-xl px-5 text-foreground">
       {(location || captured) && (
         <p
-          className="zoom-detail-item text-sm font-medium tabular-nums"
+          className="zoom-detail-item text-xs font-medium tabular-nums"
           style={{ '--detail-index': 0 } as React.CSSProperties}
         >
           {[location, captured].filter(Boolean).join(' · ')}
         </p>
       )}
       {fields.length > 0 && (
-        <dl className="spec-plate spec-plate-flow zoom-detail-frame mt-3">
+        <dl className="spec-plate spec-plate-flow zoom-detail-frame mt-2">
           {fields.map((field, index) => (
             <div
               key={field.en}

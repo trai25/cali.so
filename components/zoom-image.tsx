@@ -99,7 +99,7 @@ export function ZoomImage({
     // Fit within the viewport but never beyond the intrinsic size —
     // zoom means "actual size", not "stretch".
     const maxW = Math.min(window.innerWidth - VIEWPORT_PAD * 2, width)
-    const detailSpace = expandedContent ? 152 : 0
+    const detailSpace = expandedContent ? 128 : 0
     const maxH = Math.max(
       1,
       Math.min(
