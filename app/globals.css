@@ -1342,7 +1342,7 @@
 
 .spec-nameplate > div {
   display: grid;
-  grid-template-columns: 7.5rem minmax(0, 1fr);
+  grid-template-columns: 9rem minmax(0, 1fr);
 }
 
 .spec-nameplate > div + div {
