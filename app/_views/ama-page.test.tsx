@@ -4,7 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { AmaPageView } from './ama-page'
-import { AMA_TOPIC_LABELS, AMA_TOPICS } from '~/lib/ama/booking/topics'
+import { AMA_TOPICS } from '~/lib/ama/booking/topics'
 
 beforeEach(() => {
   vi.stubGlobal(
@@ -33,7 +33,7 @@ describe('AmaPageView', () => {
     expect(container.textContent).not.toContain(
       '这个 AMA，就是留出一小时，把这些事聊清楚。',
     )
-    expect(screen.getByText(/more advice usually isn’t the answer/)).toBeTruthy()
+    expect(screen.getByText(/Answers are getting cheaper/)).toBeTruthy()
 
     // Price and duration read straight off the spec sheet.
     expect(screen.getAllByText('US$99').length).toBe(2)
@@ -49,7 +49,7 @@ describe('AmaPageView', () => {
     const introductionStage = container.querySelector(
       '[data-ama-introduction-stage]',
     )
-    expect(introductionStage?.textContent).toContain('same three questions')
+    expect(introductionStage?.textContent).toContain('staying curious')
     expect(introductionStage?.textContent).not.toContain('US$99')
     expect(introductionStage?.textContent).not.toContain('Who you are talking to')
 
@@ -62,10 +62,6 @@ describe('AmaPageView', () => {
     const { container } = render(<AmaPageView />)
 
     expect(AMA_TOPICS.length).toBe(7)
-    for (const topic of AMA_TOPICS) {
-      const label = AMA_TOPIC_LABELS[topic]
-      expect(screen.getAllByText(label.en).length).toBeGreaterThanOrEqual(1)
-    }
 
     for (const zhLabel of [
       'Web、iOS 与全栈工程',
@@ -79,11 +75,26 @@ describe('AmaPageView', () => {
       expect(screen.getByText(zhLabel)).toBeTruthy()
     }
 
+    for (const enLabel of [
+      'Web, iOS, and full-stack engineering',
+      'Product judgment and design',
+      'AI workflows and coding agents',
+      'Career growth and going global',
+      'Indie development, startups, and GTM',
+      'Teams, collaboration, and leadership',
+      'Anything else on your mind',
+    ]) {
+      expect(screen.getByText(enLabel)).toBeTruthy()
+    }
+
     expect(container.textContent).toContain('software factory')
     expect(container.textContent).toContain('OpenClaw')
     expect(container.textContent).toContain('PM、财务和日常运营')
     expect(container.textContent).toContain('严格意义上的 OPC')
     expect(container.textContent).toContain('公司文化里必不可少的一部分')
+    expect(container.textContent).toContain('self-hosted OpenClaw')
+    expect(container.textContent).toContain('one-person company (OPC)')
+    expect(container.textContent).toContain('essential part of company culture')
     for (const tool of ['Linear', 'Codex', 'Claude Code', 'Slack', 'Cursor']) {
       expect(container.textContent).toContain(tool)
       expect(
@@ -118,7 +129,8 @@ describe('AmaPageView', () => {
     expect(screen.getByText(/解答了我很多问题/)).toBeTruthy()
     expect(screen.getAllByText('An engineer, 2023').length).toBe(2)
     expect(screen.getByText('一位大学生，2026')).toBeTruthy()
-    expect(screen.getByText('An AMA guest, 2026')).toBeTruthy()
+    expect(screen.getByText('A university student, 2026')).toBeTruthy()
+    expect(container.textContent).not.toContain('An AMA guest, 2026')
     expect(container.textContent).not.toContain('一位来访者，2026')
     expect(container.textContent).not.toContain('这 300')
     expect(container.textContent).not.toContain('¥300')

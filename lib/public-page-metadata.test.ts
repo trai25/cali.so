@@ -46,7 +46,7 @@ describe('public page metadata copy', () => {
       en: {
         title: 'Projects',
         description:
-        'Products, open-source tools, and small experiments I have made over the years. Some useful, some playful, all made with care.',
+          'Products, open-source tools, and small experiments I have made over the years. Some useful, some playful, all made with care.',
       },
     })
     expect(publicPageMetadata.ama).toEqual({
@@ -58,7 +58,7 @@ describe('public page metadata copy', () => {
       en: {
         title: 'AMA',
         description:
-          'One hour to get clear on product design, engineering, career, indie development, startups, going global, or AI workflows.',
+          'A one-to-one conversation about AI-native work, product judgment, engineering, indie development, startups, careers, and going global.',
       },
     })
   })

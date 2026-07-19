@@ -50,7 +50,7 @@ export const publicPageMetadata = {
     en: {
       title: 'AMA',
       description:
-        'One hour to get clear on product design, engineering, career, indie development, startups, going global, or AI workflows.',
+        'A one-to-one conversation about AI-native work, product judgment, engineering, indie development, startups, careers, and going global.',
     },
   },
 } as const

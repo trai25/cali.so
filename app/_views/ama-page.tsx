@@ -6,11 +6,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { AmaIntroductionStage } from '~/components/ama/ama-introduction-stage'
 import { Favicon } from '~/components/favicon'
 import { PixelCluster } from '~/components/pixel-cluster'
-import {
-  AMA_TOPIC_LABELS,
-  AMA_TOPICS,
-  type AmaTopic,
-} from '~/lib/ama/booking/topics'
+import { AMA_TOPICS, type AmaTopic } from '~/lib/ama/booking/topics'
 import { T } from '~/lib/i18n'
 import { faviconUrl } from '~/lib/link-previews'
 import { localeMetadata } from '~/lib/locale-metadata'
@@ -85,45 +81,69 @@ const TESTIMONIALS = [
     zh: '非常感谢您今天 AMA 的分享，听完之后收获很多，也觉得您的经验和建议很真诚、很有启发，解答了我很多问题 😁😁',
     en: 'Thank you so much for today’s AMA. I learned a lot, and your experience and advice felt sincere and insightful. You answered so many of my questions.',
     zhAttribution: '一位大学生，2026',
-    enAttribution: 'An AMA guest, 2026',
+    enAttribution: 'A university student, 2026',
   },
 ] as const
 
 const AMA_TOPIC_PAGE_COPY: Record<
   AmaTopic,
-  { zhLabel: string; zhDescription: string }
+  {
+    zhLabel: string
+    zhDescription: string
+    enLabel: string
+    enDescription: string
+  }
 > = {
   engineering: {
     zhLabel: 'Web、iOS 与全栈工程',
     zhDescription: '技术选择、架构、实现，以及怎么和 agents 一起把东西做出来。',
+    enLabel: 'Web, iOS, and full-stack engineering',
+    enDescription:
+      'Technical choices, architecture, implementation, and how to ship alongside agents.',
   },
   'product-design': {
     zhLabel: '产品判断与产品设计',
     zhDescription:
       '当答案越来越容易得到，怎么判断什么值得做，也把自己的品味落到产品和界面细节里。',
+    enLabel: 'Product judgment and design',
+    enDescription:
+      'When answers are everywhere, how do you decide what’s worth building and turn your taste into product and interface details?',
   },
   'ai-workflows': {
     zhLabel: 'AI 工作流与 Coding Agents',
     zhDescription:
       '从 Prompt、Memory 到多 agent 协作，怎么搭一套真的能跑、也真的能 ship 的 workflow。',
+    enLabel: 'AI workflows and coding agents',
+    enDescription:
+      'From prompts and memory to multi-agent orchestration, how to build a workflow that actually runs and ships.',
   },
   career: {
     zhLabel: '职业、出海与英语学习',
     zhDescription: '怎么选机会、进入新的市场和语境，也更快建立自己的优势。',
+    enLabel: 'Career growth and going global',
+    enDescription: 'How to choose opportunities, enter new markets, and build an edge quickly.',
   },
   'indie-business': {
     zhLabel: '独立开发、创业与 GTM',
     zhDescription:
       '从一个模糊的 idea 到 MVP、验证、定价，再决定下一步往哪里走。',
+    enLabel: 'Indie development, startups, and GTM',
+    enDescription:
+      'From a rough idea to an MVP, validation, pricing, and the decision about what comes next.',
   },
   'team-leadership': {
     zhLabel: '团队、协作与带人',
     zhDescription:
       '怎么把个人经验变成团队可以复用的系统，而不是每件事都重新来一次。',
+    enLabel: 'Teams, collaboration, and leadership',
+    enDescription:
+      'How to turn individual experience into a system the team can reuse instead of starting over every time.',
   },
   'something-else': {
     zhLabel: '其他你正在想的',
     zhDescription: '不属于上面任何一类也没关系。',
+    enLabel: 'Anything else on your mind',
+    enDescription: 'If it doesn’t fit any of the above, that’s fine.',
   },
 }
 
@@ -252,13 +272,33 @@ export function AmaPageView() {
                   如果你也正好在想这些，不妨来试试。说不定聊着聊着，就会看到一个原来没想到的角度。
                 </p>
               </div>
-              <p data-en-block>
-                After years in product design, engineering, indie development, startups, going
-                global, and now AI workflows, I’ve learned that more advice usually isn’t the
-                answer. What helps is a clearer way to see the situation. Different problems tend
-                to come back to the same three questions: what matters, what are the tradeoffs, and
-                what should happen next. This AMA gives us an hour to get clear on them.
-              </p>
+              <div data-en-block className="flex flex-col gap-3">
+                <p>Answers are getting cheaper. Judgment is getting more valuable.</p>
+                <p>
+                  Over the last few years, I’ve worked across product design, engineering, indie
+                  development, startups, and going global, while rebuilding how I work around AI.
+                  Having Codex, Claude Code, or Cursor write code is only the obvious part. The
+                  deeper shift is turning experience into prompts, workflows, memory, and agents,
+                  so one person can operate with much more leverage and move an idea toward
+                  something shipped and testable much faster.
+                </p>
+                <p>
+                  But tools are still tools. The real difference comes down to a different set of
+                  traits: staying curious when the answer isn’t obvious, keeping your own judgment
+                  when consensus is easy to copy, knowing how to use AI as leverage, learning fast
+                  enough to keep up, and carrying useful ideas from one field into another.
+                </p>
+                <p>
+                  That may sound like a conversation about being AI-native, but it ends up in very
+                  concrete decisions: which job to take, whether a product is worth building, where
+                  an indie project or startup should go next, how to enter a new market, and how to
+                  build a system where you, your team, and your agents can actually work together.
+                </p>
+                <p>
+                  If you’re thinking about any of this too, it might be worth a conversation. We
+                  may find an angle you hadn’t seen before.
+                </p>
+              </div>
             </div>
           </header>
           <PixelCluster variant={5} className="enter shrink-0" />
@@ -325,20 +365,34 @@ export function AmaPageView() {
           <div data-en-block className="flex flex-col gap-3 page-introduction">
             <p>
               I’m Cali, founder of Zolplay. I’ve worked hands-on across web, iOS, product design,
-              and my own products.
+              and indie products, and I’ve also built teams, run a company, and taken products
+              global.
             </p>
             <p>
-              These days, I’m more interested in how product judgment, design, engineering, and
-              team collaboration can work as one system that actually ships. I’ve built a software
-              factory that starts with ideas and issues in <AmaProductName name="Linear" />, then
-              brings <AmaProductName name="Codex" />, <AmaProductName name="Claude Code" />, and{' '}
-              <AmaProductName name="Cursor" /> into research, scoping, implementation, and review
-              before the work comes back to <AmaProductName name="Slack" /> and the team. The point
-              isn’t just to get AI to write code faster. It’s to redesign how products get made, so
-              a rough idea can become something real, testable, and shipped with less friction. We
-              can get specific about the workflow and coding-agent practices, or talk through a
-              product decision, startup, career move, indie project, or something you’re taking
-              global. We can talk in English, Chinese, or both.
+              What interests me now isn’t learning one more AI tool. It’s reconnecting product
+              judgment, design, engineering, and the day-to-day operation of a company. I’ve built
+              my own software factory around that: ideas and issues start in{' '}
+              <AmaProductName name="Linear" />; <AmaProductName name="Codex" />,{' '}
+              <AmaProductName name="Claude Code" />, and <AmaProductName name="Cursor" /> help with
+              research, scoping, implementation, and review; then the work returns to{' '}
+              <AmaProductName name="Slack" /> and the team keeps it moving.
+            </p>
+            <p>
+              I also run a self-hosted OpenClaw setup that orchestrates multiple agents. PM,
+              finance, and day-to-day operations are assigned to different agents, with OpenClaw
+              coordinating the work. Many processes that used to need someone watching every step
+              can now run end to end on their own.
+            </p>
+            <p>
+              I’m not literally building a one-person company (OPC). There are other people here.
+              But I do follow a lot of the OPC playbook: capture what we know in systems, give
+              repetitive work to agents, and keep human attention on direction, tradeoffs, and
+              taste.
+            </p>
+            <p>
+              I increasingly believe AI-native won’t stay a tool stack. It will become an essential
+              part of company culture. How products get built, how teams collaborate, and how work
+              gets assigned will all change with it.
             </p>
           </div>
         </div>
@@ -354,9 +408,16 @@ export function AmaPageView() {
             职业、产品、工程、出海，看起来是不同的问题，背后经常都在判断同一件事：什么值得做，什么可以交给系统，什么必须由你自己决定。
           </p>
         </div>
+        <div data-en-block className="page-introduction mt-4 flex flex-col gap-3">
+          <p>AI doesn’t have to be the starting point.</p>
+          <p>
+            Careers, products, engineering, and going global can look like separate problems. Often
+            they come down to the same judgment: what’s worth doing, what a system can handle, and
+            what still needs your judgment.
+          </p>
+        </div>
         <ul className="mt-4 text-sm">
           {AMA_TOPICS.map((topic) => {
-            const label = AMA_TOPIC_LABELS[topic]
             const pageCopy = AMA_TOPIC_PAGE_COPY[topic]
             return (
               <li key={topic} className="hairline-top py-3 first:border-t-0">
@@ -366,7 +427,12 @@ export function AmaPageView() {
                     {pageCopy.zhDescription}
                   </span>
                 </span>
-                <span data-en-block>{label.en}</span>
+                <span data-en-block className="block">
+                  <span className="block">{pageCopy.enLabel}</span>
+                  <span className="mt-1 block text-[13px] leading-5 text-muted-foreground">
+                    {pageCopy.enDescription}
+                  </span>
+                </span>
               </li>
             )
           })}
