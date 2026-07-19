@@ -62,7 +62,6 @@ the full suite and production build must pass from a frozen-lockfile install.
 pnpm typecheck
 pnpm test:unit
 pnpm test:localization
-pnpm test:port-post
 pnpm test:ama
 pnpm test:deployment
 pnpm test:security

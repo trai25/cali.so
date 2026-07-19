@@ -130,7 +130,6 @@ pnpm dev
 pnpm typecheck
 pnpm test:unit
 pnpm test:localization
-pnpm test:port-post
 pnpm test:ama
 pnpm test:deployment
 pnpm build
