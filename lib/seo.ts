@@ -1,10 +1,15 @@
 import { publicPageMetadata } from './public-page-metadata'
 
 function publicSiteUrl() {
-  const url = new URL(
+  const raw =
     process.env.PUBLIC_SITE_URL ??
-      (process.env.NODE_ENV === 'production' ? 'https://cali.so' : 'http://localhost:3199'),
-  )
+    (process.env.NODE_ENV === 'production' ? 'https://cali.so' : 'http://localhost:3199')
+  let url: URL
+  try {
+    url = new URL(raw)
+  } catch {
+    throw new Error('PUBLIC_SITE_URL must be a valid URL')
+  }
   if (
     url.protocol !== 'https:' &&
     !['localhost', '127.0.0.1'].includes(url.hostname)
