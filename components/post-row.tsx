@@ -1,6 +1,4 @@
-import Image from 'next/image'
-
-import { DitherVeil } from '~/components/dither-veil'
+import { DitheredImage } from '~/components/dither-veil'
 import { PostTransitionLink } from '~/components/post-transition-link'
 import type { Post } from '~/lib/content'
 import { formatMonthDay, formatShortDate } from '~/lib/date'
@@ -43,8 +41,14 @@ export function PostRow({
             className="print-thumb"
             style={{ viewTransitionName: coverTransitionName } as React.CSSProperties}
           >
-            <Image src={post.cover.src} alt="" width={64} height={44} sizes="64px" className="print-thumb-img" />
-            <DitherVeil src={post.cover.src} />
+            <DitheredImage
+              src={post.cover.src}
+              alt=""
+              width={64}
+              height={44}
+              sizes="64px"
+              className="print-thumb-img"
+            />
           </span>
         ) : (
           <span className="print-thumb print-thumb-empty" />

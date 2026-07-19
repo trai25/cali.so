@@ -118,16 +118,13 @@ test('dev continuously migrates and deploys the persistent Staging environment',
   )
 })
 
-test('main uses protected Production credentials and deploys only after migration', async () => {
+test('main automatically deploys with protected Production credentials after migration', async () => {
   const config = await workflow('deploy-production')
   assert.deepEqual(config.on.push.branches, ['main'])
-
-  const review = config.jobs['migration-review']
-  assert.equal(review.environment, 'production-migration-review')
-  assert.equal(review.env, undefined)
+  assert.equal(config.jobs['migration-review'], undefined)
 
   const job = config.jobs.deploy
-  assert.equal(job.needs, 'migration-review')
+  assert.equal(job.needs, undefined)
   assert.equal(job.environment, 'production')
   assert.equal(job.env, undefined)
   assertOrdered(
@@ -154,10 +151,20 @@ test('main uses protected Production credentials and deploys only after migratio
     migrate.env.MIGRATION_DATABASE_URL,
     '${{ secrets.MIGRATION_DATABASE_URL }}',
   )
+  assert.match(migrate.run, /\$\{MIGRATION_DATABASE_URL:\?/)
+  assert.match(migrate.run, /pnpm db:migrate/)
+  assert.equal(migrate.env.VERCEL_TOKEN, undefined)
   const deploy = job.steps.find(
     (step) => step.name === 'Deploy Vercel Production',
   )
+  for (const name of ['VERCEL_ORG_ID', 'VERCEL_PROJECT_ID', 'VERCEL_TOKEN']) {
+    assert.match(deploy.run, new RegExp(`\\$\\{${name}:\\?`))
+  }
   assert.match(deploy.run, /vercel@56\.3\.1 deploy --prod/)
+  assert.match(
+    deploy.run,
+    /--build-env ENABLE_EXPERIMENTAL_COREPACK=1/,
+  )
   assert.match(deploy.run, /GITHUB_STEP_SUMMARY/)
   assert.equal(deploy.env.MIGRATION_DATABASE_URL, undefined)
   assert.equal(deploy.env.DATABASE_URL, undefined)
@@ -305,6 +312,10 @@ test('shared non-production action keeps migration credentials out of Vercel', a
   assert.match(deploy.run, /vercel@56\.3\.1 deploy/)
   assert.match(deploy.run, /--target=/)
   assert.match(deploy.run, /--build-env DATABASE_URL=/)
+  assert.match(
+    deploy.run,
+    /--build-env ENABLE_EXPERIMENTAL_COREPACK=1/,
+  )
   assert.match(deploy.run, /--env DATABASE_URL=/)
   assert.doesNotMatch(deploy.run, /MIGRATION_DATABASE_URL/)
   assert.doesNotMatch(deploy.run, /\$\{\{ inputs\.(?:git-ref|target) \}\}/)

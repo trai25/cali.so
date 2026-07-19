@@ -1,5 +1,6 @@
 'use client'
 
+import Image, { type ImageProps } from 'next/image'
 import { useEffect, useRef } from 'react'
 
 import { playCoverSound } from '~/lib/sound'
@@ -56,6 +57,24 @@ function hashOf(s: string): number {
   return Math.abs(h)
 }
 
+export function DitheredImage({
+  ditherMode = 'dither',
+  src,
+  ...imageProps
+}: Omit<ImageProps, 'src'> & {
+  ditherMode?: 'dither' | 'collage'
+  src: string
+}) {
+  const imageRef = useRef<HTMLImageElement>(null)
+
+  return (
+    <>
+      <Image {...imageProps} ref={imageRef} src={src} />
+      <DitherVeil imageRef={imageRef} seed={src} mode={ditherMode} />
+    </>
+  )
+}
+
 // Physical print veil for covers, theme-invariant (paper + ink — the
 // print is an object, not an interface).
 // mode="dither": a full ordered-dither print that develops into the
@@ -66,20 +85,28 @@ function hashOf(s: string): number {
 // through a BAYER DISSOLVE: cells materialize in the order of the
 // matrix's own 16 thresholds — the image passes through its own screen.
 // Works on touch too. Reduced motion swaps instantly; glitch is skipped.
-export function DitherVeil({ src, mode = 'dither' }: { src: string; mode?: 'dither' | 'collage' }) {
+function DitherVeil({
+  imageRef,
+  seed,
+  mode,
+}: {
+  imageRef: React.RefObject<HTMLImageElement | null>
+  seed: string
+  mode: 'dither' | 'collage'
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
     const canvasEl = canvasRef.current
     if (!canvasEl) return
+    const sourceImage = imageRef.current
+    if (!sourceImage) return
+    const img: HTMLImageElement = sourceImage
     const canvas: HTMLCanvasElement = canvasEl
     const maybeCtx = canvas.getContext('2d')
     if (!maybeCtx) return
     const ctx: CanvasRenderingContext2D = maybeCtx
 
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-    img.src = src
     let playing = false
     let prepared: { rect: DOMRect; dither: Grid; ascii: Grid; full: FullGrid } | null = null
     const timers: ReturnType<typeof setTimeout>[] = []
@@ -201,7 +228,7 @@ export function DitherVeil({ src, mode = 'dither' }: { src: string; mode?: 'dith
     }
 
     function prepare(rect: DOMRect) {
-      const rand = mulberry(hashOf(src))
+      const rand = mulberry(hashOf(seed))
       const seeds: Array<{ x: number; y: number }> = []
       for (let i = 0; i < SEEDS; i++)
         seeds.push({ x: rand() * rect.width, y: rand() * rect.height })
@@ -376,7 +403,7 @@ export function DitherVeil({ src, mode = 'dither' }: { src: string; mode?: 'dith
       if (stepTimer) clearTimeout(stepTimer)
       for (const t of timers) clearTimeout(t)
     }
-  }, [src, mode])
+  }, [imageRef, seed, mode])
 
   return <canvas ref={canvasRef} aria-hidden className="dither-veil" />
 }

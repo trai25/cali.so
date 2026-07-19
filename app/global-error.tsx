@@ -7,7 +7,7 @@ import { ThemeProvider } from '~/components/theme-provider'
 import { PREPAINT_SCRIPT } from '~/lib/security/inline-scripts'
 import { cn } from '~/lib/utils'
 
-import { fontVariables } from './fonts'
+import { fontVariablesForLocale } from './fonts'
 import { ErrorPageView, type ErrorBoundaryProps } from './_views/error-page'
 
 export default function GlobalError({ retry }: ErrorBoundaryProps) {
@@ -15,7 +15,7 @@ export default function GlobalError({ retry }: ErrorBoundaryProps) {
     <html
       lang="zh-CN"
       suppressHydrationWarning
-      className={cn('font-sans', fontVariables)}
+      className={cn('font-sans', fontVariablesForLocale('zh'))}
     >
       <head>
         <title>Something went wrong | Cali Castle</title>
