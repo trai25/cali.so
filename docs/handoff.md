@@ -85,6 +85,9 @@ Current as of July 2026.
 - Security baseline controls from PR #97 remain mandatory: CSP and security
   headers, same-origin mutation policy, rate limits, kill switches,
   privacy-safe audit events, isolated credentials, and security automation.
+- Playwright is the browser release gate. Quality runs the complete production-
+  build Chromium suite plus a WebKit smoke matrix, while Preview and Staging
+  rerun the read-only hosted subset against the exact deployment URL.
 - The Bunny-backed Media Library in ADR-0007 owns the curated photo workflow.
   Private Originals stay server-only, while `/photos` and homepage previews
   consume the active Published Photo Selection from Bunny Renditions. Media
@@ -130,6 +133,8 @@ pnpm test:localization
 pnpm test:port-post
 pnpm test:ama
 pnpm test:deployment
+pnpm build
+pnpm test:browser
 pnpm test:security
 pnpm test:media:storage
 pnpm test:media:catalog
@@ -143,7 +148,6 @@ pnpm test:media:photo-selection
 pnpm test:media:purge
 pnpm test:media:reconciliation
 pnpm db:validate
-pnpm build
 pnpm verify:legacy-urls
 pnpm verify:links
 pnpm verify:public-discovery

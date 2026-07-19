@@ -65,10 +65,28 @@ test('feature pushes branch from Staging, migrate, then deploy Preview', async (
   assert.equal(comment.env.GIT_BRANCH, '${{ github.ref_name }}')
   assert.equal(comment.env.COMMIT_SHA, '${{ github.sha }}')
   assert.match(comment.run, /comment-preview-deployment\.mjs/)
+  const browserCheck = job.steps.find(
+    (step) => step.name === 'Verify Preview in browser',
+  )
+  assert.equal(
+    browserCheck.env.PLAYWRIGHT_BASE_URL,
+    '${{ steps.deployment.outputs.deployment-url }}',
+  )
+  assert.match(browserCheck.run, /pnpm test:browser:hosted/)
   assertOrdered(
     job.steps,
     'Deploy Preview',
     'Comment Preview URL on pull request',
+  )
+  assertOrdered(
+    job.steps,
+    'Comment Preview URL on pull request',
+    'Verify Preview in browser',
+  )
+  assertOrdered(
+    job.steps,
+    'Install Playwright Chromium',
+    'Verify Preview in browser',
   )
 })
 
@@ -80,9 +98,24 @@ test('dev continuously migrates and deploys the persistent Staging environment',
   assert.equal(job.environment, 'staging')
   assert.equal(job.if, "github.ref == 'refs/heads/dev'")
   const deploy = job.steps.find((step) => step.name === 'Deploy Staging')
+  assert.equal(deploy.id, 'deployment')
   assert.equal(deploy.uses, './.github/actions/deploy-neon-vercel')
   assert.equal(deploy.with['branch-name'], 'staging')
   assert.equal(deploy.with.target, 'staging')
+  const browserCheck = job.steps.find(
+    (step) => step.name === 'Verify Staging in browser',
+  )
+  assert.equal(
+    browserCheck.env.PLAYWRIGHT_BASE_URL,
+    '${{ steps.deployment.outputs.deployment-url }}',
+  )
+  assert.match(browserCheck.run, /pnpm test:browser:hosted/)
+  assertOrdered(job.steps, 'Deploy Staging', 'Verify Staging in browser')
+  assertOrdered(
+    job.steps,
+    'Install Playwright Chromium',
+    'Verify Staging in browser',
+  )
 })
 
 test('main uses protected Production credentials and deploys only after migration', async () => {
@@ -144,6 +177,11 @@ test('release pull requests reject unsafe migrations before merging to main', as
   assert.match(check.run, /check-production-migrations\.mjs/)
   assert.equal(check.env.BASE_SHA, '${{ github.event.pull_request.base.sha }}')
   assert.equal(check.env.HEAD_SHA, '${{ github.event.pull_request.head.sha }}')
+  const browserCheck = job.steps.find(
+    (step) => step.name === 'Test browser release gate',
+  )
+  assert.match(browserCheck.run, /pnpm test:browser/)
+  assertOrdered(job.steps, 'Build', 'Test browser release gate')
 })
 
 test('branch deletion cleans only ephemeral Neon and Vercel Previews', async () => {

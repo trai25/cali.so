@@ -1,6 +1,6 @@
 # v3 cutover readiness
 
-Last checked: 2026-07-18.
+Last checked: 2026-07-19.
 
 The controlled deployment architecture is active: `dev` is the integration
 branch, `staging` is the persistent non-production database branch, and the
@@ -18,10 +18,11 @@ found that its runtime contract, including the database and media provider
 configuration, was not ready for v3. Required checks on `main`, Staging runtime
 grant and signed-in owner verification, Production database and provider proof,
 Vercel dashboard checks, Analytics ingestion proof, and rollback proof remain
-open. The final complete-diff reviews also found unresolved motion and layer
-standards plus two literal issue-acceptance gaps: the repository has no
-automated browser-test command, and the reviewed custom Staging environment has
-not been explicitly accepted as the issue's requested feature Preview.
+open. PR #189 resolved the motion implementations, but the complete-diff
+Standards and Spec reviews still need to be refreshed; the documented layer
+finding and one literal issue-acceptance gap remain because the reviewed custom
+Staging environment has not been explicitly accepted as the issue's requested
+feature Preview.
 
 Unknown hosted state is not counted as passed. This report does not authorize
 merging to `main`, changing production settings, accessing production data, or
@@ -53,11 +54,11 @@ Renditions. The retired static photo fallback has been removed.
 | Gate | Status | Evidence or blocker |
 | --- | --- | --- |
 | Frozen install | PASS | `pnpm install --frozen-lockfile` completed from the audited commit. |
-| Repository validation | PARTIAL | Every existing command and count in the automated evidence section passed, but the repository no longer has an automated browser-test command. Issue #107 explicitly requires browser tests in addition to its manual browser matrix. |
+| Repository validation | PASS (LOCAL) / AWAITING CI AND HOSTED PROOF | The new `pnpm test:browser` production-build gate passes 19 Chromium behavior cases plus six WebKit smoke executions locally. `Quality` runs the complete suite, while Preview and Staging deployments run the 13 read-only `@hosted` cases against their exact deployment URL. Remote workflow proof remains pending on this branch. |
 | Public browser behavior | PASS | Local and Staging review covered desktop and mobile, both locales, light and dark appearance, reduced motion, keyboard navigation, metadata, overflow, feeds, generated social images, and Instant Navigation. |
 | Owner admin boundary | PASS (Staging signed-out path) / AWAITING OWNER AND PRODUCTION PROOF | A clean browser navigation to Staging `/admin` completes Clerk's development-instance handshake and reaches the isolated sign-in UI. The complete remote security-boundary verifier passes. Signed-in owner reads and mutations still require authorized operator access and the database gate below; confirm the Production Clerk keys and owner metadata at cutover. |
-| Complete diff Standards review | FAIL | The final review found outdated AMA capability and owner step-up decisions, keyboard animation in Preview cards, undocumented global/local layer values, and a judgement-level divergent-change smell in `app/globals.css`. ADR-0011, ADR-0012, and the security baseline now resolve the first two conflicts. Preview-card keyboard motion remains tracked by [#184](https://github.com/CaliCastle/cali.so/issues/184); the layer-scale finding still needs a fix, a dedicated issue, or explicit maintainer rejection. |
-| Complete diff Spec review | PARTIAL | No scope creep was found. Automated browser tests are absent, the issue literally requests feature Preview evidence while the current matrix used Staging, Analytics dashboard proof remains absent, and Domain evidence was overstated. The Clerk redirect-shape verifier intentionally stops at the first 307, but the separate clean-browser matrix completed the development handshake and rendered Clerk sign-in. |
+| Complete diff Standards review | PARTIAL / AWAITING RE-REVIEW | PR #189 landed the credential-driven AMA and owner-auth decisions plus keyboard-instant Preview-card, lightbox, and article-map behavior. The browser gate now verifies those motion paths. Issues #184 through #186 remain open because their PR merged to `dev`, not the default branch; the layer-scale finding and judgement-level `app/globals.css` disposition still need a recorded resolution before the refreshed review can pass. |
+| Complete diff Spec review | PARTIAL / AWAITING RE-REVIEW | No scope creep was found, and the missing automated browser-test command is now implemented. The issue still literally requests feature Preview evidence while the current matrix used Staging, Analytics dashboard proof remains absent, and Domain evidence was overstated. The Clerk redirect-shape verifier intentionally stops at the first 307, but the separate clean-browser matrix completed the development handshake and rendered Clerk sign-in. |
 | Production-like Staging | PASS (public and signed-out boundaries) | `https://beta.cali.so` serves `dev@8802607`. The complete public route, link, discovery, legacy-URL, security-boundary, and manual browser matrix passed. Signed-in owner operations and provider-backed workflows remain separate gates. |
 | Issue #107 feature Preview evidence | PARTIAL | The accepted deployment architecture promotes `dev` continuously to a stable custom Staging environment, which is a stronger repeatable target than an ephemeral feature Preview. The issue text still says Preview; obtain an explicit maintainer acceptance of Staging as the substitute or repeat the complete matrix on a recorded feature Preview URL and SHA. |
 | Vercel Web Analytics | AWAITING DASHBOARD CONFIRMATION | Chinese and English Staging routes load the first-party Insights client; owner-admin navigation does not load it before the Clerk redirect. Confirm fresh pageviews from the accepted production-like target in the existing `cali-so` Analytics dashboard: Staging if the maintainer accepts it as the Preview substitute, otherwise the recorded feature Preview. |
@@ -101,6 +102,12 @@ The following passed from the frozen installation:
 - 11 Media reconciliation tests.
 - 4 port-post tests.
 - Production build with 72 generated pages using the isolated CI environment.
+- Playwright production-build gate: 19 Chromium behavior cases plus six WebKit
+  smoke executions, covering both locales, desktop and mobile, light and dark,
+  reduced motion, prefetched Instant Navigation before streamed data releases,
+  history, focus
+  restoration, metadata, feeds, social images, public Insights inclusion, and
+  signed-out admin Insights exclusion.
 - 53 legacy URL probes against the production server.
 - 400 internal links and 147 external targets across all 30 sitemap pages; one
   aggregate fetch was transiently inconclusive and returned 200 on direct
@@ -117,6 +124,14 @@ migration remains byte-for-byte immutable and absent from the v3 Drizzle
 journal.
 
 ## Browser review
+
+Playwright now turns the browser matrix into a repository gate. `Quality` runs
+all 19 Chromium cases and repeats the six public smoke profiles in WebKit.
+Feature Preview and Staging deployment workflows run the 13 read-only
+`@hosted` cases against the exact deployment URL, so deployment-specific
+Insights, navigation, metadata, feed, social-image, locale, appearance, motion,
+and responsive failures block the workflow. Screenshots, video, and traces are
+retained only on failure.
 
 Local production-build review covered the homepage and a representative blog
 post in Chinese and English at desktop and mobile widths. Staging repeated the
@@ -175,10 +190,12 @@ Final review artifacts after the accessibility corrections:
   rather than making repository release status depend on another service's
   uptime. The final aggregate run had one inconclusive X/Twitter fetch; a direct
   retry returned HTTP 200.
-- The Preferences keyboard path and reduced-motion behavior pass, but the final
-  review found that Preview-card keyboard focus still runs its card and cell
-  animations. Issue #184 owns that defect. The same keyboard hard rule is
-  already tracked for lightbox and article-map actions in issues #185 and #186.
+- PR #189 landed the keyboard-instant Preview-card, lightbox, and article-map
+  paths. The Playwright production-build gate now verifies zero card and cell
+  motion on keyboard Preview-card focus, synchronous lightbox open and Escape
+  focus restoration, instant article-map toggles, and zero running Web
+  Animations under reduced motion. Issues #184 through #186 remain open because
+  their PR merged to `dev` rather than the default branch.
 - Earlier design-contract findings around selection weight, contrast, scroll
   reveals, and chrome typography are closed. The final review newly found that
   the implementation uses local and page-level numeric stacking values beyond
@@ -199,11 +216,13 @@ Final review artifacts after the accessibility corrections:
 - The final complete-diff Standards review found two stale decision conflicts.
   ADR-0011 now records credential-driven AMA capabilities, ADR-0012 records the
   removal of owner step-up prompts, and the superseded ADR and security-baseline
-  text is explicit. The motion and layer findings above still fail this gate.
-- The final complete-diff Spec review found no scope creep. It did find missing
-  automated browser tests, Staging substituted for the issue's literal Preview
-  requirement, and the overstated Domain row corrected above. Production and
-  dashboard blockers remain unchanged.
+  text is explicit. PR #189 resolves the motion finding in code; the layer
+  finding and a refreshed complete-diff review remain open.
+- The final complete-diff Spec review found no scope creep. The automated
+  browser-test gap is now closed locally and wired into Quality, Preview, and
+  Staging. Staging still substitutes for the issue's literal Preview
+  requirement, and the overstated Domain row is corrected above. Production
+  and dashboard blockers remain unchanged.
 - Remaining type below 14 pixels is limited to the design language's explicit
   13-pixel code exception and text printed onto physical craft objects such as
   polaroids, record sleeves, book covers, and the illustrated envelope. It is
@@ -263,42 +282,40 @@ operator before cutover.
 Maintainer-operated commands for the hosted actions below are collected in
 `docs/v3-cutover-ops-runbook.md`.
 
-1. Resolve or explicitly reject the remaining Standards blockers with recorded
-   reasoning: complete keyboard-instant issues #184 through #186 and reconcile
-   the implementation with the documented closed layer scale. The
+1. Refresh the complete-diff Standards and Spec reviews, record the disposition
+   of issues #184 through #186 now that their implementation is in `dev`, and
+   reconcile the implementation with the documented closed layer scale. The
    judgement-level `app/globals.css` divergent-change finding may remain a
    follow-up only if the maintainer records that disposition.
-2. Restore an automated browser-test command and CI gate, or explicitly revise
-   issue #107's browser-test acceptance criterion with maintainer reasoning.
-3. Either record maintainer acceptance that the stable custom Staging
+2. Either record maintainer acceptance that the stable custom Staging
    environment supersedes the issue's ephemeral Preview wording, or repeat the
    full matrix on a recorded feature Preview URL and SHA.
-4. With two fresh confirmations, verify Staging migrations `0010` and `0011`,
+3. With two fresh confirmations, verify Staging migrations `0010` and `0011`,
    Media and AMA tables, and the runtime role's CRUD-only grants. Then sign in
    as the marked owner and prove one non-destructive read plus the required
    mutation boundaries. Until then, treat signed-in Staging admin operations as
    unvalidated.
-5. Provision the Production environment for the v3 contract: replace the
+4. Provision the Production environment for the v3 contract: replace the
    legacy `DATABASE_URL` with the CRUD-only Neon runtime role and add the
    missing secrets, rate limits, intended AMA provider credential pairs, and
    complete Bunny and media configuration.
-6. Add required `Quality` and `CodeQL` checks to protected `main`; `dev` already
+5. Add required `Quality` and `CodeQL` checks to protected `main`; `dev` already
    requires both.
-7. In the Vercel dashboard, verify logs, drains, retention, firewall rules,
+6. In the Vercel dashboard, verify logs, drains, retention, firewall rules,
    the production-branch mapping, and the certificate.
-8. With two fresh confirmations, verify Production runtime grants and the
+7. With two fresh confirmations, verify Production runtime grants and the
    reviewed initial migration baseline. Configure and approve the no-secret
    `production-migration-review` environment first, then approve the protected
    `production` environment only after confirming the workflow will migrate
    before deploy.
-9. Verify the production Bunny and Neon Media boundary, run the protected live
+8. Verify the production Bunny and Neon Media boundary, run the protected live
    storage contract, and publish the intended two-photo Published Photo
    Selection through the owner admin.
-10. Confirm fresh Chinese and English pageviews from the accepted
+9. Confirm fresh Chinese and English pageviews from the accepted
     production-like target are visible in the existing `cali-so` Analytics
-    dashboard: Staging if action 3 accepts it as the substitute, otherwise the
+    dashboard: Staging if action 2 accepts it as the substitute, otherwise the
     recorded feature Preview.
-11. Confirm the rollback procedure against the recorded known-good deployment.
-12. Only after every blocker above is passed, merge `dev` to `main`, approve
+10. Confirm the rollback procedure against the recorded known-good deployment.
+11. Only after every blocker above is passed, merge `dev` to `main`, approve
     both Production deployment gates in order, and complete the cutover smoke
     tests.
