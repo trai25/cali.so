@@ -362,7 +362,7 @@ export const mediaRenditions = pgTable(
     ),
     check(
       'media_renditions_profile_check',
-      sql`${table.profileWidth} IN (640, 1024, 1600)`,
+      sql`${table.profileWidth} IN (640, 1024, 1600, 2560)`,
     ),
     check(
       'media_renditions_checksum_check',
@@ -628,7 +628,7 @@ export const mediaPublishedPhotoSelectionRenditions = pgTable(
     ),
     check(
       'media_published_photo_selection_renditions_profile_check',
-      sql`${table.profileWidth} IN (640, 1024, 1600)`,
+      sql`${table.profileWidth} IN (640, 1024, 1600, 2560)`,
     ),
     check(
       'media_published_photo_selection_renditions_object_key_check',

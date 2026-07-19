@@ -5,7 +5,8 @@ import { createHash } from 'node:crypto'
 import { parse } from 'exifr'
 import sharp from 'sharp'
 
-export const RENDITION_PROFILE_WIDTHS = [640, 1024, 1600] as const
+export const RENDITION_PROFILE_WIDTHS = [640, 1024, 1600, 2560] as const
+export const RENDITION_JPEG_QUALITY = 90
 
 const MAX_IMAGE_PIXELS = 100_000_000
 const acceptedFormats = new Set(['heif', 'jpeg', 'png'])
@@ -253,7 +254,11 @@ export async function processOriginalImage(bytes: Uint8Array) {
         const { data, info } = await pipeline
           .clone()
           .resize({ width: profileWidth, fit: 'inside', withoutEnlargement: true })
-          .jpeg({ quality: 82, progressive: true })
+          .jpeg({
+            quality: RENDITION_JPEG_QUALITY,
+            progressive: true,
+            chromaSubsampling: '4:4:4',
+          })
           .toBuffer({ resolveWithObject: true })
         return {
           profileWidth,

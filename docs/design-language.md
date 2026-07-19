@@ -305,6 +305,14 @@ fades without transform. On close they slip away on the swift curve —
 300ms return. Items carry their order as `--detail-index`; reduced motion
 renders the sheet instantly with no transform.
 
+Photo details intentionally overlap the lower edge of the print. A solid
+`--background` runway sits above the photo and uses an eased `mask-image` to
+develop from transparent to fully opaque before the first line of type. The
+text never blends with the photograph, and the mask itself is inert. Published
+photo tiles use `next/image` with the immutable Bunny Renditions as a custom
+responsive source set; the lightbox preloads and displays the largest available
+Rendition instead of enlarging the tile's selected source.
+
 ## Portrait & avatar
 
 The site carries its author: the bottom dock uses the portrait as its Home

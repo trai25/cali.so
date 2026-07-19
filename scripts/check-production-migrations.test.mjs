@@ -173,10 +173,16 @@ test('allows only newly added migration files in a Production release', () => {
   )
 })
 
-test('admits the exact reviewed migration baseline without weakening future checks', async () => {
-  const path = 'db/migrations/0011_ama_booking_system.sql'
+test('admits exact reviewed migration baselines without weakening future checks', async () => {
+  for (const path of [
+    'db/migrations/0011_ama_booking_system.sql',
+    'db/migrations/0012_high_fidelity_photo_renditions.sql',
+  ]) {
+    const sql = await readFile(path, 'utf8')
+    assert.deepEqual(productionMigrationFindings(path, sql), [])
+  }
+  const path = 'db/migrations/0012_high_fidelity_photo_renditions.sql'
   const sql = await readFile(path, 'utf8')
-  assert.deepEqual(productionMigrationFindings(path, sql), [])
   assert.throws(
     () =>
       productionMigrationFindings(path, `${sql}\n-- changed after review\n`),

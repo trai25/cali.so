@@ -20,7 +20,7 @@ const originalBytes = new TextEncoder().encode('approved original bytes')
 const originalChecksum = createHash('sha256').update(originalBytes).digest('hex')
 
 function processedImage() {
-  const rendition = (profileWidth: 640 | 1024 | 1600) => {
+  const rendition = (profileWidth: 640 | 1024 | 1600 | 2560) => {
     const bytes = new TextEncoder().encode(`rendition:${profileWidth}`)
     return {
       profileWidth,
@@ -50,7 +50,7 @@ function processedImage() {
       iso: 80,
       captureLocation: { latitude: 37.7749, longitude: -122.4194 },
     },
-    renditions: [rendition(640), rendition(1024), rendition(1600)],
+    renditions: [rendition(640), rendition(1024), rendition(1600), rendition(2560)],
   }
 }
 
@@ -243,7 +243,7 @@ function fixture() {
     setOriginalMissing(value: boolean) {
       originalMissing = value
     },
-    seedRendition(profileWidth: 640 | 1024 | 1600) {
+    seedRendition(profileWidth: 640 | 1024 | 1600 | 2560) {
       const rendition = processedImage().renditions.find(
         (candidate) => candidate.profileWidth === profileWidth,
       )!
@@ -332,7 +332,7 @@ describe('Media Library ingestion service', () => {
       },
     })
     expect(intent.completedAt).toEqual(new Date('2026-07-17T00:00:00.000Z'))
-    expect(f.renditions).toHaveLength(3)
+    expect(f.renditions).toHaveLength(4)
     expect(f.events).toEqual([
       'asset:original_verified',
       'asset:processing',
@@ -343,6 +343,8 @@ describe('Media Library ingestion service', () => {
       'rendition:record:1024',
       'rendition:store:1600',
       'rendition:record:1600',
+      'rendition:store:2560',
+      'rendition:record:2560',
       'location:seal',
       'asset:ready',
     ])
@@ -370,7 +372,7 @@ describe('Media Library ingestion service', () => {
     expect(replay).toBe(first)
     expect(f.events).toHaveLength(eventCount)
     expect(f.processor).toHaveBeenCalledTimes(1)
-    expect(f.storage.storeRendition).toHaveBeenCalledTimes(3)
+    expect(f.storage.storeRendition).toHaveBeenCalledTimes(4)
   })
 
   it('does not register a Media Asset when the Original bytes do not match', async () => {
@@ -488,7 +490,7 @@ describe('Media Library ingestion service', () => {
       processingState: 'ready',
       processingErrorCode: null,
     })
-    expect(f.renditions).toHaveLength(3)
+    expect(f.renditions).toHaveLength(4)
     expect(
       f.storage.storeRendition.mock.calls.filter(([call]) =>
         call.key.includes('/640-'),
@@ -526,7 +528,7 @@ describe('Media Library ingestion service', () => {
         call.key.includes('/640-'),
       ),
     ).toHaveLength(0)
-    expect(f.renditions).toHaveLength(3)
+    expect(f.renditions).toHaveLength(4)
   })
 
   it('marks a missing verified Original as repair required', async () => {

@@ -24,9 +24,10 @@ Upload Intent instead of registering another asset.
 2. Sign in to `/admin/media`, select both Originals together, and wait until
    both Media Assets are Ready for review. Do not upload the prepared JPEGs as
    Originals.
-3. Confirm all 640, 1024, and 1600 Renditions are progressive sRGB JPEGs and
-   that their embedded metadata is stripped. Confirm each Original remains
-   readable only through the authenticated server boundary.
+3. Confirm all 640, 1024, 1600, and 2560 Renditions are progressive sRGB
+   JPEGs at quality 90 with 4:4:4 chroma and that their embedded metadata is
+   stripped. Confirm each Original remains readable only through the
+   authenticated server boundary.
 4. Review orientation, capture date, camera details, editable Location Labels,
    and Focal Points. Generate or edit both Alt Text languages, then explicitly
    approve the pair for each Media Asset.
@@ -39,8 +40,9 @@ Upload Intent instead of registering another asset.
 1. Load `/photos` and the homepage in both locales. They must report two photos
    from one Published Photo Selection revision with no static fallback.
 2. Verify each rendered URL uses the configured Bunny CDN hostname, returns
-   `image/jpeg`, and selects a responsive Rendition. Confirm all three profile
-   URLs deliver successfully before testing an expanded photo.
+   `image/jpeg`, and selects a responsive Rendition. Confirm all four profile
+   URLs deliver successfully before testing an expanded photo, and confirm the
+   lightbox requests the 2560 profile rather than enlarging its tile source.
 3. Confirm source HTML and public responses contain no Original key or URL,
    checksum, exact coordinates, encrypted Capture Location, raw metadata, AI
    suggestion, provider response, or private error.

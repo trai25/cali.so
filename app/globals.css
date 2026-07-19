@@ -4894,15 +4894,51 @@ html[data-locale='en'] [data-en-block] {
 }
 
 .zoom-overlay-details {
+  --zoom-details-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
   position: fixed;
   inset-inline: 0;
-  bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  bottom: var(--zoom-details-bottom);
+  isolation: isolate;
   pointer-events: none;
+}
+
+/* A masked paper runway gives the overlapping plate deterministic contrast
+   without changing the photograph's colors or blending the type. */
+.zoom-overlay-details::before {
+  position: absolute;
+  z-index: -1;
+  inset: -6rem 0 calc(-1 * var(--zoom-details-bottom));
+  content: '';
+  background: var(--background);
+  opacity: 0;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    rgb(0 0 0 / 0.08) 1rem,
+    rgb(0 0 0 / 0.28) 2.25rem,
+    rgb(0 0 0 / 0.64) 4rem,
+    black 6rem
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    rgb(0 0 0 / 0.08) 1rem,
+    rgb(0 0 0 / 0.28) 2.25rem,
+    rgb(0 0 0 / 0.64) 4rem,
+    black 6rem
+  );
+  transition: opacity 150ms ease;
+}
+
+.zoom-overlay[data-state='open'] .zoom-overlay-details::before {
+  opacity: 1;
+  transition: opacity 200ms ease 120ms;
 }
 
 @media (max-width: 39.999rem) {
   .zoom-overlay-details {
-    bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+    --zoom-details-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -4938,7 +4974,8 @@ html[data-locale='en'] [data-en-block] {
 
 @media (prefers-reduced-motion: reduce) {
   .zoom-detail-item,
-  .zoom-detail-frame {
+  .zoom-detail-frame,
+  .zoom-overlay-details::before {
     transform: none;
     transition: none;
   }

@@ -33,6 +33,12 @@ _Avoid_: Pending file, temporary upload
 A public, delivery-ready version derived from an Original.
 _Avoid_: Copy, thumbnail
 
+New image processing produces no-upscale 640, 1024, 1600, and 2560 profiles as
+progressive sRGB JPEGs at quality 90 with 4:4:4 chroma. Embedded metadata is
+stripped from every Rendition while the private Original remains byte-for-byte
+unchanged. The original three-profile publication baseline remains readable;
+newly processed Media Assets add the 2560 profile for high-density lightboxes.
+
 **Display Metadata**:
 The allowlisted location, capture, and camera details that may be shown to a
 visitor. Raw embedded metadata is not Display Metadata.

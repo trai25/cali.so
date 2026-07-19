@@ -26,7 +26,10 @@ const intentInput = {
 describe('Media Library ingestion repository', () => {
   const getClient = usePGliteTestClient([
     '0005_media_catalog.sql',
+    '0006_photo_selection.sql',
+    '0007_photo_publication_revision.sql',
     '0009_media_catalog_state.sql',
+    '0012_high_fidelity_photo_renditions.sql',
   ])
   let client: PGlite
   let repository: ReturnType<typeof createMediaIngestionRepository>
@@ -97,7 +100,7 @@ describe('Media Library ingestion repository', () => {
       staleBefore: new Date('2026-07-15T00:55:00.000Z'),
     })
 
-    const rendition = (profileWidth: 640 | 1024 | 1600) => ({
+    const rendition = (profileWidth: 640 | 1024 | 1600 | 2560) => ({
       mediaAssetId: asset.id,
       profileWidth,
       objectKey: `renditions/${asset.id}/${profileWidth}-${String(profileWidth).padStart(64, '0')}.jpg`,
@@ -131,7 +134,7 @@ describe('Media Library ingestion repository', () => {
         },
       },
       completedAt: now,
-      requiredRenditionCount: 3,
+      requiredRenditionCount: 4,
     }
     await expect(repository.markReady(readyInput)).rejects.toThrow(
       'Rendition manifest is incomplete',
@@ -139,6 +142,7 @@ describe('Media Library ingestion repository', () => {
 
     await repository.recordRendition(rendition(1024))
     await repository.recordRendition(rendition(1600))
+    await repository.recordRendition(rendition(2560))
     const ready = await repository.markReady(readyInput)
 
     const staleFailure = await repository.markFailure({

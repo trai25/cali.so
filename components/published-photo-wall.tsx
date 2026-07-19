@@ -110,9 +110,6 @@ function PublishedPhotoItem({
   const locale = useLocale()
   const alt = localize(locale, photo.altText.zhHans, photo.altText.en)
   const rendition = photo.renditions.at(-1)!
-  const srcSet = photo.renditions
-    .map(({ src, profileWidth }) => `${src} ${profileWidth}w`)
-    .join(', ')
 
   // Tiles stay quiet: location and capture data live in the lightbox details.
   return (
@@ -127,9 +124,8 @@ function PublishedPhotoItem({
     >
       <div className="photo-frame relative overflow-hidden">
         <ZoomImage
-          native
           src={rendition.src}
-          srcSet={srcSet}
+          renditions={photo.renditions}
           alt={alt}
           width={photo.width}
           height={photo.height}
