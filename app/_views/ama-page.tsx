@@ -98,53 +98,47 @@ const AMA_TOPIC_PAGE_COPY: Record<
     zhLabel: 'Web、iOS 与全栈工程',
     zhDescription: '技术选择、架构、实现，以及怎么和 agents 一起把东西做出来。',
     enLabel: 'Web, iOS, and full-stack engineering',
-    enDescription:
-      'Technical choices, architecture, implementation, and how to ship alongside agents.',
+    enDescription: 'Technical choices, architecture, and shipping with agents.',
   },
   'product-design': {
     zhLabel: '产品判断与产品设计',
     zhDescription:
       '当答案越来越容易得到，怎么判断什么值得做，也把自己的品味落到产品和界面细节里。',
     enLabel: 'Product strategy and design',
-    enDescription:
-      'How to decide what’s worth building, shape the product, and carry the idea through interface and implementation.',
+    enDescription: 'What to build, how to shape it, and how the interface should feel.',
   },
   'ai-workflows': {
     zhLabel: 'AI 工作流与 Coding Agents',
     zhDescription:
       '从 Prompt、Memory 到多 agent 协作，怎么搭一套真的能跑、也真的能 ship 的 workflow。',
     enLabel: 'AI workflows and coding agents',
-    enDescription:
-      'From prompts and memory to multi-agent orchestration, how to build a workflow that actually runs and ships.',
+    enDescription: 'Prompts, memory, and multi-agent workflows that actually ship.',
   },
   career: {
     zhLabel: '职业、出海与英语学习',
     zhDescription: '怎么选机会、进入新的市场和语境，也更快建立自己的优势。',
     enLabel: 'Career moves and cross-disciplinary work',
-    enDescription:
-      'How to choose opportunities, move across disciplines, and keep learning when the work changes.',
+    enDescription: 'Choosing opportunities, changing fields, and learning fast.',
   },
   'indie-business': {
     zhLabel: '独立开发、创业与 GTM',
     zhDescription:
       '从一个模糊的 idea 到 MVP、验证、定价，再决定下一步往哪里走。',
     enLabel: 'Startups, product building, and GTM',
-    enDescription:
-      'From early strategy and product design to an MVP, validation, pricing, and what comes next.',
+    enDescription: 'Strategy, MVPs, validation, pricing, and what comes next.',
   },
   'team-leadership': {
     zhLabel: '团队、协作与带人',
     zhDescription:
       '怎么把个人经验变成团队可以复用的系统，而不是每件事都重新来一次。',
     enLabel: 'Teams, collaboration, and leadership',
-    enDescription:
-      'How to turn individual experience into a system the team can reuse instead of starting over every time.',
+    enDescription: 'Turning personal experience into systems the team can reuse.',
   },
   'something-else': {
     zhLabel: '其他你正在想的',
     zhDescription: '不属于上面任何一类也没关系。',
     enLabel: 'Anything else on your mind',
-    enDescription: 'If it doesn’t fit any of the above, that’s fine.',
+    enDescription: 'If it’s on your mind, it’s fair game.',
   },
 }
 
