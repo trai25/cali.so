@@ -3,7 +3,7 @@
 import { useState } from 'react'
 
 import { ExternalLabel } from '~/components/external-mark'
-import { classifyFaviconTone } from '~/components/favicon-tone'
+import { Favicon } from '~/components/favicon'
 import { SitePreviewCard } from '~/components/preview-card-timing'
 import { ogImageUrl, type LinkPreview } from '~/lib/link-previews'
 import { useLocale } from '~/lib/locale-client'
@@ -13,32 +13,6 @@ const HAN = /\p{Script=Han}/u
 function englishOrSource(english: string | undefined, source: string | undefined) {
   if (english) return english
   return source && !HAN.test(source) ? source : undefined
-}
-
-function hideFailedImage(event: React.SyntheticEvent<HTMLImageElement>) {
-  event.currentTarget.dataset.failed = 'true'
-}
-
-// The ref covers icons that settled before hydration attached onLoad/onError.
-function Favicon({ src, size }: { src: string; size: 14 | 16 }) {
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      ref={(img) => {
-        if (!img?.complete) return
-        if (img.naturalWidth) classifyFaviconTone(img)
-        else img.dataset.failed = 'true'
-      }}
-      src={src}
-      alt=""
-      width={size}
-      height={size}
-      loading="lazy"
-      aria-hidden
-      onLoad={(event) => classifyFaviconTone(event.currentTarget)}
-      onError={hideFailedImage}
-    />
-  )
 }
 
 // External prose links: inline favicon prefix, and — with build-time

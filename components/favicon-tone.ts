@@ -1,9 +1,18 @@
 // A favicon drawn as a white glyph on transparency vanishes on the light
-// theme, and its black twin vanishes in dark mode. Favicons are proxied
-// same-origin (/link-media), so their pixels are readable: sample the icon
-// once on load and tag it so CSS can restore the field it was drawn for.
+// theme, and its black twin vanishes in dark mode. Known favicons are proxied
+// same-origin (/link-media), so their pixels are readable. Cross-origin
+// fallback icons stay untagged because reading them would taint the canvas.
 
 const SAMPLE_SIZE = 16
+
+export function isSameOriginFaviconSource(src: string, pageUrl: string) {
+  try {
+    const page = new URL(pageUrl)
+    return new URL(src, page).origin === page.origin
+  } catch {
+    return false
+  }
+}
 
 export type FaviconTone = 'light' | 'light-mono' | 'dark' | 'dark-mono' | 'flat'
 
@@ -72,6 +81,14 @@ function observeThemeChanges() {
 }
 
 export function classifyFaviconTone(img: HTMLImageElement) {
+  const view = img.ownerDocument.defaultView
+  if (
+    !view ||
+    !isSameOriginFaviconSource(img.currentSrc || img.src, view.location.href)
+  ) {
+    return
+  }
+
   observeThemeChanges()
   if (img.dataset.tone || !img.naturalWidth) return
 

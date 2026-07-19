@@ -98,16 +98,16 @@ const publicPages = [
     {
       title: '一对一',
       description:
-        '与 Cali 的专注一小时。一场 60 分钟的一对一 AMA，聊工程、设计、职业或做产品。',
+        '从产品设计、工程、职业到独立开发、创业、出海、英语学习与 AI 工作流，用一小时聊清楚怎么判断、怎么取舍、下一步做什么。',
     },
     {
       title: 'AMA',
       description:
-        'A focused hour with Cali. One 60 minute one-to-one AMA Session about engineering, design, career, or building products.',
+        'A one-to-one conversation about AI-native work, product strategy, engineering, startups, career moves, and building products.',
     },
     {
-      zh: '一对一 · Cali Castle。与 Cali 的专注一小时。一场 60 分钟的一对一 AMA，聊工程、设计、职业或做产品。',
-      en: 'AMA · Cali Castle. A focused hour with Cali. One 60 minute one-to-one AMA Session about engineering, design, career, or building products.',
+      zh: '一对一 · Cali Castle。从产品设计、工程、职业到独立开发、创业、出海、英语学习与 AI 工作流，用一小时聊清楚怎么判断、怎么取舍、下一步做什么。',
+      en: 'AMA · Cali Castle. A one-to-one conversation about AI-native work, product strategy, engineering, startups, career moves, and building products.',
     },
   ),
 ]

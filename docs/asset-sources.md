@@ -3,6 +3,12 @@
 Source record for the album and book assets added in July 2026. Cover images
 are promotional artwork from Apple Music, publishers, authors, or retailers.
 
+## Product marks
+
+| File | Source |
+| --- | --- |
+| `public/images/codex.svg` | User-supplied Codex product mark |
+
 ## Album covers
 
 | File | Source |

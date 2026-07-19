@@ -17,6 +17,7 @@ import {
   BookingDetail,
   type BookingViewModel,
 } from '../../../app/admin/(protected)/ama/bookings/[bookingId]/BookingDetail'
+import { AMA_TOPIC_LABELS } from '../booking/topics'
 
 const fetchMock = vi.fn<typeof fetch>()
 vi.stubGlobal('fetch', fetchMock)
@@ -131,7 +132,7 @@ describe('AMA booking detail', () => {
 
     expect(text).toContain('Ada Lovelace')
     expect(text).toContain('ada@example.com')
-    expect(text).toContain('Engineering and full-stack')
+    expect(text).toContain(AMA_TOPIC_LABELS.engineering.en)
     expect(text).toContain('I want to talk about durable workflows.')
     expect(text).toContain('https://example.com/context')
     expect(text).toContain('99.00')

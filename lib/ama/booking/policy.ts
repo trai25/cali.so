@@ -22,6 +22,7 @@ export const AMA_BRIEF_RETENTION_DAYS = 90
 export const AMA_TOPICS = Object.freeze([
   'engineering',
   'product-design',
+  'ai-workflows',
   'career',
   'indie-business',
   'team-leadership',

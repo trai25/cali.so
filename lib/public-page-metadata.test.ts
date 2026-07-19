@@ -49,10 +49,22 @@ describe('public page metadata copy', () => {
           'Products, open-source tools, and small experiments I have made over the years. Some useful, some playful, all made with care.',
       },
     })
+    expect(publicPageMetadata.ama).toEqual({
+      zh: {
+        title: '一对一',
+        description:
+          '从产品设计、工程、职业到独立开发、创业、出海、英语学习与 AI 工作流，用一小时聊清楚怎么判断、怎么取舍、下一步做什么。',
+      },
+      en: {
+        title: 'AMA',
+        description:
+          'A one-to-one conversation about AI-native work, product strategy, engineering, startups, career moves, and building products.',
+      },
+    })
   })
 
   it('keeps section descriptions within social preview budgets', () => {
-    for (const section of ['blog', 'photos', 'projects'] as const) {
+    for (const section of ['blog', 'photos', 'projects', 'ama'] as const) {
       expect(publicPageMetadata[section].zh.description.length, section).toBeLessThanOrEqual(80)
       expect(publicPageMetadata[section].en.description.length, section).toBeLessThanOrEqual(160)
     }
