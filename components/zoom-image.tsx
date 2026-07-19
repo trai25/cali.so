@@ -7,6 +7,9 @@ import { createPortal } from 'react-dom'
 import { localize, useLocale } from '~/lib/locale-client'
 
 const VIEWPORT_PAD = 32
+const DETAIL_SPACE = 72
+const MOBILE_DETAIL_SPACE = 112
+const MOBILE_BREAKPOINT = 640
 
 type ZoomImageRendition = { src: string; width: number }
 
@@ -99,7 +102,11 @@ export function ZoomImage({
     // Fit within the viewport but never beyond the intrinsic size —
     // zoom means "actual size", not "stretch".
     const maxW = Math.min(window.innerWidth - VIEWPORT_PAD * 2, width)
-    const detailSpace = expandedContent ? 128 : 0
+    const detailSpace = expandedContent
+      ? window.innerWidth < MOBILE_BREAKPOINT
+        ? MOBILE_DETAIL_SPACE
+        : DETAIL_SPACE
+      : 0
     const maxH = Math.max(
       1,
       Math.min(
@@ -112,7 +119,7 @@ export function ZoomImage({
     const h = Math.round(height * scale)
     const target = {
       left: Math.round((window.innerWidth - w) / 2),
-      top: Math.round((window.innerHeight - h) / 2),
+      top: Math.round((window.innerHeight - detailSpace - h) / 2),
       width: w,
       height: h,
     }

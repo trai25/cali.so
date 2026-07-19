@@ -95,7 +95,9 @@ describe('Published Photo Selection UI', () => {
 
     const dialog = getByRole('dialog', { name: 'City photograph 1' })
     expect(dialog).toBeTruthy()
-    expect(within(dialog).getByText(/Taipei · May 8, 2025/)).toBeTruthy()
+    expect(within(dialog).getByText('Location')).toBeTruthy()
+    expect(within(dialog).getByText('Taipei')).toBeTruthy()
+    expect(within(dialog).queryByText(/May 8, 2025/)).toBeNull()
     expect(within(dialog).getByText('Apple iPhone 16 Pro')).toBeTruthy()
     expect(within(dialog).getByText('24 mm')).toBeTruthy()
     // capture details render as spec-plate label/value cells

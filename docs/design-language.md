@@ -305,12 +305,12 @@ fades without transform. On close they slip away on the swift curve —
 300ms return. Items carry their order as `--detail-index`; reduced motion
 renders the sheet instantly with no transform.
 
-Photo details intentionally overlap the lower edge of the print. A compact 4rem
-`--background` runway sits beneath the plate and uses an eased `mask-image` to
-develop from transparent to fully opaque at the first line of type. The
-lightbox caption is 12px; capture labels are 10px and values are 12px so the
-plate preserves more room for the photograph. The text never blends with the
-photograph, and the mask itself is inert. Published photo tiles use
+Photo details sit below the print with reserved viewport space; they never
+overlap the photograph and use no fade, scrim, or blend mode. Public capture
+dates are intentionally omitted. An available Location Label joins the plate
+as a labeled cell. Capture labels are 10px and values are 12px so the plate
+preserves room for the photograph. The plate stays 0.75rem plus the device safe
+area from the screen's bottom edge on every viewport. Published photo tiles use
 `next/image` with the immutable Bunny Renditions as a custom responsive source
 set; the lightbox preloads and displays the largest available Rendition instead
 of enlarging the tile's selected source.
