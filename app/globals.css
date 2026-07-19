@@ -1853,6 +1853,48 @@ figure[data-rehype-pretty-code-figure] {
   }
 }
 
+/* ── Mermaid diagrams (beautiful-mermaid, server-rendered svg) ────── */
+
+/* the diagram rests on the same sheet treatment as code: hairline frame,
+   one step up the surface ladder, edge fades tinted to match */
+.mermaid-frame {
+  border: var(--border-hairline) solid var(--border);
+  background: var(--surface-1);
+  --scroll-fade-surface: var(--surface-1);
+}
+
+/* natural svg size, centered when narrower than the column; wider
+   diagrams keep 1:1 scale and scroll instead of shrinking their text */
+.mermaid-sheet {
+  display: flex;
+  justify-content: center;
+  width: max-content;
+  min-width: 100%;
+  padding: 0.5rem;
+}
+
+.mermaid-sheet svg {
+  display: block;
+  /* the svg derives its palette from --bg/--fg with var(--muted, …)-style
+     fallbacks; the page's shadcn tokens (--muted, --accent, --border) would
+     leak in as *background* colors, so reset them to keep the derivation */
+  --line: initial;
+  --accent: initial;
+  --muted: initial;
+  --surface: initial;
+  --border: initial;
+}
+
+/* the library's font imports are stripped server-side; restore the site
+   stacks over the svg's internal rules */
+.mermaid-sheet svg text {
+  font-family: var(--font-sans);
+}
+
+.mermaid-sheet svg .mono {
+  font-family: var(--font-geist-mono), var(--font-frex-gb), ui-monospace, monospace;
+}
+
 figure[data-rehype-pretty-code-figure] figcaption[data-rehype-pretty-code-title] {
   display: flex;
   align-items: center;
