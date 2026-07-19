@@ -13,6 +13,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:validate": "node --test scripts/ama-migrations.test.mjs",
     "test:deployment": "node --test scripts/check-production-migrations.test.mjs scripts/comment-preview-deployment.test.mjs scripts/delete-vercel-branch-deployments.test.mjs scripts/deployment-workflows.test.mjs",
+    "test:browser": "playwright test",
+    "test:browser:hosted": "playwright test --project=chromium --grep @hosted",
     "start": "next start",
     "test:ama": "vitest run lib/ama && pnpm db:validate",
     "test:security": "vitest run lib/security",
@@ -86,6 +88,8 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.4",
+    "@next/playwright": "16.3.0-preview.6",
+    "@playwright/test": "1.61.1",
     "@tailwindcss/postcss": "^4.1.0",
     "@testing-library/react": "^16.3.2",
     "@types/mdx": "^2.0.14",

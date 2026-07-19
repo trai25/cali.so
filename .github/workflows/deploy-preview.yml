@@ -52,3 +52,11 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           GIT_BRANCH: ${{ github.ref_name }}
         run: node scripts/comment-preview-deployment.mjs
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Verify Preview in browser
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ steps.deployment.outputs.deployment-url }}
+        run: pnpm test:browser:hosted

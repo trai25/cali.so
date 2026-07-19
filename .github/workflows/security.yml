@@ -124,6 +124,12 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium webkit
+
+      - name: Test browser release gate
+        run: pnpm test:browser
+
       - name: Verify public links
         run: pnpm verify:links
         env:
