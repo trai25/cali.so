@@ -20,9 +20,8 @@ grant and signed-in owner verification, Production database and provider proof,
 Vercel dashboard checks, Analytics ingestion proof, and rollback proof remain
 open. PR #189 resolved the motion implementations, but the complete-diff
 Standards and Spec reviews still need to be refreshed; the documented layer
-finding and one literal issue-acceptance gap remain because the reviewed custom
-Staging environment has not been explicitly accepted as the issue's requested
-feature Preview.
+finding remains. Automated Feature Preview evidence now passes, while manual
+hosted and Analytics evidence remains open.
 
 Unknown hosted state is not counted as passed. This report does not authorize
 merging to `main`, changing production settings, accessing production data, or
@@ -54,14 +53,14 @@ Renditions. The retired static photo fallback has been removed.
 | Gate | Status | Evidence or blocker |
 | --- | --- | --- |
 | Frozen install | PASS | `pnpm install --frozen-lockfile` completed from the audited commit. |
-| Repository validation | PASS (LOCAL) / AWAITING CI AND HOSTED PROOF | The new `pnpm test:browser` production-build gate passes 19 Chromium behavior cases plus six WebKit smoke executions locally. `Quality` runs the complete suite, while Preview and Staging deployments run the 13 read-only `@hosted` cases against their exact deployment URL. Remote workflow proof remains pending on this branch. |
+| Repository validation | PASS (LOCAL AND FEATURE PREVIEW) / AWAITING QUALITY AND STAGING | The new `pnpm test:browser` production-build gate passes 19 Chromium behavior cases plus six WebKit smoke executions locally. Feature Preview run [29671775136](https://github.com/CaliCastle/cali.so/actions/runs/29671775136) passed all 13 read-only `@hosted` cases against `https://cali-lonkhb5df-cali.vercel.app` for `2336124`. `Quality` and the Staging deployment remain pending. |
 | Public browser behavior | PASS | Local and Staging review covered desktop and mobile, both locales, light and dark appearance, reduced motion, keyboard navigation, metadata, overflow, feeds, generated social images, and Instant Navigation. |
 | Owner admin boundary | PASS (Staging signed-out path) / AWAITING OWNER AND PRODUCTION PROOF | A clean browser navigation to Staging `/admin` completes Clerk's development-instance handshake and reaches the isolated sign-in UI. The complete remote security-boundary verifier passes. Signed-in owner reads and mutations still require authorized operator access and the database gate below; confirm the Production Clerk keys and owner metadata at cutover. |
 | Complete diff Standards review | PARTIAL / AWAITING RE-REVIEW | PR #189 landed the credential-driven AMA and owner-auth decisions plus keyboard-instant Preview-card, lightbox, and article-map behavior. The browser gate now verifies those motion paths. Issues #184 through #186 remain open because their PR merged to `dev`, not the default branch; the layer-scale finding and judgement-level `app/globals.css` disposition still need a recorded resolution before the refreshed review can pass. |
-| Complete diff Spec review | PARTIAL / AWAITING RE-REVIEW | No scope creep was found, and the missing automated browser-test command is now implemented. The issue still literally requests feature Preview evidence while the current matrix used Staging, Analytics dashboard proof remains absent, and Domain evidence was overstated. The Clerk redirect-shape verifier intentionally stops at the first 307, but the separate clean-browser matrix completed the development handshake and rendered Clerk sign-in. |
+| Complete diff Spec review | PARTIAL / AWAITING RE-REVIEW | No scope creep was found, and the missing automated browser-test command plus automated feature Preview evidence are now implemented. Analytics dashboard proof remains absent, and Domain evidence was overstated. The Clerk redirect-shape verifier intentionally stops at the first 307, but the separate clean-browser matrix completed the development handshake and rendered Clerk sign-in. |
 | Production-like Staging | PASS (public and signed-out boundaries) | `https://beta.cali.so` serves `dev@8802607`. The complete public route, link, discovery, legacy-URL, security-boundary, and manual browser matrix passed. Signed-in owner operations and provider-backed workflows remain separate gates. |
-| Issue #107 feature Preview evidence | PARTIAL | The accepted deployment architecture promotes `dev` continuously to a stable custom Staging environment, which is a stronger repeatable target than an ephemeral feature Preview. The issue text still says Preview; obtain an explicit maintainer acceptance of Staging as the substitute or repeat the complete matrix on a recorded feature Preview URL and SHA. |
-| Vercel Web Analytics | AWAITING DASHBOARD CONFIRMATION | Chinese and English Staging routes load the first-party Insights client; owner-admin navigation does not load it before the Clerk redirect. Confirm fresh pageviews from the accepted production-like target in the existing `cali-so` Analytics dashboard: Staging if the maintainer accepts it as the Preview substitute, otherwise the recorded feature Preview. |
+| Issue #107 feature Preview evidence | PASS (AUTOMATED MATRIX) / AWAITING MANUAL HOSTED EVIDENCE | The exact feature Preview for `2336124` passed the 13-case hosted matrix across both locales, appearance and viewport profiles, reduced motion, metadata, feeds, social images, Instant Navigation, public Analytics inclusion, and the signed-out admin boundary. Fresh Analytics dashboard proof and signed-in owner evidence remain separate manual gates. |
+| Vercel Web Analytics | AWAITING DASHBOARD CONFIRMATION | Chinese and English Feature Preview and Staging routes load the first-party Insights client; the signed-out owner-admin boundary excludes it. Confirm fresh Chinese and English pageviews from the recorded Feature Preview in the existing `cali-so` Analytics dashboard. |
 | GitHub security settings | PASS | Secret scanning, push protection, Dependabot security updates, read-only Actions defaults, and full-SHA action policy are enabled. |
 | Required GitHub checks | PARTIAL | The `dev` ruleset requires `Quality` and `CodeQL`; `main` branch protection still requires neither. The maintainer-operated command is in `docs/v3-cutover-ops-runbook.md`. |
 | Deployment environments | PASS | GitHub has Preview, Staging, `production-migration-review`, and Production environments with the intended branch policies; the last two require maintainer review. |
@@ -132,6 +131,10 @@ Feature Preview and Staging deployment workflows run the 13 read-only
 Insights, navigation, metadata, feed, social-image, locale, appearance, motion,
 and responsive failures block the workflow. Screenshots, video, and traces are
 retained only on failure.
+
+The exact Feature Preview for `2336124` passed all 13 hosted cases at
+`https://cali-lonkhb5df-cali.vercel.app` in GitHub Actions run
+[29671775136](https://github.com/CaliCastle/cali.so/actions/runs/29671775136).
 
 Local production-build review covered the homepage and a representative blog
 post in Chinese and English at desktop and mobile widths. Staging repeated the
@@ -287,9 +290,9 @@ Maintainer-operated commands for the hosted actions below are collected in
    reconcile the implementation with the documented closed layer scale. The
    judgement-level `app/globals.css` divergent-change finding may remain a
    follow-up only if the maintainer records that disposition.
-2. Either record maintainer acceptance that the stable custom Staging
-   environment supersedes the issue's ephemeral Preview wording, or repeat the
-   full matrix on a recorded feature Preview URL and SHA.
+2. Review and accept the recorded automated Feature Preview evidence for
+   `2336124`, then use that exact deployment for the remaining Analytics
+   dashboard and other manual hosted evidence.
 3. With two fresh confirmations, verify Staging migrations `0010` and `0011`,
    Media and AMA tables, and the runtime role's CRUD-only grants. Then sign in
    as the marked owner and prove one non-destructive read plus the required
@@ -311,10 +314,8 @@ Maintainer-operated commands for the hosted actions below are collected in
 8. Verify the production Bunny and Neon Media boundary, run the protected live
    storage contract, and publish the intended two-photo Published Photo
    Selection through the owner admin.
-9. Confirm fresh Chinese and English pageviews from the accepted
-    production-like target are visible in the existing `cali-so` Analytics
-    dashboard: Staging if action 2 accepts it as the substitute, otherwise the
-    recorded feature Preview.
+9. Confirm fresh Chinese and English pageviews from the recorded Feature
+    Preview are visible in the existing `cali-so` Analytics dashboard.
 10. Confirm the rollback procedure against the recorded known-good deployment.
 11. Only after every blocker above is passed, merge `dev` to `main`, approve
     both Production deployment gates in order, and complete the cutover smoke
