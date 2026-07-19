@@ -5883,7 +5883,7 @@ html[data-locale='en'] [data-en-block] {
   position: relative;
   isolation: isolate;
   margin-inline: -1rem;
-  overflow: hidden;
+  overflow: visible;
   padding: 1rem;
 }
 

@@ -45,7 +45,7 @@ export const publicPageMetadata = {
     zh: {
       title: '一对一',
       description:
-        '从 product design、工程、职业到独立开发、创业、出海、英语学习与 AI 工作流，用一小时聊清楚怎么判断、怎么取舍、下一步做什么。',
+        '从产品设计、工程、职业到独立开发、创业、出海、英语学习与 AI 工作流，用一小时聊清楚怎么判断、怎么取舍、下一步做什么。',
     },
     en: {
       title: 'AMA',

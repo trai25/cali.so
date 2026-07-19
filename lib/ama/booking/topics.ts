@@ -3,7 +3,7 @@ import { AMA_TOPICS, type AmaTopic } from './policy'
 export const AMA_TOPIC_LABELS: Record<AmaTopic, { zh: string; en: string }> = {
   engineering: { zh: 'Web、iOS 与全栈工程', en: 'Web, iOS, and full-stack engineering' },
   'product-design': {
-    zh: 'Product design 与界面细节',
+    zh: '产品设计与界面细节',
     en: 'Product design and interface craft',
   },
   'ai-workflows': {
