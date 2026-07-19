@@ -347,6 +347,200 @@
   border-top: var(--border-hairline) solid var(--border);
 }
 
+/* ── List stages: one dormant shader instrument per index ────────── */
+
+.hidden-list-stage {
+  position: relative;
+  isolation: isolate;
+}
+
+.hidden-list-stage-content {
+  position: relative;
+}
+
+.hidden-list-stage-field {
+  position: absolute;
+  inset: 0;
+  display: block;
+  overflow: hidden;
+  contain: layout paint;
+  color: var(--foreground);
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+}
+
+.projects-hidden-stage .hidden-list-stage-field {
+  transform: scale(0.985);
+  transition:
+    opacity var(--list-stage-exit-ms) var(--ease-swift),
+    transform var(--list-stage-exit-ms) var(--ease-swift);
+}
+
+.writing-hidden-stage .hidden-list-stage-field {
+  transition: opacity var(--list-stage-exit-ms) var(--ease-swift);
+}
+
+.hidden-list-stage[data-active='true'] .hidden-list-stage-field {
+  opacity: 1;
+}
+
+.projects-hidden-stage[data-active='true'] .hidden-list-stage-field {
+  transform: scale(1);
+}
+
+@keyframes projects-blueprint-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+}
+
+@keyframes writing-ink-enter {
+  from {
+    opacity: 0;
+  }
+}
+
+.projects-hidden-stage[data-active='true'][data-motion='true'] .hidden-list-stage-field {
+  animation: projects-blueprint-enter 260ms var(--ease-swift) backwards;
+}
+
+.writing-hidden-stage[data-active='true'][data-motion='true'] .hidden-list-stage-field {
+  animation: writing-ink-enter 180ms var(--ease-swift) backwards;
+}
+
+.hidden-list-stage[data-motion='false'] .hidden-list-stage-field,
+.hidden-list-stage[data-motion='false'] .hidden-list-shader-shell {
+  transition: none;
+}
+
+.hidden-list-stage-shader,
+.hidden-list-shader-shell,
+.hidden-list-shader-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.hidden-list-shader-shell {
+  opacity: 0;
+}
+
+.hidden-list-shader-shell[data-ready='true'] {
+  opacity: 1;
+}
+
+.projects-blueprint-static {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(
+      color-mix(in oklab, currentColor 35%, transparent) var(--border-hairline),
+      transparent var(--border-hairline)
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in oklab, currentColor 35%, transparent) var(--border-hairline),
+      transparent var(--border-hairline)
+    );
+  background-size: 24px 24px;
+  opacity: 0.1;
+}
+
+.projects-hidden-stage .hidden-list-stage-shader {
+  opacity: 0.14;
+}
+
+.projects-registration-mark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 58px;
+  height: 58px;
+  overflow: visible;
+  opacity: 0.26;
+  transform: translate3d(
+      var(--list-stage-target-x),
+      var(--list-stage-target-y),
+      0
+    )
+    translate(-50%, -50%);
+}
+
+.projects-registration-mark circle,
+.projects-registration-mark path {
+  vector-effect: non-scaling-stroke;
+  stroke: currentColor;
+  stroke-width: var(--border-hairline);
+}
+
+.writing-ink-current-target {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: var(--list-stage-target-width);
+  height: var(--list-stage-target-height);
+  overflow: hidden;
+  transform: translate3d(
+    var(--list-stage-target-x),
+    var(--list-stage-target-y),
+    0
+  );
+}
+
+.writing-ink-static {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: none;
+  opacity: 0.12;
+}
+
+.writing-ink-static path {
+  vector-effect: non-scaling-stroke;
+  stroke: currentColor;
+  stroke-width: 1.35;
+  stroke-linecap: round;
+}
+
+.writing-hidden-stage .hidden-list-stage-shader {
+  opacity: 0.2;
+}
+
+.dark .projects-blueprint-static {
+  opacity: 0.12;
+}
+
+.dark .projects-registration-mark {
+  opacity: 0.3;
+}
+
+.dark .projects-hidden-stage .hidden-list-stage-shader {
+  opacity: 0.12;
+}
+
+.dark .writing-ink-static {
+  opacity: 0.1;
+}
+
+.dark .writing-hidden-stage .hidden-list-stage-shader {
+  opacity: 0.17;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hidden-list-stage-field,
+  .hidden-list-shader-shell {
+    animation: none;
+    transition: none;
+  }
+}
+
 /* ── Project index: compact artifacts with drafting crop marks ───── */
 
 .project-row {
@@ -5676,12 +5870,285 @@ html[data-locale='en'] [data-en-block] {
 
 /* ── AMA booking: calm waiting dots (no spinner) ─────────────────── */
 
+.ama-introduction-stage {
+  position: relative;
+  isolation: isolate;
+  margin-inline: -1rem;
+  overflow: hidden;
+  padding: 1rem;
+}
+
+.ama-introduction-stage::before,
+.ama-conversation-static,
+.ama-conversation-shader-layer,
+.ama-conversation-shader-shell,
+.ama-conversation-shader-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
+}
+
+.ama-introduction-stage::before {
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--surface-2) 62%, transparent) 0%,
+    color-mix(in oklab, var(--surface-1) 38%, transparent) 48%,
+    transparent 78%
+  );
+  content: '';
+}
+
+.ama-conversation-static,
+.ama-conversation-shader-layer {
+  mask-image: radial-gradient(ellipse at center, black 42%, transparent 78%);
+}
+
+.ama-conversation-static {
+  color: var(--foreground);
+  opacity: 0.055;
+  transition: opacity 350ms var(--ease-swift);
+}
+
+.ama-conversation-static svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 0.8;
+  vector-effect: non-scaling-stroke;
+}
+
+.ama-conversation-shader-layer {
+  opacity: 0;
+  transition: opacity 350ms var(--ease-swift);
+}
+
+.ama-introduction-stage[data-shader-ready='true'] .ama-conversation-static {
+  opacity: 0;
+}
+
+.ama-introduction-stage[data-shader-ready='true']
+  .ama-conversation-shader-layer {
+  opacity: 0.12;
+}
+
+.dark
+  .ama-introduction-stage[data-shader-ready='true']
+  .ama-conversation-shader-layer {
+  opacity: 0.15;
+}
+
+.ama-introduction-content {
+  position: relative;
+}
+
 .ama-waiting-dots::after {
   display: inline-block;
   min-width: 1.5em;
   animation: ama-waiting-dots 1.6s steps(1) infinite;
   content: '…';
   text-align: left;
+}
+
+body:has(.ama-success-stage) {
+  --background: #08070a;
+  --border: rgb(241 238 229 / 0.16);
+  --foreground: #f1eee5;
+  --muted-foreground: rgb(241 238 229 / 0.68);
+
+  background: #08070a;
+  color: #f1eee5;
+}
+
+body:has(.ama-success-stage) main {
+  isolation: isolate;
+}
+
+.ama-success-stage {
+  position: relative;
+  display: grid;
+  min-height: max(32rem, calc(100svh - 10.5rem));
+  place-items: center;
+  color: #f1eee5;
+}
+
+.ama-success-static-background,
+.ama-success-shader-layer,
+.ama-success-confetti {
+  position: fixed;
+  inset: 0;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
+
+.ama-success-shader-shell,
+.ama-success-shader-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
+}
+
+.ama-success-static-background {
+  z-index: -2;
+  background:
+    linear-gradient(164deg, transparent 18%, rgb(118 24 219 / 0.2) 42%, transparent 62%),
+    linear-gradient(150deg, #030304 10%, #18181a 52%, #050407 90%);
+}
+
+.ama-success-shader-layer {
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 350ms var(--ease-swift);
+}
+
+.ama-success-stage[data-shader-ready='true'] .ama-success-shader-layer {
+  opacity: 1;
+}
+
+.ama-success-confetti {
+  z-index: 1;
+  overflow: hidden;
+}
+
+.ama-success-confetti-piece {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0.35rem;
+  height: 0.7rem;
+  border-radius: 1px;
+  background: var(--ama-confetti-color);
+  color: transparent;
+  opacity: 0;
+  transform-origin: center;
+  animation: ama-success-confetti-burst var(--ama-confetti-duration)
+    var(--ease-swift) var(--ama-confetti-delay) both;
+}
+
+.ama-success-confetti-piece:nth-child(3n) {
+  width: 0.5rem;
+  height: 0.18rem;
+}
+
+.ama-success-confetti-piece:nth-child(4n) {
+  border-radius: 50%;
+}
+
+.ama-success-stage-content {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 31rem);
+  padding: 4rem 2rem calc(6rem + env(safe-area-inset-bottom));
+  text-align: center;
+}
+
+.ama-success-stage-content [role='status'] {
+  align-items: center;
+}
+
+.ama-success-stage .text-muted-foreground {
+  color: rgb(241 238 229 / 0.72);
+}
+
+.ama-success-mark {
+  display: grid;
+  width: 4rem;
+  height: 4rem;
+  margin: 0 auto 1.75rem;
+  place-items: center;
+  border-radius: 50%;
+  background: #f1eee5;
+  color: #131216;
+  box-shadow: 0 0 0 0.45rem rgb(217 239 98 / 0.46);
+  font-size: 1.5rem;
+  line-height: 1;
+  animation: ama-success-mark-arrive 350ms var(--ease-swift) both;
+}
+
+@keyframes ama-success-confetti-burst {
+  0% {
+    opacity: 0;
+    transform: translate3d(
+        var(--ama-confetti-origin-x),
+        var(--ama-confetti-origin-y),
+        0
+      )
+      scale(0.72) rotate(0deg);
+  }
+
+  8% {
+    opacity: 1;
+  }
+
+  52% {
+    opacity: 0.94;
+    transform: translate3d(
+        var(--ama-confetti-apex-x),
+        var(--ama-confetti-apex-y),
+        0
+      )
+      scale(1) rotate(var(--ama-confetti-mid-rotation));
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(
+        var(--ama-confetti-end-x),
+        var(--ama-confetti-end-y),
+        0
+      )
+      scale(0.86) rotate(var(--ama-confetti-rotation));
+  }
+}
+
+@keyframes ama-success-mark-arrive {
+  0% {
+    opacity: 0;
+    transform: scale(0.72) rotate(-10deg);
+  }
+
+  58% {
+    opacity: 1;
+    transform: scale(1.08) rotate(-2deg);
+  }
+
+  100% {
+    transform: scale(1) rotate(-4deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ama-conversation-static,
+  .ama-conversation-shader-layer {
+    transition: none;
+  }
+
+  .ama-conversation-shader-layer {
+    display: none;
+  }
+
+  .ama-success-shader-layer {
+    display: none;
+    transition: none;
+  }
+
+  .ama-success-confetti {
+    display: none;
+  }
+
+  .ama-success-mark {
+    animation: none;
+  }
 }
 
 @keyframes ama-waiting-dots {

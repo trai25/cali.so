@@ -3,6 +3,8 @@
 import dynamic from 'next/dynamic'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { useWebGpuCapability } from '~/components/use-webgpu-capability'
+
 const PortraitShaderField = dynamic(
   () => import('./portrait-shader-field').then((module) => module.PortraitShaderField),
   { ssr: false },
@@ -10,12 +12,6 @@ const PortraitShaderField = dynamic(
 
 const EXIT_MS = 320
 const TOUCH_REVEAL_MS = 2600
-
-type WebGpuNavigator = Navigator & {
-  gpu?: {
-    requestAdapter: () => Promise<unknown | null>
-  }
-}
 
 export function PortraitHiddenStage({
   children,
@@ -37,8 +33,11 @@ export function PortraitHiddenStage({
   const animatedRef = useRef(false)
   const mounted = useRef(true)
   const reducedMotion = useRef(false)
-  const webGpuSupported = useRef<boolean | null>(null)
-  const webGpuRequest = useRef<Promise<boolean> | null>(null)
+  const {
+    check: checkWebGpu,
+    markUnavailable: markWebGpuUnavailable,
+    supported: webGpuSupported,
+  } = useWebGpuCapability()
 
   const clearExitTimer = useCallback(() => {
     if (exitTimer.current !== undefined) window.clearTimeout(exitTimer.current)
@@ -48,29 +47,6 @@ export function PortraitHiddenStage({
   const clearTouchTimer = useCallback(() => {
     if (touchTimer.current !== undefined) window.clearTimeout(touchTimer.current)
     touchTimer.current = undefined
-  }, [])
-
-  const checkWebGpu = useCallback(() => {
-    if (webGpuSupported.current !== null) {
-      return Promise.resolve(webGpuSupported.current)
-    }
-
-    if (webGpuRequest.current === null) {
-      const gpu = (navigator as WebGpuNavigator).gpu
-      webGpuRequest.current = (async () => {
-        if (!gpu?.requestAdapter) return false
-        try {
-          return Boolean(await gpu.requestAdapter())
-        } catch {
-          return false
-        }
-      })().then((supported) => {
-        webGpuSupported.current = supported
-        return supported
-      })
-    }
-
-    return webGpuRequest.current
   }, [])
 
   const syncStage = useCallback(() => {
@@ -155,11 +131,11 @@ export function PortraitHiddenStage({
   }, [clearTouchTimer, syncStage])
 
   const markShaderUnavailable = useCallback(() => {
-    webGpuSupported.current = false
+    markWebGpuUnavailable()
     animatedRef.current = false
     setShaderMounted(false)
     setMotionEnabled(false)
-  }, [])
+  }, [markWebGpuUnavailable])
 
   useEffect(() => {
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)')

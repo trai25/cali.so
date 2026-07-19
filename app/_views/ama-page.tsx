@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
+import { AmaIntroductionStage } from '~/components/ama/ama-introduction-stage'
 import { PixelCluster } from '~/components/pixel-cluster'
 import { AMA_TOPIC_LABELS, AMA_TOPICS } from '~/lib/ama/booking/topics'
 import { T } from '~/lib/i18n'
@@ -103,42 +104,44 @@ function SectionHeading({
 export function AmaPageView() {
   return (
     <div className="mx-auto w-full max-w-[37.5rem] px-6">
-      <div className="flex items-start justify-between gap-4">
-        <header className="max-w-[34rem]">
-          <h1 className="page-eyebrow enter">
-            <T zh="一对一" en="AMA" />
-          </h1>
-          <p
-            className="page-introduction enter mt-4 text-balance"
-            style={{ '--enter-delay': '70ms' } as React.CSSProperties}
-          >
-            <T
-              zh="与 Cali 的专注一小时。一场 60 分钟的一对一 AMA，你带着问题来，我们把它聊透。"
-              en="A focused hour with Cali. One 60 minute one-to-one AMA Session: you bring the questions, we work through them properly."
-            />
-          </p>
-        </header>
-        <PixelCluster variant={5} className="enter shrink-0" />
-      </div>
+      <AmaIntroductionStage>
+        <div className="flex items-start justify-between gap-4">
+          <header className="max-w-[34rem]">
+            <h1 className="page-eyebrow enter">
+              <T zh="一对一" en="AMA" />
+            </h1>
+            <p
+              className="page-introduction enter mt-4 text-balance"
+              style={{ '--enter-delay': '70ms' } as React.CSSProperties}
+            >
+              <T
+                zh="与 Cali 的专注一小时。一场 60 分钟的一对一 AMA，你带着问题来，我们把它聊透。"
+                en="A focused hour with Cali. One 60 minute one-to-one AMA Session: you bring the questions, we work through them properly."
+              />
+            </p>
+          </header>
+          <PixelCluster variant={5} className="enter shrink-0" />
+        </div>
 
-      <section
-        className="enter mt-10"
-        style={{ '--enter-delay': '120ms' } as React.CSSProperties}
-        aria-label="AMA Session"
-      >
-        <dl className="spec-nameplate">
-          {SPEC_ROWS.map((row) => (
-            <div key={row.enLabel}>
-              <dt>
-                <T zh={row.zhLabel} en={row.enLabel} />
-              </dt>
-              <dd>
-                <T zh={row.zhValue} en={row.enValue} />
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </section>
+        <section
+          className="enter mt-10"
+          style={{ '--enter-delay': '120ms' } as React.CSSProperties}
+          aria-label="AMA Session"
+        >
+          <dl className="spec-nameplate">
+            {SPEC_ROWS.map((row) => (
+              <div key={row.enLabel}>
+                <dt>
+                  <T zh={row.zhLabel} en={row.enLabel} />
+                </dt>
+                <dd>
+                  <T zh={row.zhValue} en={row.enValue} />
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      </AmaIntroductionStage>
 
       <section className="mt-12" aria-labelledby="ama-who-heading">
         <div id="ama-who-heading">

@@ -15,11 +15,13 @@ export function PostRow({
   headingLevel = 'h2',
   dateStyle = 'full',
   locale = 'zh',
+  listStageId,
 }: {
   post: Post
   headingLevel?: 'h2' | 'h3'
   dateStyle?: 'full' | 'month-day' | 'short'
   locale?: Locale
+  listStageId?: string
 }) {
   const Heading = headingLevel
   const safeSlug = encodeURIComponent(post.slug)
@@ -31,6 +33,7 @@ export function PostRow({
       coverTransitionName={coverTransitionName}
       titleTransitionName={titleTransitionName}
       className="group blog-row hairline-top"
+      listStageId={listStageId}
     >
       <span className="print-pile" aria-hidden>
         <span className="print-pile-sheet" />
@@ -53,7 +56,11 @@ export function PostRow({
       >
         <T zh={post.title} en={post.titleEn} />
       </Heading>
-      <span className="blog-row-leader" aria-hidden />
+      <span
+        className="blog-row-leader"
+        aria-hidden
+        data-list-stage-target={listStageId ? '' : undefined}
+      />
       <time
         dateTime={post.publishedAt.toISOString()}
         className="blog-row-date shrink-0 text-muted-foreground tabular-nums"

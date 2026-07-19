@@ -45,6 +45,14 @@ beforeEach(() => {
   search = `hold=${HOLD_ID}`
   vi.useFakeTimers()
   vi.stubGlobal('fetch', fetchMock)
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn(() => ({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })),
+  )
 })
 
 afterEach(() => {
@@ -68,6 +76,8 @@ describe('BookingConfirmation', () => {
     expect(screen.getByText(/付款已确认/)).toBeTruthy()
     expect(screen.getByText(/Manage Link/)).toBeTruthy()
     expect(vi.mocked(trackFunnelEvent)).toHaveBeenCalledExactlyOnceWith('ama_booking_paid')
+    expect(document.querySelector('[data-ama-success-stage]')).not.toBeNull()
+    expect(document.querySelectorAll('[data-ama-confetti-piece]').length).toBeGreaterThan(0)
 
     const callsAfterSettle = fetchMock.mock.calls.length
     await act(async () => {
@@ -93,6 +103,7 @@ describe('BookingConfirmation', () => {
 
     expect(screen.getByText(/Payment confirmed/)).toBeTruthy()
     expect(screen.getByText(/being finalized/)).toBeTruthy()
+    expect(document.querySelector('[data-ama-success-stage]')).not.toBeNull()
   })
 
   it('tells the truth when payment landed but the time was taken', async () => {
@@ -105,6 +116,8 @@ describe('BookingConfirmation', () => {
 
     expect(screen.getByText(/that time was taken while you paid/)).toBeTruthy()
     expect(screen.getByText(/Manage Link/)).toBeTruthy()
+    expect(document.querySelector('[data-ama-success-stage]')).toBeNull()
+    expect(document.querySelector('[data-ama-confetti-piece]')).toBeNull()
   })
 
   it('offers a way back when the hold expired unpaid', async () => {

@@ -2,6 +2,7 @@ import Image from 'next/image'
 
 import { ExternalLabel } from '~/components/external-mark'
 import { GhostSchematic } from '~/components/ghost-schematic'
+import { ProjectsBlueprintStage } from '~/components/hidden-list-stage'
 import { PixelCluster } from '~/components/pixel-cluster'
 import { T } from '~/lib/i18n'
 import { publicPageMetadata } from '~/lib/public-page-metadata'
@@ -31,45 +32,51 @@ export function ProjectsPageView() {
         <PixelCluster variant={3} className="enter shrink-0" />
       </div>
 
-      <ul className="focus-list mt-10 flex flex-col">
-        {projects.map((project, index) => (
-          <li
-            key={project.name}
-            className="enter-swing"
-            style={
-              { '--enter-delay': `${120 + Math.abs(index - center) * 50}ms` } as React.CSSProperties
-            }
-          >
-            <a
-              href={project.url}
-              target="_blank"
-              rel="noreferrer"
-              className="project-row hairline-top group"
+      <ProjectsBlueprintStage className="mt-10">
+        <ul className="focus-list flex flex-col">
+          {projects.map((project, index) => (
+            <li
+              key={project.name}
+              className="enter-swing"
+              style={
+                {
+                  '--enter-delay': `${120 + Math.abs(index - center) * 50}ms`,
+                } as React.CSSProperties
+              }
             >
-              <span className="project-icon-frame" aria-hidden="true">
-                <Image
-                  src={project.icon}
-                  alt=""
-                  width={36}
-                  height={36}
-                  className="project-icon"
-                />
-              </span>
-              <span className="project-identity">
-                <span className="project-name font-medium">
-                  <ExternalLabel>
-                    <T zh={project.name} en={project.nameEn} />
-                  </ExternalLabel>
+              <a
+                href={project.url}
+                target="_blank"
+                rel="noreferrer"
+                className="project-row hairline-top group"
+                data-list-stage-row
+                data-list-stage-id={project.name}
+              >
+                <span className="project-icon-frame" aria-hidden="true" data-list-stage-anchor>
+                  <Image
+                    src={project.icon}
+                    alt=""
+                    width={36}
+                    height={36}
+                    className="project-icon"
+                  />
                 </span>
-                <span className="project-domain text-muted-foreground">{project.domain}</span>
-              </span>
-              <span className="project-description text-muted-foreground">
-                <T zh={project.description} en={project.descriptionEn ?? project.description} />
-              </span>
-            </a>
-          </li>
-        ))}
-      </ul>
+                <span className="project-identity">
+                  <span className="project-name font-medium">
+                    <ExternalLabel>
+                      <T zh={project.name} en={project.nameEn} />
+                    </ExternalLabel>
+                  </span>
+                  <span className="project-domain text-muted-foreground">{project.domain}</span>
+                </span>
+                <span className="project-description text-muted-foreground">
+                  <T zh={project.description} en={project.descriptionEn ?? project.description} />
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </ProjectsBlueprintStage>
     </div>
   )
 }

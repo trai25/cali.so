@@ -67,6 +67,19 @@ unconfigured returns 503 before touching provider code.
 durable operations under leases; an interrupted worker's lease expires and the
 next run reclaims the work, so no step depends on a healthy previous run.
 
+## Local confirmation previews
+
+In `next dev`, these URLs exercise the real public confirmation page and API
+contract without a database record. They add no preview-only page chrome:
+
+- Confirmed: `/en/ama/book/confirmation?hold=00000000-0000-4000-8000-000000000001`
+- Finalizing: `/en/ama/book/confirmation?hold=00000000-0000-4000-8000-000000000002`
+- Needs reschedule: `/en/ama/book/confirmation?hold=00000000-0000-4000-8000-000000000003`
+
+The same hold ids work on the unprefixed Chinese confirmation route. Outside
+the development server, they are ordinary unknown ids and never return fixture
+data.
+
 ## Recovery
 
 - A paid Booking whose provider work keeps failing stays `finalizing`

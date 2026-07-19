@@ -1,5 +1,6 @@
 import { GeistPixelSquare } from 'geist/font/pixel'
 
+import { WritingInkStage } from '~/components/hidden-list-stage'
 import { PixelCluster } from '~/components/pixel-cluster'
 import { PostRow } from '~/components/post-row'
 import { RevealScope } from '~/components/reveal-scope'
@@ -27,7 +28,7 @@ export function BlogIndexPageView({ locale }: { locale: Locale }) {
         </h1>
         <PixelCluster variant={1} />
       </header>
-      <div className="mt-6 flex flex-col gap-8">
+      <WritingInkStage className="mt-6" contentClassName="flex flex-col gap-8">
         {[...postsByYear].map(([year, yearPosts]) => {
           const center = (yearPosts.length - 1) / 2
 
@@ -59,6 +60,7 @@ export function BlogIndexPageView({ locale }: { locale: Locale }) {
                       headingLevel="h3"
                       dateStyle="month-day"
                       locale={locale}
+                      listStageId={post.slug}
                     />
                   </li>
                 ))}
@@ -66,7 +68,7 @@ export function BlogIndexPageView({ locale }: { locale: Locale }) {
             </section>
           )
         })}
-      </div>
+      </WritingInkStage>
     </div>
   )
 }

@@ -382,6 +382,14 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
   static decoration; they never join the morph or change the row geometry.
   Desktop titles remain one line; below 40rem they may use two balanced lines
   before truncating. Rows swing in center-out.
+- **Writing ink current**: the index owns one dormant `Strands` field, never
+  one canvas per post. After 120ms of fine-pointer intent, three or four fine
+  monochrome strands occupy only the active row's dotted-leader lane and
+  retarget immediately as the pointer crosses rows. Keyboard focus reveals a
+  static ink plate with no animation. Touch remains an ordinary first-tap
+  link, and reduced motion, unavailable WebGPU, or initialization failure use
+  the same static treatment. The field fades out and unmounts only after the
+  pointer leaves the complete writing list.
 - **Hover cards are informational only**: `.link-card` carries
   `pointer-events: none; user-select: none` — a card is a printed label,
   never a control. Email's card is a little paper ENVELOPE (folded flap,
@@ -732,6 +740,55 @@ the shared selective-focus treatment softens the other rows. The row never
 expands or moves. Touch is a plain whole-row link, keyboard focus uses the
 neutral focus ring without motion, and reduced motion keeps every artifact
 still.
+
+The list also owns one dormant **blueprint field** behind all project rows:
+a monochrome `Grid` passing through one very low-strength `FlowField`. After
+120ms of initial fine-pointer intent, it develops across the bounded list and
+a separate registration mark retargets immediately to the active project's
+icon; the same runtime remains mounted while rows are traversed. It never
+tracks the cursor or emits ripples. Keyboard focus uses a static blueprint
+plate, touch preserves direct first-tap navigation, and reduced motion,
+unavailable WebGPU, or initialization failure stay static. The field fades
+away and unmounts only after the pointer leaves the full list.
+
+## AMA introduction
+
+The public AMA route opens with one bounded **conversation field** behind its
+introduction and session specification. Two monochrome sine traces move slowly
+toward and through one another, reading as a conversation without becoming an
+illustration or previewing the paid confirmation treatment. The field is
+visible immediately at very low contrast and has no pointer interaction.
+
+The content keeps its normal editorial alignment and contrast while the field
+fades softly at its edges instead of becoming a card. A matching static pair
+of traces is present in the server-rendered page and fades out once the live
+canvas is ready, so the pair is replaced rather than doubled. The live canvas
+mounts only after WebGPU preflight, unmounts when the bounded field leaves the
+viewport, and returns when it re-enters. Reduced motion, unavailable WebGPU,
+or shader initialization failure retain only the static traces.
+
+## AMA confirmation
+
+The public confirmation route reserves its full celebration for a server-proven
+paid AMA Session whose Booking is `finalizing` or `confirmed`. Those two states
+become one full-viewport dark stage using the Shaders **Undertones 8** preset
+(`bb1fda80-5ce2-4072-b528-9837f6e7aff7`) as its background: `Swirl` and
+`ChromaFlow`, refracted once through `FlutedGlass`, with the preset's restrained
+`FilmGrain` finish. The four layers remain one canvas, use the exported preset
+values, disable vendor telemetry, and mount only after WebGPU preflight. A
+matching static plate remains underneath during initialization and on browsers
+without WebGPU. The field covers the full visual viewport behind the site
+chrome and confirmation copy; it is not framed as a card inside the content
+column.
+
+Two twelve-piece registration-color confetti bursts launch once from the lower
+left and lower right corners, arc inward across the viewport, and settle toward
+the center while a centered check mark arrives over the field. The pieces use
+only transform and opacity and never loop. Reduced motion keeps the static dark
+plate and check mark but omits both the shader and confetti.
+`needs_reschedule` is deliberately not celebratory: payment landed, but the
+chosen time did not, so it retains the calm explanatory state with no success
+stage.
 
 ## Photo index
 

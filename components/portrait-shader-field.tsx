@@ -1,31 +1,11 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
 import { ContourLines, PerlinNoise, Shader } from 'shaders/react'
 
-const SHADER_READY_TIMEOUT_MS = 2000
-
-function readForegroundInk() {
-  return getComputedStyle(document.body).color
-}
+import { useHiddenShaderField } from '~/components/use-hidden-shader-field'
 
 export function PortraitShaderField({ onUnavailable }: { onUnavailable: () => void }) {
-  const [ink, setInk] = useState(readForegroundInk)
-  const [ready, setReady] = useState(false)
-  const handleReady = useCallback(() => setReady(true), [])
-
-  useEffect(() => {
-    const root = document.documentElement
-    const observer = new MutationObserver(() => setInk(readForegroundInk()))
-    observer.observe(root, { attributes: true, attributeFilter: ['class'] })
-    return () => observer.disconnect()
-  }, [])
-
-  useEffect(() => {
-    if (ready) return
-    const timer = window.setTimeout(onUnavailable, SHADER_READY_TIMEOUT_MS)
-    return () => window.clearTimeout(timer)
-  }, [onUnavailable, ready])
+  const { handleReady, ink, ready } = useHiddenShaderField(onUnavailable)
 
   return (
     <span className="portrait-hidden-stage-shader-shell" data-ready={ready ? 'true' : 'false'}>
