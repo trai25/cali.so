@@ -67,7 +67,11 @@ describe('AmaPageView', () => {
     expect(container.textContent).toContain('software factory')
     for (const tool of ['Linear', 'Codex', 'Claude Code', 'Slack', 'Cursor']) {
       expect(container.textContent).toContain(tool)
+      expect(
+        container.querySelectorAll(`[data-ama-product-name="${tool}"]`),
+      ).toHaveLength(2)
     }
+    expect(container.querySelectorAll('.ama-product-logo')).toHaveLength(10)
   })
 
   it('states the 24 hour policy and carries the testimonials', () => {

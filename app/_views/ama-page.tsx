@@ -1,10 +1,15 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ClaudeIcon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { OpenAiLogoIcon } from '@phosphor-icons/react/ssr'
 
 import { AmaIntroductionStage } from '~/components/ama/ama-introduction-stage'
+import { Favicon } from '~/components/favicon'
 import { PixelCluster } from '~/components/pixel-cluster'
 import { AMA_TOPIC_LABELS, AMA_TOPICS } from '~/lib/ama/booking/topics'
 import { T } from '~/lib/i18n'
+import { faviconUrl } from '~/lib/link-previews'
 import { localeMetadata } from '~/lib/locale-metadata'
 import { localePath, type Locale } from '~/lib/locale-route'
 import { publicPageMetadata } from '~/lib/public-page-metadata'
@@ -80,6 +85,56 @@ const TESTIMONIALS = [
     enAttribution: 'An AMA guest, 2026',
   },
 ] as const
+
+const AMA_PRODUCTS = {
+  Linear: 'https://linear.app',
+  Codex: null,
+  'Claude Code': null,
+  Slack: 'https://slack.com',
+  Cursor: 'https://cursor.com',
+} as const
+
+type AmaProduct = keyof typeof AMA_PRODUCTS
+
+function AmaProductName({ name }: { name: AmaProduct }) {
+  let logo: React.ReactNode
+
+  if (name === 'Codex') {
+    logo = (
+      <OpenAiLogoIcon
+        className="ama-product-logo"
+        size={14}
+        weight="fill"
+        aria-hidden
+      />
+    )
+  } else if (name === 'Claude Code') {
+    logo = (
+      <HugeiconsIcon
+        className="ama-product-logo"
+        icon={ClaudeIcon}
+        size={14}
+        strokeWidth={1.8}
+        aria-hidden
+      />
+    )
+  } else {
+    logo = (
+      <Favicon
+        className="ama-product-logo"
+        src={faviconUrl(AMA_PRODUCTS[name])!}
+        size={14}
+      />
+    )
+  }
+
+  return (
+    <span className="ama-product-name" data-ama-product-name={name}>
+      {logo}
+      <span>{name}</span>
+    </span>
+  )
+}
 
 function SectionHeading({
   index,
@@ -158,12 +213,46 @@ export function AmaPageView() {
         <div id="ama-who-heading">
           <SectionHeading index="01" zh="关于我" en="About me" delay={170} />
         </div>
-        <p className="page-introduction mt-4">
-          <T
-            zh="我是 Cali，佐玩（Zolplay）的创始人。Web、iOS、产品设计和独立产品都亲手做过。现在大部分工作跑在自己搭的 software factory 里，Linear、Codex、Claude Code、Slack 和 Cursor 串在一起，从想法一路做到 ship。你想聊具体 workflow，还是产品方向、创业、职业、独立开发、出海，或者英语学习，都可以。中文、英文，混着聊也行。"
-            en="I’m Cali, founder of Zolplay. I’ve built across web, iOS, product design, and my own products. These days, most of that work runs through a software factory I built around Linear, Codex, Claude Code, Slack, and Cursor, from the first idea through shipping. We can get specific about a workflow, a product decision, a startup, a career move, an indie project, or something you’re trying to take global. We can talk in English, Chinese, or both."
-          />
-        </p>
+        <div className="mt-4 flex flex-col gap-3">
+          <p className="page-introduction">
+            <T
+              zh="我是 Cali，佐玩（Zolplay）的创始人。Web、iOS、产品设计和独立产品都亲手做过。"
+              en="I’m Cali, founder of Zolplay. I’ve worked hands-on across web, iOS, product design, and my own products."
+            />
+          </p>
+          <p className="page-introduction">
+            <T
+              zh={
+                <>
+                  现在，我更感兴趣的是，怎么把产品判断、设计、工程和团队协作，连成一套真正能跑起来的系统。我给自己搭了一套 software factory：从{' '}
+                  <AmaProductName name="Linear" /> 里的想法和 issue 出发，让{' '}
+                  <AmaProductName name="Codex" />、<AmaProductName name="Claude Code" /> 和{' '}
+                  <AmaProductName name="Cursor" /> 参与调研、拆 scope、实现和 review，最后回到{' '}
+                  <AmaProductName name="Slack" />，和团队一起继续往前走。重点不只是「用 AI
+                  写代码更快」，而是重新设计做产品的方式，让一个模糊的念头更快变成能 ship、能验证的东西。你想聊具体
+                  workflow、coding agents
+                  的实践，还是产品方向、创业、职业、独立开发、出海或英语学习，都可以。中文、英文，混着聊也行。
+                </>
+              }
+              en={
+                <>
+                  These days, I’m more interested in how product judgment, design, engineering, and
+                  team collaboration can work as one system that actually ships. I’ve built a
+                  software factory that starts with ideas and issues in <AmaProductName name="Linear" />,
+                  then brings{' '}
+                  <AmaProductName name="Codex" />, <AmaProductName name="Claude Code" />, and{' '}
+                  <AmaProductName name="Cursor" /> into research, scoping, implementation, and review
+                  before the work comes back to <AmaProductName name="Slack" /> and the team. The
+                  point isn’t just to get AI to write code faster. It’s to redesign how
+                  products get made, so a rough idea can become something real, testable, and shipped
+                  with less friction. We can get specific about the workflow and coding-agent
+                  practices, or talk through a product decision, startup, career move, indie project,
+                  or something you’re taking global. We can talk in English, Chinese, or both.
+                </>
+              }
+            />
+          </p>
+        </div>
       </section>
 
       <section className="mt-12" aria-labelledby="ama-topics-heading">
