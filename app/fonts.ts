@@ -1,6 +1,8 @@
 import { Geist, Geist_Mono } from 'next/font/google'
 import localFont from 'next/font/local'
 
+import type { Locale } from '~/lib/locale-route'
+
 const geist = Geist({
   subsets: ['latin'],
   variable: '--font-geist',
@@ -25,4 +27,10 @@ const frexSansGB = localFont({
   preload: false,
 })
 
-export const fontVariables = [geist.variable, geistMono.variable, frexSansGB.variable].join(' ')
+const latinFontVariables = [geist.variable, geistMono.variable].join(' ')
+
+export function fontVariablesForLocale(locale: Locale) {
+  return [latinFontVariables, locale === 'zh' ? frexSansGB.variable : null]
+    .filter(Boolean)
+    .join(' ')
+}

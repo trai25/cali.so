@@ -9,7 +9,7 @@ import {
 } from '~/lib/non-public-metadata'
 import { cn } from '~/lib/utils'
 
-import { fontVariables } from './fonts'
+import { fontVariablesForLocale } from './fonts'
 import { NotFoundPageView } from './_views/not-found-page'
 
 export const metadata: Metadata = {
@@ -23,7 +23,11 @@ export default function GlobalNotFound() {
   // defaults to Chinese. PREPAINT_SCRIPT derives an explicit /en URL before
   // paint and updates lang/data-locale without consulting localStorage.
   return (
-    <html lang="zh-CN" suppressHydrationWarning className={cn('font-sans', fontVariables)}>
+    <html
+      lang="zh-CN"
+      suppressHydrationWarning
+      className={cn('font-sans', fontVariablesForLocale('zh'))}
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: PREPAINT_SCRIPT }} />
       </head>

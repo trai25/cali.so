@@ -20,7 +20,7 @@ import { seo } from '~/lib/seo'
 import type { Locale } from '~/lib/locale-route'
 import { cn } from '~/lib/utils'
 
-import { fontVariables } from '../fonts'
+import { fontVariablesForLocale } from '../fonts'
 
 export const rootMetadata: Metadata = {
   metadataBase: seo.url,
@@ -42,6 +42,7 @@ export async function SiteDocument({
   restoreLocale?: boolean
 }>) {
   const english = locale === 'en'
+  const fontVariables = fontVariablesForLocale(locale)
 
   if (isAdmin) {
     // The owner admin shares the public warm paper, ambient layer, and

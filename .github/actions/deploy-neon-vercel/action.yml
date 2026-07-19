@@ -135,6 +135,7 @@ runs:
             --token "$VERCEL_TOKEN" \
             --target="$DEPLOY_TARGET" \
             --build-env DATABASE_URL="$RUNTIME_DATABASE_URL" \
+            --build-env ENABLE_EXPERIMENTAL_COREPACK=1 \
             --env DATABASE_URL="$RUNTIME_DATABASE_URL" \
             --meta githubCommitRef="$DEPLOY_GIT_REF" \
             --meta githubCommitSha="$DEPLOY_COMMIT_SHA"
