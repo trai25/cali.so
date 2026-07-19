@@ -1,6 +1,6 @@
 import Image from 'next/image'
 
-import { DitherVeil } from '~/components/dither-veil'
+import { DitheredImage } from '~/components/dither-veil'
 import type { PostCover } from '~/lib/content'
 import { tiltFromSlug } from '~/lib/polaroid'
 import { cn } from '~/lib/utils'
@@ -44,16 +44,28 @@ export function PolaroidCover({
       }
     >
       <span className="polaroid-photo">
-        <Image
-          src={cover.src}
-          alt={alt ?? ''}
-          width={cover.width}
-          height={cover.height}
-          priority={priority}
-          sizes={sizes}
-          className="w-full"
-        />
-        {print && <DitherVeil src={cover.src} mode={print === 'collage' ? 'collage' : 'dither'} />}
+        {print ? (
+          <DitheredImage
+            src={cover.src}
+            alt={alt ?? ''}
+            width={cover.width}
+            height={cover.height}
+            priority={priority}
+            sizes={sizes}
+            className="w-full"
+            ditherMode={print === 'collage' ? 'collage' : 'dither'}
+          />
+        ) : (
+          <Image
+            src={cover.src}
+            alt={alt ?? ''}
+            width={cover.width}
+            height={cover.height}
+            priority={priority}
+            sizes={sizes}
+            className="w-full"
+          />
+        )}
       </span>
       <figcaption className="polaroid-caption">{caption ?? cover.caption ?? ' '}</figcaption>
     </figure>

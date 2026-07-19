@@ -1,6 +1,12 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+const { fontVariablesForLocale } = vi.hoisted(() => ({
+  fontVariablesForLocale: vi.fn((locale: 'zh' | 'en') =>
+    locale === 'zh' ? 'latin-font cjk-font' : 'latin-font',
+  ),
+}))
+
 vi.mock('react', async (importOriginal) => {
   const react = await importOriginal<typeof import('react')>()
 
@@ -49,7 +55,7 @@ vi.mock('~/components/route-motion-controller', () => ({
   ),
 }))
 vi.mock('./fonts', () => ({
-  fontVariables: '',
+  fontVariablesForLocale,
 }))
 
 import { SiteDocument } from './_components/site-document'
@@ -60,6 +66,20 @@ beforeEach(() => {
 })
 
 describe('SiteDocument analytics', () => {
+  it('activates the CJK font only for Chinese documents', async () => {
+    const chinese = renderToStaticMarkup(
+      await SiteDocument({ children: <p>中文页面</p>, locale: 'zh' }),
+    )
+    const english = renderToStaticMarkup(
+      await SiteDocument({ children: <p>English page</p>, locale: 'en' }),
+    )
+
+    expect(chinese).toContain('cjk-font')
+    expect(english).not.toContain('cjk-font')
+    expect(fontVariablesForLocale).toHaveBeenCalledWith('zh')
+    expect(fontVariablesForLocale).toHaveBeenCalledWith('en')
+  })
+
   it('collects page views across the public route families', async () => {
     for (const locale of ['zh', 'en'] as const) {
       const html = renderToStaticMarkup(
