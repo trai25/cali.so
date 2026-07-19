@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { faviconTone } from './favicon-tone'
+import { faviconTone, isSameOriginFaviconSource } from './favicon-tone'
 
 // 4×4 RGBA buffer where `coverage` of the pixels carry the given color at
 // full alpha and the rest stay transparent.
@@ -67,5 +67,22 @@ describe('faviconTone', () => {
   it('ignores fully transparent icons', () => {
     const { data, pixels } = icon([255, 255, 255], 0)
     expect(faviconTone(data, pixels)).toBeUndefined()
+  })
+
+  it('samples same-origin media without touching cross-origin fallbacks', () => {
+    const pageUrl = 'https://cali.so/ama'
+
+    expect(
+      isSameOriginFaviconSource(
+        '/link-media/favicon?url=https%3A%2F%2Flinear.app',
+        pageUrl,
+      ),
+    ).toBe(true)
+    expect(
+      isSameOriginFaviconSource(
+        'https://og.zolplay.com/favicon?url=https%3A%2F%2Fcursor.com',
+        pageUrl,
+      ),
+    ).toBe(false)
   })
 })
