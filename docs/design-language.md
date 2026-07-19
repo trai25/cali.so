@@ -327,8 +327,9 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
   boxed image — prints must dissolve into the paper in both themes.
 - **The halftone portrait hero** (`components/halftone-portrait.tsx`): the
   home portrait rendered as a dot screen on canvas — dot radius ∝ auto-leveled
-  luminance (p5–p95 stretch), 3px cells, dots taper through the outer 10% and
-  below a 6% floor so the figure emerges from nothing. A fine pointer swells
+  luminance (p5–p95 stretch), a denser 2px screen for the light-mode mobile
+  presentation and 3px cells everywhere else, dots taper through the outer 10%
+  and below a 6% floor so the figure emerges from nothing. A fine pointer swells
   (+8%) and repels (≤3px) dots within ~150px, smoothed per-frame (0.16
   lerp, rAF only while active). Touch and reduced motion get the static
   print. The server-rendered shell is visually empty; once the client paints
