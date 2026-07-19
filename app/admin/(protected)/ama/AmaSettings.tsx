@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 
+import { SectionTag } from '~/components/section-tag'
+import { Button } from '~/components/ui/button'
 import { T } from '~/lib/i18n'
 
 import {
@@ -62,11 +64,11 @@ const previewTimeOptions: Intl.DateTimeFormatOptions = {
   hour12: false,
 }
 const previewDateFormatters = {
-  zh: new Intl.DateTimeFormat('zh-TW', previewDateOptions),
+  zh: new Intl.DateTimeFormat('zh-CN', previewDateOptions),
   en: new Intl.DateTimeFormat('en-US', previewDateOptions),
 }
 const previewTimeFormatters = {
-  zh: new Intl.DateTimeFormat('zh-TW', previewTimeOptions),
+  zh: new Intl.DateTimeFormat('zh-CN', previewTimeOptions),
   en: new Intl.DateTimeFormat('en-US', previewTimeOptions),
 }
 
@@ -236,9 +238,9 @@ function GoogleCalendarSection({
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-md">
-          <h3 id="google-heading" className="text-sm font-medium">
+          <SectionTag index={2} id="google-heading">
             <T zh="Google 日历" en="Google Calendar" />
-          </h3>
+          </SectionTag>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
             <T zh={copy.zh} en={copy.en} />
           </p>
@@ -251,17 +253,16 @@ function GoogleCalendarSection({
               method="post"
               onSubmit={connect}
             >
-              <button
+              <Button
+                variant="primary"
+                size="md"
                 type="submit"
                 disabled={pending !== null}
-                className="min-h-11 touch-manipulation rounded-full bg-foreground px-4 text-sm font-medium text-background outline-none transition-transform duration-100 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-60 focus-visible:ring-1 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transform-none motion-reduce:transition-none"
+                loading={pending === 'connect'}
+                expandHitArea
               >
-                {pending === 'connect' ? (
-                  <T zh="正在连接…" en="Connecting…" />
-                ) : (
-                  <T zh={connectLabel.zh} en={connectLabel.en} />
-                )}
-              </button>
+                <T zh={connectLabel.zh} en={connectLabel.en} />
+              </Button>
             </form>
           )}
           {connection.status !== 'disconnected' && (
@@ -270,23 +271,21 @@ function GoogleCalendarSection({
               method="post"
               onSubmit={disconnect}
             >
-              <button
+              <Button
+                variant="ghost"
+                size="md"
                 type="submit"
                 disabled={pending !== null}
-                className={`min-h-11 touch-manipulation rounded-full px-3 text-sm outline-none transition-transform duration-100 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-60 focus-visible:ring-1 motion-reduce:transform-none motion-reduce:transition-none ${
-                  disconnectArmed
-                    ? 'text-destructive focus-visible:ring-destructive'
-                    : 'text-muted-foreground focus-visible:ring-foreground'
-                }`}
+                loading={pending === 'disconnect'}
+                destructive={disconnectArmed}
+                expandHitArea
               >
-                {pending === 'disconnect' ? (
-                  <T zh="正在断开…" en="Disconnecting…" />
-                ) : disconnectArmed ? (
+                {disconnectArmed ? (
                   <T zh="确认断开？" en="Confirm disconnect?" />
                 ) : (
                   <T zh="断开" en="Disconnect" />
                 )}
-              </button>
+              </Button>
             </form>
           )}
         </div>
@@ -307,20 +306,26 @@ function GoogleCalendarSection({
       />
 
       {connection.identity && (
-        <dl className="mt-4 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[7rem_minmax(0,1fr)]">
-          <dt className="text-muted-foreground">
-            <T zh="日历" en="Calendar" />
-          </dt>
-          <dd className="min-w-0 break-words">
-            {connection.identity.summary || connection.identity.email || connection.identity.calendarId}
-          </dd>
+        <dl className="spec-nameplate mt-4 mb-6">
+          <div>
+            <dt>
+              <T zh="日历" en="Calendar" />
+            </dt>
+            <dd className="min-w-0 break-words">
+              {connection.identity.summary ||
+                connection.identity.email ||
+                connection.identity.calendarId}
+            </dd>
+          </div>
           {connection.identity.email && (
-            <>
-              <dt className="text-muted-foreground">
+            <div>
+              <dt>
                 <T zh="账号" en="Account" />
               </dt>
-              <dd className="min-w-0 break-words">{connection.identity.email}</dd>
-            </>
+              <dd className="min-w-0 break-words">
+                {connection.identity.email}
+              </dd>
+            </div>
           )}
         </dl>
       )}
@@ -334,9 +339,9 @@ function SlotPreview({ slots }: { slots: readonly PreviewSlotViewModel[] }) {
   return (
     <section className="mt-8 hairline-top pt-6" aria-labelledby="preview-heading">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 id="preview-heading" className="text-sm font-medium">
+        <SectionTag index={3} id="preview-heading">
           <T zh="开放时间预览" en="Open-time preview" />
-        </h3>
+        </SectionTag>
         <span className="text-sm text-muted-foreground tabular-nums">
           Asia/Taipei · UTC+8
         </span>
@@ -400,10 +405,7 @@ export function AmaSettings({
   notices,
 }: AmaSettingsProps) {
   return (
-    <section aria-labelledby="settings-heading" className="mt-10 hairline-top pt-6">
-      <h2 id="settings-heading" className="text-sm font-medium text-muted-foreground">
-        <T zh="设置" en="Settings" />
-      </h2>
+    <div className="pb-10">
       <p className="mt-1 text-sm leading-6 text-muted-foreground">
         <T
           zh="每次 60 分钟 · 至少提前 24 小时 · 开放未来 30 天 · 前后各留 15 分钟"
@@ -411,11 +413,11 @@ export function AmaSettings({
         />
       </p>
 
-      <section className="mt-6" aria-labelledby="availability-heading">
+      <section className="mt-6 hairline-top pt-6" aria-labelledby="availability-heading">
         <div className="max-w-md">
-          <h3 id="availability-heading" className="text-sm font-medium">
+          <SectionTag index={1} id="availability-heading">
             <T zh="每周可预约时段" en="Weekly Availability Windows" />
-          </h3>
+          </SectionTag>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
             <T
               zh="所有时间都按 Asia/Taipei 解释。可以在同一天添加多个时段。"
@@ -471,6 +473,6 @@ export function AmaSettings({
         }
       />
       <SlotPreview slots={previewSlots} />
-    </section>
+    </div>
   )
 }

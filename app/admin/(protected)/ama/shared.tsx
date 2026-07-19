@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 
+import { Button } from '~/components/ui/button'
+
 import type {
   BookingStatus,
   MeetingProviderName,
@@ -78,10 +80,10 @@ function zonedFormatter(zone: string, locale: Locale) {
       hour12: false,
     }
     try {
-      formatter = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-TW' : 'en-US', options)
+      formatter = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', options)
     } catch {
       // An unknown stored time zone must not break the page; fall back to UTC.
-      formatter = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-TW' : 'en-US', {
+      formatter = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
         ...options,
         timeZone: 'UTC',
       })
@@ -176,11 +178,6 @@ export function OperationStatusBadge({ status }: { status: DurableOperationStatu
     </span>
   )
 }
-
-const actionButtonClass =
-  'min-h-11 rounded-md border border-border px-3 text-sm font-medium outline-none disabled:opacity-50 focus-visible:border-foreground'
-const quietButtonClass =
-  'min-h-11 px-3 text-sm text-muted-foreground outline-none disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground'
 
 /**
  * Durable operation rows with Retry and Mark resolved recovery actions.
@@ -338,53 +335,50 @@ export function OperationsList({
                   </p>
                 </div>
                 {actionable && (
+                  // Dense stacked rows: the row itself is the tap target — no
+                  // hit-area extension on these compact pills.
                   <div className="flex flex-wrap items-center gap-2">
                     {operation.status === 'failed' && (
-                      <button
-                        type="button"
+                      <Button
+                        variant="tertiary"
+                        size="sm"
                         disabled={pending !== null}
+                        loading={pending === `${operation.id}:retry`}
                         onClick={() => void act(operation, 'retry')}
-                        className={actionButtonClass}
                       >
-                        {pending === `${operation.id}:retry` ? (
-                          <T zh="正在重试…" en="Retrying…" />
-                        ) : (
-                          <T zh="重试" en="Retry" />
-                        )}
-                      </button>
+                        <T zh="重试" en="Retry" />
+                      </Button>
                     )}
                     {confirming ? (
                       <>
-                        <button
-                          type="button"
+                        <Button
+                          variant="tertiary"
+                          size="sm"
+                          destructive
                           disabled={pending !== null}
+                          loading={pending === `${operation.id}:resolve`}
                           onClick={() => void act(operation, 'resolve')}
-                          className={`${actionButtonClass} text-destructive focus-visible:border-destructive`}
                         >
-                          {pending === `${operation.id}:resolve` ? (
-                            <T zh="正在标记…" en="Resolving…" />
-                          ) : (
-                            <T zh="确认已在系统外完成" en="Confirm done outside the system" />
-                          )}
-                        </button>
-                        <button
-                          type="button"
+                          <T zh="确认已在系统外完成" en="Confirm done outside the system" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           disabled={pending !== null}
                           onClick={() => setConfirmingId(null)}
-                          className={quietButtonClass}
                         >
                           <T zh="返回" en="Keep it" />
-                        </button>
+                        </Button>
                       </>
                     ) : (
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         disabled={pending !== null}
                         onClick={() => setConfirmingId(operation.id)}
-                        className={quietButtonClass}
                       >
                         <T zh="标记为已解决" en="Mark resolved" />
-                      </button>
+                      </Button>
                     )}
                   </div>
                 )}

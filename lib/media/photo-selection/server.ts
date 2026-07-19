@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { unstable_cache } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 
 import { getDatabase } from '~/db'
 
@@ -49,20 +49,31 @@ function restoreSelectionDates(
   }
 }
 
-const readPublishedPhotoSelection = unstable_cache(
-  async () => {
+async function readPublishedPhotoSelection() {
+  'use cache'
+  cacheTag(PUBLIC_PHOTO_SELECTION_CACHE_TAG)
+  cacheLife('max')
+  try {
     const cdnBaseUrl = parseBunnyRenditionCdnEnv(process.env)
-    return createPublicPhotoSelectionRepository(
+    return await createPublicPhotoSelectionRepository(
       () => getDatabase(),
       cdnBaseUrl,
     ).getPublishedSelection()
-  },
-  ['published-photo-selection'],
-  {
-    tags: [PUBLIC_PHOTO_SELECTION_CACHE_TAG],
-    revalidate: false,
-  },
-)
+  } catch (error) {
+    // An error thrown inside the 'use cache' scope aborts a prerender even
+    // when the caller catches it. On Vercel that is deliberate: a deploy
+    // must fail loudly rather than silently ship an empty photos page. The
+    // documented local build (shaped but unreachable DATABASE_URL) renders
+    // the empty state instead. At runtime the rethrow lands in the caller's
+    // catch, so a request never 500s over this read.
+    if (process.env.VERCEL_ENV) throw error
+    console.error(
+      '[photo-selection] read failed; rendering empty state',
+      error,
+    )
+    return null
+  }
+}
 
 // Local development only: when no real selection exists (no database or
 // nothing published), fall back to generated test cards so the photos
@@ -78,7 +89,11 @@ export async function getPublishedPhotoSelection() {
     )
     if (selection && selection.items.length > 0) return selection
     return devFallback()
-  } catch {
+  } catch (error) {
+    console.error(
+      '[photo-selection] public read failed; rendering empty state',
+      error,
+    )
     return devFallback()
   }
 }

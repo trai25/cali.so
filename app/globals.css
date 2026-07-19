@@ -1853,6 +1853,71 @@ figure[data-rehype-pretty-code-figure] {
   }
 }
 
+/* ── Fluid vertical scroll area (components/ui/scroll-area.tsx) ──── */
+
+/* flex column so a flexed parent (dialog body) sizes the viewport;
+   standalone use still sizes to content */
+.scroll-area-y {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.scroll-area-y-viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.scroll-area-y-viewport::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scroll-area-y-viewport::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--foreground) 20%, transparent);
+  border-radius: 4px;
+}
+
+/* edge fades: visible only while content continues in that direction */
+.scroll-area-y-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2.5rem;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.scroll-area-y-fade-start {
+  top: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--scroll-fade-surface, var(--background)),
+    transparent
+  );
+}
+
+.scroll-area-y-fade-end {
+  bottom: 0;
+  background: linear-gradient(
+    to top,
+    var(--scroll-fade-surface, var(--background)),
+    transparent
+  );
+}
+
+.scroll-area-y-fade[data-visible] {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-area-y-fade {
+    transition: none;
+  }
+}
+
 figure[data-rehype-pretty-code-figure] figcaption[data-rehype-pretty-code-title] {
   display: flex;
   align-items: center;
@@ -5997,6 +6062,19 @@ body:has(.ama-success-stage) {
   --border: rgb(241 238 229 / 0.16);
   --foreground: #f1eee5;
   --muted-foreground: rgb(241 238 229 / 0.68);
+  --muted: rgb(241 238 229 / 0.09);
+  --hover: rgb(241 238 229 / 0.08);
+  --active: rgb(241 238 229 / 0.14);
+  /* A solid stage surface ramp so ladder-riding sheets (dialogs, popovers)
+     stay dark here regardless of the page theme. */
+  --surface-1: #121014;
+  --surface-2: #161418;
+  --surface-3: #1a181d;
+  --surface-4: #1f1d22;
+  --surface-5: #242227;
+  --surface-6: #29272c;
+  --surface-7: #2e2c31;
+  --surface-8: #333136;
 
   background: #08070a;
   color: #f1eee5;
@@ -6057,27 +6135,43 @@ body:has(.ama-success-stage) main {
   overflow: hidden;
 }
 
+/* Ballistic confetti in three layers: the piece drives horizontally with a
+   touch of drag, the fall layer rises and drops with gravity easings that
+   flip at the apex, and the card tumbles in 3D. All transform/opacity,
+   nothing loops. */
 .ama-success-confetti-piece {
   position: absolute;
   top: 0;
   left: 0;
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: ama-confetti-drive var(--ama-confetti-duration)
+    cubic-bezier(0.22, 0.52, 0.56, 0.9) var(--ama-confetti-delay) both;
+}
+
+.ama-success-confetti-fall {
+  display: block;
+  animation: ama-confetti-fall var(--ama-confetti-duration) linear
+    var(--ama-confetti-delay) both;
+}
+
+.ama-success-confetti-card {
+  display: block;
   width: 0.35rem;
   height: 0.7rem;
   border-radius: 1px;
   background: var(--ama-confetti-color);
-  color: transparent;
-  opacity: 0;
   transform-origin: center;
-  animation: ama-success-confetti-burst var(--ama-confetti-duration)
-    var(--ease-swift) var(--ama-confetti-delay) both;
+  animation: ama-confetti-tumble var(--ama-confetti-duration) linear
+    var(--ama-confetti-delay) both;
 }
 
-.ama-success-confetti-piece:nth-child(3n) {
+.ama-success-confetti-piece:nth-child(3n) .ama-success-confetti-card {
   width: 0.5rem;
   height: 0.18rem;
 }
 
-.ama-success-confetti-piece:nth-child(4n) {
+.ama-success-confetti-piece:nth-child(4n) .ama-success-confetti-card {
   border-radius: 50%;
 }
 
@@ -6093,58 +6187,274 @@ body:has(.ama-success-stage) main {
   align-items: center;
 }
 
+/* Form-like stage content (the guest manage page) stays left-aligned. */
+.ama-success-stage-content--start {
+  text-align: left;
+}
+
+.ama-success-stage-content--start [role='status'] {
+  align-items: stretch;
+}
+
 .ama-success-stage .text-muted-foreground {
   color: rgb(241 238 229 / 0.72);
 }
 
+/* The ladder and cert stamp read in the stage's paper ink on the dark
+   field, independent of the page theme — their default token colors would
+   vanish here in light mode. The lit signal cell stays chromatic. */
+.ama-success-stage .status-ladder {
+  min-width: 10rem;
+  color: rgb(241 238 229 / 0.6);
+}
+
+.ama-success-stage .status-ladder [data-state='current'] {
+  color: rgb(241 238 229 / 0.92);
+}
+
+.ama-success-stage .status-ladder [data-state='done'] .status-ladder-cell {
+  background: rgb(241 238 229 / 0.62);
+}
+
+.ama-success-stage .status-ladder [data-state='pending'] .status-ladder-cell {
+  box-shadow: inset 0 0 0 var(--border-hairline) rgb(241 238 229 / 0.45);
+}
+
+.ama-success-stage .cert-stamp {
+  border-color: rgb(241 238 229 / 0.5);
+  color: rgb(241 238 229 / 0.9);
+}
+
+/* The confirmation's status stamp: the heading-ornament (section-tag)
+   composition — boxed signal cell, hazard-hatch chip, tracked mono label —
+   pressed at a slight angle over the session plate's top rule, like a
+   rubber stamp on the document. Static; a stamp never animates. */
+.ama-plate-stamp {
+  position: relative;
+  z-index: 1;
+  margin-bottom: -0.5625rem;
+  margin-right: 0.75rem;
+  transform: rotate(-3deg);
+  background: rgb(8 7 10 / 0.82);
+  color: rgb(241 238 229 / 0.85);
+}
+
+.ama-plate-stamp .section-tag-index {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Dialog glass: keep the ladder's surface color but drop its alpha so the
+   page reads through the sheet, with a blur so text over it stays legible.
+   color-mix against transparent preserves whatever surface level Elevated
+   assigned (warm paper in the admin, the dark ramp on the AMA stage).
+   backdrop-filter must stay in a stylesheet rule the CSS pipeline keeps —
+   it is a class here, not a raw property on a utility. */
+.dialog-glass {
+  background: color-mix(in oklab, var(--surface-5) 82%, transparent);
+  backdrop-filter: blur(20px) saturate(1.4);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .dialog-glass {
+    background: var(--surface-5);
+  }
+}
+
+/* A standalone hatch chip (no index cell in front) keeps its left rule. */
+.section-tag-hatch:first-child {
+  border-left: var(--border-hairline) solid
+    color-mix(in oklab, var(--muted-foreground) 45%, transparent);
+}
+
+/* The cancel dialog is a hazard-marked sheet: a full-width tape band
+   along its top edge, clipped by the panel's own radius. */
+.ama-cancel-dialog {
+  overflow: hidden;
+}
+
+.ama-cancel-dialog::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 0.5rem;
+  pointer-events: none;
+  border-bottom: var(--border-hairline) solid
+    color-mix(in oklab, var(--destructive) 40%, transparent);
+  background: repeating-linear-gradient(
+    -45deg,
+    color-mix(in oklab, var(--destructive) 50%, transparent) 0,
+    color-mix(in oklab, var(--destructive) 50%, transparent) var(--border-hairline),
+    transparent var(--border-hairline),
+    transparent 5px
+  );
+}
+
+/* Hazard tape flanking a destructive doorway: a short bordered strip of
+   fine diagonal strokes in destructive ink at low alpha. */
+.ama-hazard-strip {
+  width: 2.5rem;
+  height: 0.875rem;
+  border: var(--border-hairline) solid
+    color-mix(in oklab, var(--destructive) 45%, transparent);
+  background: repeating-linear-gradient(
+    -45deg,
+    color-mix(in oklab, var(--destructive) 55%, transparent) 0,
+    color-mix(in oklab, var(--destructive) 55%, transparent) var(--border-hairline),
+    transparent var(--border-hairline),
+    transparent 5px
+  );
+}
+
+/* The session plate prints in the stage's paper ink, same theme
+   independence as the ladder above. */
+.ama-success-stage .spec-nameplate {
+  border-color: rgb(241 238 229 / 0.3);
+}
+
+.ama-success-stage .spec-nameplate > div + div {
+  border-top-color: rgb(241 238 229 / 0.3);
+}
+
+.ama-success-stage .spec-nameplate dt {
+  border-right-color: rgb(241 238 229 / 0.3);
+  color: rgb(241 238 229 / 0.55);
+}
+
+/* Ornamental proof-sheet foot; the label sets in the plate's faded ink. */
+.ama-success-barcode {
+  align-self: center;
+  margin-top: 1.25rem;
+  width: 8.5rem;
+  color: rgb(241 238 229 / 0.44);
+}
+
+.ama-success-barcode svg {
+  /* The strip fills the container so bars and label share one box and one
+     center; preserveAspectRatio="none" keeps the stretch harmless. */
+  width: 100%;
+}
+
+.ama-success-barcode .barcode-label {
+  text-align: center;
+  letter-spacing: 0.22em;
+}
+
+/* The confirmation seal in the print register: a square hairline plate on
+   the 2px corner with calibration brackets outside it, stamped at the
+   arrive animation's settled -4° — an inspection stamp, not a badge. */
 .ama-success-mark {
+  position: relative;
   display: grid;
   width: 4rem;
   height: 4rem;
   margin: 0 auto 1.75rem;
   place-items: center;
-  border-radius: 50%;
-  background: #f1eee5;
-  color: #131216;
-  box-shadow: 0 0 0 0.45rem rgb(217 239 98 / 0.46);
-  font-size: 1.5rem;
+  border-radius: 2px;
+  border: var(--border-hairline) solid rgb(241 238 229 / 0.55);
+  background: rgb(241 238 229 / 0.05);
+  color: #f1eee5;
+  font-size: 1.375rem;
   line-height: 1;
   animation: ama-success-mark-arrive 350ms var(--ease-swift) both;
 }
 
-@keyframes ama-success-confetti-burst {
+/* Hazard-hatch bands along the plate's top and bottom edges — the fine
+   diagonal-stroke chip from the section-tag register, behind the check. */
+.ama-success-mark::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+        -45deg,
+        currentColor 0,
+        currentColor var(--border-hairline),
+        transparent var(--border-hairline),
+        transparent 4px
+      )
+      top / 100% 0.4375rem no-repeat,
+    repeating-linear-gradient(
+        -45deg,
+        currentColor 0,
+        currentColor var(--border-hairline),
+        transparent var(--border-hairline),
+        transparent 4px
+      )
+      bottom / 100% 0.4375rem no-repeat;
+  opacity: 0.34;
+}
+
+/* Viewfinder corner brackets, 8px outside the plate (9px arms). */
+.ama-success-mark::before {
+  content: '';
+  position: absolute;
+  inset: -0.5rem;
+  pointer-events: none;
+  opacity: 0.62;
+  background:
+    linear-gradient(currentColor, currentColor) left top / 9px var(--border-hairline) no-repeat,
+    linear-gradient(currentColor, currentColor) left top / var(--border-hairline) 9px no-repeat,
+    linear-gradient(currentColor, currentColor) right top / 9px var(--border-hairline) no-repeat,
+    linear-gradient(currentColor, currentColor) right top / var(--border-hairline) 9px no-repeat,
+    linear-gradient(currentColor, currentColor) left bottom / 9px var(--border-hairline) no-repeat,
+    linear-gradient(currentColor, currentColor) left bottom / var(--border-hairline) 9px no-repeat,
+    linear-gradient(currentColor, currentColor) right bottom / 9px var(--border-hairline) no-repeat,
+    linear-gradient(currentColor, currentColor) right bottom / var(--border-hairline) 9px no-repeat;
+}
+
+/* Horizontal drive: launch speed decays to a drift (air drag); the piece
+   fades while still moving, never hanging in place. */
+@keyframes ama-confetti-drive {
   0% {
     opacity: 0;
-    transform: translate3d(
-        var(--ama-confetti-origin-x),
-        var(--ama-confetti-origin-y),
-        0
-      )
-      scale(0.72) rotate(0deg);
+    transform: translate3d(var(--ama-confetti-x-from), 0, 0);
   }
 
-  8% {
+  5% {
     opacity: 1;
   }
 
-  52% {
-    opacity: 0.94;
-    transform: translate3d(
-        var(--ama-confetti-apex-x),
-        var(--ama-confetti-apex-y),
-        0
-      )
-      scale(1) rotate(var(--ama-confetti-mid-rotation));
+  72% {
+    opacity: 0.95;
   }
 
   100% {
     opacity: 0;
-    transform: translate3d(
-        var(--ama-confetti-end-x),
-        var(--ama-confetti-end-y),
-        0
-      )
-      scale(0.86) rotate(var(--ama-confetti-rotation));
+    transform: translate3d(var(--ama-confetti-x-to), 0, 0);
+  }
+}
+
+/* Vertical ballistics: decelerate to the apex, then gravity takes over —
+   the easing flips per keyframe so the arc reads as a true parabola. */
+@keyframes ama-confetti-fall {
+  0% {
+    transform: translate3d(0, var(--ama-confetti-y-from), 0);
+    animation-timing-function: cubic-bezier(0.16, 0.8, 0.38, 1);
+  }
+
+  44% {
+    transform: translate3d(0, var(--ama-confetti-y-apex), 0);
+    animation-timing-function: cubic-bezier(0.52, 0.04, 0.86, 0.42);
+  }
+
+  100% {
+    transform: translate3d(0, var(--ama-confetti-y-fall), 0);
+  }
+}
+
+/* Finite 3D tumble — the rotateX flutter shows the paper's thin edge. */
+@keyframes ama-confetti-tumble {
+  0% {
+    transform: rotateZ(var(--ama-confetti-tilt)) rotateX(0deg);
+  }
+
+  100% {
+    transform: rotateZ(calc(var(--ama-confetti-tilt) + var(--ama-confetti-spin-z)))
+      rotateX(var(--ama-confetti-spin-x));
   }
 }
 

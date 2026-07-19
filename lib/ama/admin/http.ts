@@ -187,11 +187,11 @@ export function createAvailabilityMutationHandler(
       } else {
         const input = availabilityWindowFrom(formData)
         if (!input || (intent === 'update' && id === null)) {
-          return redirect(baseUrl, '/admin/ama?availability=invalid')
+          return redirect(baseUrl, '/admin/ama/settings?availability=invalid')
         }
         if (intent === 'create') await service.create(input)
         else if (intent === 'update') await service.update(id!, input)
-        else return redirect(baseUrl, '/admin/ama?availability=invalid')
+        else return redirect(baseUrl, '/admin/ama/settings?availability=invalid')
       }
 
       dependencies.security.recordPrivilegedAction(
@@ -199,9 +199,9 @@ export function createAvailabilityMutationHandler(
         'availability_mutation.succeeded',
         access.actorId,
       )
-      return redirect(baseUrl, '/admin/ama?availability=saved')
+      return redirect(baseUrl, '/admin/ama/settings?availability=saved')
     } catch {
-      return redirect(baseUrl, '/admin/ama?availability=failed')
+      return redirect(baseUrl, '/admin/ama/settings?availability=failed')
     }
   }
 }
@@ -227,7 +227,7 @@ export function createGoogleConnectHandler(
       )
       return redirect(baseUrl, providerUrl)
     } catch {
-      return redirect(baseUrl, '/admin/ama?calendar=unavailable')
+      return redirect(baseUrl, '/admin/ama/settings?calendar=unavailable')
     }
   }
 }
@@ -256,9 +256,9 @@ export function createGoogleCallbackHandler(
         'google_callback.completed',
         access.actorId,
       )
-      return redirect(baseUrl, `/admin/ama?calendar=${result}`)
+      return redirect(baseUrl, `/admin/ama/settings?calendar=${result}`)
     } catch {
-      return redirect(baseUrl, '/admin/ama?calendar=unavailable')
+      return redirect(baseUrl, '/admin/ama/settings?calendar=unavailable')
     }
   }
 }
@@ -282,9 +282,9 @@ export function createGoogleDisconnectHandler(
         'google_disconnect.succeeded',
         access.actorId,
       )
-      return redirect(baseUrl, '/admin/ama?calendar=disconnected')
+      return redirect(baseUrl, '/admin/ama/settings?calendar=disconnected')
     } catch {
-      return redirect(baseUrl, '/admin/ama?calendar=unavailable')
+      return redirect(baseUrl, '/admin/ama/settings?calendar=unavailable')
     }
   }
 }

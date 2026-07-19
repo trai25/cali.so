@@ -134,13 +134,16 @@ describe('ManageBooking', () => {
     expect(screen.queryByRole('button', { name: /Cancel booking/ })).toBeNull()
   })
 
-  it('renders the booking summary with zone label, provider, and meeting link', async () => {
+  it('renders the booking summary with provider and the meeting link in the plate', async () => {
     await renderManage()
 
-    expect(screen.getByText('America/New_York')).toBeTruthy()
+    // The zone label moved into a hover tooltip — never in the static DOM.
+    expect(screen.queryByText('America/New_York')).toBeNull()
     expect(screen.getAllByText('Google Meet').length).toBeGreaterThanOrEqual(1)
     expect(
-      screen.getByRole('link', { name: /打开会议链接|Open meeting link/ }).getAttribute('href'),
+      screen
+        .getByRole('link', { name: /meet\.google\.com/ })
+        .getAttribute('href'),
     ).toBe('https://meet.google.com/abc-defg-hij')
     expect(screen.getByText(/Confirmed/)).toBeTruthy()
   })

@@ -3,7 +3,11 @@
 import { useRouter } from 'next/navigation'
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 
+import { PixelCluster } from '~/components/pixel-cluster'
+import { Button } from '~/components/ui/button'
 import { InputCopy } from '~/components/ui/input-copy'
+import { Switch } from '~/components/ui/switch'
+import { TabItem, Tabs, TabsList } from '~/components/ui/tabs'
 import { AMA_TOPIC_LABELS, type AmaTopic } from '~/lib/ama/booking/topics'
 import type {
   BookingLocale,
@@ -68,6 +72,14 @@ type SlotViewModel = { startsAt: string; endsAt: string }
 
 const MANAGE_CUTOFF_MS = 24 * 60 * 60 * 1000
 
+// Decorative reinforcement of the lifecycle the badge already announces —
+// rendered only for the linear states (diverged states have no honest rung).
+const LADDER_STEPS = [
+  { zh: '敲定中', en: 'Finalizing' },
+  { zh: '已确认', en: 'Confirmed' },
+  { zh: '已举行', en: 'Session held' },
+] as const
+
 function formatAmount(amountTotal: number, currency: string, locale: Locale) {
   try {
     return new Intl.NumberFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
@@ -123,9 +135,9 @@ function dayLabel(iso: string, zone: string, locale: Locale) {
       day: 'numeric',
     }
     try {
-      formatter = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-TW' : 'en-US', options)
+      formatter = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', options)
     } catch {
-      formatter = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-TW' : 'en-US', {
+      formatter = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
         ...options,
         timeZone: 'UTC',
       })
@@ -167,6 +179,9 @@ function isFlatDetail(detail: Record<string, unknown>) {
   )
 }
 
+// One nameplate row (label cell | value cell). The booking data reads as the
+// session's own specification, so it takes the AMA page's boxed plate
+// register — selectable, links intact, only the frame and type are chrome.
 function DefinitionRow({
   term,
   children,
@@ -175,10 +190,10 @@ function DefinitionRow({
   children: React.ReactNode
 }) {
   return (
-    <>
-      <dt className="text-muted-foreground">{term}</dt>
+    <div>
+      <dt>{term}</dt>
       <dd className="min-w-0 break-words">{children}</dd>
-    </>
+    </div>
   )
 }
 
@@ -402,6 +417,17 @@ export function BookingDetail({
 
   const pickerZone = zoneView === 'owner' ? OWNER_TIME_ZONE : booking.guestTimeZone
   const sessionIsPast = Date.parse(endsAt) < Date.now()
+  // finalizing → step 1 lit; confirmed upcoming → step 2 lit; confirmed past →
+  // all rungs done (no lit cell — the cert stamp takes over). Diverged states
+  // (needs_reschedule, cancelled) render no ladder at all.
+  const ladderCurrent =
+    status === 'finalizing'
+      ? 0
+      : status === 'confirmed'
+        ? sessionIsPast
+          ? LADDER_STEPS.length
+          : 1
+        : null
   const canCancel = status !== 'cancelled'
   const canReschedule = status !== 'cancelled'
   const canGrantRefundException =
@@ -416,9 +442,12 @@ export function BookingDetail({
 
   return (
     <div className="pb-10">
-      <p className="text-sm font-medium text-muted-foreground">
-        <T zh="咨询预约" en="AMA Booking" />
-      </p>
+      <div className="flex items-center justify-between gap-4">
+        <p className="page-eyebrow">
+          <T zh="咨询预约" en="AMA Booking" />
+        </p>
+        <PixelCluster variant={10} className="shrink-0" />
+      </div>
       <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
         <h1 className="text-sm font-medium">{booking.guestName}</h1>
         <BookingStatusBadge status={status} />
@@ -434,44 +463,84 @@ export function BookingDetail({
         )}
       </div>
 
+      {ladderCurrent !== null && (
+        <ol className="status-ladder mt-3" aria-hidden>
+          {LADDER_STEPS.map((step, index) => (
+            <li
+              key={step.en}
+              data-state={
+                index < ladderCurrent
+                  ? 'done'
+                  : index === ladderCurrent
+                    ? 'current'
+                    : 'pending'
+              }
+            >
+              <span className="status-ladder-index">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <span>
+                <T zh={step.zh} en={step.en} />
+              </span>
+              <span className="status-ladder-cell" />
+            </li>
+          ))}
+        </ol>
+      )}
+      {status === 'confirmed' && sessionIsPast && (
+        <p className="cert-stamp mt-3 self-start" aria-hidden>
+          <span className="spec-signal" />
+          <T zh="已举行" en="Session held" /> +
+        </p>
+      )}
+
       {/* Actions */}
       <section aria-labelledby="actions-heading" className="mt-6">
         <h2 id="actions-heading" className="sr-only">
           <T zh="操作" en="Actions" />
         </h2>
-        <div className="flex flex-wrap gap-2">
+        {/* gap-y-4 keeps the buttons' 44px hit-area extensions from
+            overlapping when the row wraps. */}
+        <div className="flex flex-wrap gap-x-2 gap-y-4">
           {canReschedule && (
-            <button
-              type="button"
+            <Button
+              variant="tertiary"
+              size="md"
               disabled={pending !== null}
               onClick={() => openPanel('reschedule')}
               aria-expanded={panel === 'reschedule'}
-              className="min-h-11 rounded-md border border-border px-4 text-sm font-medium outline-none disabled:opacity-50 focus-visible:border-foreground"
+              active={panel === 'reschedule'}
+              expandHitArea
             >
               <T zh="改期" en="Reschedule" />
-            </button>
+            </Button>
           )}
           {canCancel && (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="md"
+              destructive
               disabled={pending !== null}
               onClick={() => openPanel('cancel')}
               aria-expanded={panel === 'cancel'}
-              className="min-h-11 rounded-md px-4 text-sm text-destructive outline-none disabled:opacity-50 focus-visible:ring-1 focus-visible:ring-destructive"
+              active={panel === 'cancel'}
+              expandHitArea
             >
               <T zh="取消预约" en="Cancel Booking" />
-            </button>
+            </Button>
           )}
           {canGrantRefundException && (
-            <button
-              type="button"
+            <Button
+              variant="tertiary"
+              size="md"
               disabled={pending !== null}
               onClick={() => openPanel('refund')}
               aria-expanded={panel === 'refund'}
-              className="min-h-11 rounded-md border border-border px-4 text-sm font-medium outline-none disabled:opacity-50 focus-visible:border-foreground"
+              active={panel === 'refund'}
+              expandHitArea
             >
               <T zh="批准退款例外" en="Grant refund exception" />
-            </button>
+            </Button>
           )}
         </div>
 
@@ -481,32 +550,21 @@ export function BookingDetail({
               <h3 className="text-sm font-medium">
                 <T zh="选择新的时间" en="Pick a new time" />
               </h3>
-              <div
-                className="flex items-center gap-1"
-                role="tablist"
-                aria-label="Time zone view"
+              <Tabs
+                value={zoneView}
+                onValueChange={(value) => setZoneView(value as 'owner' | 'guest')}
               >
-                {(['owner', 'guest'] as const).map((zone) => (
-                  <button
-                    key={zone}
-                    type="button"
-                    role="tab"
-                    aria-selected={zoneView === zone}
-                    onClick={() => setZoneView(zone)}
-                    className={`min-h-11 rounded-full px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-foreground ${
-                      zoneView === zone
-                        ? 'bg-foreground text-background'
-                        : 'text-muted-foreground hover:bg-hover hover:text-foreground'
-                    }`}
-                  >
-                    {zone === 'owner' ? (
-                      <T zh="我的时区" en="Owner time" />
-                    ) : (
-                      <T zh="访客时区" en="Guest time" />
-                    )}
-                  </button>
-                ))}
-              </div>
+                <TabsList variant="subtle" aria-label="Time zone view">
+                  <TabItem
+                    value="owner"
+                    label={localize(locale, '我的时区', 'Owner time')}
+                  />
+                  <TabItem
+                    value="guest"
+                    label={localize(locale, '访客时区', 'Guest time')}
+                  />
+                </TabsList>
+              </Tabs>
             </div>
             <p className="mt-1 text-sm text-muted-foreground">{pickerZone}</p>
 
@@ -565,26 +623,23 @@ export function BookingDetail({
                   </div>
                 ))}
                 <div className="flex flex-wrap items-center gap-2 hairline-top pt-4">
-                  <button
-                    type="button"
+                  <Button
+                    variant="primary"
+                    size="md"
                     disabled={pending !== null || !selectedSlot}
+                    loading={pending === 'reschedule'}
                     onClick={() => void reschedule()}
-                    className="min-h-11 rounded-full bg-foreground px-4 text-sm font-medium text-background outline-none transition-transform duration-100 active:scale-[0.97] disabled:opacity-50 focus-visible:ring-1 focus-visible:ring-foreground focus-visible:ring-offset-2 motion-reduce:transform-none"
                   >
-                    {pending === 'reschedule' ? (
-                      <T zh="正在改期…" en="Rescheduling…" />
-                    ) : (
-                      <T zh="确认改期" en="Confirm reschedule" />
-                    )}
-                  </button>
-                  <button
-                    type="button"
+                    <T zh="确认改期" en="Confirm reschedule" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     disabled={pending !== null}
                     onClick={() => setPanel('none')}
-                    className="min-h-11 px-3 text-sm text-muted-foreground outline-none disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
                   >
                     <T zh="关闭" en="Close" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -602,36 +657,31 @@ export function BookingDetail({
                 en="The Guest is emailed, and the meeting and calendar event are removed."
               />
             </p>
-            <label className="mt-4 flex min-h-11 items-center gap-3 text-sm">
-              <input
-                type="checkbox"
-                checked={refundChecked}
-                onChange={(event) => setRefundChecked(event.target.checked)}
-                className="h-4 w-4 accent-foreground"
-              />
-              <T zh="同时全额退款" en="Issue full refund" />
-            </label>
+            <Switch
+              className="mt-4"
+              label={<T zh="同时全额退款" en="Issue full refund" />}
+              checked={refundChecked}
+              onCheckedChange={setRefundChecked}
+            />
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <button
-                type="button"
+              <Button
+                variant="primary"
+                size="md"
+                destructive
                 disabled={pending !== null}
+                loading={pending === 'cancel'}
                 onClick={() => void cancelBooking()}
-                className="min-h-11 rounded-full bg-destructive px-4 text-sm font-medium text-white outline-none disabled:opacity-50 focus-visible:ring-1 focus-visible:ring-destructive focus-visible:ring-offset-2"
               >
-                {pending === 'cancel' ? (
-                  <T zh="正在取消…" en="Cancelling…" />
-                ) : (
-                  <T zh="确认取消预约" en="Confirm cancellation" />
-                )}
-              </button>
-              <button
-                type="button"
+                <T zh="确认取消预约" en="Confirm cancellation" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 disabled={pending !== null}
                 onClick={() => setPanel('none')}
-                className="min-h-11 px-3 text-sm text-muted-foreground outline-none disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
               >
                 <T zh="保留预约" en="Keep the Booking" />
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -648,26 +698,23 @@ export function BookingDetail({
               />
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <button
-                type="button"
+              <Button
+                variant="primary"
+                size="md"
                 disabled={pending !== null}
+                loading={pending === 'refund'}
                 onClick={() => void grantRefundException()}
-                className="min-h-11 rounded-full bg-foreground px-4 text-sm font-medium text-background outline-none disabled:opacity-50 focus-visible:ring-1 focus-visible:ring-foreground focus-visible:ring-offset-2"
               >
-                {pending === 'refund' ? (
-                  <T zh="正在退款…" en="Refunding…" />
-                ) : (
-                  <T zh="确认退款例外" en="Confirm refund exception" />
-                )}
-              </button>
-              <button
-                type="button"
+                <T zh="确认退款例外" en="Confirm refund exception" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 disabled={pending !== null}
                 onClick={() => setPanel('none')}
-                className="min-h-11 px-3 text-sm text-muted-foreground outline-none disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
               >
                 <T zh="返回" en="Go back" />
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -687,12 +734,12 @@ export function BookingDetail({
       {/* Schedule */}
       <section
         aria-labelledby="schedule-heading"
-        className="mt-8 hairline-top pt-6"
+        className="mt-8 hairline-top pb-4 pt-6"
       >
         <h2 id="schedule-heading" className="text-sm font-medium">
           <T zh="日程" en="Schedule" />
         </h2>
-        <dl className="mt-3 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[9rem_minmax(0,1fr)]">
+        <dl className="spec-nameplate mt-3 mb-6">
           <DefinitionRow term={<T zh="开始" en="Starts" />}>
             <ZonedTimes iso={startsAt} guestTimeZone={booking.guestTimeZone} />
           </DefinitionRow>
@@ -720,12 +767,12 @@ export function BookingDetail({
       {/* Identity */}
       <section
         aria-labelledby="guest-heading"
-        className="mt-8 hairline-top pt-6"
+        className="mt-8 hairline-top pb-4 pt-6"
       >
         <h2 id="guest-heading" className="text-sm font-medium">
           <T zh="访客" en="Guest" />
         </h2>
-        <dl className="mt-3 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[9rem_minmax(0,1fr)]">
+        <dl className="spec-nameplate mt-3 mb-6">
           <DefinitionRow term={<T zh="姓名" en="Name" />}>{booking.guestName}</DefinitionRow>
           <DefinitionRow term={<T zh="邮箱" en="Email" />}>
             <span className="break-all">{booking.guestEmail}</span>
@@ -791,12 +838,12 @@ export function BookingDetail({
       {/* Payment */}
       <section
         aria-labelledby="payment-heading"
-        className="mt-8 hairline-top pt-6"
+        className="mt-8 hairline-top pb-4 pt-6"
       >
         <h2 id="payment-heading" className="text-sm font-medium">
           <T zh="付款" en="Payment" />
         </h2>
-        <dl className="mt-3 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[9rem_minmax(0,1fr)]">
+        <dl className="spec-nameplate mt-3 mb-6">
           <DefinitionRow term={<T zh="金额" en="Amount" />}>
             <span className="tabular-nums">
               <T
@@ -837,13 +884,13 @@ export function BookingDetail({
       {/* Meeting */}
       <section
         aria-labelledby="meeting-heading"
-        className="mt-8 hairline-top pt-6"
+        className="mt-8 hairline-top pb-4 pt-6"
       >
         <h2 id="meeting-heading" className="text-sm font-medium">
           <T zh="会议" en="Meeting" />
         </h2>
         {booking.meetingUrl || booking.googleCalendarEventId || booking.tencentMeetingId ? (
-          <dl className="mt-3 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[9rem_minmax(0,1fr)]">
+          <dl className="spec-nameplate mt-3 mb-6">
             {booking.meetingUrl && (
               <DefinitionRow term={<T zh="会议链接" en="Meeting link" />}>
                 <a
@@ -910,8 +957,10 @@ export function BookingDetail({
               <li key={event.id} className="py-2.5 text-sm">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
                   <span className="min-w-0">
-                    <span className="font-medium">{event.event}</span>
-                    <span className="ml-3 text-muted-foreground">{event.actor}</span>
+                    <span className="font-mono text-xs font-medium">{event.event}</span>
+                    <span className="ml-3 font-mono text-xs text-muted-foreground">
+                      {event.actor}
+                    </span>
                   </span>
                   <time
                     dateTime={event.occurredAt}

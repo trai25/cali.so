@@ -1,6 +1,5 @@
 'use client'
 
-import { Dialog } from '@base-ui/react/dialog'
 import {
   useEffect,
   useMemo,
@@ -12,7 +11,16 @@ import {
   type MouseEvent,
 } from 'react'
 
-import { Elevated } from '~/lib/elevated'
+import { PixelCluster } from '~/components/pixel-cluster'
+import { Button } from '~/components/ui/button'
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogTitle,
+} from '~/components/ui/dialog'
+import { Input } from '~/components/ui/input'
+import { TabItem, Tabs, TabsList } from '~/components/ui/tabs'
 import { T } from '~/lib/i18n'
 import { localize, useLocale } from '~/lib/locale-client'
 import { isMediaAssetEligible } from '~/lib/media/asset-review/eligibility'
@@ -112,6 +120,15 @@ function assetName(asset: MediaAssetReviewRecord) {
   )
 }
 
+function assetNameIsIdFallback(asset: MediaAssetReviewRecord) {
+  return !(
+    asset.locationLabelEn ||
+    asset.locationLabelZhHans ||
+    asset.altTextEn ||
+    asset.altTextZhHans
+  )
+}
+
 const queueErrorCopy: Record<string, { zh: string; en: string }> = {
   invalid_file: {
     zh: '不支持的类型，或超过 50 MiB',
@@ -197,13 +214,15 @@ function DropZone({
             JPEG · PNG · HEIC · ≤ 50 MiB
           </p>
         </div>
-        <button
+        <Button
           type="button"
+          variant="primary"
+          size="md"
+          expandHitArea
           onClick={() => inputRef.current?.click()}
-          className="min-h-11 rounded-full bg-foreground px-4 text-sm font-medium text-background outline-none transition-transform duration-100 active:scale-[0.97] focus-visible:ring-1 focus-visible:ring-foreground focus-visible:ring-offset-2 motion-reduce:transform-none"
         >
           <T zh="选择文件" en="Choose files" />
-        </button>
+        </Button>
         <input
           ref={inputRef}
           type="file"
@@ -241,13 +260,17 @@ function DropZone({
                   </p>
                 </div>
                 {item.status === 'failed' ? (
-                  <button
+                  // Dense stacked rows — the row's own min-h-11 is the tap
+                  // target, so no expandHitArea here.
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="shrink-0"
                     onClick={() => onRetry(item)}
-                    className="min-h-11 shrink-0 px-3 text-sm font-medium outline-none focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
                   >
                     <T zh="重试" en="Retry" />
-                  </button>
+                  </Button>
                 ) : (
                   <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
                     {(item.file.size / 1024 / 1024).toFixed(1)} MiB
@@ -259,27 +282,6 @@ function DropZone({
         </ol>
       )}
     </div>
-  )
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-}: {
-  label: React.ReactNode
-  value: string
-  onChange(value: string): void
-}) {
-  return (
-    <label className="grid gap-1.5 text-sm text-muted-foreground">
-      {label}
-      <input
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="min-h-11 rounded-md border border-border bg-background px-3 text-base text-foreground outline-none focus:border-foreground"
-      />
-    </label>
   )
 }
 
@@ -589,27 +591,49 @@ function Inspector({
         day: 'numeric',
       }).format(new Date(asset.capturedAt))
     : null
-  const camera = [
-    captured,
-    [asset.cameraMake, asset.cameraModel].filter(Boolean).join(' ') || null,
-    asset.lens,
-    asset.focalLengthMillimeters ? `${asset.focalLengthMillimeters} mm` : null,
-    asset.aperture ? `ƒ/${asset.aperture}` : null,
-    asset.shutterSpeedSeconds
-      ? asset.shutterSpeedSeconds < 1
-        ? `1/${Math.round(1 / asset.shutterSpeedSeconds)}`
-        : `${asset.shutterSpeedSeconds}s`
-      : null,
-    asset.iso ? `ISO ${asset.iso}` : null,
-  ].filter(Boolean)
+  // The capture data as spec-plate fields — the same register the
+  // published wall's lightbox uses; only non-null cells render.
+  const cameraBody = [asset.cameraMake, asset.cameraModel]
+    .filter(Boolean)
+    .join(' ')
+  const captureFields: { zh: string; en: string; value: string }[] = [
+    ...(captured ? [{ zh: '日期', en: 'Date', value: captured }] : []),
+    ...(cameraBody ? [{ zh: '相机', en: 'Camera', value: cameraBody }] : []),
+    ...(asset.lens ? [{ zh: '镜头', en: 'Lens', value: asset.lens }] : []),
+    ...(asset.focalLengthMillimeters
+      ? [{ zh: '焦距', en: 'Focal', value: `${asset.focalLengthMillimeters} mm` }]
+      : []),
+    ...(asset.aperture
+      ? [{ zh: '光圈', en: 'Aperture', value: `ƒ/${asset.aperture}` }]
+      : []),
+    ...(asset.shutterSpeedSeconds
+      ? [
+          {
+            zh: '快门',
+            en: 'Shutter',
+            value:
+              asset.shutterSpeedSeconds < 1
+                ? `1/${Math.round(1 / asset.shutterSpeedSeconds)} s`
+                : `${asset.shutterSpeedSeconds} s`,
+          },
+        ]
+      : []),
+    ...(asset.iso ? [{ zh: '感光度', en: 'ISO', value: String(asset.iso) }] : []),
+  ]
   const editable = asset.catalogState === 'active'
 
   return (
     <>
       <div className="flex items-baseline justify-between gap-4">
-        <Dialog.Title className="min-w-0 truncate text-sm font-medium">
+        <DialogTitle
+          className={
+            assetNameIsIdFallback(asset)
+              ? 'min-w-0 truncate font-mono'
+              : 'min-w-0 truncate'
+          }
+        >
           {assetName(asset)}
-        </Dialog.Title>
+        </DialogTitle>
         <p className="shrink-0 text-sm text-muted-foreground">
           <T zh={processingLabel(asset).zh} en={processingLabel(asset).en} />
         </p>
@@ -618,18 +642,17 @@ function Inspector({
       {['original_verified', 'processing', 'retryable_failure'].includes(
         asset.processingState,
       ) && (
-        <button
+        <Button
           type="button"
+          variant="tertiary"
+          size="md"
+          className="mt-4"
+          loading={pending === 'resume'}
           disabled={pending !== null || !editable}
           onClick={resumeProcessing}
-          className="mt-4 min-h-11 rounded-md border border-border px-4 text-sm font-medium outline-none disabled:opacity-50 focus-visible:border-foreground"
         >
-          {pending === 'resume' ? (
-            <T zh="正在恢复…" en="Resuming…" />
-          ) : (
-            <T zh="恢复处理" en="Resume processing" />
-          )}
-        </button>
+          <T zh="恢复处理" en="Resume processing" />
+        </Button>
       )}
 
       {asset.previewRendition && (
@@ -670,10 +693,17 @@ function Inspector({
         </>
       )}
 
-      {camera.length > 0 && (
-        <p className="mt-3 text-sm leading-5 tabular-nums text-muted-foreground">
-          {camera.join(' · ')}
-        </p>
+      {captureFields.length > 0 && (
+        <dl className="spec-plate spec-plate-flow mt-3">
+          {captureFields.map((field) => (
+            <div key={field.en}>
+              <dt>
+                <T zh={field.zh} en={field.en} />
+              </dt>
+              <dd>{field.value}</dd>
+            </div>
+          ))}
+        </dl>
       )}
 
       <div className="mt-5 grid gap-4 hairline-top pt-4">
@@ -682,29 +712,27 @@ function Inspector({
             <T zh="地点" en="Location" />
           </h3>
           {asset.hasCaptureLocation && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
+              loading={pending === 'location'}
               disabled={pending !== null || !editable}
               onClick={suggestLocationLabel}
-              className="min-h-11 px-2 text-sm text-muted-foreground outline-none disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
             >
-              {pending === 'location' ? (
-                <T zh="正在查询…" en="Looking up…" />
-              ) : (
-                <T zh="根据拍摄位置填写" en="Fill from Capture Location" />
-              )}
-            </button>
+              <T zh="根据拍摄位置填写" en="Fill from Capture Location" />
+            </Button>
           )}
         </div>
-        <Field
+        <Input
           label={<T zh="地点（中文）" en="Location (Chinese)" />}
           value={locationZh}
-          onChange={setLocationZh}
+          onChange={(event) => setLocationZh(event.target.value)}
         />
-        <Field
+        <Input
           label={<T zh="地点（英文）" en="Location (English)" />}
           value={locationEn}
-          onChange={setLocationEn}
+          onChange={(event) => setLocationEn(event.target.value)}
         />
       </div>
 
@@ -713,28 +741,26 @@ function Inspector({
           <h3 className="text-sm font-medium">
             <T zh="替代文本" en="Alt Text" />
           </h3>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
+            loading={pending === 'suggestion'}
             disabled={pending !== null || !editable}
             onClick={regenerate}
-            className="min-h-11 px-2 text-sm text-muted-foreground outline-none disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
           >
-            {pending === 'suggestion' ? (
-              <T zh="生成中…" en="Generating…" />
-            ) : (
-              <T zh="重新生成" en="Regenerate" />
-            )}
-          </button>
+            <T zh="重新生成" en="Regenerate" />
+          </Button>
         </div>
-        <Field
+        <Input
           label={<T zh="替代文本（中文）" en="Alt Text (Chinese)" />}
           value={altZh}
-          onChange={setAltZh}
+          onChange={(event) => setAltZh(event.target.value)}
         />
-        <Field
+        <Input
           label={<T zh="替代文本（英文）" en="Alt Text (English)" />}
           value={altEn}
-          onChange={setAltEn}
+          onChange={(event) => setAltEn(event.target.value)}
         />
       </div>
 
@@ -752,54 +778,62 @@ function Inspector({
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 hairline-top pt-4">
         <div className="flex flex-wrap items-center gap-2">
           {asset.catalogState === 'active' && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
+              destructive={archiveArmed}
               disabled={pending !== null}
               onClick={requestArchive}
-              className="min-h-11 px-3 text-sm text-muted-foreground outline-none disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
             >
               {archiveArmed ? (
                 <T zh="确认归档？" en="Confirm archive?" />
               ) : (
                 <T zh="归档" en="Archive" />
               )}
-            </button>
+            </Button>
           )}
           {asset.catalogState === 'archived' && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               disabled={pending !== null}
               onClick={() => void changeCatalogState('restore')}
-              className="min-h-11 px-3 text-sm text-muted-foreground outline-none disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
             >
               <T zh="恢复" en="Restore" />
-            </button>
+            </Button>
           )}
           {(asset.catalogState === 'archived' ||
             asset.catalogState === 'purging') && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
+              destructive
               disabled={pending !== null}
               onClick={() => setPurgeArmed((current) => !current)}
-              className="min-h-11 px-3 text-sm text-destructive outline-none disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-destructive"
             >
               {asset.catalogState === 'purging' ? (
                 <T zh="重试清除" en="Retry Purge" />
               ) : (
                 <T zh="永久清除" en="Purge" />
               )}
-            </button>
+            </Button>
           )}
         </div>
         {editable && (
-          <button
+          <Button
             type="button"
+            variant="primary"
+            size="md"
+            expandHitArea
+            loading={pending === 'save'}
             disabled={pending !== null}
             onClick={() => void save()}
-            className="min-h-11 rounded-full bg-foreground px-5 text-sm font-medium text-background outline-none transition-transform duration-100 active:scale-[0.97] disabled:opacity-50 focus-visible:ring-1 focus-visible:ring-foreground focus-visible:ring-offset-2 motion-reduce:transform-none"
           >
-            {pending === 'save' ? <T zh="正在保存…" en="Saving…" /> : <T zh="保存" en="Save" />}
-          </button>
+            <T zh="保存" en="Save" />
+          </Button>
         )}
       </div>
 
@@ -812,25 +846,25 @@ function Inspector({
             />
           </p>
           <div className="flex flex-wrap items-center gap-2">
-            <input
+            <Input
+              destructive
               value={purgeText}
               onChange={(event) => setPurgeText(event.target.value)}
               placeholder="PURGE"
               aria-label={localize(locale, '输入 PURGE 确认', 'Type PURGE to confirm')}
-              className="min-h-11 w-32 rounded-md border border-border bg-background px-3 text-base outline-none placeholder:text-muted-foreground focus:border-destructive"
+              className="w-32"
             />
-            <button
+            <Button
               type="button"
+              variant="primary"
+              size="md"
+              destructive
+              loading={pending === 'purge'}
               disabled={pending !== null || purgeText !== 'PURGE'}
               onClick={() => void purge()}
-              className="min-h-11 rounded-full bg-destructive px-4 text-sm font-medium text-white outline-none disabled:opacity-50 focus-visible:ring-1 focus-visible:ring-destructive focus-visible:ring-offset-2"
             >
-              {pending === 'purge' ? (
-                <T zh="正在清除…" en="Purging…" />
-              ) : (
-                <T zh="确认清除" en="Confirm purge" />
-              )}
-            </button>
+              <T zh="确认清除" en="Confirm purge" />
+            </Button>
           </div>
         </div>
       )}
@@ -1065,9 +1099,12 @@ export function MediaLibrary({
 
   return (
     <div className="pb-10">
-      <h1 className="text-sm font-medium text-muted-foreground">
-        <T zh="媒体" en="Media" />
-      </h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="page-eyebrow">
+          <T zh="媒体" en="Media" />
+        </h1>
+        <PixelCluster variant={8} className="shrink-0" />
+      </div>
       <p className="mt-1 text-sm tabular-nums text-muted-foreground">
         {active.length} <T zh="张使用中" en="active" />
         {archived.length > 0 && (
@@ -1085,42 +1122,27 @@ export function MediaLibrary({
       />
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <div
-          className="flex items-center gap-1"
-          role="tablist"
-          aria-label={localize(locale, '媒体视图', 'Media view')}
-        >
-          {(['active', 'archived'] as const).map((item) => (
-            <button
-              key={item}
-              type="button"
-              role="tab"
-              aria-selected={view === item}
-              onClick={() => setView(item)}
-              className={`min-h-11 rounded-full px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-foreground ${
-                view === item
-                  ? 'bg-foreground text-background'
-                  : 'text-muted-foreground hover:bg-hover hover:text-foreground'
-              }`}
-            >
-              {item === 'active' ? (
-                <T zh="使用中" en="Active" />
-              ) : (
-                <T zh="已归档" en="Archived" />
-              )}
-            </button>
-          ))}
-        </div>
+        <Tabs value={view} onValueChange={(value) => setView(value as LibraryView)}>
+          <TabsList
+            variant="subtle"
+            aria-label={localize(locale, '媒体视图', 'Media view')}
+          >
+            <TabItem value="active" label={localize(locale, '使用中', 'Active')} />
+            <TabItem
+              value="archived"
+              label={localize(locale, '已归档', 'Archived')}
+            />
+          </TabsList>
+        </Tabs>
         <label className="relative min-w-0 flex-1 sm:max-w-56">
           <span className="sr-only">
             <T zh="搜索" en="Search" />
           </span>
-          <input
+          <Input
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder={localize(locale, '地点、日期、描述…', 'Place, date, alt text…')}
-            className="min-h-11 w-full rounded-md border border-border bg-background px-3 text-base outline-none placeholder:text-muted-foreground focus:border-foreground"
           />
         </label>
       </div>
@@ -1152,7 +1174,7 @@ export function MediaLibrary({
                   onClick={() => setOpenId(asset.id)}
                   aria-label={assetName(asset)}
                   aria-haspopup="dialog"
-                  className="group relative block aspect-square w-full overflow-hidden rounded-md bg-surface-1 outline-none focus-visible:ring-1 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  className="group photo-frame relative block aspect-square w-full overflow-hidden bg-surface-1 outline-none focus-visible:ring-1 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
                   {asset.previewRendition ? (
                     // Bunny is the delivery and cache layer for Renditions.
@@ -1190,6 +1212,7 @@ export function MediaLibrary({
                       <T zh="选用" en="In use" />
                     </span>
                   )}
+                  <span className="calibration-corners" aria-hidden />
                 </button>
               </li>
             )
@@ -1206,18 +1229,14 @@ export function MediaLibrary({
         </p>
       )}
 
-      <Dialog.Root
+      <Dialog
         open={open !== null}
         onOpenChange={(next) => {
           if (!next) setOpenId(null)
         }}
       >
-        <Dialog.Portal>
-          <Dialog.Backdrop className="fixed inset-0 z-[var(--z-card)] bg-background/70 backdrop-blur-[6px] transition-opacity duration-200 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0 motion-reduce:transition-none" />
-          <Dialog.Popup
-            render={<Elevated offset={4} shadowLevel={4} />}
-            className="fixed left-1/2 top-1/2 z-[var(--z-card)] max-h-[85dvh] w-[min(34rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl p-5 outline-none transition-[opacity,transform] duration-200 ease-[var(--ease-swift)] data-[ending-style]:scale-[0.97] data-[ending-style]:opacity-0 data-[starting-style]:scale-[0.97] data-[starting-style]:opacity-0 motion-reduce:transition-none"
-          >
+        <DialogContent size="lg">
+          <DialogBody>
             {open && (
               <Inspector
                 key={open.id}
@@ -1226,9 +1245,9 @@ export function MediaLibrary({
                 onClose={() => setOpenId(null)}
               />
             )}
-          </Dialog.Popup>
-        </Dialog.Portal>
-      </Dialog.Root>
+          </DialogBody>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -373,8 +373,18 @@ describe('hold state handler', () => {
     })
   })
 
-  it('reports a paid hold with its Booking status', async () => {
-    const f = stateFixture({ state: 'paid', bookingStatus: 'confirmed' })
+  it('reports a paid hold with its Booking status and session facts', async () => {
+    const startsAt = new Date('2026-08-01T02:00:00.000Z')
+    const endsAt = new Date('2026-08-01T03:00:00.000Z')
+    const f = stateFixture({
+      state: 'paid',
+      bookingStatus: 'confirmed',
+      startsAt,
+      endsAt,
+      meetingProvider: 'google-meet',
+      guestTimeZone: 'Asia/Taipei',
+      meetingUrl: 'https://meet.google.com/abc-defg-hij',
+    })
 
     const response = await f.handler(
       new Request('https://cali.so/api/ama/holds/x'),
@@ -382,7 +392,15 @@ describe('hold state handler', () => {
     )
 
     await expect(response.json()).resolves.toEqual({
-      hold: { state: 'paid', bookingStatus: 'confirmed' },
+      hold: {
+        state: 'paid',
+        bookingStatus: 'confirmed',
+        startsAt: startsAt.toISOString(),
+        endsAt: endsAt.toISOString(),
+        meetingProvider: 'google-meet',
+        guestTimeZone: 'Asia/Taipei',
+        meetingUrl: 'https://meet.google.com/abc-defg-hij',
+      },
     })
   })
 

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 
+import { PixelCluster } from '~/components/pixel-cluster'
 import { requireOwnerPage } from '~/lib/admin/server'
 import { T } from '~/lib/i18n'
 import { getMediaAdminPageServices } from '~/lib/media/admin/server'
@@ -19,10 +20,15 @@ export const instant = true
 function PhotosFallback() {
   return (
     <div className="pb-10" aria-busy="true">
-      <h1 className="text-sm font-medium text-muted-foreground">
-        <T zh="照片选集" en="Photo Selection" />
-      </h1>
-      <p className="mt-1 text-sm text-muted-foreground">…</p>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="page-eyebrow">
+          <T zh="照片选集" en="Photo Selection" />
+        </h1>
+        <PixelCluster variant={9} className="shrink-0" />
+      </div>
+      <div className="mt-1 flex min-h-8 flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <p className="text-sm tabular-nums text-muted-foreground">…</p>
+      </div>
       <ul className="mt-6 grid grid-cols-3 gap-x-4 gap-y-6">
         {Array.from({ length: 6 }, (_, index) => (
           <li

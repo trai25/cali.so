@@ -26,18 +26,17 @@ function jsonResponse(body: unknown, status = 200) {
   return Response.json(body, { status })
 }
 
+// The route owns the page header now; the count line opens the component.
+function countLine(container: HTMLElement) {
+  return container.querySelector('p')!
+}
+
 function buttonWithText(container: HTMLElement, text: string) {
   const button = Array.from(container.querySelectorAll('button')).find((item) =>
     item.textContent?.includes(text),
   )
   if (!button) throw new Error(`No button containing "${text}"`)
   return button
-}
-
-const settings: AmaOperationsProps['settings'] = {
-  windows: [{ id: 1, isoWeekday: 1, startMinute: 540, endMinute: 720 }],
-  googleConnection: { status: 'disconnected', identity: null },
-  previewSlots: [],
 }
 
 const fixtures: AmaOperationsProps = {
@@ -109,7 +108,6 @@ const fixtures: AmaOperationsProps = {
       lastErrorCode: 'stripe_unavailable',
     },
   ],
-  settings,
 }
 
 const emptyFixtures: AmaOperationsProps = {
@@ -118,7 +116,6 @@ const emptyFixtures: AmaOperationsProps = {
   attention: [],
   timeRequests: [],
   failedOperations: [],
-  settings,
 }
 
 describe('AMA admin page', () => {
@@ -127,10 +124,10 @@ describe('AMA admin page', () => {
     const text = container.textContent!
 
     // Header counts: upcoming and everything needing a hand.
-    const countLine = container.querySelector('h1 + p')!
-    expect(countLine.textContent).toContain('1 ')
-    expect(countLine.textContent).toContain('3 ')
-    expect(countLine.className).toContain('tabular-nums')
+    const counts = countLine(container)
+    expect(counts.textContent).toContain('1 ')
+    expect(counts.textContent).toContain('3 ')
+    expect(counts.className).toContain('tabular-nums')
 
     // Attention comes first: the broken booking, the failed operation, and
     // the new Alternate Time Request.
@@ -156,23 +153,26 @@ describe('AMA admin page', () => {
     expect(text).not.toContain('Succeeded')
     expect(text).not.toContain('Running')
 
-    // Settings render at the bottom with the native form contract.
-    expect(text).toContain('Weekly Availability Windows')
+    // Settings moved to their own page under the AMA menu.
+    expect(text).not.toContain('Weekly Availability Windows')
     expect(
       container.querySelector('form[action="/api/admin/ama/availability"]'),
-    ).not.toBeNull()
-    expect(
-      container.querySelector('form[action="/api/admin/ama/google/connect"]'),
-    ).not.toBeNull()
+    ).toBeNull()
   })
 
   it('collapses past Bookings behind a toggle instead of the front page', () => {
     const { container } = render(<AmaOperations {...fixtures} />)
 
-    const details = container.querySelector('details')!
-    expect(details.open).toBe(false)
-    expect(details.textContent).toContain('Grace Hopper')
-    expect(details.querySelector('summary')?.textContent).toContain('1')
+    const toggle = container.querySelector(
+      'button[aria-controls="past-bookings"]',
+    )!
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    expect(toggle.textContent).toContain('1')
+    expect(container.textContent).not.toContain('Grace Hopper')
+
+    fireEvent.click(toggle)
+    expect(toggle.getAttribute('aria-expanded')).toBe('true')
+    expect(container.textContent).toContain('Grace Hopper')
   })
 
   it('shows one quiet all-clear line when nothing needs attention', () => {
@@ -202,7 +202,7 @@ describe('AMA admin page', () => {
       }),
     )
     expect(container.textContent).toContain('Marked as resolved.')
-    expect(container.querySelector('h1 + p')?.textContent).toContain('2 ')
+    expect(countLine(container).textContent).toContain('2 ')
   })
 
   it('retries a failed operation from the attention section', async () => {
@@ -229,7 +229,7 @@ describe('AMA admin page', () => {
         item.textContent?.includes('Retry'),
       ),
     ).toBe(false)
-    expect(container.querySelector('h1 + p')?.textContent).toContain('2 ')
+    expect(countLine(container).textContent).toContain('2 ')
   })
 
   it('requires an inline confirm before marking an operation resolved', async () => {

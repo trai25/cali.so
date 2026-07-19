@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 
+import { PixelCluster } from '~/components/pixel-cluster'
 import { requireOwnerPage } from '~/lib/admin/server'
 import { getAmaAdminServices } from '~/lib/ama/admin/server'
 import { T } from '~/lib/i18n'
@@ -28,9 +29,12 @@ const FALLBACK_ROWS = [
 function OverviewFallback() {
   return (
     <div className="pb-10">
-      <h1 className="text-sm font-medium text-muted-foreground">
-        <T zh="总览" en="Overview" />
-      </h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="page-eyebrow">
+          <T zh="总览" en="Overview" />
+        </h1>
+        <PixelCluster variant={6} className="shrink-0" />
+      </div>
       <ul className="mt-6 hairline-top pt-4" aria-busy="true">
         {FALLBACK_ROWS.map((row) => (
           <li

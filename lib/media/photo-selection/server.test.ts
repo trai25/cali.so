@@ -5,8 +5,11 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('server-only', () => ({}))
+// The 'use cache' directive is inert under Vitest, so the function body
+// runs directly; cacheTag/cacheLife just need to be no-ops.
 vi.mock('next/cache', () => ({
-  unstable_cache: (callback: () => unknown) => callback,
+  cacheTag: () => undefined,
+  cacheLife: () => undefined,
 }))
 vi.mock('~/db', () => ({ getDatabase: vi.fn() }))
 vi.mock('./repository', () => ({
@@ -22,6 +25,7 @@ vi.mock('../storage/config', () => ({
 import { getPublishedPhotoSelection } from './server'
 
 afterEach(() => {
+  vi.unstubAllEnvs()
   vi.clearAllMocks()
 })
 
@@ -64,10 +68,45 @@ describe('Published Photo Selection server read', () => {
   })
 
   it('returns the empty public state when the database is unavailable', async () => {
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined)
     mocks.getPublishedSelection.mockRejectedValueOnce(
       new Error('Database unavailable'),
     )
 
     await expect(getPublishedPhotoSelection()).resolves.toBeNull()
+    consoleError.mockRestore()
+  })
+
+  it('logs the swallowed error before rendering the empty state', async () => {
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined)
+    const failure = new Error('Database unavailable')
+    mocks.getPublishedSelection.mockRejectedValueOnce(failure)
+
+    await expect(getPublishedPhotoSelection()).resolves.toBeNull()
+    expect(consoleError).toHaveBeenCalledWith(
+      '[photo-selection] read failed; rendering empty state',
+      failure,
+    )
+    consoleError.mockRestore()
+  })
+
+  it('rethrows from the cached read on Vercel so a deploy fails loudly, while the caller still renders the empty state at runtime', async () => {
+    vi.stubEnv('VERCEL_ENV', 'production')
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined)
+    const failure = new Error('Database unavailable')
+    mocks.getPublishedSelection.mockRejectedValueOnce(failure)
+
+    await expect(getPublishedPhotoSelection()).resolves.toBeNull()
+    expect(consoleError).toHaveBeenCalledWith(
+      '[photo-selection] public read failed; rendering empty state',
+      failure,
+    )
+    consoleError.mockRestore()
   })
 })
