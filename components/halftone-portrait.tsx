@@ -4,7 +4,9 @@ import { useEffect, useRef } from 'react'
 
 import { localize, useLocale } from '~/lib/locale-client'
 
-const CELL = 3 // CSS px between dot centers
+const MOBILE_CELL = 2 // denser mobile screen keeps facial features legible
+const DESKTOP_CELL = 3 // CSS px between dot centers
+const MOBILE_PRESENTATION_MAX = 200 // separates the 149.6px and 240px presentations
 const EDGE_FADE = 0.1 // fraction of each edge over which dots taper out
 const RADIUS = 150 // pointer influence radius (CSS px)
 const SWELL = 0.08 // max extra dot growth near the pointer
@@ -23,6 +25,7 @@ interface Cell {
 
 interface Field {
   cells: Cell[]
+  cell: number
   ink: string
 }
 
@@ -92,8 +95,10 @@ export function HalftonePortrait({
     function buildField(kind: 'light' | 'dark') {
       const img = images[kind]
       if (!img || cssW < 4) return
-      const cols = Math.max(1, Math.round(cssW / CELL))
-      const rows = Math.max(1, Math.round(cssH / CELL))
+      const cell =
+        kind === 'light' && cssW < MOBILE_PRESENTATION_MAX ? MOBILE_CELL : DESKTOP_CELL
+      const cols = Math.max(1, Math.round(cssW / cell))
+      const rows = Math.max(1, Math.round(cssH / cell))
       const off = document.createElement('canvas')
       off.width = cols
       off.height = rows
@@ -123,8 +128,8 @@ export function HalftonePortrait({
           // dark: ink ∝ light, black ground drops out.
           const tone = kind === 'light' ? (lum > 0.93 ? 0 : Math.pow(1 - lum, 0.95)) : lum
           if (tone < 0.06) continue
-          const x = (c + 0.5) * CELL
-          const y = (r + 0.5) * CELL
+          const x = (c + 0.5) * cell
+          const y = (r + 0.5) * cell
           const fx = Math.min(x, cssW - x) / (cssW * EDGE_FADE)
           // the headshot's hair meets the frame top — no top fade in light
           const fy =
@@ -134,14 +139,14 @@ export function HalftonePortrait({
           cells.push({ x, y, tone: tone * edge })
         }
       }
-      fields[kind] = { cells, ink: kind === 'light' ? INK_LIGHT : INK_DARK }
+      fields[kind] = { cell, cells, ink: kind === 'light' ? INK_LIGHT : INK_DARK }
     }
 
     function drawField(field: Field, alpha: number) {
       if (alpha <= 0.01) return false
       ctx.globalAlpha = alpha
       ctx.fillStyle = field.ink
-      const maxR = CELL * 0.52
+      const maxR = field.cell * 0.52
       let painted = false
       for (const cell of field.cells) {
         let { x, y } = cell
