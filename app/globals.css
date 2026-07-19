@@ -5914,6 +5914,7 @@ html[data-locale='en'] [data-en-block] {
 .ama-conversation-static,
 .ama-conversation-shader-layer {
   mask-image: radial-gradient(ellipse at center, black 42%, transparent 78%);
+  transform: translateY(-5rem);
 }
 
 .ama-conversation-static {
