@@ -26,6 +26,7 @@ import { T } from '~/lib/i18n'
 import { localeMetadata } from '~/lib/locale-metadata'
 import type { Locale } from '~/lib/locale-route'
 import rehypePrefixIds from '~/lib/rehype-prefix-ids'
+import remarkMermaid from '~/lib/remark-mermaid'
 import { postViewTransitionName } from '~/lib/view-transition-name'
 
 export function generatePostStaticParams() {
@@ -141,7 +142,7 @@ async function CachedPostBody({
       components={mdxComponents(slug, locale)}
       options={{
         mdxOptions: {
-          remarkPlugins: [remarkGfm],
+          remarkPlugins: [remarkGfm, remarkMermaid],
           rehypePlugins,
         },
       }}
