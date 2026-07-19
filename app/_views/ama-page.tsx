@@ -40,22 +40,22 @@ const SPEC_ROWS = [
 const STEPS = [
   {
     zh: '选个时间，看到的都是你当地的时间。',
-    en: 'Pick a time. The page shows everything in your time zone.',
+    en: 'Pick a time. Everything is shown in your time zone.',
   },
   {
-    zh: '写几句话告诉我你想聊什么，相关链接也可以直接丢进来。',
-    en: 'Tell me what you want to work through. Drop in any useful links too.',
+    zh: '写几句你想聊什么，相关链接也可以直接丢进来。',
+    en: 'Tell me what you want to work through, and drop in any useful links.',
   },
   {
-    zh: '付款走 Stripe Checkout，银行卡信息不会经过本站。',
-    en: 'Pay through Stripe Checkout. Your card details never touch this site.',
+    zh: '付款会跳到 Stripe Checkout，银行卡信息不会经过本站。',
+    en: 'Payment happens in Stripe Checkout, so your card details never touch this site.',
   },
   {
-    zh: '付款后，日历邀请和会议链接会发到你的邮箱。',
-    en: 'After payment, the calendar invite and meeting link land in your inbox.',
+    zh: '付完款，日历邀请和会议链接会发到你的邮箱。',
+    en: 'After payment, you’ll get the calendar invite and meeting link by email.',
   },
   {
-    zh: '邮件里也有管理链接。之后要改期或取消，点进去就行。',
+    zh: '同一封邮件里也有管理链接。之后想改期或取消，点进去就行。',
     en: 'That email also includes your Manage Link, where you can reschedule or cancel.',
   },
 ] as const
@@ -74,8 +74,8 @@ const TESTIMONIALS = [
     enAttribution: 'An engineer, 2023',
   },
   {
-    zh: '非常感谢您今天 AMA 的分享，听完之后收获很多，也觉得您的经验和建议很真诚、很有启发，解答了我很多问题。这 300 花得值 😁😁',
-    en: 'Thank you so much for today’s AMA. I learned a lot, and your experience and advice felt sincere and insightful. You answered so many of my questions. The ¥300 was well worth it.',
+    zh: '非常感谢您今天 AMA 的分享，听完之后收获很多，也觉得您的经验和建议很真诚、很有启发，解答了我很多问题 😁😁',
+    en: 'Thank you so much for today’s AMA. I learned a lot, and your experience and advice felt sincere and insightful. You answered so many of my questions.',
     zhAttribution: '一位来访者，2026',
     enAttribution: 'An AMA guest, 2026',
   },
@@ -127,7 +127,7 @@ export function AmaPageView() {
             >
               <T
                 zh="带着你最近卡住的问题来。不管是产品、设计、工程、职业，还是你正在搭的 AI 工作流，我们花一小时一起拆。"
-                en="Bring the thing you’re stuck on. Product, design, engineering, career, or the AI workflow you’re building, and we’ll spend an hour working through it together."
+                en="Bring the thing you’re stuck on. Product, design, engineering, career, or the AI workflow you’re building. We’ll spend an hour working through it together."
               />
             </p>
           </header>
@@ -160,8 +160,8 @@ export function AmaPageView() {
         </div>
         <p className="page-introduction mt-4">
           <T
-            zh="我是 Cali，佐玩（Zolplay）的创始人。做了很多年 product design 和工程，Web、iOS、独立产品都亲手做过。现在我把 Linear、Codex、Claude Code、Slack 和 Cursor 串成一套自己的 software factory，从想法和设计一路做到 ship。中英文都行，混着聊也行。"
-            en="I’m Cali, founder of Zolplay. I’ve spent years moving between product design and engineering across web, iOS, and my own indie products. These days I do most of that inside my own software factory, with Linear, Codex, Claude Code, Slack, and Cursor taking work from the first product decision through shipping. We can talk in English, Chinese, or both."
+            zh="我是 Cali，佐玩（Zolplay）的创始人。这些年一直在 product design 和工程之间来回切换，Web、iOS、独立产品都亲手做过。现在大部分工作都跑在自己搭的 software factory 里，Linear、Codex、Claude Code、Slack 和 Cursor 串在一起，从想法一路做到 ship。你可以来聊一个具体 workflow，也可以直接把手上的问题带来。中文、英文，混着聊都行。"
+            en="I’m Cali, founder of Zolplay. I’ve spent years moving between product design and engineering across web, iOS, and my own products. These days, most of that work runs through a software factory I built around Linear, Codex, Claude Code, Slack, and Cursor, from the first idea through shipping. We can unpack a specific workflow or work directly on whatever is in front of you, in English, Chinese, or both."
           />
         </p>
       </section>
@@ -210,7 +210,7 @@ export function AmaPageView() {
         <p className="page-introduction mt-4">
           <T
             zh="离开始还有 24 小时以上，改期和取消都免费；取消后会自动全额退款。不到 24 小时就不再自动退款。"
-            en="If we’re at least 24 hours out, you can reschedule or cancel for free. Cancelling triggers a full refund automatically. Inside 24 hours, refunds are no longer automatic."
+            en="If we’re at least 24 hours out, you can reschedule or cancel for free. Cancellations are refunded automatically. Inside 24 hours, refunds are no longer automatic."
           />
         </p>
       </section>

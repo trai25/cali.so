@@ -51,13 +51,18 @@ describe('AmaPageView', () => {
   })
 
   it('lists all seven topics in both languages', () => {
-    render(<AmaPageView />)
+    const { container } = render(<AmaPageView />)
 
     expect(AMA_TOPICS.length).toBe(7)
     for (const topic of AMA_TOPICS) {
       const label = AMA_TOPIC_LABELS[topic]
       expect(screen.getAllByText(label.zh).length).toBeGreaterThanOrEqual(1)
       expect(screen.getAllByText(label.en).length).toBeGreaterThanOrEqual(1)
+    }
+
+    expect(container.textContent).toContain('software factory')
+    for (const tool of ['Linear', 'Codex', 'Claude Code', 'Slack', 'Cursor']) {
+      expect(container.textContent).toContain(tool)
     }
   })
 
@@ -79,9 +84,10 @@ describe('AmaPageView', () => {
       screen.getByText(/skipping the three month probation/),
     ).toBeTruthy()
     expect(screen.getByText(/解答了我很多问题/)).toBeTruthy()
-    expect(screen.getByText(/The ¥300 was well worth it/)).toBeTruthy()
     expect(screen.getAllByText('An engineer, 2023').length).toBe(2)
     expect(screen.getByText('An AMA guest, 2026')).toBeTruthy()
+    expect(container.textContent).not.toContain('这 300')
+    expect(container.textContent).not.toContain('¥300')
   })
 
   it('links both locale CTAs to the booking flow and nothing legacy', () => {
