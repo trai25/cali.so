@@ -55,6 +55,30 @@ afterAll(() => {
 })
 
 describe('VinylShelf', () => {
+  it('centers Breach and keeps each artist run together', () => {
+    const middleIndex = Math.floor(records.length / 2)
+    const weekndStart = records.findIndex((record) => record.artist === 'The Weeknd')
+
+    expect(records[middleIndex].album).toBe('Breach')
+    expect(records.slice(middleIndex - 2, middleIndex + 1).map((record) => record.album)).toEqual([
+      'Trench',
+      'Clancy',
+      'Breach',
+    ])
+    expect(records.slice(weekndStart, weekndStart + 3).map((record) => record.album)).toEqual([
+      'Starboy',
+      'After Hours',
+      'Hurry Up Tomorrow',
+    ])
+
+    const { container } = render(<VinylShelf />)
+    const shelf = container.querySelector<HTMLElement>('.vinyl-shelf')
+    const annotation = container.querySelector<HTMLElement>('.vinyl-annotation')
+
+    expect(shelf?.dataset.activeIndex).toBe(String(middleIndex))
+    expect(annotation?.textContent).toContain('Breach')
+  })
+
   it('keeps every physical finish deterministic and decorative', () => {
     const finishSeeds = records.map(
       (record) => `${record.artist}, ${record.album} (${record.year})`,
