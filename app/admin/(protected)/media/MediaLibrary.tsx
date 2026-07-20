@@ -5,22 +5,31 @@ import {
   useMemo,
   useRef,
   useState,
-  type ChangeEvent,
-  type DragEvent,
   type KeyboardEvent,
   type MouseEvent,
 } from 'react'
+
+import {
+  TransferDialog,
+  type QueueItem,
+  type TransferDiscardTarget,
+} from './TransferDialog'
 
 import { PixelCluster } from '~/components/pixel-cluster'
 import { Button } from '~/components/ui/button'
 import {
   Dialog,
   DialogBody,
+  DialogClose,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
   DialogTitle,
 } from '~/components/ui/dialog'
 import { Input } from '~/components/ui/input'
 import { TabItem, Tabs, TabsList } from '~/components/ui/tabs'
+import { adminResponseJson } from '~/lib/admin/client-response'
 import { T } from '~/lib/i18n'
 import { localize, useLocale } from '~/lib/locale-client'
 import { isMediaAssetEligible } from '~/lib/media/asset-review/eligibility'
@@ -30,20 +39,10 @@ import {
   MAX_ORIGINAL_UPLOAD_CHUNK_BYTES,
   originalUploadChunkCount,
 } from '~/lib/media/storage/transfer'
+import { uploadChunkWithRetry } from '~/lib/media/transfer/client'
+import type { TransferJob } from '~/lib/media/transfer/service'
 
 type LibraryView = 'active' | 'archived'
-type QueueStatus = 'hashing' | 'uploading' | 'processing' | 'ready' | 'failed'
-
-type QueueItem = {
-  id: string
-  file: File
-  idempotencyKey?: string
-  uploadIntentId?: string
-  checksumSha256?: string
-  uploadedChunkCount?: number
-  status: QueueStatus
-  error?: string
-}
 
 const acceptedTypes = new Set([
   'image/heic',
@@ -107,14 +106,6 @@ function clearDurableUploadIdempotencyKey(input: {
   }
 }
 
-async function responseJson(response: Response) {
-  const body = (await response.json()) as Record<string, unknown>
-  if (!response.ok) {
-    throw new Error(typeof body.error === 'string' ? body.error : 'request_failed')
-  }
-  return body
-}
-
 function assetName(asset: MediaAssetReviewRecord) {
   return (
     asset.locationLabelEn ||
@@ -132,17 +123,6 @@ function assetNameIsIdFallback(asset: MediaAssetReviewRecord) {
     asset.altTextEn ||
     asset.altTextZhHans
   )
-}
-
-const queueErrorCopy: Record<string, { zh: string; en: string }> = {
-  invalid_file: {
-    zh: '不支持的类型，或超过 50 MiB',
-    en: 'Unsupported type, or over 50 MiB',
-  },
-  upload_failed: { zh: '传输中断', en: 'Transfer interrupted' },
-  processing_failed: { zh: '处理失败', en: 'Processing failed' },
-  rate_limited: { zh: '操作太频繁，稍后重试', en: 'Rate limited — wait a moment' },
-  request_failed: { zh: '请求失败', en: 'Request failed' },
 }
 
 function processingLabel(asset: MediaAssetReviewRecord) {
@@ -179,123 +159,14 @@ function statusTone(asset: MediaAssetReviewRecord): 'busy' | 'attention' | null 
   return null
 }
 
-function DropZone({
-  items,
-  onFiles,
-  onRetry,
-}: {
-  items: QueueItem[]
-  onFiles(files: File[]): void
-  onRetry(item: QueueItem): void
-}) {
-  const inputRef = useRef<HTMLInputElement>(null)
-  const [dragging, setDragging] = useState(false)
-
-  function drop(event: DragEvent<HTMLDivElement>) {
-    event.preventDefault()
-    setDragging(false)
-    onFiles(Array.from(event.dataTransfer.files))
-  }
-
-  return (
-    <div
-      onDragEnter={(event) => {
-        event.preventDefault()
-        setDragging(true)
-      }}
-      onDragOver={(event) => event.preventDefault()}
-      onDragLeave={() => setDragging(false)}
-      onDrop={drop}
-      className={`mt-6 rounded-lg border border-dashed px-5 py-4 transition-colors duration-150 ${
-        dragging ? 'border-foreground bg-surface-1' : 'border-border'
-      }`}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-        <div>
-          <p className="text-sm font-medium">
-            <T zh="拖入或选择照片" en="Drop or choose photos" />
-          </p>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            JPEG · PNG · HEIC · ≤ 50 MiB
-          </p>
-        </div>
-        <Button
-          type="button"
-          variant="primary"
-          size="md"
-          expandHitArea
-          onClick={() => inputRef.current?.click()}
-        >
-          <T zh="选择文件" en="Choose files" />
-        </Button>
-        <input
-          ref={inputRef}
-          type="file"
-          multiple
-          accept=".heic,.heif,.jpg,.jpeg,.png,image/heic,image/heif,image/jpeg,image/png"
-          className="sr-only"
-          onChange={(event: ChangeEvent<HTMLInputElement>) => {
-            onFiles(Array.from(event.target.files ?? []))
-            event.target.value = ''
-          }}
-        />
-      </div>
-
-      {items.length > 0 && (
-        <ol aria-live="polite" className="mt-4 hairline-top">
-          {items.map((item) => {
-            const cause = item.error
-              ? queueErrorCopy[item.error] ?? queueErrorCopy.request_failed!
-              : null
-            return (
-              <li
-                key={item.id}
-                className="flex min-h-11 items-center justify-between gap-4 py-1.5 text-sm"
-              >
-                <div className="min-w-0">
-                  <p className="truncate">{item.file.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {item.status === 'hashing' && <T zh="正在校验" en="Checking" />}
-                    {item.status === 'uploading' && <T zh="正在上传" en="Uploading" />}
-                    {item.status === 'processing' && <T zh="正在处理" en="Processing" />}
-                    {item.status === 'ready' && <T zh="已入档" en="In the archive" />}
-                    {item.status === 'failed' && cause && (
-                      <T zh={cause.zh} en={cause.en} />
-                    )}
-                  </p>
-                </div>
-                {item.status === 'failed' ? (
-                  // Dense stacked rows — the row's own min-h-11 is the tap
-                  // target, so no expandHitArea here.
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="shrink-0"
-                    onClick={() => onRetry(item)}
-                  >
-                    <T zh="重试" en="Retry" />
-                  </Button>
-                ) : (
-                  <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
-                    {(item.file.size / 1024 / 1024).toFixed(1)} MiB
-                  </span>
-                )}
-              </li>
-            )
-          })}
-        </ol>
-      )}
-    </div>
-  )
-}
-
 function Inspector({
   asset,
+  onArchiveUndo,
   onUpdated,
   onClose,
 }: {
   asset: MediaAssetReviewRecord
+  onArchiveUndo(asset: MediaAssetReviewRecord, operationId: string): void
   onUpdated(asset: MediaAssetReviewRecord | null): void
   onClose(): void
 }) {
@@ -311,24 +182,12 @@ function Inspector({
   const [focalPoint, setFocalPoint] = useState(asset.focalPoint)
   const [pending, setPending] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
-  const [archiveArmed, setArchiveArmed] = useState(false)
-  const [purgeArmed, setPurgeArmed] = useState(false)
-  const [purgeText, setPurgeText] = useState('')
+  const [purgeOpen, setPurgeOpen] = useState(false)
   const noticeRef = useRef<HTMLParagraphElement>(null)
-  const archiveTimerRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (notice) noticeRef.current?.focus()
   }, [notice])
-
-  useEffect(
-    () => () => {
-      if (archiveTimerRef.current !== null) {
-        window.clearTimeout(archiveTimerRef.current)
-      }
-    },
-    [],
-  )
 
   async function mutate(body: Record<string, unknown>) {
     const response = await fetch(`/api/admin/media/assets/${asset.id}`, {
@@ -336,7 +195,7 @@ function Inspector({
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
     })
-    return responseJson(response)
+    return adminResponseJson(response)
   }
 
   // One save: display metadata and Alt Text go out together; untouched
@@ -402,7 +261,7 @@ function Inspector({
       const response = await fetch(`/api/admin/media/assets/${asset.id}/alt-text`, {
         method: 'POST',
       })
-      const body = await responseJson(response)
+      const body = await adminResponseJson(response)
       const suggestion = body.suggestion as { zhHans: string; en: string }
       setAltZh(suggestion.zhHans)
       setAltEn(suggestion.en)
@@ -427,7 +286,7 @@ function Inspector({
         `/api/admin/media/assets/${asset.id}/location-label`,
         { method: 'POST' },
       )
-      const body = await responseJson(response)
+      const body = await adminResponseJson(response)
       const suggestion = body.suggestion as { zhHans?: string; en?: string }
       if (suggestion.zhHans) setLocationZh(suggestion.zhHans)
       if (suggestion.en) setLocationEn(suggestion.en)
@@ -471,7 +330,7 @@ function Inspector({
       const response = await fetch(`/api/admin/media/assets/${asset.id}/resume`, {
         method: 'POST',
       })
-      const body = await responseJson(response)
+      const body = await adminResponseJson(response)
       onUpdated(body.asset as MediaAssetReviewRecord)
       setNotice(
         localize(
@@ -493,28 +352,16 @@ function Inspector({
     }
   }
 
-  function requestArchive() {
-    if (!archiveArmed) {
-      setArchiveArmed(true)
-      if (archiveTimerRef.current !== null) {
-        window.clearTimeout(archiveTimerRef.current)
-      }
-      archiveTimerRef.current = window.setTimeout(
-        () => setArchiveArmed(false),
-        4000,
-      )
-      return
-    }
-    setArchiveArmed(false)
-    void changeCatalogState('archive')
-  }
-
   async function changeCatalogState(intent: 'archive' | 'restore') {
     setPending(intent)
     setNotice(null)
     try {
       const body = await mutate({ intent })
-      onUpdated(body.asset as MediaAssetReviewRecord)
+      const updated = body.asset as MediaAssetReviewRecord
+      onUpdated(updated)
+      if (intent === 'archive' && typeof body.undoOperationId === 'string') {
+        onArchiveUndo(updated, body.undoOperationId)
+      }
       setNotice(
         intent === 'archive'
           ? localize(locale, '已归档。', 'Archived.')
@@ -524,8 +371,8 @@ function Inspector({
       setNotice(
         localize(
           locale,
-          '这个素材仍在照片选集中，或暂时无法更新。',
-          'This asset is still in a Photo Selection or could not be updated.',
+          '暂时无法更新，请重试。',
+          'Could not update this Media Asset. Try again.',
         ),
       )
     } finally {
@@ -534,16 +381,16 @@ function Inspector({
   }
 
   async function purge() {
-    if (purgeText !== 'PURGE') return
     setPending('purge')
     setNotice(null)
     try {
       const response = await fetch(`/api/admin/media/assets/${asset.id}/purge`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ confirmation: purgeText }),
+        body: JSON.stringify({ confirmation: 'PURGE' }),
       })
-      await responseJson(response)
+      await adminResponseJson(response)
+      setPurgeOpen(false)
       onUpdated(null)
       onClose()
     } catch {
@@ -787,15 +634,10 @@ function Inspector({
               type="button"
               variant="ghost"
               size="sm"
-              destructive={archiveArmed}
               disabled={pending !== null}
-              onClick={requestArchive}
+              onClick={() => void changeCatalogState('archive')}
             >
-              {archiveArmed ? (
-                <T zh="确认归档？" en="Confirm archive?" />
-              ) : (
-                <T zh="归档" en="Archive" />
-              )}
+              <T zh="归档" en="Archive" />
             </Button>
           )}
           {asset.catalogState === 'archived' && (
@@ -817,7 +659,7 @@ function Inspector({
               size="sm"
               destructive
               disabled={pending !== null}
-              onClick={() => setPurgeArmed((current) => !current)}
+              onClick={() => setPurgeOpen(true)}
             >
               {asset.catalogState === 'purging' ? (
                 <T zh="重试清除" en="Retry Purge" />
@@ -842,38 +684,6 @@ function Inspector({
         )}
       </div>
 
-      {purgeArmed && (
-        <div className="mt-4 grid gap-3 rounded-md bg-surface-1 p-4">
-          <p className="text-sm leading-5">
-            <T
-              zh="永久清除不可撤销：原片、成品和目录记录都会删除。输入 PURGE 确认。"
-              en="Purge cannot be undone: the Original, Renditions, and catalog record are removed. Type PURGE to confirm."
-            />
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <Input
-              destructive
-              value={purgeText}
-              onChange={(event) => setPurgeText(event.target.value)}
-              placeholder="PURGE"
-              aria-label={localize(locale, '输入 PURGE 确认', 'Type PURGE to confirm')}
-              className="w-32"
-            />
-            <Button
-              type="button"
-              variant="primary"
-              size="md"
-              destructive
-              loading={pending === 'purge'}
-              disabled={pending !== null || purgeText !== 'PURGE'}
-              onClick={() => void purge()}
-            >
-              <T zh="确认清除" en="Confirm purge" />
-            </Button>
-          </div>
-        </div>
-      )}
-
       {asset.catalogState !== 'active' && (
         <p className="mt-3 text-sm leading-5 text-muted-foreground">
           <T
@@ -882,6 +692,43 @@ function Inspector({
           />
         </p>
       )}
+
+      <Dialog open={purgeOpen} onOpenChange={setPurgeOpen}>
+        <DialogContent size="sm" className="h-64">
+          <DialogHeader>
+            <DialogTitle>
+              <T zh="永久清除素材" en="Purge Media Asset" />
+            </DialogTitle>
+            <DialogClose disabled={pending === 'purge'}>
+              <T zh="取消" en="Cancel" />
+            </DialogClose>
+          </DialogHeader>
+          <DialogDescription>
+            <T
+              zh="原片、成品和目录记录会永久删除。如果它仍在照片选集中，系统会只撤下这一张，不会发布其他草稿更改。"
+              en="The Original, Renditions, and catalog record will be permanently removed. If selected, only this photo is withdrawn; unrelated Draft changes stay unpublished."
+            />
+          </DialogDescription>
+          <DialogBody>
+            <p className="text-sm leading-6 text-muted-foreground">
+              <T zh="此操作无法撤销。" en="This action cannot be undone." />
+            </p>
+          </DialogBody>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="primary"
+              size="md"
+              destructive
+              loading={pending === 'purge'}
+              disabled={pending !== null}
+              onClick={() => void purge()}
+            >
+              <T zh="永久清除" en="Purge" />
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
@@ -893,24 +740,43 @@ function Inspector({
 export function MediaLibrary({
   initialActive,
   initialArchived,
+  initialTransfers,
   selectionIds,
 }: {
   initialActive: MediaAssetReviewRecord[]
   initialArchived: MediaAssetReviewRecord[]
+  initialTransfers: TransferJob[]
   selectionIds: string[]
 }) {
   const locale = useLocale()
   const [active, setActive] = useState(initialActive)
   const [archived, setArchived] = useState(initialArchived)
+  const [transfers, setTransfers] = useState(initialTransfers)
   const [view, setView] = useState<LibraryView>('active')
   const [queue, setQueue] = useState<QueueItem[]>([])
+  const [transferOpen, setTransferOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [openId, setOpenId] = useState<string | null>(null)
+  const [archiveUndo, setArchiveUndo] = useState<{
+    assetId: string
+    operationId: string
+  } | null>(null)
+  const [discardTarget, setDiscardTarget] =
+    useState<TransferDiscardTarget | null>(null)
+  const [pendingTransferId, setPendingTransferId] = useState<string | null>(null)
+  const [transferNotices, setTransferNotices] = useState<Record<string, string>>(
+    {},
+  )
   const queueTimersRef = useRef<number[]>([])
+  const cancelingTransferIdsRef = useRef(new Set<string>())
+  const archiveUndoTimerRef = useRef<number | null>(null)
 
   useEffect(
     () => () => {
       for (const timer of queueTimersRef.current) window.clearTimeout(timer)
+      if (archiveUndoTimerRef.current !== null) {
+        window.clearTimeout(archiveUndoTimerRef.current)
+      }
     },
     [],
   )
@@ -937,6 +803,15 @@ export function MediaLibrary({
     )
   }, [assets, search])
   const open = assets.find((asset) => asset.id === openId) ?? null
+  const visibleTransfers = useMemo(
+    () =>
+      transfers.filter(
+        (job) =>
+          !queue.some((item) => item.uploadIntentId === job.uploadIntentId),
+      ),
+    [queue, transfers],
+  )
+  const transferCount = queue.length + visibleTransfers.length
 
   function patchQueue(id: string, patch: Partial<QueueItem>) {
     setQueue((current) =>
@@ -969,17 +844,190 @@ export function MediaLibrary({
     })
   }
 
+  function offerArchiveUndo(assetId: string, operationId: string) {
+    setArchiveUndo({ assetId, operationId })
+    if (archiveUndoTimerRef.current !== null) {
+      window.clearTimeout(archiveUndoTimerRef.current)
+    }
+    archiveUndoTimerRef.current = window.setTimeout(
+      () => setArchiveUndo(null),
+      10_000,
+    )
+  }
+
+  async function undoArchive() {
+    if (!archiveUndo) return
+    const pendingUndo = archiveUndo
+    setArchiveUndo(null)
+    try {
+      const response = await fetch(
+        `/api/admin/media/assets/${pendingUndo.assetId}`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            intent: 'undo_archive',
+            operationId: pendingUndo.operationId,
+          }),
+        },
+      )
+      const body = await adminResponseJson(response)
+      mergeAsset(body.asset as MediaAssetReviewRecord)
+      setView('active')
+    } catch {
+      await reloadAssets().catch(() => undefined)
+    }
+  }
+
   async function reloadAssets() {
     const [activeResponse, archivedResponse] = await Promise.all([
       fetch('/api/admin/media/assets?view=active', { cache: 'no-store' }),
       fetch('/api/admin/media/assets?view=archived', { cache: 'no-store' }),
     ])
     const [activeBody, archivedBody] = await Promise.all([
-      responseJson(activeResponse),
-      responseJson(archivedResponse),
+      adminResponseJson(activeResponse),
+      adminResponseJson(archivedResponse),
     ])
     setActive(activeBody.assets as MediaAssetReviewRecord[])
     setArchived(archivedBody.assets as MediaAssetReviewRecord[])
+  }
+
+  async function reloadTransfers() {
+    const response = await fetch('/api/admin/media/upload-intents', {
+      cache: 'no-store',
+    })
+    const body = await adminResponseJson(response)
+    if (!Array.isArray(body.transfers)) throw new Error('invalid_response')
+    setTransfers(body.transfers as TransferJob[])
+  }
+
+  function setTransferNotice(uploadIntentId: string, notice: string | null) {
+    setTransferNotices((current) => {
+      const next = { ...current }
+      if (notice === null) delete next[uploadIntentId]
+      else next[uploadIntentId] = notice
+      return next
+    })
+  }
+
+  async function retryPersistedFile(job: TransferJob, file: File) {
+    setPendingTransferId(job.uploadIntentId)
+    setTransferNotice(job.uploadIntentId, null)
+    const contentType = fileContentType(file)
+    if (contentType !== job.contentType || file.size !== job.byteSize) {
+      setTransferNotice(
+        job.uploadIntentId,
+        localize(
+          locale,
+          '请选择同一张原片（类型和大小必须一致）。',
+          'Choose the same Original; its type and size must match.',
+        ),
+      )
+      setPendingTransferId(null)
+      return
+    }
+    try {
+      const sha256 = await checksum(file)
+      if (sha256 !== job.checksumSha256) {
+        setTransferNotice(
+          job.uploadIntentId,
+          localize(
+            locale,
+            '这不是原来的文件，请重新选择。',
+            'This is not the original file. Choose it again.',
+          ),
+        )
+        return
+      }
+      const item: QueueItem = {
+        id: crypto.randomUUID(),
+        file,
+        uploadIntentId: job.uploadIntentId,
+        checksumSha256: sha256,
+        status: 'uploading',
+      }
+      setQueue((current) => [item, ...current])
+      void upload(item)
+    } catch {
+      setTransferNotice(
+        job.uploadIntentId,
+        localize(locale, '无法读取这个文件。', 'This file could not be read.'),
+      )
+    } finally {
+      setPendingTransferId(null)
+    }
+  }
+
+  async function retryPersistedProcessing(job: TransferJob) {
+    if (!job.mediaAssetId) return
+    setPendingTransferId(job.uploadIntentId)
+    setTransferNotice(job.uploadIntentId, null)
+    try {
+      const response = await fetch(
+        `/api/admin/media/assets/${job.mediaAssetId}/resume`,
+        { method: 'POST' },
+      )
+      await adminResponseJson(response)
+      await Promise.all([reloadAssets(), reloadTransfers()])
+      setView('active')
+    } catch {
+      setTransferNotice(
+        job.uploadIntentId,
+        localize(
+          locale,
+          '暂时无法恢复处理，请稍后重试。',
+          'Processing could not resume yet. Try again later.',
+        ),
+      )
+      await reloadTransfers().catch(() => undefined)
+    } finally {
+      setPendingTransferId(null)
+    }
+  }
+
+  async function discardTransfer() {
+    if (!discardTarget) return
+    const target = discardTarget
+    cancelingTransferIdsRef.current.add(target.uploadIntentId)
+    let discarded = false
+    setPendingTransferId(target.uploadIntentId)
+    setTransferNotice(target.uploadIntentId, null)
+    try {
+      const response = await fetch(
+        `/api/admin/media/upload-intents/${target.uploadIntentId}`,
+        { method: 'DELETE' },
+      )
+      await adminResponseJson(response)
+      discarded = true
+      setQueue((current) =>
+        current.filter(
+          (item) => item.uploadIntentId !== target.uploadIntentId,
+        ),
+      )
+      setTransfers((current) =>
+        current.filter(
+          (job) => job.uploadIntentId !== target.uploadIntentId,
+        ),
+      )
+      setDiscardTarget(null)
+      await Promise.all([reloadAssets(), reloadTransfers()])
+    } catch {
+      setTransferNotice(
+        target.uploadIntentId,
+        localize(
+          locale,
+          '丢弃未完成。已确认的步骤会保留，可以安全重试。',
+          'Discard is incomplete. Confirmed progress is saved and safe to retry.',
+        ),
+      )
+      setDiscardTarget(null)
+      await reloadTransfers().catch(() => undefined)
+    } finally {
+      if (!discarded) {
+        cancelingTransferIdsRef.current.delete(target.uploadIntentId)
+      }
+      setPendingTransferId(null)
+    }
   }
 
   async function upload(item: QueueItem) {
@@ -1010,7 +1058,7 @@ export function MediaLibrary({
             checksumSha256: sha256,
           }),
         })
-        const intentBody = await responseJson(intentResponse)
+        const intentBody = await adminResponseJson(intentResponse)
         uploadIntentId = (intentBody.uploadIntent as { id: string }).id
         patchQueue(item.id, {
           checksumSha256: sha256,
@@ -1029,6 +1077,7 @@ export function MediaLibrary({
       const chunkCount = originalUploadChunkCount(item.file.size)
       let uploadedChunkCount = item.uploadedChunkCount ?? 0
       let restartedAfterConflict = false
+      let replacedMissingIntent = false
       while (uploadedChunkCount < chunkCount) {
         patchQueue(item.id, { status: 'uploading' })
         const start = uploadedChunkCount * MAX_ORIGINAL_UPLOAD_CHUNK_BYTES
@@ -1037,7 +1086,7 @@ export function MediaLibrary({
           Math.min(start + MAX_ORIGINAL_UPLOAD_CHUNK_BYTES, item.file.size),
         )
         const chunkChecksumSha256 = await checksum(chunk)
-        const uploadResponse = await fetch(
+        const uploadResponse = await uploadChunkWithRetry(
           `/api/admin/media/upload-intents/${uploadIntentId}/original?chunk=${uploadedChunkCount}`,
           {
             method: 'PUT',
@@ -1048,13 +1097,67 @@ export function MediaLibrary({
             body: chunk,
           },
         )
+        if (cancelingTransferIdsRef.current.has(uploadIntentId)) {
+          throw new Error('upload_failed')
+        }
         if (!uploadResponse.ok) {
+          // Chunk responses use an empty 204 body on success, so they cannot
+          // all flow through adminResponseJson. Failures still must use the
+          // shared handler to re-enter Clerk after an expired session.
+          if (uploadResponse.status === 401) {
+            await adminResponseJson(uploadResponse)
+          }
+          if (uploadResponse.status === 404 && !replacedMissingIntent) {
+            replacedMissingIntent = true
+            // The stale reservation may still own partial chunks. Discard is
+            // idempotent and closes the server-side transfer before a fresh
+            // intent starts; a completed/ready replay simply rejects it.
+            await fetch(
+              `/api/admin/media/upload-intents/${uploadIntentId}`,
+              { method: 'DELETE' },
+            ).catch(() => undefined)
+            clearDurableUploadIdempotencyKey({
+              checksumSha256: sha256,
+              byteSize: item.file.size,
+              contentType,
+            })
+            idempotencyKey = durableUploadIdempotencyKey({
+              checksumSha256: sha256,
+              byteSize: item.file.size,
+              contentType,
+            })
+            const replacementResponse = await fetch(
+              '/api/admin/media/upload-intents',
+              {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                  idempotencyKey,
+                  contentType,
+                  byteSize: item.file.size,
+                  checksumSha256: sha256,
+                }),
+              },
+            )
+            const replacementBody = await adminResponseJson(replacementResponse)
+            uploadIntentId = (
+              replacementBody.uploadIntent as { id: string }
+            ).id
+            uploadedChunkCount = 0
+            patchQueue(item.id, {
+              idempotencyKey,
+              uploadIntentId,
+              uploadedChunkCount: 0,
+            })
+            continue
+          }
           if (uploadResponse.status === 409 && !restartedAfterConflict) {
             restartedAfterConflict = true
             uploadedChunkCount = 0
             patchQueue(item.id, { uploadedChunkCount: 0 })
             continue
           }
+          await adminResponseJson(uploadResponse)
           throw new Error('upload_failed')
         }
         uploadedChunkCount += 1
@@ -1062,13 +1165,16 @@ export function MediaLibrary({
       }
 
       patchQueue(item.id, { uploadIntentId, status: 'processing' })
+      if (cancelingTransferIdsRef.current.has(uploadIntentId)) {
+        throw new Error('upload_failed')
+      }
       const completionResponse = await fetch(
         `/api/admin/media/upload-intents/${uploadIntentId}/complete`,
         { method: 'POST' },
       )
       let completionBody
       try {
-        completionBody = await responseJson(completionResponse)
+        completionBody = await adminResponseJson(completionResponse)
       } catch (error) {
         if (error instanceof Error && error.message === 'original_mismatch') {
           patchQueue(item.id, { uploadedChunkCount: 0 })
@@ -1079,6 +1185,7 @@ export function MediaLibrary({
         id: string
         processingState: string
       }
+      patchQueue(item.id, { mediaAssetId: mediaAsset.id })
       if (mediaAsset.processingState !== 'ready') throw new Error('processing_failed')
       patchQueue(item.id, { status: 'ready' })
       scheduleQueueClear(item.id)
@@ -1088,6 +1195,9 @@ export function MediaLibrary({
         contentType,
       })
       try {
+        setTransfers((current) =>
+          current.filter((job) => job.uploadIntentId !== uploadIntentId),
+        )
         await reloadAssets()
         setView('active')
       } catch {
@@ -1100,7 +1210,7 @@ export function MediaLibrary({
           `/api/admin/media/assets/${mediaAsset.id}/alt-text`,
           { method: 'POST' },
         )
-        const altTextBody = await responseJson(altTextResponse)
+        const altTextBody = await adminResponseJson(altTextResponse)
         if (altTextBody.asset) {
           mergeAsset(altTextBody.asset as MediaAssetReviewRecord)
         }
@@ -1113,6 +1223,7 @@ export function MediaLibrary({
         status: 'failed',
         error: error instanceof Error ? error.message : 'request_failed',
       })
+      await reloadTransfers().catch(() => undefined)
     }
   }
 
@@ -1136,29 +1247,38 @@ export function MediaLibrary({
         </h1>
         <PixelCluster variant={8} className="shrink-0" />
       </div>
-      <p className="mt-1 text-sm tabular-nums text-muted-foreground">
-        {active.length} <T zh="张使用中" en="active" />
-        {archived.length > 0 && (
-          <>
-            {' · '}
-            {archived.length} <T zh="张已归档" en="archived" />
-          </>
-        )}
-      </p>
+      <div className="mt-1 flex h-10 items-center justify-between gap-4">
+        <p className="text-sm tabular-nums text-muted-foreground">
+          {active.length} <T zh="张素材" en="in Library" />
+          {archived.length > 0 && (
+            <>
+              {' · '}
+              {archived.length} <T zh="张已归档" en="archived" />
+            </>
+          )}
+        </p>
+        <Button
+          type="button"
+          variant="primary"
+          size="lg"
+          expandHitArea
+          active={transferOpen}
+          onClick={() => setTransferOpen(true)}
+        >
+          <T zh="传输" en="Transfers" />
+          {transferCount > 0 && (
+            <span className="min-w-3 text-center tabular-nums">{transferCount}</span>
+          )}
+        </Button>
+      </div>
 
-      <DropZone
-        items={queue}
-        onFiles={addFiles}
-        onRetry={(item) => void upload(item)}
-      />
-
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <Tabs value={view} onValueChange={(value) => setView(value as LibraryView)}>
           <TabsList
             variant="subtle"
             aria-label={localize(locale, '媒体视图', 'Media view')}
           >
-            <TabItem value="active" label={localize(locale, '使用中', 'Active')} />
+            <TabItem value="active" label={localize(locale, '素材库', 'Library')} />
             <TabItem
               value="archived"
               label={localize(locale, '已归档', 'Archived')}
@@ -1178,13 +1298,14 @@ export function MediaLibrary({
         </label>
       </div>
 
-      {visibleAssets.length === 0 ? (
-        <p className="mt-6 hairline-top py-10 text-sm leading-6 text-muted-foreground">
+      <div className="min-h-[25rem]">
+        {visibleAssets.length === 0 ? (
+          <p className="mt-6 hairline-top py-10 text-sm leading-6 text-muted-foreground">
           {assets.length === 0 ? (
             view === 'active' ? (
               <T
-                zh="档案还是空的——把照片拖进上面的框里就好。"
-                en="The archive is empty — drop photos into the tray above."
+                zh="素材库还是空的——从传输开始。"
+                en="The Library is empty — start a Transfer."
               />
             ) : (
               <T zh="没有已归档的素材。" en="Nothing is archived." />
@@ -1192,9 +1313,9 @@ export function MediaLibrary({
           ) : (
             <T zh="没有匹配的素材。" en="No matches." />
           )}
-        </p>
-      ) : (
-        <ul className="mt-4 grid grid-cols-3 gap-2">
+          </p>
+        ) : (
+          <ul className="mt-4 grid grid-cols-3 gap-2">
           {visibleAssets.map((asset) => {
             const tone = statusTone(asset)
             const inSelection = selectionIds.includes(asset.id)
@@ -1248,17 +1369,19 @@ export function MediaLibrary({
               </li>
             )
           })}
-        </ul>
-      )}
+          </ul>
+        )}
 
-      {view === 'active' && active.some((asset) => !isMediaAssetEligible(asset)) && (
-        <p className="mt-4 text-sm leading-5 text-muted-foreground">
-          <T
-            zh="带黄点的素材还不能发布——处理中，或缺少替代文本（打开后保存即可）；红点表示需要打开检查一下。"
-            en="Amber dots are not publishable yet — still processing, or missing Alt Text (open and save to fix); red dots want a look inside."
-          />
-        </p>
-      )}
+        {view === 'active' &&
+          active.some((asset) => !isMediaAssetEligible(asset)) && (
+            <p className="mt-4 text-sm leading-5 text-muted-foreground">
+              <T
+                zh="带黄点的素材还不能发布——处理中，或缺少替代文本（打开后保存即可）；红点表示需要打开检查一下。"
+                en="Amber dots are not publishable yet — still processing, or missing Alt Text (open and save to fix); red dots want a look inside."
+              />
+            </p>
+          )}
+      </div>
 
       <Dialog
         open={open !== null}
@@ -1266,12 +1389,18 @@ export function MediaLibrary({
           if (!next) setOpenId(null)
         }}
       >
-        <DialogContent size="lg">
+        <DialogContent
+          size="lg"
+          className="h-[min(46rem,calc(100dvh-2rem))]"
+        >
           <DialogBody>
             {open && (
               <Inspector
                 key={open.id}
                 asset={open}
+                onArchiveUndo={(asset, operationId) => {
+                  offerArchiveUndo(asset.id, operationId)
+                }}
                 onUpdated={(asset) => mergeAsset(asset, openId ?? undefined)}
                 onClose={() => setOpenId(null)}
               />
@@ -1279,6 +1408,42 @@ export function MediaLibrary({
           </DialogBody>
         </DialogContent>
       </Dialog>
+
+      <TransferDialog
+        open={transferOpen}
+        onOpenChange={setTransferOpen}
+        queue={queue}
+        transfers={visibleTransfers}
+        notices={transferNotices}
+        pendingTransferId={pendingTransferId}
+        discardTarget={discardTarget}
+        onFiles={addFiles}
+        onDismissQueueItem={(item) => {
+          setQueue((current) =>
+            current.filter((candidate) => candidate.id !== item.id),
+          )
+        }}
+        onRetryQueueItem={(item) => void upload(item)}
+        onChooseFile={(target, file) => void retryPersistedFile(target, file)}
+        onRetryProcessing={(target) => void retryPersistedProcessing(target)}
+        onRequestDiscard={setDiscardTarget}
+        onCloseDiscard={() => setDiscardTarget(null)}
+        onConfirmDiscard={() => void discardTransfer()}
+      />
+
+      {archiveUndo && (
+        <div
+          role="status"
+          className="fixed bottom-24 left-1/2 z-[var(--z-toast)] flex min-h-11 w-[min(24rem,calc(100vw-2rem))] -translate-x-1/2 items-center justify-between gap-3 rounded-[2px] bg-foreground px-4 py-2 text-background shadow-[var(--shadow-medium)]"
+        >
+          <span className="text-sm">
+            <T zh="已归档并从照片选集撤下。" en="Archived and withdrawn from Photo Selection." />
+          </span>
+          <Button type="button" variant="secondary" size="sm" onClick={() => void undoArchive()}>
+            <T zh="撤销" en="Undo" />
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

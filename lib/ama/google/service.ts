@@ -6,7 +6,6 @@ import type { EncryptedSecretEnvelope, createSecretBox } from '../secrets'
 import {
   GOOGLE_CALENDAR_SCOPES,
   GoogleCalendarError,
-  type GoogleCalendarIdentity,
 } from './client'
 
 const OAUTH_ATTEMPT_LIFETIME_MS = 10 * 60 * 1000
@@ -84,7 +83,6 @@ export interface GoogleCalendarProvider {
     refreshToken?: string
     expiresAt: Date
   }>
-  getPrimaryCalendarIdentity(accessToken: string): Promise<GoogleCalendarIdentity>
   refreshAccessToken(refreshToken: string): Promise<{
     accessToken?: string
     expiresAt: Date
@@ -114,10 +112,6 @@ export type GoogleConnectionResult =
   | 'expired'
   | 'revoked'
   | 'unavailable'
-
-function calendarEmail(identity: GoogleCalendarIdentity) {
-  return identity.id.includes('@') ? identity.id : null
-}
 
 function publicStatus(status: GoogleConnectionStatus | undefined): GoogleConnectionResult | 'disconnected' {
   if (!status || status === 'disconnected') return 'disconnected'
@@ -194,12 +188,11 @@ export function createGoogleCalendarService(dependencies: GoogleCalendarServiceD
         })
         if (!tokens.accessToken || !tokens.refreshToken) return 'unavailable'
 
-        const identity = await provider.getPrimaryCalendarIdentity(tokens.accessToken)
         await repository.saveConnection({
           status: 'connected',
-          calendarId: identity.id,
-          calendarEmail: calendarEmail(identity),
-          calendarSummary: identity.summary,
+          calendarId: 'primary',
+          calendarEmail: null,
+          calendarSummary: null,
           grantedScopes: [...GOOGLE_CALENDAR_SCOPES],
           refreshTokenEnvelope: secretBox.seal(
             tokens.refreshToken,

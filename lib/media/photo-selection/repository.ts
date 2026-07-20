@@ -16,6 +16,7 @@ import {
 } from '~/db/schema'
 
 import { createPublicRenditionUrl } from '../storage/bunny'
+import { lockPhotoSelectionMutations } from '../catalog/lifecycle-locks'
 
 import type {
   DraftPhotoSelection,
@@ -262,6 +263,7 @@ export function createPhotoSelectionRepository(
     async saveDraft(input): Promise<SaveDraftRepositoryResult> {
       try {
         return await database().transaction(async (transaction) => {
+          await lockPhotoSelectionMutations(transaction, input.ownerUserId)
           const [current] = await transaction
             .select()
             .from(mediaPhotoSelectionDrafts)
@@ -349,6 +351,7 @@ export function createPhotoSelectionRepository(
     async publishDraft(input): Promise<PublishDraftRepositoryResult> {
       try {
         return await database().transaction(async (transaction) => {
+          await lockPhotoSelectionMutations(transaction, input.ownerUserId)
           const [existing] = await transaction
             .select()
             .from(mediaPublishedPhotoSelections)

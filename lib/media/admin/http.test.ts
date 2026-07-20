@@ -16,6 +16,8 @@ import {
   createMediaOriginalUploadHandler,
   createMediaPurgeHandler,
   createMediaResumeHandler,
+  createMediaTransferDiscardHandler,
+  createMediaTransferListHandler,
   createMediaUploadCompletionHandler,
   createMediaUploadIntentHandler,
   createPhotoSelectionDraftHandler,
@@ -189,6 +191,10 @@ describe('Media admin HTTP contract', () => {
           f.calls.push(input)
           return input
         },
+        async undoArchive(input) {
+          f.calls.push(input)
+          return input
+        },
         async restore(input) {
           f.calls.push(input)
           return input
@@ -233,6 +239,10 @@ describe('Media admin HTTP contract', () => {
             f.calls.push(input)
             return input
           },
+          async undoArchive(input) {
+            f.calls.push(input)
+            return input
+          },
           async restore(input) {
             f.calls.push(input)
             return input
@@ -269,6 +279,10 @@ describe('Media admin HTTP contract', () => {
           return input
         },
         async archive(input) {
+          f.calls.push(input)
+          return input
+        },
+        async undoArchive(input) {
           f.calls.push(input)
           return input
         },
@@ -314,6 +328,58 @@ describe('Media admin HTTP contract', () => {
     expect(response.status).toBe(503)
     expect(body).toBe('{"error":"dependency_unavailable"}')
     expect(body).not.toContain('password')
+  })
+
+  it('returns an Archive Undo capability through the owner boundary', async () => {
+    const f = fixture()
+    const operationId = '22222222-2222-4222-8222-222222222222'
+    const handler = createMediaAssetActionHandler({
+      authenticator: f.authenticator,
+      security: f.security,
+      review: {
+        async updateDisplayMetadata() {
+          throw new Error('not used')
+        },
+        async approveAltText() {
+          throw new Error('not used')
+        },
+        async archive(input) {
+          f.calls.push(input)
+          return { asset: { id: mediaAssetId, catalogState: 'archived' }, operationId, undoOperationId: operationId }
+        },
+        async undoArchive(input) {
+          f.calls.push(input)
+          return { asset: { id: mediaAssetId, catalogState: 'active' } }
+        },
+        async restore() {
+          throw new Error('not used')
+        },
+      },
+    })
+
+    const archived = await handler(
+      request(`/api/admin/media/assets/${mediaAssetId}`, {
+        body: JSON.stringify({ intent: 'archive' }),
+      }),
+      mediaAssetId,
+    )
+    await expect(archived.json()).resolves.toMatchObject({
+      asset: { catalogState: 'archived' },
+      undoOperationId: operationId,
+    })
+    const undone = await handler(
+      request(`/api/admin/media/assets/${mediaAssetId}`, {
+        body: JSON.stringify({ intent: 'undo_archive', operationId }),
+      }),
+      mediaAssetId,
+    )
+    await expect(undone.json()).resolves.toMatchObject({
+      asset: { catalogState: 'active' },
+    })
+    expect(f.calls).toEqual([
+      { ownerUserId: 'owner_01', mediaAssetId },
+      { ownerUserId: 'owner_01', mediaAssetId, operationId },
+    ])
   })
 
   it('creates typed Upload Intents and records the privileged action', async () => {
@@ -793,6 +859,7 @@ describe('Media admin HTTP contract', () => {
         },
       },
       storage: {
+        async deleteOriginalChunk() {},
         async inspectOriginalChunk() {
           throw new Error('a missing intent must not reach storage')
         },
@@ -821,6 +888,58 @@ describe('Media admin HTTP contract', () => {
     ])
   })
 
+  it('lists durable Transfer Jobs through a no-store owner read', async () => {
+    const f = fixture()
+    const handler = createMediaTransferListHandler({
+      authenticator: f.authenticator,
+      security: f.security,
+      transfer: {
+        async list(ownerUserId) {
+          f.calls.push(ownerUserId)
+          return [{ uploadIntentId: 'upload_01', stage: 'failed' }]
+        },
+      },
+    })
+
+    const response = await handler(
+      request('/api/admin/media/upload-intents'),
+    )
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('cache-control')).toBe('no-store')
+    await expect(response.json()).resolves.toEqual({
+      transfers: [{ uploadIntentId: 'upload_01', stage: 'failed' }],
+    })
+    expect(f.calls).toEqual(['owner_01'])
+  })
+
+  it('discards one owner Transfer Job through the mutation boundary', async () => {
+    const f = fixture()
+    const handler = createMediaTransferDiscardHandler({
+      authenticator: f.authenticator,
+      security: f.security,
+      transfer: {
+        async discard(input) {
+          f.calls.push(input)
+          return { status: 'discarded' }
+        },
+      },
+    })
+
+    const response = await handler(
+      request(`/api/admin/media/upload-intents/${mediaAssetId}`, {
+        method: 'DELETE',
+      }),
+      mediaAssetId,
+    )
+
+    expect(response.status).toBe(200)
+    expect(f.calls).toEqual([
+      { ownerUserId: 'owner_01', uploadIntentId: mediaAssetId },
+    ])
+    expect(f.auditEvents.at(-1)?.event).toBe('media_upload.discarded')
+  })
+
   it('stores an authorized Original chunk below the platform body limit', async () => {
     // A 50 MiB Original needs 13 bounded requests, so chunks must not consume
     // the generic owner mutation budget that protects semantic actions.
@@ -844,6 +963,7 @@ describe('Media admin HTTP contract', () => {
         },
       },
       storage: {
+        async deleteOriginalChunk() {},
         async inspectOriginalChunk() {
           return null
         },
@@ -872,6 +992,58 @@ describe('Media admin HTTP contract', () => {
     })
   })
 
+  it('removes a chunk when Discard wins after the initial transfer claim', async () => {
+    const f = fixture(false)
+    const bytes = 'private image bytes'
+    const checksumSha256 = createHash('sha256').update(bytes).digest('hex')
+    const intent = {
+      originalKey: 'originals/upload_01.jpg',
+      contentType: 'image/jpeg',
+      byteSize: bytes.length,
+      checksumSha256,
+    }
+    const claimUploadIntentTransfer = vi
+      .fn()
+      .mockResolvedValueOnce(intent)
+      .mockResolvedValueOnce(null)
+    const deleteOriginalChunk = vi.fn(async () => {})
+    const handler = createMediaOriginalUploadHandler({
+      authenticator: f.authenticator,
+      security: f.security,
+      baseUrl: new URL('https://cali.so'),
+      ingestionRepository: { claimUploadIntentTransfer },
+      storage: {
+        deleteOriginalChunk,
+        async inspectOriginalChunk() {
+          return null
+        },
+        async storeOriginalChunk() {},
+      },
+      uploadChunkRateLimiter: {
+        retryAfterSeconds: 60,
+        async limit() {
+          return { success: true }
+        },
+      },
+    })
+
+    const response = await handler(
+      request('/api/admin/media/upload-intents/upload_01/original?chunk=0', {
+        method: 'PUT',
+        body: bytes,
+        contentType: 'application/octet-stream',
+        headers: { 'x-media-chunk-sha256': checksumSha256 },
+      }),
+      'upload_01',
+    )
+
+    expect(response.status).toBe(404)
+    expect(deleteOriginalChunk).toHaveBeenCalledWith(
+      'originals/upload_01.jpg',
+      0,
+    )
+  })
+
   it.each([
     '/api/admin/media/upload-intents/upload_01/original',
     '/api/admin/media/upload-intents/upload_01/original?chunk=invalid',
@@ -894,6 +1066,7 @@ describe('Media admin HTTP contract', () => {
         },
       },
       storage: {
+        async deleteOriginalChunk() {},
         async inspectOriginalChunk() {
           throw new Error('an invalid chunk must not reach storage')
         },
@@ -931,6 +1104,7 @@ describe('Media admin HTTP contract', () => {
         },
       },
       storage: {
+        async deleteOriginalChunk() {},
         async inspectOriginalChunk() {
           return null
         },

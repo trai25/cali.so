@@ -25,3 +25,25 @@ same-origin browser upload protection, checks Rendition cache headers, then
 purges every object in a `finally` cleanup. Never point this environment at a
 production zone. A successful run is the release evidence for the Bunny S3
 preview, path protection, delivery, and permanent-deletion contract.
+
+## Public delivery checks
+
+After the storage contract passes, verify the exact deployed commit without
+using private provider or database output as evidence:
+
+1. Load `/photos`, `/en/photos`, and the homepage in both locales. They must use
+   one active Published Photo Selection with no static fallback.
+2. Confirm rendered media URLs use the configured Bunny CDN hostname, return
+   `image/jpeg`, and select responsive 640, 1024, 1600, and 2560 Renditions. An
+   expanded photo must use the largest available Rendition rather than enlarging
+   its tile source.
+3. Confirm HTML and public responses contain no Original or transfer-chunk key,
+   checksum, exact Capture Location, encrypted location, raw metadata, Alt Text
+   Suggestion, provider response, or private error.
+4. Check natural aspect ratios, Focal Point crops, keyboard and touch metadata,
+   reduced motion, and localized Alt Text.
+
+A failed Publish must leave the previous Published Photo Selection active.
+Interrupted ingestion must remain recoverable through reconciliation or the
+owner Resume processing action. Production database or cloud verification still
+requires two fresh explicit confirmations.

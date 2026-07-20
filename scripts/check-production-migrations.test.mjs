@@ -177,6 +177,7 @@ test('admits exact reviewed migration baselines without weakening future checks'
   for (const path of [
     'db/migrations/0011_ama_booking_system.sql',
     'db/migrations/0012_high_fidelity_photo_renditions.sql',
+    'db/migrations/0013_brief_yellowjacket.sql',
   ]) {
     const sql = await readFile(path, 'utf8')
     assert.deepEqual(productionMigrationFindings(path, sql), [])

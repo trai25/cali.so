@@ -44,6 +44,6 @@ are promotional artwork from Apple Music, publishers, authors, or retailers.
 | Hustle Harder, Hustle Smarter | [HarperCollins](https://www.harpercollins.com/products/hustle-harder-hustle-smarter-curtis-50-cent-jackson) |
 | Build | [HarperCollins](https://www.harpercollins.com/products/build-tony-fadell) |
 | Sword of Destiny | [Orbit / Hachette](https://www.hachettebookgroup.com/titles/andrzej-sapkowski/sword-of-destiny/9780316389716/) |
-| Universal Principles of UX | [Quarto](https://cloud.firebrandtech.com/api/v2/image/111/9780760378045/CoverArtHigh/XL) |
+| Universal Principles of UX | [Quarto](https://www.quarto.com/books/9780760378045/universal-principles-of-ux) |
 | Steal Like an Artist | [Workman / Hachette](https://workman.com/titles/austin-kleon/steal-like-an-artist/9780761169253/) |
 | Show Your Work! | [Workman / Hachette](https://workman.com/titles/austin-kleon/show-your-work/9780761178972/) |

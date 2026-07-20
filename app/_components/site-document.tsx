@@ -7,6 +7,7 @@ import { Suspense } from 'react'
 import { AmbientBackground } from '~/components/ambient-background'
 import { Dock, DockFallback } from '~/components/dock'
 import { LocaleRestorer } from '~/components/locale-restorer'
+import { LocaleSuggestion } from '~/components/locale-suggestion'
 import { PreviewCardTimingProvider } from '~/components/preview-card-timing'
 import {
   RouteMotionController,
@@ -93,6 +94,9 @@ export async function SiteDocument({
         <ThemeProvider>
           <PreviewCardTimingProvider>
             <RouteMotionController />
+            <Suspense fallback={null}>
+              <LocaleSuggestion locale={locale} />
+            </Suspense>
             {restoreLocale && <LocaleRestorer />}
             <AmbientBackground />
             <div className="flex min-h-screen flex-col pb-20">

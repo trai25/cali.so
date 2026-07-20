@@ -13,8 +13,8 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: ReactNode;
   /** 14px destructive text below the control, wired via aria-describedby. */
   error?: ReactNode;
-  /** Destructive border treatment without an error message (e.g. the
-   *  type-PURGE confirmation input). Implied when `error` is set. */
+  /** Destructive border treatment without an error message. Implied when
+   *  `error` is set. */
   destructive?: boolean;
 }
 

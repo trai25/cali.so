@@ -16,8 +16,18 @@ the selections that publish them across the personal site.
 
 **Media Asset**:
 A reusable file registered in the Media Library, together with its owned
-metadata and storage references.
+metadata and storage references. Only a ready Media Asset appears in Library
+or Archived; an incomplete attempt remains a Transfer Job.
 _Avoid_: Upload, file record
+
+**Transfer Job**:
+The owner-visible attempt to move one chosen Original through transfer,
+verification, and processing into Archive. A failed Transfer Job remains in the
+transfer queue for Retry or permanent Discard. An in-flight processing job can
+also be permanently Discarded; processing and Purge serialize on that Media
+Asset so no late Rendition can escape cleanup. Transfer Jobs do not appear as
+empty Archived Media Assets.
+_Avoid_: Empty Media Asset, failed archive item
 
 **Original**:
 The protected, full-quality source object from which public versions are made.
@@ -84,14 +94,25 @@ Original verification, Rendition processing, readiness, retryable failure, and
 repair required. It is separate from Catalog State.
 _Avoid_: Lifecycle, upload status
 
+Every processing write records its deterministic Rendition manifest before
+the Bunny side effect. Processing, Discard, and Purge use the same per-asset
+lock; Photo Selection mutations use one owner-scoped lock before Media Asset
+locks. These orders are part of the persistence contract, not UI behavior.
+
 **Archived Media Asset**:
 A Media Asset hidden from normal library views and unavailable to new Photo
-Selections while its files and metadata remain recoverable.
+Selections while its files and metadata remain recoverable. Archive withdraws
+the Media Asset from Draft and Published Photo Selections; immediate Undo may
+restore the exact prior membership and order while those selection revisions
+remain unchanged. A later Restore returns the Media Asset to the Library only.
 _Avoid_: Deleted asset, trashed file
 
 **Purge**:
 The irreversible removal of a Media Asset, including its Original, Renditions,
-and catalog record.
+and catalog record. If the Media Asset belongs to a Draft or Published Photo
+Selection, Purge first withdraws that asset from both. Withdrawing from the
+Published Photo Selection advances only that publication; unrelated Draft
+changes remain unpublished.
 _Avoid_: Delete, remove
 
 **Photo Selection**:
@@ -108,5 +129,6 @@ _Avoid_: Working gallery, unpublished photos
 The immutable snapshot shown on the photos page and in homepage previews. It
 captures membership, order, public Rendition references, Focal Points, Alt
 Text, and Display Metadata, and changes only when the owner publishes a Draft
-Photo Selection.
+Photo Selection, or when Archive or Purge withdraws one Media Asset without
+publishing unrelated Draft changes.
 _Avoid_: Live gallery, active photos

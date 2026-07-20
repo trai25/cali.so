@@ -32,12 +32,15 @@ export type MediaPurgeStatusRecord = {
 }
 
 export type ClaimMediaPurgeResult =
-  | { status: 'claimed'; job: MediaPurgeJob }
+  | {
+      status: 'claimed'
+      job: MediaPurgeJob
+      publicSelectionChanged: boolean
+    }
   | { status: 'completed' }
   | { status: 'busy' }
   | { status: 'invalid_state' }
   | { status: 'not_found' }
-  | { status: 'selection_conflict' }
 
 export interface MediaPurgeRepository {
   getStatus(input: {
@@ -90,13 +93,16 @@ export type MediaPurgeErrorCode =
   | 'invalid_state'
   | 'not_found'
   | 'retryable_failure'
-  | 'selection_conflict'
 
 export class MediaPurgeError extends Error {
   constructor(
     readonly code: MediaPurgeErrorCode,
     readonly details?: {
-      step?: 'rendition_object' | 'rendition_cdn' | 'original'
+      step?:
+        | 'publication_cache'
+        | 'rendition_object'
+        | 'rendition_cdn'
+        | 'original'
     },
   ) {
     super(`Media Asset Purge failed: ${code}`)
@@ -111,6 +117,7 @@ type MediaPurgeDependencies = {
     deleteRendition(key: string): Promise<void>
     purgeRendition(key: string): Promise<void>
   }
+  invalidatePublicSelection: () => Promise<void>
   clock?: { now(): Date }
   idGenerator?: () => string
 }
@@ -136,6 +143,7 @@ function throwClaimFailure(
 export function createMediaPurgeService({
   repository,
   storage,
+  invalidatePublicSelection,
   clock = { now: () => new Date() },
   idGenerator = randomUUID,
 }: MediaPurgeDependencies) {
@@ -199,6 +207,14 @@ export function createMediaPurgeService({
           throw new MediaPurgeError('dependency_unavailable')
         }
         throw new MediaPurgeError('retryable_failure', { step })
+      }
+
+      if (claim.publicSelectionChanged) {
+        try {
+          await invalidatePublicSelection()
+        } catch {
+          await fail('publication_cache')
+        }
       }
 
       for (const rendition of claim.job.renditions) {

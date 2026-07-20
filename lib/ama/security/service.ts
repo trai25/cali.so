@@ -32,6 +32,7 @@ export type PrivilegedAuditEvent =
   | 'media_photo_selection.draft_saved'
   | 'media_photo_selection.published'
   | 'media_upload.completed'
+  | 'media_upload.discarded'
   | 'media_upload.intent_created'
 
 export type AmaFeatureFlags = {

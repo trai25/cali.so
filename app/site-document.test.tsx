@@ -30,6 +30,11 @@ vi.mock('~/components/dock', () => ({
 vi.mock('~/components/locale-restorer', () => ({
   LocaleRestorer: () => null,
 }))
+vi.mock('~/components/locale-suggestion', () => ({
+  LocaleSuggestion: ({ locale }: { locale: 'zh' | 'en' }) => (
+    <span data-locale-suggestion={locale} />
+  ),
+}))
 vi.mock('~/components/preview-card-timing', () => ({
   PreviewCardTimingProvider: ({ children }: { children: React.ReactNode }) => (
     <div data-public-preview-cards="">{children}</div>
@@ -94,6 +99,7 @@ describe('SiteDocument analytics', () => {
       expect(html).toContain('data-public-footer')
       expect(html).toContain('data-public-route-transition')
       expect(html).toContain('data-public-preview-cards')
+      expect(html).toContain(`data-locale-suggestion="${locale}"`)
     }
   })
 
@@ -112,6 +118,7 @@ describe('SiteDocument analytics', () => {
     expect(html).not.toContain('data-public-route-motion')
     expect(html).not.toContain('data-public-route-transition')
     expect(html).not.toContain('data-public-preview-cards')
+    expect(html).not.toContain('data-locale-suggestion')
     expect(html).toContain('Owner admin')
     // The admin shares the warm working-paper palette (July 2026 decision)
     // while staying outside analytics and social reads.
