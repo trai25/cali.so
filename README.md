@@ -23,7 +23,7 @@ general-purpose blog template.
   closed when their pair is absent
 - A Bunny-backed Media Library with owner review and curation in admin; its
   active Published Photo Selection powers `/photos` and the homepage preview
-  while private Originals remain server-only
+  while CDN path rules expose only immutable Renditions
 - CSP, same-origin mutation checks, rate limits, fail-closed provider controls,
   security automation, and isolated Staging, Preview, and Production credentials
 
@@ -118,8 +118,9 @@ pnpm audit:prod
   Google, and Tencent turn on only when their complete Production credential
   pairs are configured and otherwise fail closed with 503.
 - The public photo surfaces depend on migrations `0005` through `0008`, the
-  private Originals and public Renditions boundary, and an active Published
-  Photo Selection. The retired static photo fallback is not part of v3.
+  protected Original and public Rendition path boundary in the shared Bunny
+  Media zone, and an active Published Photo Selection. The retired static photo
+  fallback is not part of v3.
 - Production database or sensitive cloud-data access requires two fresh
   confirmations immediately before access.
 

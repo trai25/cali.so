@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted; storage-zone topology superseded by ADR-0013
 
 ## Context
 

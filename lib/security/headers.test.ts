@@ -33,9 +33,9 @@ describe('site security headers', () => {
     expect(headers['permissions-policy']).toContain('payment=()')
   })
 
-  it('allows only the configured Bunny Rendition origin for images', async () => {
+  it('allows only the configured Bunny Media origin for images', async () => {
     vi.stubEnv(
-      'BUNNY_RENDITIONS_CDN_URL',
+      'BUNNY_MEDIA_CDN_URL',
       'https://media.example.com/private/path?ignored=true',
     )
     const { securityHeaders: configuredHeaders } = await import('./headers')

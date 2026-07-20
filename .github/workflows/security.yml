@@ -36,11 +36,9 @@ jobs:
       GOOGLE_CLIENT_SECRET: ci-google-secret
       SITE_URL: https://cali.so
       BUNNY_MEDIA_REGION: ny
-      BUNNY_ORIGINALS_ZONE: ci-media-originals
-      BUNNY_ORIGINALS_PASSWORD: ci-originals-password
-      BUNNY_RENDITIONS_ZONE: ci-media-renditions
-      BUNNY_RENDITIONS_PASSWORD: ci-renditions-password
-      BUNNY_RENDITIONS_CDN_URL: https://media-ci.example.com
+      BUNNY_MEDIA_ZONE: ci-media
+      BUNNY_MEDIA_PASSWORD: ci-media-password
+      BUNNY_MEDIA_CDN_URL: https://media-ci.example.com
       BUNNY_CDN_API_KEY: ci-cdn-api-key
     steps:
       - name: Check out repository

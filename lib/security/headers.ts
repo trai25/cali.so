@@ -1,7 +1,7 @@
 const isDevelopment = process.env.NODE_ENV === 'development'
 
 function optionalMediaImageSource() {
-  const value = process.env.BUNNY_RENDITIONS_CDN_URL
+  const value = process.env.BUNNY_MEDIA_CDN_URL
   if (!value) return ''
   try {
     const url = new URL(value)

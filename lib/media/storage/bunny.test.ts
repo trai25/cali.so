@@ -14,23 +14,85 @@ import { BunnyStorageError, createBunnyStorage } from './bunny'
 
 const config = {
   region: 'sg' as const,
-  originals: {
-    zone: 'cali-media-originals-preview',
-    password: 'originals-zone-password',
-  },
-  renditions: {
-    zone: 'cali-media-renditions-preview',
-    password: 'renditions-zone-password',
+  media: {
+    zone: 'cali-media-preview',
+    password: 'media-zone-password',
     cdnBaseUrl: new URL('https://media-preview.cali.so/'),
   },
   cdnApiKey: 'preview-cdn-api-key',
 }
 
 describe('Bunny Media Storage', () => {
-  it('stores an Original only in the private zone with explicit integrity metadata', async () => {
+  it('uses one Media zone for Original and Rendition objects', async () => {
     const send = vi.fn(async (_command: unknown) => ({}))
     const storage = createBunnyStorage(config, {
-      originalsClient: { send } as never,
+      client: { send } as never,
+    })
+    const originalBytes = new TextEncoder().encode('original bytes')
+    const renditionBytes = new TextEncoder().encode('rendition bytes')
+    const originalChecksum = createHash('sha256')
+      .update(originalBytes)
+      .digest('hex')
+    const renditionChecksum = createHash('sha256')
+      .update(renditionBytes)
+      .digest('hex')
+
+    await storage.storeOriginal({
+      key: 'originals/asset_01/revision_01.heic',
+      bytes: originalBytes,
+      contentType: 'image/heic',
+      checksumSha256: originalChecksum,
+    })
+    await storage.storeRendition({
+      key: `renditions/asset_01/photo-1600-${renditionChecksum}.jpg`,
+      bytes: renditionBytes,
+      checksumSha256: renditionChecksum,
+      contentType: 'image/jpeg',
+    })
+
+    const buckets = send.mock.calls.map(([command]) => {
+      if (!(command instanceof PutObjectCommand)) {
+        throw new TypeError('Expected PutObject')
+      }
+      return command.input.Bucket
+    })
+    expect(buckets).toEqual(['cali-media-preview', 'cali-media-preview'])
+  })
+
+  it('rejects keys outside each Media namespace before contacting Bunny', async () => {
+    const send = vi.fn(async (_command: unknown) => ({}))
+    const storage = createBunnyStorage(config, {
+      client: { send } as never,
+    })
+    const bytes = new TextEncoder().encode('misplaced bytes')
+    const checksumSha256 = createHash('sha256').update(bytes).digest('hex')
+
+    await expect(
+      storage.storeOriginal({
+        key: `renditions/asset_01/original-${checksumSha256}.jpg`,
+        bytes,
+        contentType: 'image/jpeg',
+        checksumSha256,
+      }),
+    ).rejects.toThrow('originals/ namespace')
+    await expect(
+      storage.storeRendition({
+        key: `originals/asset_01/rendition-${checksumSha256}.jpg`,
+        bytes,
+        contentType: 'image/jpeg',
+        checksumSha256,
+      }),
+    ).rejects.toThrow('renditions/ namespace')
+    expect(() =>
+      storage.publicRenditionUrl('originals/asset_01/revision_01.jpg'),
+    ).toThrow('renditions/ namespace')
+    expect(send).not.toHaveBeenCalled()
+  })
+
+  it('stores an Original in the Media zone with explicit integrity metadata', async () => {
+    const send = vi.fn(async (_command: unknown) => ({}))
+    const storage = createBunnyStorage(config, {
+      client: { send } as never,
     })
     const bytes = new TextEncoder().encode('private image bytes')
     const checksum = createHash('sha256').update(bytes).digest('hex')
@@ -46,7 +108,7 @@ describe('Bunny Media Storage', () => {
     expect(command).toBeInstanceOf(PutObjectCommand)
     if (!(command instanceof PutObjectCommand)) throw new TypeError('Expected PutObject')
     expect(command.input).toEqual({
-      Bucket: 'cali-media-originals-preview',
+      Bucket: 'cali-media-preview',
       Key: 'originals/asset_01/revision_01.heic',
       Body: bytes,
       ContentLength: 19,
@@ -55,7 +117,7 @@ describe('Bunny Media Storage', () => {
     })
   })
 
-  it('stores, reads, and deletes an Original transfer chunk only in the private zone', async () => {
+  it('stores, reads, and deletes an Original transfer chunk in the Media zone', async () => {
     const bytes = new TextEncoder().encode('private chunk bytes')
     const checksum = createHash('sha256').update(bytes).digest('hex')
     const send = vi.fn(async (command: unknown) => {
@@ -72,7 +134,7 @@ describe('Bunny Media Storage', () => {
       return {}
     })
     const storage = createBunnyStorage(config, {
-      originalsClient: { send } as never,
+      client: { send } as never,
     })
 
     await storage.storeOriginalChunk({
@@ -114,10 +176,10 @@ describe('Bunny Media Storage', () => {
       !(head instanceof HeadObjectCommand) ||
       !(remove instanceof DeleteObjectCommand)
     ) {
-      throw new TypeError('Expected private chunk commands')
+      throw new TypeError('Expected Media chunk commands')
     }
     expect(put.input).toEqual({
-      Bucket: 'cali-media-originals-preview',
+      Bucket: 'cali-media-preview',
       Key: expectedKey,
       Body: bytes,
       ContentLength: bytes.byteLength,
@@ -125,22 +187,22 @@ describe('Bunny Media Storage', () => {
       ChecksumSHA256: Buffer.from(checksum, 'hex').toString('base64'),
     })
     expect(get.input).toEqual({
-      Bucket: 'cali-media-originals-preview',
+      Bucket: 'cali-media-preview',
       Key: expectedKey,
     })
     expect(head.input).toEqual({
-      Bucket: 'cali-media-originals-preview',
+      Bucket: 'cali-media-preview',
       Key: expectedKey,
     })
     expect(remove.input).toEqual({
-      Bucket: 'cali-media-originals-preview',
+      Bucket: 'cali-media-preview',
       Key: expectedKey,
     })
   })
 
   it('normalizes provider failures while storing an Original', async () => {
     const storage = createBunnyStorage(config, {
-      originalsClient: {
+      client: {
         send: vi.fn(async (_command: unknown) => {
           throw new Error('originals-zone-password raw provider detail')
         }),
@@ -164,7 +226,7 @@ describe('Bunny Media Storage', () => {
   it('stores a Rendition in the public zone and derives its immutable CDN URL', async () => {
     const send = vi.fn(async (_command: unknown) => ({}))
     const storage = createBunnyStorage(config, {
-      renditionsClient: { send } as never,
+      client: { send } as never,
     })
     const bytes = new TextEncoder().encode('public jpeg bytes')
     const checksum = createHash('sha256').update(bytes).digest('hex')
@@ -181,7 +243,7 @@ describe('Bunny Media Storage', () => {
     expect(command).toBeInstanceOf(PutObjectCommand)
     if (!(command instanceof PutObjectCommand)) throw new TypeError('Expected PutObject')
     expect(command.input).toEqual({
-      Bucket: 'cali-media-renditions-preview',
+      Bucket: 'cali-media-preview',
       Key: renditionKey,
       Body: bytes,
       ContentLength: 17,
@@ -196,7 +258,7 @@ describe('Bunny Media Storage', () => {
   it('rejects an overwriteable Rendition key before contacting Bunny', async () => {
     const send = vi.fn(async (_command: unknown) => ({}))
     const storage = createBunnyStorage(config, {
-      renditionsClient: { send } as never,
+      client: { send } as never,
     })
     const bytes = new TextEncoder().encode('public jpeg bytes')
     const checksum = createHash('sha256').update(bytes).digest('hex')
@@ -215,7 +277,7 @@ describe('Bunny Media Storage', () => {
   it('rejects a non-JPEG Rendition contract before contacting Bunny', async () => {
     const send = vi.fn(async (_command: unknown) => ({}))
     const storage = createBunnyStorage(config, {
-      renditionsClient: { send } as never,
+      client: { send } as never,
     })
     const bytes = new TextEncoder().encode('public image bytes')
     const checksum = createHash('sha256').update(bytes).digest('hex')
@@ -238,7 +300,7 @@ describe('Bunny Media Storage', () => {
       LastModified: new Date('2026-07-15T00:00:00.000Z'),
     }))
     const storage = createBunnyStorage(config, {
-      renditionsClient: { send } as never,
+      client: { send } as never,
     })
 
     const object = await storage.inspectRendition(
@@ -249,7 +311,7 @@ describe('Bunny Media Storage', () => {
     expect(command).toBeInstanceOf(HeadObjectCommand)
     if (!(command instanceof HeadObjectCommand)) throw new TypeError('Expected HeadObject')
     expect(command.input).toEqual({
-      Bucket: 'cali-media-renditions-preview',
+      Bucket: 'cali-media-preview',
       Key: 'renditions/asset_01/photo-1600-v1.jpg',
     })
     expect(object).toEqual({
@@ -267,7 +329,7 @@ describe('Bunny Media Storage', () => {
       ETag: undefined,
     }))
     const storage = createBunnyStorage(config, {
-      originalsClient: { send } as never,
+      client: { send } as never,
     })
 
     const object = await storage.inspectOriginal(
@@ -278,7 +340,7 @@ describe('Bunny Media Storage', () => {
     expect(command).toBeInstanceOf(HeadObjectCommand)
     if (!(command instanceof HeadObjectCommand)) throw new TypeError('Expected HeadObject')
     expect(command.input).toEqual({
-      Bucket: 'cali-media-originals-preview',
+      Bucket: 'cali-media-preview',
       Key: 'originals/asset_01/revision_01.heic',
     })
     expect(object).toEqual({
@@ -291,11 +353,11 @@ describe('Bunny Media Storage', () => {
 
   it('reports a missing Original without exposing Bunny provider details', async () => {
     const providerError = Object.assign(
-      new Error('cali-media-originals-preview secret provider response'),
+      new Error('cali-media-preview secret provider response'),
       { $metadata: { httpStatusCode: 404 } },
     )
     const storage = createBunnyStorage(config, {
-      originalsClient: {
+      client: {
         send: vi.fn(async (_command: unknown) => {
           throw providerError
         }),
@@ -310,7 +372,7 @@ describe('Bunny Media Storage', () => {
     await expect(inspection).rejects.not.toThrow(/secret provider response/)
   })
 
-  it('reads private Original bytes through the authenticated storage client', async () => {
+  it('reads Original bytes through the authenticated storage client', async () => {
     const bytes = new TextEncoder().encode('private image bytes')
     const send = vi.fn(async (_command: unknown) => ({
       Body: {
@@ -318,7 +380,7 @@ describe('Bunny Media Storage', () => {
       },
     }))
     const storage = createBunnyStorage(config, {
-      originalsClient: { send } as never,
+      client: { send } as never,
     })
 
     const original = await storage.readOriginal(
@@ -329,7 +391,7 @@ describe('Bunny Media Storage', () => {
     expect(command).toBeInstanceOf(GetObjectCommand)
     if (!(command instanceof GetObjectCommand)) throw new TypeError('Expected GetObject')
     expect(command.input).toEqual({
-      Bucket: 'cali-media-originals-preview',
+      Bucket: 'cali-media-preview',
       Key: 'originals/asset_01/revision_01.heic',
     })
     expect(original).toEqual(bytes)
@@ -343,7 +405,7 @@ describe('Bunny Media Storage', () => {
       },
     }))
     const storage = createBunnyStorage(config, {
-      renditionsClient: { send } as never,
+      client: { send } as never,
     })
     const key = 'renditions/asset_01/photo-1600-v1.jpg'
 
@@ -355,24 +417,22 @@ describe('Bunny Media Storage', () => {
       throw new TypeError('Expected GetObject')
     }
     expect(command.input).toEqual({
-      Bucket: 'cali-media-renditions-preview',
+      Bucket: 'cali-media-preview',
       Key: key,
     })
   })
 
-  it('deletes Originals and Renditions individually from their own zones', async () => {
-    const originalsSend = vi.fn(async (_command: unknown) => ({}))
-    const renditionsSend = vi.fn(async (_command: unknown) => ({}))
+  it('deletes Originals and Renditions individually from the Media zone', async () => {
+    const send = vi.fn(async (_command: unknown) => ({}))
     const storage = createBunnyStorage(config, {
-      originalsClient: { send: originalsSend } as never,
-      renditionsClient: { send: renditionsSend } as never,
+      client: { send } as never,
     })
 
     await storage.deleteOriginal('originals/asset_01/revision_01.heic')
     await storage.deleteRendition('renditions/asset_01/photo-1600-v1.jpg')
 
-    const originalCommand = originalsSend.mock.calls[0]?.[0]
-    const renditionCommand = renditionsSend.mock.calls[0]?.[0]
+    const originalCommand = send.mock.calls[0]?.[0]
+    const renditionCommand = send.mock.calls[1]?.[0]
     expect(originalCommand).toBeInstanceOf(DeleteObjectCommand)
     expect(renditionCommand).toBeInstanceOf(DeleteObjectCommand)
     if (
@@ -382,11 +442,11 @@ describe('Bunny Media Storage', () => {
       throw new TypeError('Expected DeleteObject commands')
     }
     expect(originalCommand.input).toEqual({
-      Bucket: 'cali-media-originals-preview',
+      Bucket: 'cali-media-preview',
       Key: 'originals/asset_01/revision_01.heic',
     })
     expect(renditionCommand.input).toEqual({
-      Bucket: 'cali-media-renditions-preview',
+      Bucket: 'cali-media-preview',
       Key: 'renditions/asset_01/photo-1600-v1.jpg',
     })
   })
@@ -429,7 +489,7 @@ describe('Bunny Media Storage', () => {
   it('exposes a partial Rendition removal when deletion succeeds but purge fails', async () => {
     const send = vi.fn(async (_command: unknown) => ({}))
     const storage = createBunnyStorage(config, {
-      renditionsClient: { send } as never,
+      client: { send } as never,
       fetch: vi.fn(async () => new Response(null, { status: 503 })),
     })
     const key = 'renditions/asset_01/photo-1600-v1.jpg'

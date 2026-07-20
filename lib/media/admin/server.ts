@@ -33,7 +33,7 @@ import { createMediaPurgeService } from '../purge/service'
 import { createMediaReconciliationRepository } from '../reconciliation/repository'
 import { createMediaReconciliationService } from '../reconciliation/service'
 import { createPublicRenditionUrl } from '../storage/bunny'
-import { parseBunnyRenditionCdnEnv } from '../storage/config'
+import { parseBunnyMediaCdnEnv } from '../storage/config'
 import { getMediaStorage } from '../storage/server'
 
 let services: ReturnType<typeof createServices> | undefined
@@ -57,7 +57,7 @@ function createCatalogServices(publicRenditionUrl: (key: string) => string) {
 }
 
 function createPageServices() {
-  const cdnBaseUrl = parseBunnyRenditionCdnEnv(process.env)
+  const cdnBaseUrl = parseBunnyMediaCdnEnv(process.env)
   const { review, selection } = createCatalogServices(
     createPublicRenditionUrl(cdnBaseUrl),
   )

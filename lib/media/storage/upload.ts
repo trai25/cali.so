@@ -96,7 +96,7 @@ async function readBoundedBody(request: Request, maximumBytes: number) {
 /**
  * Bounded server-side transfer boundary for an owner-authorized Upload Intent.
  * Each request stays below the hosting platform body limit, and the caller
- * resolves the private Original key without exposing Bunny credentials.
+ * resolves the protected Original key without exposing Bunny credentials.
  */
 export async function storeOriginalChunkFromSameOriginRequest({
   request,

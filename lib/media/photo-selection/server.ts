@@ -10,7 +10,7 @@ import {
   type PublicPhotoSelection,
 } from './repository'
 import { devPhotoSelectionFixture } from './dev-fixtures'
-import { parseBunnyRenditionCdnEnv } from '../storage/config'
+import { parseBunnyMediaCdnEnv } from '../storage/config'
 
 type CachedPublicPhoto = Omit<
   PublicPhotoSelection['items'][number],
@@ -73,7 +73,7 @@ async function readPublishedPhotoSelection() {
   cacheTag(PUBLIC_PHOTO_SELECTION_CACHE_TAG)
   cacheLife('max')
   try {
-    const cdnBaseUrl = parseBunnyRenditionCdnEnv(process.env)
+    const cdnBaseUrl = parseBunnyMediaCdnEnv(process.env)
     return await createPublicPhotoSelectionRepository(
       () => getDatabase(),
       cdnBaseUrl,

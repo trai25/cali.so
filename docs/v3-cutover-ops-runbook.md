@@ -183,13 +183,12 @@ add AMA_EMAIL_FROM
 add TENCENT_MEETING_MCP_URL
 add TENCENT_MEETING_MCP_TOKEN
 
-# Bunny media storage (production zones, not the preview zones).
+# Bunny media storage. Use the existing Rendition zone as the one production
+# Media zone; its Pull Zone blocks /originals/* and /transfer-chunks/*.
 add BUNNY_MEDIA_REGION
-add BUNNY_ORIGINALS_ZONE
-add BUNNY_ORIGINALS_PASSWORD
-add BUNNY_RENDITIONS_ZONE
-add BUNNY_RENDITIONS_PASSWORD
-add BUNNY_RENDITIONS_CDN_URL
+add BUNNY_MEDIA_ZONE
+add BUNNY_MEDIA_PASSWORD
+add BUNNY_MEDIA_CDN_URL
 add BUNNY_CDN_API_KEY
 
 # Media enrichment. Both capabilities are enabled by default.

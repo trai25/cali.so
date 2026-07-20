@@ -10,13 +10,9 @@ import {
 
 const config = {
   region: 'sg' as const,
-  originals: {
-    zone: 'cali-media-originals-preview',
-    password: 'originals-zone-password',
-  },
-  renditions: {
-    zone: 'cali-media-renditions-preview',
-    password: 'renditions-zone-password',
+  media: {
+    zone: 'cali-media-preview',
+    password: 'media-zone-password',
     cdnBaseUrl: new URL('https://media-preview.cali.so/'),
   },
   cdnApiKey: 'preview-account-api-key',
@@ -37,57 +33,92 @@ const contractExpectations = {
 
 function accountFetch(options?: {
   forceSsl?: boolean
-  originalsPullZone?: boolean
+  invalidMatching?: 'rule-match-none' | 'conditional-match-all' | 'pattern-match-none'
+  missingProtectedPath?: 'originals' | 'transfer-chunks'
   ttl?: number
 }) {
   const ttl = options?.ttl ?? contractExpectations.edgeTtlSeconds
+  const pullZone = {
+    Id: 404,
+    Name: 'media-preview',
+    OriginUrl: 'https://storage.bunnycdn.com/cali-media-preview',
+    Enabled: true,
+    Suspended: false,
+    StorageZoneId: 202,
+    Hostnames: [
+      {
+        Value: 'media-preview.cali.so',
+        ForceSSL: options?.forceSsl ?? true,
+      },
+    ],
+    CacheControlMaxAgeOverride: ttl,
+    CacheControlPublicMaxAgeOverride: ttl,
+    EdgeRules: [
+      ...(options?.missingProtectedPath === 'originals'
+        ? []
+        : [
+            {
+              ActionType: 4,
+              TriggerMatchingType:
+                options?.invalidMatching === 'rule-match-none'
+                  ? 2
+                  : options?.invalidMatching === 'conditional-match-all'
+                    ? 1
+                    : 0,
+              Enabled: true,
+              Triggers: [
+                {
+                  Type: 0,
+                  PatternMatches: ['/originals/*'],
+                  PatternMatchingType:
+                    options?.invalidMatching === 'pattern-match-none'
+                      ? 2
+                      : 0,
+                },
+                ...(options?.invalidMatching === 'conditional-match-all'
+                  ? [
+                      {
+                        Type: 1,
+                        PatternMatches: ['required-header-value'],
+                        PatternMatchingType: 0,
+                      },
+                    ]
+                  : []),
+              ],
+            },
+          ]),
+      ...(options?.missingProtectedPath === 'transfer-chunks'
+        ? []
+        : [
+            {
+              ActionType: 4,
+              TriggerMatchingType: 0,
+              Enabled: true,
+              Triggers: [
+                {
+                  Type: 0,
+                  PatternMatches: ['/transfer-chunks/*'],
+                  PatternMatchingType: 0,
+                },
+              ],
+            },
+          ]),
+    ],
+  }
+  const { EdgeRules: _edgeRules, ...listedPullZone } = pullZone
   return vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
     expect(init?.headers).toEqual({ AccessKey: 'preview-account-api-key' })
     const url = new URL(String(input))
     if (url.pathname === '/storagezone') {
       return Response.json([
-        { Id: 101, Name: 'cali-media-originals-preview', Deleted: false },
-        { Id: 202, Name: 'cali-media-renditions-preview', Deleted: false },
+        { Id: 202, Name: 'cali-media-preview', Deleted: false },
       ])
     }
     if (url.pathname === '/pullzone') {
-      return Response.json({
-        Items: [
-          ...(options?.originalsPullZone
-            ? [
-                {
-                  Id: 303,
-                  Name: 'unsafe-originals-preview',
-                  OriginUrl:
-                    'https://storage.bunnycdn.com/cali-media-originals-preview',
-                  Enabled: true,
-                  Suspended: false,
-                  StorageZoneId: 101,
-                  Hostnames: [{ Value: 'originals-preview.cali.so' }],
-                  CacheControlMaxAgeOverride: ttl,
-                  CacheControlPublicMaxAgeOverride: ttl,
-                },
-              ]
-            : []),
-          {
-            Id: 404,
-            Name: 'media-renditions-preview',
-            OriginUrl:
-              'https://storage.bunnycdn.com/cali-media-renditions-preview',
-            Enabled: true,
-            Suspended: false,
-            StorageZoneId: 202,
-            Hostnames: [
-              {
-                Value: 'media-preview.cali.so',
-                ForceSSL: options?.forceSsl ?? true,
-              },
-            ],
-            CacheControlMaxAgeOverride: ttl,
-            CacheControlPublicMaxAgeOverride: ttl,
-          },
-        ],
-      })
+      return Response.json({ Items: [listedPullZone] })
+    }
+    if (url.pathname === '/pullzone/404') {
+      return Response.json(pullZone)
     }
     return new Response(null, { status: 404 })
   })
@@ -133,41 +164,40 @@ describe('Bunny Media Storage live contract guards', () => {
     expect(() =>
       assertNonProductionBunnyContract(contractEnvironment, {
         ...config,
-        originals: { ...config.originals, zone: 'cali-media-originals-prod' },
+        media: { ...config.media, zone: 'cali-media-prod' },
       }),
-    ).toThrow('BUNNY_ORIGINALS_ZONE')
+    ).toThrow('BUNNY_MEDIA_ZONE')
 
     expect(() =>
       assertNonProductionBunnyContract(contractEnvironment, {
         ...config,
-        renditions: {
-          ...config.renditions,
+        media: {
+          ...config.media,
           cdnBaseUrl: new URL('https://media.cali.so'),
         },
       }),
-    ).toThrow('BUNNY_RENDITIONS_CDN_URL')
+    ).toThrow('BUNNY_MEDIA_CDN_URL')
   })
 })
 
 describe('Bunny Media Storage account contract', () => {
-  it('verifies Original privacy and the Rendition Pull Zone cache policy', async () => {
+  it('verifies the Media zone and Pull Zone cache policy', async () => {
     await expect(
       verifyBunnyAccountContract(config, contractExpectations, accountFetch()),
     ).resolves.toEqual({
-        originalsZoneId: 101,
-        renditionsZoneId: 202,
-        renditionsPullZoneId: 404,
+        mediaZoneId: 202,
+        mediaPullZoneId: 404,
       })
   })
 
-  it('rejects an Original Storage Zone attached to a Pull Zone', async () => {
-    await expect(
-      verifyBunnyAccountContract(
-        config,
-        contractExpectations,
-        accountFetch({ originalsPullZone: true }),
-      ),
-    ).rejects.toThrow('Original Storage Zone')
+  it('loads the full Pull Zone before verifying protected paths', async () => {
+    const request = accountFetch()
+
+    await verifyBunnyAccountContract(config, contractExpectations, request)
+
+    expect(
+      request.mock.calls.map(([input]) => new URL(String(input)).pathname),
+    ).toContain('/pullzone/404')
   })
 
   it('rejects an insufficient browser or edge TTL', async () => {
@@ -180,7 +210,37 @@ describe('Bunny Media Storage account contract', () => {
     ).rejects.toThrow('cache contract')
   })
 
-  it('requires HTTPS enforcement on the public Rendition hostname', async () => {
+  it.each(['originals', 'transfer-chunks'] as const)(
+    'requires a Block Request rule for /%s/*',
+    async (missingProtectedPath) => {
+      await expect(
+        verifyBunnyAccountContract(
+          config,
+          contractExpectations,
+          accountFetch({ missingProtectedPath }),
+        ),
+      ).rejects.toThrow('protected path contract')
+    },
+  )
+
+  it.each([
+    'rule-match-none',
+    'conditional-match-all',
+    'pattern-match-none',
+  ] as const)(
+    'rejects a protected-path rule with %s semantics',
+    async (invalidMatching) => {
+      await expect(
+        verifyBunnyAccountContract(
+          config,
+          contractExpectations,
+          accountFetch({ invalidMatching }),
+        ),
+      ).rejects.toThrow('protected path contract')
+    },
+  )
+
+  it('requires HTTPS enforcement on the public Media hostname', async () => {
     await expect(
       verifyBunnyAccountContract(
         config,
