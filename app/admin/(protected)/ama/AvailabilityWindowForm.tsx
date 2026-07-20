@@ -11,6 +11,7 @@ import {
 } from '~/components/ui/select'
 import { T } from '~/lib/i18n'
 import { localize, useLocale } from '~/lib/locale-client'
+import { cn } from '~/lib/utils'
 
 export type AvailabilityWindowViewModel = {
   id: number
@@ -21,7 +22,9 @@ export type AvailabilityWindowViewModel = {
 
 type AvailabilityWindowFormProps = {
   window?: AvailabilityWindowViewModel
+  fixedWeekday?: number
   describedBy?: string
+  fixtureMode?: boolean
 }
 
 const weekdays = [
@@ -51,10 +54,14 @@ const endOptions = timeOptions(30, 24 * 60)
 
 export function AvailabilityWindowForm({
   window: availabilityWindow,
+  fixedWeekday,
   describedBy,
+  fixtureMode = false,
 }: AvailabilityWindowFormProps) {
   const locale = useLocale()
-  const [weekday, setWeekday] = useState(availabilityWindow?.isoWeekday ?? 1)
+  const [weekday, setWeekday] = useState(
+    fixedWeekday ?? availabilityWindow?.isoWeekday ?? 1,
+  )
   const [pending, setPending] = useState<'save' | 'delete' | null>(null)
   const [deleteArmed, setDeleteArmed] = useState(false)
   const deleteTimerRef = useRef<number | null>(null)
@@ -91,7 +98,16 @@ export function AvailabilityWindowForm({
       if (deleteTimerRef.current !== null) {
         window.clearTimeout(deleteTimerRef.current)
       }
+      if (fixtureMode) {
+        event.preventDefault()
+        setDeleteArmed(false)
+        return
+      }
       setPending('delete')
+      return
+    }
+    if (fixtureMode) {
+      event.preventDefault()
       return
     }
     setPending('save')
@@ -102,18 +118,27 @@ export function AvailabilityWindowForm({
       action="/api/admin/ama/availability"
       method="post"
       aria-describedby={describedBy}
-      className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end"
+      className={cn(
+        'grid gap-3 sm:items-end',
+        fixedWeekday === undefined
+          ? 'sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]'
+          : 'sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]',
+      )}
       onSubmit={handleSubmit}
     >
       {availabilityWindow && (
         <input type="hidden" name="id" value={availabilityWindow.id} />
       )}
 
+      {fixedWeekday !== undefined && (
+        <input type="hidden" name="weekday" value={fixedWeekday} />
+      )}
+
       {/* One localized Select replaces the CSS-swapped zh/en native pair. Its
           hidden input posts the direct `weekday` field, which the server
           parser reads ahead of the legacy weekdayZh/weekdayEn/weekdayOriginal
           trio. */}
-      <div className="grid gap-1.5 text-sm">
+      {fixedWeekday === undefined && <div className="grid gap-1.5 text-sm">
         <span className="text-muted-foreground">
           <T zh="星期" en="Day" />
         </span>
@@ -140,7 +165,7 @@ export function AvailabilityWindowForm({
             ))}
           </SelectContent>
         </Select>
-      </div>
+      </div>}
 
       <div className="grid gap-1.5 text-sm">
         <span className="text-muted-foreground">
@@ -214,7 +239,11 @@ export function AvailabilityWindowForm({
           loading={pending === 'save'}
           expandHitArea
         >
-          {isExisting ? <T zh="保存" en="Save" /> : <T zh="添加" en="Add" />}
+          {isExisting ? (
+            <T zh="保存" en="Save" />
+          ) : (
+            <T zh="添加时段" en="Add interval" />
+          )}
         </Button>
         {isExisting && (
           <Button

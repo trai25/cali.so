@@ -45,18 +45,28 @@ function AmaFallback() {
 async function AmaMenuLoader() {
   await requireOwnerPage('/admin/ama')
   const { availability, bookingAdmin, google } = getAmaAdminServices()
-  const [upcoming, attention, timeRequests, operations, windows, connection] =
+  const [upcoming, attention, timeRequests, operations, schedule, connection] =
     await Promise.all([
-      bookingAdmin.listBookings('upcoming'),
-      bookingAdmin.listBookings('attention'),
+      bookingAdmin.searchBookings({
+        view: 'upcoming',
+        page: 1,
+        pageSize: 1,
+        filters: {},
+      }),
+      bookingAdmin.searchBookings({
+        view: 'attention',
+        page: 1,
+        pageSize: 1,
+        filters: {},
+      }),
       bookingAdmin.listAlternateTimeRequests('new'),
       bookingAdmin.listUnresolvedOperations(),
-      availability.list(),
+      availability.getSchedule(),
       google.getConnection(),
     ])
 
   const needsAttention =
-    attention.length +
+    attention.total +
     timeRequests.length +
     operations.filter((operation) => operation.status === 'failed').length
   const calendarConnected =
@@ -66,7 +76,7 @@ async function AmaMenuLoader() {
     <div className="pb-10">
       <AmaHeader />
       <p className="mt-1 text-sm tabular-nums text-muted-foreground">
-        {upcoming.length} <T zh="场即将进行" en="upcoming" />
+        {upcoming.total} <T zh="场即将进行" en="upcoming" />
         {needsAttention > 0 && (
           <>
             {' · '}
@@ -87,7 +97,7 @@ async function AmaMenuLoader() {
               </>
             ) : (
               <>
-                {upcoming.length} <T zh="场即将进行" en="upcoming" />
+                {upcoming.total} <T zh="场即将进行" en="upcoming" />
               </>
             )
           }
@@ -97,7 +107,7 @@ async function AmaMenuLoader() {
           label={<T zh="设置" en="Settings" />}
           value={
             <>
-              {windows.length} <T zh="个时段" en="windows" />
+              {schedule.windows.length} <T zh="个时段" en="windows" />
               {' · '}
               {calendarConnected ? (
                 <T zh="日历已连接" en="calendar connected" />
@@ -107,6 +117,13 @@ async function AmaMenuLoader() {
             </>
           }
         />
+        {process.env.NODE_ENV === 'development' && (
+          <AdminMenuRow
+            href="/admin/ama/fixtures"
+            label={<T zh="演示数据" en="Fixture pages" />}
+            value={<T zh="仅限本地" en="local only" />}
+          />
+        )}
       </AdminMenu>
     </div>
   )

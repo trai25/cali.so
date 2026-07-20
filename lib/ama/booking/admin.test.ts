@@ -62,6 +62,25 @@ function fixture() {
 }
 
 describe('Booking admin listings', () => {
+  it('returns filtered pages with a real total', async () => {
+    const f = fixture()
+    const upcoming = await f.seed()
+
+    await expect(
+      f.service.searchBookings({
+        view: 'upcoming',
+        page: 1,
+        pageSize: 20,
+        filters: { guestEmail: upcoming.booking.guestEmail },
+      }),
+    ).resolves.toMatchObject({
+      total: 1,
+      page: 1,
+      pageSize: 20,
+      items: [expect.objectContaining({ id: upcoming.booking.id })],
+    })
+  })
+
   it('passes booking views and detail with events and operations through', async () => {
     const f = fixture()
     const upcoming = await f.seed()

@@ -12,6 +12,10 @@ const migrationUrls = {
     '../db/migrations/0011_ama_booking_system.sql',
     import.meta.url,
   ),
+  availabilityOverrides: new URL(
+    '../db/migrations/0013_ama_availability_overrides.sql',
+    import.meta.url,
+  ),
 }
 
 async function readMigration(url) {
@@ -104,6 +108,26 @@ test('AMA Booking migration adds the paid booking system with one exclusion guar
   assert.match(sql, /"manage_token_hash" varchar\(64\)/)
   assert.doesNotMatch(sql, /"manage_token"\s/)
 
+  assert.doesNotMatch(sql, /\b(drop|truncate)\s+table\b/)
+})
+
+test('AMA schedule migration adds replacing date overrides and a singleton time zone', async () => {
+  const sql = await readMigration(migrationUrls.availabilityOverrides)
+
+  assert.match(sql, /create table "ama_availability_settings"/)
+  assert.match(sql, /"id" = 1/)
+  assert.match(sql, /"time_zone" varchar\(64\) default 'asia\/taipei' not null/)
+  assert.match(sql, /create table "ama_availability_overrides"/)
+  assert.match(sql, /"local_date" date not null/)
+  assert.match(sql, /"ama_availability_overrides_local_date_uidx"/)
+  assert.match(sql, /create table "ama_availability_override_windows"/)
+  assert.match(sql, /on delete cascade/)
+  assert.match(sql, /"start_minute" between 0 and 1439/)
+  assert.match(sql, /"end_minute" between 1 and 1440/)
+  assert.match(
+    sql,
+    /"start_minute" < "ama_availability_override_windows"\."end_minute"/,
+  )
   assert.doesNotMatch(sql, /\b(drop|truncate)\s+table\b/)
 })
 

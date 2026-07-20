@@ -1,15 +1,32 @@
 'use client'
 
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from 'react'
 
 import { SectionTag } from '~/components/section-tag'
 import { Button } from '~/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from '~/components/ui/select'
 import { T } from '~/lib/i18n'
+import { localize, useLocale } from '~/lib/locale-client'
 
 import {
   AvailabilityWindowForm,
   type AvailabilityWindowViewModel,
 } from './AvailabilityWindowForm'
+import {
+  DateOverrideForm,
+  type DateOverrideViewModel,
+} from './DateOverrideForm'
 
 export type { AvailabilityWindowViewModel } from './AvailabilityWindowForm'
 
@@ -38,38 +55,52 @@ export type PreviewSlotViewModel = {
 }
 
 export type AmaSettingsNotices = {
-  availability?: 'saved' | 'invalid' | 'failed'
+  availability?:
+    | 'saved'
+    | 'invalid'
+    | 'invalid-time-zone'
+    | 'invalid-override'
+    | 'invalid-copy'
+    | 'failed'
   calendar?: GoogleConnectionStatus
 }
 
 export type AmaSettingsProps = {
+  timeZone: string
   windows: readonly AvailabilityWindowViewModel[]
+  overrides: readonly DateOverrideViewModel[]
   googleConnection: GoogleConnectionViewModel
   previewSlots: readonly PreviewSlotViewModel[]
+  publicBookingUrl: string
   notices?: AmaSettingsNotices
+  fixtureMode?: boolean
 }
 
-const ownerTimeZone = 'Asia/Taipei'
 const previewLimit = 12
-const previewDateOptions: Intl.DateTimeFormatOptions = {
-  timeZone: ownerTimeZone,
-  weekday: 'short',
-  month: 'short',
-  day: 'numeric',
+
+const weekdays = [
+  { value: 1, zh: '星期一', en: 'Monday' },
+  { value: 2, zh: '星期二', en: 'Tuesday' },
+  { value: 3, zh: '星期三', en: 'Wednesday' },
+  { value: 4, zh: '星期四', en: 'Thursday' },
+  { value: 5, zh: '星期五', en: 'Friday' },
+  { value: 6, zh: '星期六', en: 'Saturday' },
+  { value: 7, zh: '星期日', en: 'Sunday' },
+] as const
+
+function listTimeZones(selected: string) {
+  const zones =
+    typeof Intl.supportedValuesOf === 'function'
+      ? Intl.supportedValuesOf('timeZone')
+      : []
+  return zones.includes(selected) ? zones : [selected, ...zones]
 }
-const previewTimeOptions: Intl.DateTimeFormatOptions = {
-  timeZone: ownerTimeZone,
-  hour: '2-digit',
-  minute: '2-digit',
-  hour12: false,
-}
-const previewDateFormatters = {
-  zh: new Intl.DateTimeFormat('zh-CN', previewDateOptions),
-  en: new Intl.DateTimeFormat('en-US', previewDateOptions),
-}
-const previewTimeFormatters = {
-  zh: new Intl.DateTimeFormat('zh-CN', previewTimeOptions),
-  en: new Intl.DateTimeFormat('en-US', previewTimeOptions),
+
+function formatMinute(minute: number) {
+  if (minute === 24 * 60) return '24:00'
+  return `${Math.floor(minute / 60)
+    .toString()
+    .padStart(2, '0')}:${(minute % 60).toString().padStart(2, '0')}`
 }
 
 function QueryNotices({
@@ -91,6 +122,18 @@ function QueryNotices({
     invalid: {
       zh: '这个时段无效。请确认星期和起止时间。',
       en: 'That window is invalid. Check its day and start and end times.',
+    },
+    'invalid-time-zone': {
+      zh: '请选择有效的 IANA 时区。',
+      en: 'Choose a valid IANA time zone.',
+    },
+    'invalid-override': {
+      zh: '日期覆盖无效。请检查日期和每个时段。',
+      en: 'That date override is invalid. Check the date and every interval.',
+    },
+    'invalid-copy': {
+      zh: '请选择至少一个要复制到的星期。',
+      en: 'Choose at least one weekday to copy these hours to.',
     },
     failed: {
       zh: '暂时无法保存时段，请重试。',
@@ -123,8 +166,8 @@ function QueryNotices({
     : null
   const calendar = notices.calendar ? calendarCopy[notices.calendar] : null
   const isAlert =
-    notices.availability === 'invalid' ||
-    notices.availability === 'failed' ||
+    (notices.availability !== undefined &&
+      notices.availability !== 'saved') ||
     (notices.calendar !== undefined &&
       notices.calendar !== 'connected' &&
       notices.calendar !== 'disconnected')
@@ -144,14 +187,621 @@ function QueryNotices({
   )
 }
 
+function ScheduleTimeZoneForm({
+  timeZone,
+  describedBy,
+  fixtureMode,
+}: {
+  timeZone: string
+  describedBy?: string
+  fixtureMode: boolean
+}) {
+  const locale = useLocale()
+  const [selected, setSelected] = useState(timeZone)
+  const [pending, setPending] = useState(false)
+  const timeZones = useMemo(() => listTimeZones(timeZone), [timeZone])
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    if (fixtureMode) {
+      event.preventDefault()
+      return
+    }
+    setPending(true)
+  }
+
+  return (
+    <form
+      action="/api/admin/ama/availability"
+      method="post"
+      aria-describedby={describedBy}
+      className="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"
+      onSubmit={submit}
+    >
+      <input type="hidden" name="intent" value="set-time-zone" />
+      <div className="grid gap-1.5 text-sm">
+        <span className="text-muted-foreground">
+          <T zh="时区" en="Time zone" />
+        </span>
+        <Select
+          name="timeZone"
+          value={selected}
+          onValueChange={setSelected}
+          readOnly={pending}
+        >
+          <SelectTrigger
+            aria-label={localize(locale, '日程时区', 'Schedule time zone')}
+            className="w-full rounded-[2px] font-mono text-[13px]"
+            disabled={pending}
+          />
+          <SelectContent>
+            {timeZones.map((zone, index) => (
+              <SelectItem
+                key={zone}
+                value={zone}
+                index={index}
+                className="font-mono text-[13px]"
+              >
+                {zone}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <Button
+        type="submit"
+        variant="primary"
+        size="lg"
+        disabled={pending || selected === timeZone}
+        loading={pending}
+        expandHitArea
+      >
+        <T zh="保存时区" en="Save time zone" />
+      </Button>
+    </form>
+  )
+}
+
+function WeekdaySchedule({
+  weekday,
+  windows,
+  describedBy,
+  fixtureMode,
+}: {
+  weekday: (typeof weekdays)[number]
+  windows: readonly AvailabilityWindowViewModel[]
+  describedBy?: string
+  fixtureMode: boolean
+}) {
+  const [adding, setAdding] = useState(false)
+  const [copying, setCopying] = useState(false)
+  const [pending, setPending] = useState(false)
+  const enabled = windows.length > 0
+
+  function mutation(event: FormEvent<HTMLFormElement>) {
+    if (fixtureMode) {
+      event.preventDefault()
+      return
+    }
+    setPending(true)
+  }
+
+  return (
+    <section
+      className="hairline-top py-4"
+      aria-labelledby={`weekday-${weekday.value}`}
+    >
+      <div className="flex min-h-11 flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-baseline gap-3">
+          <h3 id={`weekday-${weekday.value}`} className="text-sm font-medium">
+            <T zh={weekday.zh} en={weekday.en} />
+          </h3>
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {enabled ? (
+              <T
+                zh={`${windows.length} 个时段`}
+                en={`${windows.length} ${windows.length === 1 ? 'interval' : 'intervals'}`}
+              />
+            ) : (
+              <T zh="关闭" en="Off" />
+            )}
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-1">
+          {enabled && (
+            <>
+              <Button
+                type="button"
+                variant="ghost"
+                size="lg"
+                active={adding}
+                disabled={pending}
+                aria-expanded={adding}
+                onClick={() => {
+                  setAdding((value) => !value)
+                  setCopying(false)
+                }}
+                expandHitArea
+              >
+                <T zh="添加时段" en="Add interval" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="lg"
+                active={copying}
+                disabled={pending}
+                aria-expanded={copying}
+                onClick={() => {
+                  setCopying((value) => !value)
+                  setAdding(false)
+                }}
+                expandHitArea
+              >
+                <T zh="复制" en="Copy" />
+              </Button>
+            </>
+          )}
+          <form
+            action="/api/admin/ama/availability"
+            method="post"
+            onSubmit={mutation}
+          >
+            <input type="hidden" name="intent" value="set-weekday" />
+            <input type="hidden" name="weekday" value={weekday.value} />
+            <input type="hidden" name="enabled" value={String(!enabled)} />
+            <Button
+              type="submit"
+              variant={enabled ? 'tertiary' : 'primary'}
+              size="lg"
+              aria-pressed={enabled}
+              disabled={pending}
+              loading={pending}
+              expandHitArea
+            >
+              {enabled ? <T zh="开启" en="On" /> : <T zh="关闭" en="Off" />}
+            </Button>
+          </form>
+        </div>
+      </div>
+
+      {enabled && (
+        <div className="mt-2 grid gap-3">
+          {windows.map((window) => (
+            <AvailabilityWindowForm
+              key={window.id}
+              window={window}
+              fixedWeekday={weekday.value}
+              describedBy={describedBy}
+              fixtureMode={fixtureMode}
+            />
+          ))}
+        </div>
+      )}
+
+      {adding && (
+        <div className="mt-4 rounded-[2px] bg-surface-1 px-4 py-4">
+          <AvailabilityWindowForm
+            fixedWeekday={weekday.value}
+            describedBy={describedBy}
+            fixtureMode={fixtureMode}
+          />
+        </div>
+      )}
+
+      {copying && (
+        <form
+          action="/api/admin/ama/availability"
+          method="post"
+          aria-describedby={describedBy}
+          className="mt-4 rounded-[2px] bg-surface-1 px-4 py-4"
+          onSubmit={mutation}
+        >
+          <input type="hidden" name="intent" value="copy-weekday" />
+          <input type="hidden" name="weekday" value={weekday.value} />
+          <fieldset disabled={pending}>
+            <legend className="text-sm text-muted-foreground">
+              <T zh="复制到" en="Copy to" />
+            </legend>
+            <div className="mt-2 grid grid-cols-2 gap-1 sm:grid-cols-3">
+              {weekdays
+                .filter((target) => target.value !== weekday.value)
+                .map((target) => (
+                  <label
+                    key={target.value}
+                    className="flex min-h-11 cursor-pointer items-center gap-2 rounded-[2px] px-2 text-sm hover:bg-hover"
+                  >
+                    <input
+                      type="checkbox"
+                      name="targetWeekday"
+                      value={target.value}
+                      className="size-4 accent-current"
+                    />
+                    <T zh={target.zh} en={target.en} />
+                  </label>
+                ))}
+            </div>
+          </fieldset>
+          <div className="mt-3 flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="lg"
+              disabled={pending}
+              onClick={() => setCopying(false)}
+              expandHitArea
+            >
+              <T zh="取消" en="Cancel" />
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              disabled={pending}
+              loading={pending}
+              expandHitArea
+            >
+              <T zh="复制时段" en="Copy intervals" />
+            </Button>
+          </div>
+        </form>
+      )}
+    </section>
+  )
+}
+
+function DateOverrideItem({
+  override,
+  describedBy,
+  fixtureMode,
+}: {
+  override: DateOverrideViewModel
+  describedBy?: string
+  fixtureMode: boolean
+}) {
+  const [editing, setEditing] = useState(false)
+  const [deleteArmed, setDeleteArmed] = useState(false)
+  const [pending, setPending] = useState(false)
+  const timerRef = useRef<number | null>(null)
+
+  useEffect(
+    () => () => {
+      if (timerRef.current !== null) window.clearTimeout(timerRef.current)
+    },
+    [],
+  )
+
+  function remove(event: FormEvent<HTMLFormElement>) {
+    if (!deleteArmed) {
+      event.preventDefault()
+      setDeleteArmed(true)
+      timerRef.current = window.setTimeout(() => setDeleteArmed(false), 4000)
+      return
+    }
+    if (fixtureMode) {
+      event.preventDefault()
+      setDeleteArmed(false)
+      return
+    }
+    setPending(true)
+  }
+
+  return (
+    <li className="py-4">
+      <div className="flex min-h-11 flex-wrap items-center justify-between gap-3">
+        <div>
+          <time
+            dateTime={override.localDate}
+            className="font-mono text-sm tabular-nums"
+          >
+            {override.localDate}
+          </time>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            {override.intervals.length === 0 ? (
+              <T zh="关闭预约" en="Closed" />
+            ) : (
+              override.intervals.map((interval, index) => (
+                <span key={`${interval.startMinute}-${interval.endMinute}`}>
+                  {index > 0 && ', '}
+                  {formatMinute(interval.startMinute)}–
+                  {formatMinute(interval.endMinute)}
+                </span>
+              ))
+            )}
+          </p>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="lg"
+            active={editing}
+            disabled={pending}
+            aria-expanded={editing}
+            onClick={() => setEditing((value) => !value)}
+            expandHitArea
+          >
+            <T zh="编辑" en="Edit" />
+          </Button>
+          <form
+            action="/api/admin/ama/availability"
+            method="post"
+            aria-describedby={describedBy}
+            onSubmit={remove}
+          >
+            <input type="hidden" name="intent" value="delete-override" />
+            <input type="hidden" name="localDate" value={override.localDate} />
+            <Button
+              type="submit"
+              variant="ghost"
+              size="lg"
+              destructive={deleteArmed}
+              disabled={pending}
+              loading={pending}
+              expandHitArea
+            >
+              {deleteArmed ? (
+                <T zh="确认删除？" en="Confirm delete?" />
+              ) : (
+                <T zh="删除" en="Delete" />
+              )}
+            </Button>
+          </form>
+        </div>
+      </div>
+      {editing && (
+        <div className="mt-3">
+          <DateOverrideForm
+            override={override}
+            describedBy={describedBy}
+            fixtureMode={fixtureMode}
+            onCancel={() => setEditing(false)}
+          />
+        </div>
+      )}
+    </li>
+  )
+}
+
+function DateOverridesSection({
+  overrides,
+  describedBy,
+  fixtureMode,
+}: {
+  overrides: readonly DateOverrideViewModel[]
+  describedBy?: string
+  fixtureMode: boolean
+}) {
+  const [adding, setAdding] = useState(false)
+
+  return (
+    <section
+      className="mt-8 hairline-top pt-6"
+      aria-labelledby="overrides-heading"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="max-w-md">
+          <SectionTag index={2} id="overrides-heading">
+            <T zh="日期覆盖" en="Date overrides" />
+          </SectionTag>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            <T
+              zh="某一天可以完全关闭，也可以用自定义时段替代每周安排。"
+              en="Close a date or replace its weekly hours with custom intervals."
+            />
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="primary"
+          size="lg"
+          active={adding}
+          aria-expanded={adding}
+          onClick={() => setAdding((value) => !value)}
+          expandHitArea
+        >
+          <T zh="添加覆盖" en="Add override" />
+        </Button>
+      </div>
+
+      {adding && (
+        <div className="mt-4">
+          <DateOverrideForm
+            describedBy={describedBy}
+            fixtureMode={fixtureMode}
+            onCancel={() => setAdding(false)}
+          />
+        </div>
+      )}
+
+      {overrides.length === 0 ? (
+        <p className="mt-4 text-sm leading-6 text-muted-foreground">
+          <T
+            zh="没有日期覆盖。每一天都会使用每周安排。"
+            en="No date overrides. Every date follows the weekly schedule."
+          />
+        </p>
+      ) : (
+        <ul className="mt-3 divide-y divide-border/70">
+          {overrides.map((override) => (
+            <DateOverrideItem
+              key={override.id}
+              override={override}
+              describedBy={describedBy}
+              fixtureMode={fixtureMode}
+            />
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+function ReadinessSection({
+  windows,
+  overrides,
+  connection,
+  slots,
+  publicBookingUrl,
+}: {
+  windows: readonly AvailabilityWindowViewModel[]
+  overrides: readonly DateOverrideViewModel[]
+  connection: GoogleConnectionViewModel
+  slots: readonly PreviewSlotViewModel[]
+  publicBookingUrl: string
+}) {
+  const [copied, setCopied] = useState(false)
+  const copiedTimerRef = useRef<number | null>(null)
+  const hasHours =
+    windows.length > 0 ||
+    overrides.some((override) => override.intervals.length > 0)
+
+  useEffect(
+    () => () => {
+      if (copiedTimerRef.current !== null) {
+        window.clearTimeout(copiedTimerRef.current)
+      }
+    },
+    [],
+  )
+
+  const calendarFailures: Record<Exclude<GoogleConnectionStatus, 'connected'>, {
+    zh: string
+    en: string
+  }> = {
+    disconnected: {
+      zh: '连接 Google 日历后，才能在发布开放时间前检查冲突。',
+      en: 'Connect Google Calendar to check conflicts before publishing open times.',
+    },
+    expired: {
+      zh: 'Google 连接已过期。请重新连接后再开放预约。',
+      en: 'The Google connection expired. Reconnect before opening bookings.',
+    },
+    revoked: {
+      zh: 'Google 已撤销访问权限。请重新连接后再开放预约。',
+      en: 'Google access was revoked. Reconnect before opening bookings.',
+    },
+    'denied-scope': {
+      zh: '缺少事件和忙闲权限。重新连接并允许两项权限。',
+      en: 'Event and free/busy permissions are missing. Reconnect and allow both.',
+    },
+    unavailable: {
+      zh: '目前无法检查 Google 日历。恢复连接前不会发布开放时间。',
+      en: 'Google Calendar cannot be checked. Open times stay unpublished until it recovers.',
+    },
+  }
+
+  const checks = [
+    hasHours
+      ? {
+          ready: true,
+          zh: '至少有一个可预约时段。',
+          en: 'At least one availability interval is configured.',
+        }
+      : {
+          ready: false,
+          zh: '开启至少一天，或添加带自定义时段的日期覆盖。',
+          en: 'Turn on at least one weekday or add a date override with custom hours.',
+        },
+    connection.status === 'connected'
+      ? {
+          ready: true,
+          zh: 'Google 日历已连接，可以检查冲突。',
+          en: 'Google Calendar is connected and conflict checks are available.',
+        }
+      : { ready: false, ...calendarFailures[connection.status] },
+    slots.length > 0
+      ? {
+          ready: true,
+          zh: `未来 30 天有 ${slots.length} 个开放时间。`,
+          en: `${slots.length} open ${slots.length === 1 ? 'time' : 'times'} in the next 30 days.`,
+        }
+      : {
+          ready: false,
+          zh:
+            connection.status === 'connected'
+              ? '未来 30 天没有开放时间。检查时段、日历冲突和提前预约规则。'
+              : '日历连接恢复后，才能生成开放时间预览。',
+          en:
+            connection.status === 'connected'
+              ? 'No open times in the next 30 days. Check hours, Calendar conflicts, and notice rules.'
+              : 'Open-time preview is blocked until Calendar is healthy.',
+        },
+  ]
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(publicBookingUrl)
+      setCopied(true)
+      if (copiedTimerRef.current !== null) {
+        window.clearTimeout(copiedTimerRef.current)
+      }
+      copiedTimerRef.current = window.setTimeout(() => setCopied(false), 1500)
+    } catch {
+      setCopied(false)
+    }
+  }
+
+  return (
+    <section
+      className="mt-8 hairline-top pt-6"
+      aria-labelledby="readiness-heading"
+    >
+      <SectionTag index={4} id="readiness-heading">
+        <T zh="上线检查" en="Readiness checklist" />
+      </SectionTag>
+      <ul className="mt-3 divide-y divide-border/70">
+        {checks.map((check, index) => (
+          <li key={index} className="flex min-h-11 items-start gap-3 py-3 text-sm">
+            <span
+              aria-hidden="true"
+              className={`mt-2 size-1.5 shrink-0 rounded-full ${
+                check.ready ? 'bg-foreground' : 'bg-destructive'
+              }`}
+            />
+            <span className={check.ready ? undefined : 'text-destructive'}>
+              <T zh={check.zh} en={check.en} />
+            </span>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <Button asChild variant="primary" size="lg" expandHitArea>
+          <a href={publicBookingUrl} target="_blank" rel="noreferrer">
+            <T zh="查看公开预约页" en="View public booking page" />
+          </a>
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="lg"
+          className="min-w-[7rem]"
+          onClick={() => void copyLink()}
+          expandHitArea
+        >
+          {copied ? (
+            <T zh="已复制" en="Copied" />
+          ) : (
+            <T zh="复制预约链接" en="Copy booking link" />
+          )}
+        </Button>
+        <span className="sr-only" role="status" aria-live="polite">
+          {copied ? <T zh="预约链接已复制" en="Booking link copied" /> : null}
+        </span>
+      </div>
+    </section>
+  )
+}
+
 function GoogleCalendarSection({
   connection,
   notice,
   restoreNoticeFocus,
+  fixtureMode,
 }: {
   connection: GoogleConnectionViewModel
   notice?: GoogleConnectionStatus
   restoreNoticeFocus: boolean
+  fixtureMode: boolean
 }) {
   const [pending, setPending] = useState<'connect' | 'disconnect' | null>(null)
   const [disconnectArmed, setDisconnectArmed] = useState(false)
@@ -168,6 +818,10 @@ function GoogleCalendarSection({
 
   function connect(event: FormEvent<HTMLFormElement>) {
     if (pending !== null) {
+      event.preventDefault()
+      return
+    }
+    if (fixtureMode) {
       event.preventDefault()
       return
     }
@@ -195,6 +849,11 @@ function GoogleCalendarSection({
     }
     if (disconnectTimerRef.current !== null) {
       window.clearTimeout(disconnectTimerRef.current)
+    }
+    if (fixtureMode) {
+      event.preventDefault()
+      setDisconnectArmed(false)
+      return
     }
     setPending('disconnect')
   }
@@ -238,7 +897,7 @@ function GoogleCalendarSection({
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-md">
-          <SectionTag index={2} id="google-heading">
+          <SectionTag index={3} id="google-heading">
             <T zh="Google 日历" en="Google Calendar" />
           </SectionTag>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -333,17 +992,47 @@ function GoogleCalendarSection({
   )
 }
 
-function SlotPreview({ slots }: { slots: readonly PreviewSlotViewModel[] }) {
+function SlotPreview({
+  slots,
+  timeZone,
+}: {
+  slots: readonly PreviewSlotViewModel[]
+  timeZone: string
+}) {
   const visibleSlots = slots.slice(0, previewLimit)
+  const formatters = useMemo(() => {
+    const dateOptions: Intl.DateTimeFormatOptions = {
+      timeZone,
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    }
+    const timeOptions: Intl.DateTimeFormatOptions = {
+      timeZone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }
+    return {
+      date: {
+        zh: new Intl.DateTimeFormat('zh-CN', dateOptions),
+        en: new Intl.DateTimeFormat('en-US', dateOptions),
+      },
+      time: {
+        zh: new Intl.DateTimeFormat('zh-CN', timeOptions),
+        en: new Intl.DateTimeFormat('en-US', timeOptions),
+      },
+    }
+  }, [timeZone])
 
   return (
     <section className="mt-8 hairline-top pt-6" aria-labelledby="preview-heading">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <SectionTag index={3} id="preview-heading">
+        <SectionTag index={5} id="preview-heading">
           <T zh="开放时间预览" en="Open-time preview" />
         </SectionTag>
         <span className="text-sm text-muted-foreground tabular-nums">
-          Asia/Taipei · UTC+8
+          {timeZone}
         </span>
       </div>
 
@@ -367,14 +1056,14 @@ function SlotPreview({ slots }: { slots: readonly PreviewSlotViewModel[] }) {
                 >
                   <time dateTime={slot.startsAt}>
                     <T
-                      zh={previewDateFormatters.zh.format(startsAt)}
-                      en={previewDateFormatters.en.format(startsAt)}
+                      zh={formatters.date.zh.format(startsAt)}
+                      en={formatters.date.en.format(startsAt)}
                     />
                   </time>
                   <span className="text-muted-foreground tabular-nums">
                     <T
-                      zh={`${previewTimeFormatters.zh.format(startsAt)}–${previewTimeFormatters.zh.format(endsAt)}`}
-                      en={`${previewTimeFormatters.en.format(startsAt)}–${previewTimeFormatters.en.format(endsAt)}`}
+                      zh={`${formatters.time.zh.format(startsAt)}–${formatters.time.zh.format(endsAt)}`}
+                      en={`${formatters.time.en.format(startsAt)}–${formatters.time.en.format(endsAt)}`}
                     />
                   </span>
                 </li>
@@ -395,15 +1084,21 @@ function SlotPreview({ slots }: { slots: readonly PreviewSlotViewModel[] }) {
   )
 }
 
-// The scheduling settings live at the bottom of the AMA page: Availability
-// Windows and the Google Calendar connection keep their native form-POST
-// contract (303 back to /admin/ama with ?availability= / ?calendar= notices).
 export function AmaSettings({
+  timeZone = 'Asia/Taipei',
   windows,
+  overrides = [],
   googleConnection,
   previewSlots,
+  publicBookingUrl = '/ama/book',
   notices,
+  fixtureMode = false,
 }: AmaSettingsProps) {
+  const availabilityError =
+    notices?.availability && notices.availability !== 'saved'
+      ? 'availability-notice'
+      : undefined
+
   return (
     <div className="pb-10">
       <p className="mt-1 text-sm leading-6 text-muted-foreground">
@@ -416,12 +1111,12 @@ export function AmaSettings({
       <section className="mt-6 hairline-top pt-6" aria-labelledby="availability-heading">
         <div className="max-w-md">
           <SectionTag index={1} id="availability-heading">
-            <T zh="每周可预约时段" en="Weekly Availability Windows" />
+            <T zh="每周安排" en="Weekly schedule" />
           </SectionTag>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
             <T
-              zh="所有时间都按 Asia/Taipei 解释。可以在同一天添加多个时段。"
-              en="All times are interpreted in Asia/Taipei. You can add multiple windows on one day."
+              zh={`所有每周时段和日期覆盖都按 ${timeZone} 解释。更改会立即保存。`}
+              en={`Weekly hours and date overrides use ${timeZone}. Each change saves immediately.`}
             />
           </p>
         </div>
@@ -435,44 +1130,48 @@ export function AmaSettings({
           restoreFocus={notices?.availability !== undefined}
         />
 
-        {windows.length > 0 && (
-          <div className="mt-5 grid gap-5">
-            {windows.map((window) => (
-              <AvailabilityWindowForm
-                key={window.id}
-                window={window}
-                describedBy={
-                  notices?.availability && notices.availability !== 'saved'
-                    ? 'availability-notice'
-                    : undefined
-                }
-              />
-            ))}
-          </div>
-        )}
+        <ScheduleTimeZoneForm
+          timeZone={timeZone}
+          describedBy={availabilityError}
+          fixtureMode={fixtureMode}
+        />
 
-        <div className="mt-6 hairline-top pt-5">
-          <p className="mb-3 text-sm text-muted-foreground">
-            <T zh="添加时段" en="Add a window" />
-          </p>
-          <AvailabilityWindowForm
-            describedBy={
-              notices?.availability && notices.availability !== 'saved'
-                ? 'availability-notice'
-                : undefined
-            }
-          />
+        <div className="mt-6">
+          {weekdays.map((weekday) => (
+            <WeekdaySchedule
+              key={weekday.value}
+              weekday={weekday}
+              windows={windows.filter(
+                (window) => window.isoWeekday === weekday.value,
+              )}
+              describedBy={availabilityError}
+              fixtureMode={fixtureMode}
+            />
+          ))}
         </div>
       </section>
 
+      <DateOverridesSection
+        overrides={overrides}
+        describedBy={availabilityError}
+        fixtureMode={fixtureMode}
+      />
       <GoogleCalendarSection
         connection={googleConnection}
         notice={notices?.calendar}
         restoreNoticeFocus={
           notices?.calendar !== undefined && notices.availability === undefined
         }
+        fixtureMode={fixtureMode}
       />
-      <SlotPreview slots={previewSlots} />
+      <ReadinessSection
+        windows={windows}
+        overrides={overrides}
+        connection={googleConnection}
+        slots={previewSlots}
+        publicBookingUrl={publicBookingUrl}
+      />
+      <SlotPreview slots={previewSlots} timeZone={timeZone} />
     </div>
   )
 }

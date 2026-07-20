@@ -512,6 +512,121 @@ describe('Booking repository', () => {
     expect(pastView.map((booking) => booking.id)).toEqual([past.booking.id])
   })
 
+  it('keeps future cancelled Bookings out of Upcoming', async () => {
+    const cancelled = await createBookingFixture(
+      '2026-08-10T02:00:00.000Z',
+      'cs_cancelled_future',
+    )
+    await repository.cancelBooking({
+      bookingId: cancelled.booking.id,
+      cancelledBy: 'owner',
+      now,
+    })
+
+    const upcoming = await repository.listBookings({ view: 'upcoming', now })
+
+    expect(upcoming.map((booking) => booking.id)).not.toContain(
+      cancelled.booking.id,
+    )
+  })
+
+  it('filters the admin booking search by identity, date, id, and status', async () => {
+    const first = await createBookingFixture(
+      '2026-08-10T02:00:00.000Z',
+      'cs_search_first',
+    )
+    const second = await createBookingFixture(
+      '2026-08-11T02:00:00.000Z',
+      'cs_search_second',
+    )
+    await getClient().query(
+      'update ama_bookings set guest_name = $1, guest_email = $2 where id = $3',
+      ['Grace Hopper', 'grace@example.com', second.booking.id],
+    )
+    await repository.transitionStatus({
+      bookingId: second.booking.id,
+      from: ['finalizing'],
+      to: 'confirmed',
+      now,
+    })
+
+    const result = await repository.searchBookings({
+      view: 'upcoming',
+      now,
+      page: 1,
+      pageSize: 20,
+      filters: {
+        guestName: 'grace',
+        guestEmail: 'GRACE@EXAMPLE.COM',
+        bookingId: second.booking.id.slice(0, 12),
+        status: 'confirmed',
+        startsFrom: new Date('2026-08-11T00:00:00.000Z'),
+        startsBefore: new Date('2026-08-12T00:00:00.000Z'),
+      },
+    })
+
+    expect(result).toMatchObject({ total: 1, page: 1, pageSize: 20 })
+    expect(result.items.map((booking) => booking.id)).toEqual([
+      second.booking.id,
+    ])
+    expect(result.items.map((booking) => booking.id)).not.toContain(
+      first.booking.id,
+    )
+  })
+
+  it('returns a real total independently from the requested page', async () => {
+    const first = await createBookingFixture(
+      '2026-08-10T02:00:00.000Z',
+      'cs_page_first',
+    )
+    const second = await createBookingFixture(
+      '2026-08-11T02:00:00.000Z',
+      'cs_page_second',
+    )
+    await createBookingFixture('2026-08-12T02:00:00.000Z', 'cs_page_third')
+
+    const result = await repository.searchBookings({
+      view: 'upcoming',
+      now,
+      page: 2,
+      pageSize: 1,
+      filters: {},
+    })
+
+    expect(result).toMatchObject({ total: 3, page: 2, pageSize: 1 })
+    expect(result.items.map((booking) => booking.id)).toEqual([
+      second.booking.id,
+    ])
+    expect(result.items.map((booking) => booking.id)).not.toContain(
+      first.booking.id,
+    )
+  })
+
+  it('lists cancelled Bookings in their own admin view', async () => {
+    const cancelled = await createBookingFixture(
+      '2026-08-10T02:00:00.000Z',
+      'cs_cancelled_view',
+    )
+    await repository.cancelBooking({
+      bookingId: cancelled.booking.id,
+      cancelledBy: 'guest',
+      now,
+    })
+
+    const result = await repository.searchBookings({
+      view: 'cancelled',
+      now,
+      page: 1,
+      pageSize: 20,
+      filters: {},
+    })
+
+    expect(result.total).toBe(1)
+    expect(result.items.map((booking) => booking.id)).toEqual([
+      cancelled.booking.id,
+    ])
+  })
+
   it('surfaces Bookings that need attention', async () => {
     const finalizing = await createBookingFixture('2026-08-10T02:00:00.000Z', 'cs_final')
     const rescheduling = await createBookingFixture('2026-08-11T02:00:00.000Z', 'cs_resch')

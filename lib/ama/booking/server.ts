@@ -30,7 +30,6 @@ import { bookingRepository } from './repository'
 import { createBookingService } from './service'
 
 const PROVIDER_REQUEST_TIMEOUT_MS = 8_000
-const OWNER_TIME_ZONE = 'Asia/Taipei'
 
 let services: ReturnType<typeof createServices> | undefined
 
@@ -122,7 +121,6 @@ function createServices() {
   const availability = createAvailabilityService({
     repository: availabilityRepository,
     calendar: google,
-    ownerTimeZone: OWNER_TIME_ZONE,
     clock,
   })
   const calendar: BookingCalendar = googleProvider

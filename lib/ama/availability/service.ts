@@ -3,6 +3,7 @@ import 'server-only'
 import { AMA_BOOKING_POLICY } from './policy'
 import {
   computeAvailableSlots,
+  type AvailabilityOverride,
   type AvailabilityWindow,
   type SlotHold,
   type TimeInterval,
@@ -15,10 +16,29 @@ export type AvailabilityWindowRecord = AvailabilityWindow & {
 }
 
 export interface AvailabilityRepository {
+  getTimeZone(): Promise<string>
+  setTimeZone(timeZone: string): Promise<string>
   list(): Promise<AvailabilityWindowRecord[]>
+  listOverrides(): Promise<AvailabilityOverrideRecord[]>
   create(input: AvailabilityWindow): Promise<AvailabilityWindowRecord>
   update(id: number, input: AvailabilityWindow): Promise<AvailabilityWindowRecord | null>
   delete(id: number): Promise<boolean>
+  saveOverride(
+    localDate: string,
+    intervals: AvailabilityOverride['intervals'],
+  ): Promise<AvailabilityOverrideRecord>
+  deleteOverride(localDate: string): Promise<boolean>
+  replaceWeekday(
+    isoWeekday: number,
+    intervals: AvailabilityOverride['intervals'],
+  ): Promise<void>
+  copyWeekday(sourceWeekday: number, targetWeekdays: readonly number[]): Promise<void>
+}
+
+export type AvailabilityOverrideRecord = AvailabilityOverride & {
+  id: number
+  createdAt: Date
+  updatedAt: Date
 }
 
 export type CalendarAvailabilityStatus =
@@ -39,7 +59,6 @@ export interface CalendarAvailability {
 type AvailabilityServiceDependencies = {
   repository: AvailabilityRepository
   calendar: CalendarAvailability
-  ownerTimeZone: string
   clock?: { now(): Date }
 }
 
@@ -47,6 +66,20 @@ export class InvalidAvailabilityWindowError extends Error {
   constructor() {
     super('Availability Window must be a same-day interval')
     this.name = 'InvalidAvailabilityWindowError'
+  }
+}
+
+export class InvalidAvailabilityTimeZoneError extends Error {
+  constructor() {
+    super('Schedule time zone must be a valid IANA time zone')
+    this.name = 'InvalidAvailabilityTimeZoneError'
+  }
+}
+
+export class InvalidAvailabilityOverrideError extends Error {
+  constructor() {
+    super('Date override must have a valid date and same-day intervals')
+    this.name = 'InvalidAvailabilityOverrideError'
   }
 }
 
@@ -67,17 +100,103 @@ function assertWindow(input: AvailabilityWindow) {
   }
 }
 
+function assertWeekday(isoWeekday: number) {
+  if (!Number.isInteger(isoWeekday) || isoWeekday < 1 || isoWeekday > 7) {
+    throw new InvalidAvailabilityWindowError()
+  }
+}
+
+function normalizeTimeZone(value: string) {
+  const timeZone = value.trim()
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone }).format()
+  } catch {
+    throw new InvalidAvailabilityTimeZoneError()
+  }
+  if (timeZone.length === 0 || timeZone.length > 64) {
+    throw new InvalidAvailabilityTimeZoneError()
+  }
+  return timeZone
+}
+
+function normalizeLocalDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new InvalidAvailabilityOverrideError()
+  }
+  const date = new Date(`${value}T00:00:00.000Z`)
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
+    throw new InvalidAvailabilityOverrideError()
+  }
+  return value
+}
+
+function assertIntervals(intervals: AvailabilityOverride['intervals']) {
+  try {
+    for (const interval of intervals) {
+      assertWindow({ ...interval, isoWeekday: 1 })
+    }
+  } catch {
+    throw new InvalidAvailabilityOverrideError()
+  }
+}
+
 export function createAvailabilityService(dependencies: AvailabilityServiceDependencies) {
   const {
     repository,
     calendar,
-    ownerTimeZone,
     clock = { now: () => new Date() },
   } = dependencies
 
   return {
     list() {
       return repository.list()
+    },
+
+    async getSchedule() {
+      const [timeZone, windows, overrides] = await Promise.all([
+        repository.getTimeZone(),
+        repository.list(),
+        repository.listOverrides(),
+      ])
+      return { timeZone, windows, overrides }
+    },
+
+    setTimeZone(timeZone: string) {
+      return repository.setTimeZone(normalizeTimeZone(timeZone))
+    },
+
+    async setWeekday(isoWeekday: number, enabled: boolean) {
+      assertWeekday(isoWeekday)
+      if (!enabled) {
+        await repository.replaceWeekday(isoWeekday, [])
+        return
+      }
+      const windows = await repository.list()
+      if (windows.some((window) => window.isoWeekday === isoWeekday)) return
+      await repository.replaceWeekday(isoWeekday, [
+        { startMinute: 9 * 60, endMinute: 12 * 60 },
+      ])
+    },
+
+    copyWeekday(sourceWeekday: number, targetWeekdays: readonly number[]) {
+      assertWeekday(sourceWeekday)
+      const targets = [...new Set(targetWeekdays)]
+      for (const target of targets) assertWeekday(target)
+      if (targets.length === 0) throw new InvalidAvailabilityWindowError()
+      return repository.copyWeekday(sourceWeekday, targets)
+    },
+
+    saveOverride(
+      localDate: string,
+      intervals: AvailabilityOverride['intervals'],
+    ) {
+      const normalizedDate = normalizeLocalDate(localDate)
+      assertIntervals(intervals)
+      return repository.saveOverride(normalizedDate, intervals)
+    },
+
+    deleteOverride(localDate: string) {
+      return repository.deleteOverride(normalizeLocalDate(localDate))
     },
 
     create(input: AvailabilityWindow) {
@@ -118,13 +237,18 @@ export function createAvailabilityService(dependencies: AvailabilityServiceDepen
         return { status: calendarResult.status, slots: [] }
       }
 
-      const windows = await repository.list()
+      const [ownerTimeZone, windows, overrides] = await Promise.all([
+        repository.getTimeZone(),
+        repository.list(),
+        repository.listOverrides(),
+      ])
       return {
         status: 'connected' as const,
         slots: computeAvailableSlots({
           now,
           ownerTimeZone,
           windows,
+          overrides,
           googleBusy: calendarResult.busy,
           slotHolds: input.slotHolds ?? [],
           bookings: input.bookings ?? [],

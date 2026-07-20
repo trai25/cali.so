@@ -1,6 +1,18 @@
 import 'server-only'
 
-import { and, asc, desc, eq, gte, inArray, isNull, lt, sql } from 'drizzle-orm'
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  isNull,
+  lt,
+  sql,
+  type SQL,
+} from 'drizzle-orm'
 
 import { getDatabase } from '~/db'
 import {
@@ -17,6 +29,16 @@ export type BookingLocale = 'zh' | 'en'
 export type MeetingProviderName = 'google-meet' | 'tencent-meeting'
 export type BookingStatus = 'finalizing' | 'confirmed' | 'needs_reschedule' | 'cancelled'
 export type RefundStatus = 'none' | 'pending' | 'refunded' | 'failed'
+export type AdminBookingView = 'upcoming' | 'attention' | 'past' | 'cancelled'
+
+export type AdminBookingFilters = {
+  guestName?: string
+  guestEmail?: string
+  bookingId?: string
+  status?: BookingStatus
+  startsFrom?: Date
+  startsBefore?: Date
+}
 
 export type BookingIntentRecord = {
   id: string
@@ -96,6 +118,10 @@ function isUniqueViolation(error: unknown): boolean {
   const candidate = error as { code?: unknown; cause?: unknown }
   if (candidate.code === '23505') return true
   return candidate.cause !== undefined && isUniqueViolation(candidate.cause)
+}
+
+function containsPattern(value: string) {
+  return `%${value.replace(/[\\%_]/g, '\\$&')}%`
 }
 
 export function createBookingRepository(database: () => BookingDatabase) {
@@ -480,6 +506,92 @@ export function createBookingRepository(database: () => BookingDatabase) {
       return (updated as BookingRecord | undefined) ?? null
     },
 
+    async searchBookings(input: {
+      view: AdminBookingView
+      now: Date
+      page: number
+      pageSize: number
+      filters: AdminBookingFilters
+    }): Promise<{
+      items: BookingRecord[]
+      total: number
+      page: number
+      pageSize: number
+    }> {
+      const requestedPage = Math.max(1, Math.floor(input.page))
+      const pageSize = Math.max(1, Math.min(100, Math.floor(input.pageSize)))
+      const conditions: SQL[] = []
+
+      if (input.view === 'attention') {
+        conditions.push(
+          sql`(${amaBookings.status} IN ('finalizing', 'needs_reschedule') OR ${amaBookings.refundStatus} = 'failed')`,
+        )
+      } else if (input.view === 'upcoming') {
+        conditions.push(
+          gte(amaBookings.endsAt, input.now),
+          sql`${amaBookings.status} <> 'cancelled'`,
+        )
+      } else if (input.view === 'past') {
+        conditions.push(
+          lt(amaBookings.endsAt, input.now),
+          sql`${amaBookings.status} <> 'cancelled'`,
+        )
+      } else {
+        conditions.push(eq(amaBookings.status, 'cancelled'))
+      }
+
+      const guestName = input.filters.guestName?.trim()
+      if (guestName) {
+        conditions.push(ilike(amaBookings.guestName, containsPattern(guestName)))
+      }
+      const guestEmail = input.filters.guestEmail?.trim()
+      if (guestEmail) {
+        conditions.push(ilike(amaBookings.guestEmail, containsPattern(guestEmail)))
+      }
+      const bookingId = input.filters.bookingId?.trim()
+      if (bookingId) {
+        conditions.push(
+          sql`${amaBookings.id}::text ILIKE ${containsPattern(bookingId)}`,
+        )
+      }
+      if (input.filters.status) {
+        conditions.push(eq(amaBookings.status, input.filters.status))
+      }
+      if (input.filters.startsFrom) {
+        conditions.push(gte(amaBookings.startsAt, input.filters.startsFrom))
+      }
+      if (input.filters.startsBefore) {
+        conditions.push(lt(amaBookings.startsAt, input.filters.startsBefore))
+      }
+
+      const where = and(...conditions)
+      const ordering =
+        input.view === 'upcoming' || input.view === 'attention' ? asc : desc
+      const [totalRow] = await database()
+        .select({ total: sql<number>`count(*)::int` })
+        .from(amaBookings)
+        .where(where)
+      const total = Number(totalRow?.total ?? 0)
+      const page = Math.min(
+        requestedPage,
+        Math.max(1, Math.ceil(total / pageSize)),
+      )
+      const items = await database()
+        .select()
+        .from(amaBookings)
+        .where(where)
+        .orderBy(ordering(amaBookings.startsAt), asc(amaBookings.id))
+        .limit(pageSize)
+        .offset((page - 1) * pageSize)
+
+      return {
+        items: items as BookingRecord[],
+        total,
+        page,
+        pageSize,
+      }
+    },
+
     async listBookings(input: {
       view: 'upcoming' | 'past' | 'attention'
       now: Date
@@ -500,14 +612,24 @@ export function createBookingRepository(database: () => BookingDatabase) {
         return (await database()
           .select()
           .from(amaBookings)
-          .where(gte(amaBookings.endsAt, input.now))
+          .where(
+            and(
+              gte(amaBookings.endsAt, input.now),
+              sql`${amaBookings.status} <> 'cancelled'`,
+            ),
+          )
           .orderBy(asc(amaBookings.startsAt))
           .limit(limit)) as BookingRecord[]
       }
       return (await database()
         .select()
         .from(amaBookings)
-        .where(lt(amaBookings.endsAt, input.now))
+        .where(
+          and(
+            lt(amaBookings.endsAt, input.now),
+            sql`${amaBookings.status} <> 'cancelled'`,
+          ),
+        )
         .orderBy(desc(amaBookings.startsAt))
         .limit(limit)) as BookingRecord[]
     },

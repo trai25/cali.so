@@ -122,6 +122,36 @@ describe('computeAvailableSlots', () => {
     expect(result[0]).toBe('2026-07-14T00:00:00.000Z')
   })
 
+  it('replaces a recurring day with a closed date override', () => {
+    const result = starts(
+      baseInput({
+        overrides: [{ localDate: '2026-07-14', intervals: [] }],
+      }),
+    )
+
+    expect(result.some((start) => start.startsWith('2026-07-14'))).toBe(false)
+    expect(result.some((start) => start.startsWith('2026-07-21'))).toBe(true)
+  })
+
+  it('uses custom date-override intervals instead of the recurring hours', () => {
+    const result = starts(
+      baseInput({
+        overrides: [
+          {
+            localDate: '2026-07-14',
+            intervals: [{ startMinute: 14 * 60, endMinute: 16 * 60 }],
+          },
+        ],
+      }),
+    ).filter((start) => start.startsWith('2026-07-14'))
+
+    expect(result).toEqual([
+      '2026-07-14T14:00:00.000Z',
+      '2026-07-14T14:30:00.000Z',
+      '2026-07-14T15:00:00.000Z',
+    ])
+  })
+
   it('skips nonexistent starts in a daylight-saving gap', () => {
     const result = starts(
       baseInput({

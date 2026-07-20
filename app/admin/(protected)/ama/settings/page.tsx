@@ -18,7 +18,14 @@ export const metadata: Metadata = {
 
 export const instant = true
 
-const availabilityNotices = new Set(['saved', 'invalid', 'failed'] as const)
+const availabilityNotices = new Set([
+  'saved',
+  'invalid',
+  'invalid-time-zone',
+  'invalid-override',
+  'invalid-copy',
+  'failed',
+] as const)
 const calendarNotices = new Set([
   'disconnected',
   'connected',
@@ -98,9 +105,9 @@ async function SettingsLoader({
   searchParams: SettingsSearchParams
 }) {
   await requireOwnerPage('/admin/ama/settings')
-  const { availability, google } = getAmaAdminServices()
-  const [windows, connection, preview, params] = await Promise.all([
-    availability.list(),
+  const { availability, google, baseUrl } = getAmaAdminServices()
+  const [schedule, connection, preview, params] = await Promise.all([
+    availability.getSchedule(),
     google.getConnection(),
     availability.preview(),
     searchParams,
@@ -116,11 +123,20 @@ async function SettingsLoader({
     <>
       <SettingsHeader />
       <AmaSettings
-        windows={windows.map(({ id, isoWeekday, startMinute, endMinute }) => ({
+        timeZone={schedule.timeZone}
+        windows={schedule.windows.map(({ id, isoWeekday, startMinute, endMinute }) => ({
           id,
           isoWeekday,
           startMinute,
           endMinute,
+        }))}
+        overrides={schedule.overrides.map((override) => ({
+          id: override.id,
+          localDate: override.localDate,
+          intervals: override.intervals.map(({ startMinute, endMinute }) => ({
+            startMinute,
+            endMinute,
+          })),
         }))}
         googleConnection={{
           status,
@@ -137,6 +153,7 @@ async function SettingsLoader({
           startsAt: slot.startsAt.toISOString(),
           endsAt: slot.endsAt.toISOString(),
         }))}
+        publicBookingUrl={new URL('/ama/book', baseUrl).toString()}
         notices={queryNotices(params)}
       />
     </>

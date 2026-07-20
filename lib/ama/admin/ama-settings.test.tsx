@@ -22,7 +22,16 @@ function settingsProps(
   status: AmaSettingsProps['googleConnection']['status'],
 ): AmaSettingsProps {
   return {
+    timeZone: 'Asia/Taipei',
     windows: [{ id: 1, isoWeekday: 1, startMinute: 540, endMinute: 720 }],
+    overrides: [
+      {
+        id: 1,
+        localDate: '2026-07-18',
+        intervals: [],
+      },
+    ],
+    publicBookingUrl: 'https://cali.so/ama/book',
     googleConnection: {
       status,
       identity:
@@ -51,6 +60,38 @@ function renderSettingsMarkup(
 }
 
 describe('AMA settings UI contract', () => {
+  it('groups the weekly schedule, exposes overrides, and reports exact readiness blockers', () => {
+    const html = renderSettingsMarkup('disconnected')
+
+    expect(html).toContain('Monday')
+    expect(html).toContain('Sunday')
+    expect(html).toContain('value="set-time-zone"')
+    expect(html).toContain('value="set-weekday"')
+    expect(html).toContain('data-en="true">Copy</span>')
+    expect(html).toContain('data-en="true">Add override</span>')
+    expect(html).toContain('2026-07-18')
+    expect(html).toContain('Readiness checklist')
+    expect(html).toContain('Connect Google Calendar to check conflicts before publishing open times.')
+    expect(html).toContain('href="https://cali.so/ama/book"')
+  })
+
+  it('reveals copy and date-override forms in place', () => {
+    const { container } = render(<AmaSettings {...settingsProps('connected')} />)
+    const buttons = [...container.querySelectorAll<HTMLButtonElement>('button')]
+
+    fireEvent.click(buttons.find((button) => button.textContent?.includes('Copy'))!)
+    expect(
+      container.querySelector('input[name="intent"][value="copy-weekday"]'),
+    ).not.toBeNull()
+
+    fireEvent.click(
+      buttons.find((button) => button.textContent?.includes('Add override'))!,
+    )
+    expect(
+      container.querySelector('input[name="intent"][value="save-override"]'),
+    ).not.toBeNull()
+  })
+
   it('keeps localized scheduling content and accessible form recovery in static HTML', () => {
     const html = renderSettingsMarkup('expired')
 
@@ -85,9 +126,12 @@ describe('AMA settings UI contract', () => {
   it('submits Google connect directly and locks in a pending state', () => {
     const { container } = render(
       <AmaSettings
+        timeZone="Asia/Taipei"
         windows={[]}
+        overrides={[]}
         googleConnection={{ status: 'disconnected', identity: null }}
         previewSlots={[]}
+        publicBookingUrl="https://cali.so/ama/book"
       />,
     )
     const form = container.querySelector<HTMLFormElement>(
@@ -109,7 +153,9 @@ describe('AMA settings UI contract', () => {
     vi.useFakeTimers()
     const { container } = render(
       <AmaSettings
+        timeZone="Asia/Taipei"
         windows={[]}
+        overrides={[]}
         googleConnection={{
           status: 'connected',
           identity: {
@@ -119,6 +165,7 @@ describe('AMA settings UI contract', () => {
           },
         }}
         previewSlots={[]}
+        publicBookingUrl="https://cali.so/ama/book"
       />,
     )
     const form = container.querySelector<HTMLFormElement>(
@@ -198,9 +245,12 @@ describe('AMA settings UI contract', () => {
   it('restores focus to mutation feedback after a redirect render', () => {
     render(
       <AmaSettings
+        timeZone="Asia/Taipei"
         windows={[]}
+        overrides={[]}
         googleConnection={{ status: 'disconnected', identity: null }}
         previewSlots={[]}
+        publicBookingUrl="https://cali.so/ama/book"
         notices={{ availability: 'saved' }}
       />,
     )

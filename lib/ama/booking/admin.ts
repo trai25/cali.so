@@ -8,6 +8,8 @@ import type { SlotClaimsRepository } from './claims'
 import { cancelBooking, rescheduleBookingTo } from './manage'
 import type {
   AlternateTimeRequestRecord,
+  AdminBookingFilters,
+  AdminBookingView,
   BookingEventRecord,
   BookingRecord,
   BookingRepository,
@@ -18,6 +20,13 @@ export type BookingDetail = {
   booking: BookingRecord
   events: BookingEventRecord[]
   operations: DurableOperationRecord[]
+}
+
+export type BookingAdminSearchInput = {
+  view: AdminBookingView
+  page: number
+  pageSize: number
+  filters: AdminBookingFilters
 }
 
 export type AdminActionResult =
@@ -47,6 +56,10 @@ export function createBookingAdminService(dependencies: BookingAdminDependencies
   } = dependencies
 
   return {
+    searchBookings(input: BookingAdminSearchInput) {
+      return repository.searchBookings({ ...input, now: clock.now() })
+    },
+
     listBookings(view: 'upcoming' | 'past' | 'attention') {
       return repository.listBookings({ view, now: clock.now() })
     },

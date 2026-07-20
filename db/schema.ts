@@ -3,6 +3,7 @@ import {
   boolean,
   check,
   customType,
+  date,
   index,
   integer,
   jsonb,
@@ -104,6 +105,71 @@ export const amaAvailabilityWindows = pgTable(
       table.isoWeekday,
       table.startMinute,
       table.endMinute,
+    ),
+  ],
+)
+
+export const amaAvailabilitySettings = pgTable(
+  'ama_availability_settings',
+  {
+    id: integer('id').primaryKey().default(1),
+    timeZone: varchar('time_zone', { length: 64 })
+      .default('Asia/Taipei')
+      .notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    check('ama_availability_settings_singleton_check', sql`${table.id} = 1`),
+    check(
+      'ama_availability_settings_time_zone_check',
+      sql`length(btrim(${table.timeZone})) > 0`,
+    ),
+  ],
+)
+
+export const amaAvailabilityOverrides = pgTable(
+  'ama_availability_overrides',
+  {
+    id: serial('id').primaryKey(),
+    localDate: date('local_date', { mode: 'string' }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('ama_availability_overrides_local_date_uidx').on(table.localDate),
+  ],
+)
+
+export const amaAvailabilityOverrideWindows = pgTable(
+  'ama_availability_override_windows',
+  {
+    id: serial('id').primaryKey(),
+    overrideId: integer('override_id')
+      .notNull()
+      .references(() => amaAvailabilityOverrides.id, { onDelete: 'cascade' }),
+    startMinute: integer('start_minute').notNull(),
+    endMinute: integer('end_minute').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('ama_availability_override_windows_order_idx').on(
+      table.overrideId,
+      table.startMinute,
+      table.endMinute,
+    ),
+    check(
+      'ama_availability_override_windows_start_minute_check',
+      sql`${table.startMinute} BETWEEN 0 AND 1439`,
+    ),
+    check(
+      'ama_availability_override_windows_end_minute_check',
+      sql`${table.endMinute} BETWEEN 1 AND 1440`,
+    ),
+    check(
+      'ama_availability_override_windows_same_day_check',
+      sql`${table.startMinute} < ${table.endMinute}`,
     ),
   ],
 )

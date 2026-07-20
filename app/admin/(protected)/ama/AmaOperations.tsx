@@ -22,81 +22,117 @@ import {
 } from './shared'
 
 export type AmaOperationsProps = {
-  upcoming: BookingRowViewModel[]
-  past: BookingRowViewModel[]
-  attention: BookingRowViewModel[]
+  view: BookingView
+  bookings: BookingRowViewModel[]
+  total: number
+  page: number
+  pageSize: number
+  ownerTimeZone: string
+  filters: BookingFiltersViewModel
+  attentionTotal: number
   timeRequests: AlternateTimeRequestViewModel[]
   failedOperations: OperationViewModel[]
+  basePath?: string
+}
+
+export type BookingView = 'attention' | 'upcoming' | 'past' | 'cancelled'
+
+export type BookingFiltersViewModel = {
+  guestName: string
+  guestEmail: string
+  bookingId: string
+  status: '' | BookingRowViewModel['status']
+  from: string
+  to: string
 }
 
 function BookingRow({
   booking,
+  ownerTimeZone,
   showPrep = false,
 }: {
   booking: BookingRowViewModel
+  ownerTimeZone: string
   showPrep?: boolean
 }) {
   const provider = providerLabels[booking.meetingProvider]
   return (
-    <li>
+    <li className="grid gap-3 px-2 py-4 text-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
       <Link
         href={`/admin/ama/bookings/${booking.id}`}
-        className="flex min-h-11 flex-wrap items-center justify-between gap-x-6 gap-y-1 rounded-md px-2 py-3 text-sm outline-none hover:bg-hover focus-visible:ring-1 focus-visible:ring-foreground"
+        className="min-w-0 rounded-[2px] outline-none focus-visible:ring-1 focus-visible:ring-foreground"
       >
-        <span className="min-w-0">
-          <span className="block truncate font-medium">{booking.guestName}</span>
-          <span className="mt-0.5 block text-sm text-muted-foreground">
-            <span className="tabular-nums">
-              <T
-                zh={zonedDateTime(booking.startsAt, OWNER_TIME_ZONE, 'zh')}
-                en={zonedDateTime(booking.startsAt, OWNER_TIME_ZONE, 'en')}
-              />
-              {' '}(Asia/Taipei)
-            </span>
-            <span aria-hidden="true"> · </span>
-            <span className="tabular-nums">
-              <T
-                zh={zonedDateTime(booking.startsAt, booking.guestTimeZone, 'zh')}
-                en={zonedDateTime(booking.startsAt, booking.guestTimeZone, 'en')}
-              />
-              {' '}({booking.guestTimeZone})
-            </span>
+        <span className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+          <span className="font-medium">{booking.guestName}</span>
+          <span className="break-all font-mono text-xs text-muted-foreground">
+            {booking.guestEmail}
           </span>
-          {showPrep && (
-            <span className="mt-0.5 block text-sm text-muted-foreground">
-              <T zh={provider.zh} en={provider.en} />
-              <span aria-hidden="true"> · </span>
-              {booking.hasMeetingLink ? (
-                <T zh="会议链接就绪" en="Meeting link ready" />
-              ) : (
-                <T zh="尚无会议链接" en="No meeting link yet" />
-              )}
-              <span aria-hidden="true"> · </span>
-              {booking.hasBrief ? (
-                <T zh="已有预约简述" en="Booking Brief received" />
-              ) : (
-                <T zh="没有预约简述" en="No Booking Brief" />
-              )}
-            </span>
-          )}
+          <span className="font-mono text-[11px] text-muted-foreground">
+            {booking.id.slice(0, 8)}
+          </span>
         </span>
-        <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          {!showPrep && (
-            <span className="text-muted-foreground">
-              <T zh={provider.zh} en={provider.en} />
-            </span>
-          )}
-          <BookingStatusBadge status={booking.status} />
-          {booking.refundStatus === 'failed' && (
-            <span className="text-destructive">
-              <T
-                zh={refundStatusLabels.failed.zh}
-                en={refundStatusLabels.failed.en}
-              />
-            </span>
+        <span className="mt-1 block text-sm text-muted-foreground">
+          <span className="tabular-nums">
+            <T
+              zh={zonedDateTime(booking.startsAt, ownerTimeZone, 'zh')}
+              en={zonedDateTime(booking.startsAt, ownerTimeZone, 'en')}
+            />
+            {' '}({ownerTimeZone})
+          </span>
+          <span aria-hidden="true"> · </span>
+          <span className="tabular-nums">
+            <T
+              zh={zonedDateTime(booking.startsAt, booking.guestTimeZone, 'zh')}
+              en={zonedDateTime(booking.startsAt, booking.guestTimeZone, 'en')}
+            />
+            {' '}({booking.guestTimeZone})
+          </span>
+        </span>
+        {booking.topics.length > 0 && (
+          <span className="mt-1 block line-clamp-1 text-sm text-muted-foreground">
+            <T zh="话题：" en="Topics: " />
+            {booking.topics.join(', ')}
+          </span>
+        )}
+        <span className="mt-1 block line-clamp-1 text-sm text-muted-foreground">
+          {booking.briefPreview ? (
+            <>
+              <T zh="预约简述：" en="Booking Brief: " />
+              {booking.briefPreview}
+            </>
+          ) : (
+            <T zh="没有预约简述" en="No Booking Brief" />
           )}
         </span>
       </Link>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:justify-end">
+        <span className="text-muted-foreground">
+          <T zh={provider.zh} en={provider.en} />
+        </span>
+        <BookingStatusBadge status={booking.status} />
+        {booking.refundStatus === 'failed' && (
+          <span className="text-destructive">
+            <T
+              zh={refundStatusLabels.failed.zh}
+              en={refundStatusLabels.failed.en}
+            />
+          </span>
+        )}
+        {showPrep && booking.meetingUrl && (
+          <Button asChild variant="primary" size="lg" expandHitArea>
+            <a href={booking.meetingUrl} target="_blank" rel="noreferrer">
+              <T zh="加入会议" en="Join meeting" />
+            </a>
+          </Button>
+        )}
+        {booking.calendarUrl && (
+          <Button asChild variant="ghost" size="lg" expandHitArea>
+            <a href={booking.calendarUrl} target="_blank" rel="noreferrer">
+              <T zh="在日历中打开" en="Open in Google Calendar" />
+            </a>
+          </Button>
+        )}
+      </div>
     </li>
   )
 }
@@ -241,62 +277,306 @@ function AlternateTimeRequests({
   )
 }
 
-// The AMA product in one place: what needs a hand first, what is coming up,
-// the archive of past sessions, and the scheduling settings at the bottom.
-export function AmaOperations({
-  upcoming,
-  past,
-  attention,
+const viewLabels: Record<BookingView, { zh: string; en: string }> = {
+  attention: { zh: '需要处理', en: 'Needs attention' },
+  upcoming: { zh: '即将进行', en: 'Upcoming' },
+  past: { zh: '已结束', en: 'Past' },
+  cancelled: { zh: '已取消', en: 'Cancelled' },
+}
+
+function BookingFilters({
+  view,
+  filters,
+  ownerTimeZone,
+  basePath,
+}: {
+  view: BookingView
+  filters: BookingFiltersViewModel
+  ownerTimeZone: string
+  basePath: string
+}) {
+  const locale = useLocale()
+  const hasFilters = Object.values(filters).some(Boolean)
+  const inputClassName =
+    'min-h-11 rounded-[2px] border border-border bg-transparent px-3 text-base outline-none focus-visible:ring-1 focus-visible:ring-foreground'
+
+  return (
+    <form
+      action={basePath}
+      method="get"
+      className="mt-5 rounded-[2px] bg-surface-1 px-4 py-4"
+    >
+      <input type="hidden" name="view" value={view} />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="grid gap-1.5 text-sm">
+          <span className="text-muted-foreground">
+            <T zh="访客姓名" en="Guest name" />
+          </span>
+          <input
+            type="search"
+            name="guestName"
+            defaultValue={filters.guestName}
+            autoComplete="off"
+            spellCheck={false}
+            data-lpignore="true"
+            data-1p-ignore
+            className={inputClassName}
+          />
+        </label>
+        <label className="grid gap-1.5 text-sm">
+          <span className="text-muted-foreground">
+            <T zh="访客邮箱" en="Guest email" />
+          </span>
+          <input
+            type="email"
+            name="guestEmail"
+            defaultValue={filters.guestEmail}
+            autoComplete="off"
+            spellCheck={false}
+            data-lpignore="true"
+            data-1p-ignore
+            className={`${inputClassName} font-mono`}
+          />
+        </label>
+        <label className="grid gap-1.5 text-sm">
+          <span className="text-muted-foreground">
+            <T zh="预约 ID" en="Booking id" />
+          </span>
+          <input
+            type="search"
+            name="bookingId"
+            defaultValue={filters.bookingId}
+            autoComplete="off"
+            spellCheck={false}
+            data-lpignore="true"
+            data-1p-ignore
+            className={`${inputClassName} font-mono`}
+          />
+        </label>
+        <label className="grid gap-1.5 text-sm">
+          <span className="text-muted-foreground">
+            <T zh="状态" en="Status" />
+          </span>
+          <select
+            name="status"
+            defaultValue={filters.status}
+            className={inputClassName}
+          >
+            <option value="">{localize(locale, '全部状态', 'All statuses')}</option>
+            <option value="finalizing">
+              {localize(locale, '正在敲定', 'Finalizing')}
+            </option>
+            <option value="confirmed">
+              {localize(locale, '已确认', 'Confirmed')}
+            </option>
+            <option value="needs_reschedule">
+              {localize(locale, '需要改期', 'Needs reschedule')}
+            </option>
+            <option value="cancelled">
+              {localize(locale, '已取消', 'Cancelled')}
+            </option>
+          </select>
+        </label>
+        <label className="grid gap-1.5 text-sm">
+          <span className="text-muted-foreground">
+            <T zh="开始日期" en="From date" />
+          </span>
+          <input
+            type="date"
+            name="from"
+            defaultValue={filters.from}
+            className={`${inputClassName} font-mono tabular-nums`}
+          />
+        </label>
+        <label className="grid gap-1.5 text-sm">
+          <span className="text-muted-foreground">
+            <T zh="结束日期" en="To date" />
+          </span>
+          <input
+            type="date"
+            name="to"
+            defaultValue={filters.to}
+            className={`${inputClassName} font-mono tabular-nums`}
+          />
+        </label>
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">
+        <T
+          zh={`日期按 ${ownerTimeZone} 解释。`}
+          en={`Dates use ${ownerTimeZone}.`}
+        />
+      </p>
+      <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+        {hasFilters && (
+          <Button asChild variant="ghost" size="lg" expandHitArea>
+            <Link href={`${basePath}?view=${view}`}>
+              <T zh="清除筛选" en="Clear filters" />
+            </Link>
+          </Button>
+        )}
+        <Button type="submit" variant="primary" size="lg" expandHitArea>
+          <T zh="筛选预约" en="Filter Bookings" />
+        </Button>
+      </div>
+    </form>
+  )
+}
+
+function BookingLedger({
+  view,
+  bookings,
+  total,
+  page,
+  pageSize,
+  ownerTimeZone,
+  filters,
+  attentionTotal,
   timeRequests,
   failedOperations,
+  basePath = '/admin/ama/bookings',
 }: AmaOperationsProps) {
   const locale = useLocale()
   const [handledCount, setHandledCount] = useState(0)
-  const [pastOpen, setPastOpen] = useState(false)
-  const attentionTotal = Math.max(
-    0,
-    attention.length + failedOperations.length + timeRequests.length - handledCount,
-  )
+  const remainingAttention = Math.max(0, attentionTotal - handledCount)
+  const hasFilters = Object.values(filters).some(Boolean)
+  const pageCount = Math.max(1, Math.ceil(total / pageSize))
+  const firstResult = total === 0 ? 0 : (page - 1) * pageSize + 1
+  const lastResult = Math.min(total, page * pageSize)
   const allClear =
-    attention.length === 0 &&
+    bookings.length === 0 &&
     failedOperations.length === 0 &&
     timeRequests.length === 0
+
+  function hrefFor(nextView: BookingView, nextPage = 1) {
+    const params = new URLSearchParams({ view: nextView })
+    if (filters.guestName) params.set('guestName', filters.guestName)
+    if (filters.guestEmail) params.set('guestEmail', filters.guestEmail)
+    if (filters.bookingId) params.set('bookingId', filters.bookingId)
+    if (filters.status) params.set('status', filters.status)
+    if (filters.from) params.set('from', filters.from)
+    if (filters.to) params.set('to', filters.to)
+    if (nextPage > 1) params.set('page', String(nextPage))
+    return `${basePath}?${params.toString()}`
+  }
+
+  const emptyCopy: Record<BookingView, { zh: string; en: string }> = {
+    attention: hasFilters
+      ? {
+          zh: '没有符合筛选条件的待处理预约。',
+          en: 'No attention Bookings match these filters.',
+        }
+      : { zh: '一切正常。', en: 'All clear.' },
+    upcoming: hasFilters
+      ? {
+          zh: '没有符合筛选条件的即将进行预约。',
+          en: 'No upcoming Bookings match these filters.',
+        }
+      : {
+          zh: '没有即将进行的预约。',
+          en: 'There are no upcoming Bookings.',
+        },
+    past: hasFilters
+      ? {
+          zh: '没有符合筛选条件的已结束预约。',
+          en: 'No past Bookings match these filters.',
+        }
+      : { zh: '还没有已结束的预约。', en: 'There are no past Bookings yet.' },
+    cancelled: hasFilters
+      ? {
+          zh: '没有符合筛选条件的已取消预约。',
+          en: 'No cancelled Bookings match these filters.',
+        }
+      : { zh: '没有已取消的预约。', en: 'There are no cancelled Bookings.' },
+  }
 
   return (
     <div className="pb-10">
       <p className="mt-1 text-sm tabular-nums text-muted-foreground">
-        {upcoming.length} <T zh="场即将进行" en="upcoming" />
+        {total} <T zh="条结果" en={total === 1 ? 'result' : 'results'} />
         {' · '}
-        {attentionTotal} <T zh="项待处理" en="to handle" />
+        {remainingAttention} <T zh="项待处理" en="to handle" />
       </p>
 
-      <section aria-labelledby="attention-heading" className="mt-6 hairline-top pt-6">
-        <SectionTag index={1} id="attention-heading">
-          <T zh="需要处理" en="Needs attention" />
-        </SectionTag>
-        {allClear ? (
+      <nav
+        aria-label={localize(locale, '预约视图', 'Booking views')}
+        className="mt-5 grid grid-cols-2 gap-1 hairline-top pt-4 sm:grid-cols-4"
+      >
+        {(Object.keys(viewLabels) as BookingView[]).map((option) => {
+          const selected = option === view
+          const label = viewLabels[option]
+          return (
+            <Link
+              key={option}
+              href={hrefFor(option)}
+              aria-current={selected ? 'page' : undefined}
+              className={`flex min-h-11 items-center justify-center rounded-[2px] px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-foreground ${
+                selected
+                  ? 'bg-foreground text-background'
+                  : 'text-muted-foreground hover:bg-hover hover:text-foreground'
+              }`}
+            >
+              <T zh={label.zh} en={label.en} />
+            </Link>
+          )
+        })}
+      </nav>
+
+      <BookingFilters
+        view={view}
+        filters={filters}
+        ownerTimeZone={ownerTimeZone}
+        basePath={basePath}
+      />
+
+      <section
+        aria-labelledby="booking-view-heading"
+        className="mt-8 hairline-top pt-6"
+      >
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <SectionTag index={1} id="booking-view-heading">
+            <T zh={viewLabels[view].zh} en={viewLabels[view].en} />
+          </SectionTag>
+          <span className="text-sm text-muted-foreground tabular-nums">
+            <T
+              zh={`${firstResult}–${lastResult}，共 ${total} 条`}
+              en={`${firstResult}–${lastResult} of ${total}`}
+            />
+          </span>
+        </div>
+
+        {bookings.length === 0 && (view !== 'attention' || allClear) ? (
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            <T zh="一切正常。" en="All clear." />
+            <T zh={emptyCopy[view].zh} en={emptyCopy[view].en} />
           </p>
         ) : (
+          bookings.length > 0 && (
+            <ul className="mt-3 divide-y divide-border/70">
+              {bookings.map((booking) => (
+                <BookingRow
+                  key={booking.id}
+                  booking={booking}
+                  ownerTimeZone={ownerTimeZone}
+                  showPrep={view === 'upcoming'}
+                />
+              ))}
+            </ul>
+          )
+        )}
+
+        {view === 'attention' && (
           <>
-            {attention.length > 0 && (
-              <ul className="mt-3 divide-y divide-border/70">
-                {attention.map((booking) => (
-                  <BookingRow key={booking.id} booking={booking} />
-                ))}
-              </ul>
-            )}
             {failedOperations.length > 0 && (
-              <div className="mt-3">
-                <h3 className="sr-only">
+              <div className="mt-4 hairline-top pt-3">
+                <h3 className="text-sm font-medium">
                   <T zh="失败的后台操作" en="Failed operations" />
                 </h3>
                 <OperationsList
                   operations={failedOperations}
                   removeOnResolve
                   onStatusChange={(from) => {
-                    if (from === 'failed') setHandledCount((count) => count + 1)
+                    if (from === 'failed') {
+                      setHandledCount((count) => count + 1)
+                    }
                   }}
                 />
               </div>
@@ -307,70 +587,43 @@ export function AmaOperations({
             />
           </>
         )}
-      </section>
 
-      <section aria-labelledby="upcoming-heading" className="mt-8 hairline-top pt-6">
-        <SectionTag index={2} id="upcoming-heading">
-          <T zh="即将进行" en="Upcoming" />
-        </SectionTag>
-        {upcoming.length === 0 ? (
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            <T zh="没有即将进行的预约。" en="There are no upcoming Bookings." />
-          </p>
-        ) : (
-          <ul className="mt-3 divide-y divide-border/70">
-            {upcoming.map((booking) => (
-              <BookingRow key={booking.id} booking={booking} showPrep />
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section aria-labelledby="past-heading" className="mt-8 hairline-top pt-6">
-        {past.length === 0 ? (
-          <>
-            <SectionTag index={3} id="past-heading">
-              <T zh="已结束" en="Past" />
-            </SectionTag>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              <T zh="还没有已结束的预约。" en="There are no past Bookings yet." />
-            </p>
-          </>
-        ) : (
-          <>
-            <div className="flex min-h-11 items-center justify-between gap-4">
-              <SectionTag index={3} id="past-heading">
-                <T zh="已结束" en="Past" />
-              </SectionTag>
-              <Button
-                variant="ghost"
-                size="sm"
-                active={pastOpen}
-                expandHitArea
-                aria-expanded={pastOpen}
-                aria-controls="past-bookings"
-                aria-label={localize(
-                  locale,
-                  pastOpen ? '收起已结束的预约' : '展开已结束的预约',
-                  pastOpen ? 'Hide past Bookings' : 'Show past Bookings',
-                )}
-                onClick={() => setPastOpen((current) => !current)}
-              >
-                <span className="tabular-nums">{past.length}</span>
-                <span aria-hidden> · </span>
-                {pastOpen ? <T zh="收起" en="Hide" /> : <T zh="展开" en="Show" />}
+        {pageCount > 1 && (
+          <nav
+            aria-label={localize(locale, '预约分页', 'Booking pagination')}
+            className="mt-5 flex min-h-11 items-center justify-between gap-3 hairline-top pt-4"
+          >
+            {page > 1 ? (
+              <Button asChild variant="ghost" size="lg" expandHitArea>
+                <Link href={hrefFor(view, page - 1)}>
+                  <T zh="上一页" en="Previous" />
+                </Link>
               </Button>
-            </div>
-            {pastOpen && (
-              <ul id="past-bookings" className="mt-3 divide-y divide-border/70">
-                {past.map((booking) => (
-                  <BookingRow key={booking.id} booking={booking} />
-                ))}
-              </ul>
+            ) : (
+              <span />
             )}
-          </>
+            <span className="text-sm text-muted-foreground tabular-nums">
+              <T
+                zh={`第 ${page}/${pageCount} 页`}
+                en={`Page ${page} of ${pageCount}`}
+              />
+            </span>
+            {page < pageCount ? (
+              <Button asChild variant="ghost" size="lg" expandHitArea>
+                <Link href={hrefFor(view, page + 1)}>
+                  <T zh="下一页" en="Next" />
+                </Link>
+              </Button>
+            ) : (
+              <span />
+            )}
+          </nav>
         )}
       </section>
     </div>
   )
+}
+
+export function AmaOperations(props: AmaOperationsProps) {
+  return <BookingLedger {...props} />
 }
