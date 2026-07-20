@@ -78,8 +78,9 @@ Current as of July 2026.
   every request, and `/admin/login` stays a deliberate `instant = false`
   redirect. Consequences: the admin has no client-side ClerkProvider (no
   Clerk JS ships to the admin at all), and the former per-request nonce
-  admin CSP is retired — nonces force dynamic rendering — so admin pages
-  use the static site policy from `lib/security/headers.ts`.
+  admin CSP is retired because nonces force dynamic rendering. Admin pages
+  use the static site policy from `lib/security/headers.ts`; AMA settings
+  extends only `form-action` for the redirect to Google OAuth.
 - The complete paid AMA booking system (#79, slices #82 through #87) is
   implemented and enabled by default (maintainer decision, July 2026; the
   former `AMA_*_ENABLED` switches are removed): public `/ama` and

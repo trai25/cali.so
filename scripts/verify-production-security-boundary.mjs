@@ -100,6 +100,7 @@ async function verifyPublicPages(baseUrl) {
 async function verifyAdminPages(baseUrl) {
   for (const path of [
     '/admin',
+    '/admin/ama/settings',
     '/admin/login',
     '/admin/photos?view=draft',
   ]) {
@@ -126,6 +127,20 @@ async function verifyAdminPages(baseUrl) {
       `${requestedUrl.pathname}${requestedUrl.search}`,
       `${path} Clerk return path`,
     )
+    const policy = response.headers.get('content-security-policy') ?? ''
+    if (path === '/admin/ama/settings') {
+      assert.match(
+        policy,
+        /form-action 'self' https:\/\/accounts\.google\.com(?:;|$)/,
+        `${path} Google OAuth form destination`,
+      )
+    } else {
+      assert.doesNotMatch(
+        policy,
+        /https:\/\/accounts\.google\.com/,
+        `${path} Google OAuth policy scope`,
+      )
+    }
   }
 }
 
