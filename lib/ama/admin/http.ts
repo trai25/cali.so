@@ -23,6 +23,10 @@ export interface AvailabilityMutationService {
     sourceWeekday: number,
     targetWeekdays: readonly number[],
   ): Promise<unknown>
+  replaceWeekday(
+    isoWeekday: number,
+    intervals: readonly { startMinute: number; endMinute: number }[],
+  ): Promise<unknown>
   saveOverride(
     localDate: string,
     intervals: readonly { startMinute: number; endMinute: number }[],
@@ -200,6 +204,39 @@ function overrideIntervalsFrom(formData: FormData) {
     }
     intervals.push({ startMinute, endMinute })
   }
+  const ordered = [...intervals].sort((left, right) =>
+    left.startMinute - right.startMinute || left.endMinute - right.endMinute,
+  )
+  for (let index = 1; index < ordered.length; index += 1) {
+    if (ordered[index]!.startMinute < ordered[index - 1]!.endMinute) return null
+  }
+  return intervals
+}
+
+function weekdayIntervalsFrom(formData: FormData) {
+  const starts = formStrings(formData, 'start')
+  const ends = formStrings(formData, 'end')
+  if (starts.length === 0 || starts.length !== ends.length) return null
+
+  const intervals: { startMinute: number; endMinute: number }[] = []
+  for (let index = 0; index < starts.length; index += 1) {
+    const startMinute = parseMinute(starts[index])
+    const endMinute = parseMinute(ends[index], true)
+    if (
+      startMinute === null ||
+      endMinute === null ||
+      startMinute >= endMinute
+    ) {
+      return null
+    }
+    intervals.push({ startMinute, endMinute })
+  }
+  const ordered = [...intervals].sort((left, right) =>
+    left.startMinute - right.startMinute || left.endMinute - right.endMinute,
+  )
+  for (let index = 1; index < ordered.length; index += 1) {
+    if (ordered[index]!.startMinute < ordered[index - 1]!.endMinute) return null
+  }
   return intervals
 }
 
@@ -250,6 +287,13 @@ export function createAvailabilityMutationHandler(
           )
         }
         await service.copyWeekday(weekday, targets)
+      } else if (intent === 'save-weekday') {
+        const weekday = parseWeekday(formData)
+        const intervals = weekdayIntervalsFrom(formData)
+        if (weekday === null || intervals === null) {
+          return redirect(baseUrl, '/admin/ama/settings?availability=invalid')
+        }
+        await service.replaceWeekday(weekday, intervals)
       } else if (intent === 'save-override') {
         const localDate = formString(formData, 'localDate')
         const mode = formString(formData, 'overrideMode')

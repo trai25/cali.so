@@ -121,6 +121,28 @@ function assertWeekday(isoWeekday: number) {
   }
 }
 
+function assertWeekdayIntervals(
+  isoWeekday: number,
+  intervals: readonly Pick<AvailabilityWindow, 'startMinute' | 'endMinute'>[],
+) {
+  assertWeekday(isoWeekday)
+  if (intervals.length === 0) throw new InvalidAvailabilityWindowError()
+
+  const ordered = intervals
+    .map((interval) => ({ ...interval }))
+    .sort((left, right) =>
+      left.startMinute - right.startMinute || left.endMinute - right.endMinute,
+    )
+  for (const interval of ordered) {
+    assertWindow({ isoWeekday, ...interval })
+  }
+  for (let index = 1; index < ordered.length; index += 1) {
+    if (ordered[index]!.startMinute < ordered[index - 1]!.endMinute) {
+      throw new InvalidAvailabilityWindowError()
+    }
+  }
+}
+
 function normalizeTimeZone(value: string) {
   const timeZone = value.trim()
   if (timeZone.length === 0 || timeZone.length > 64) {
@@ -196,6 +218,14 @@ export function createAvailabilityService(dependencies: AvailabilityServiceDepen
       for (const target of targets) assertWeekday(target)
       if (targets.length === 0) throw new InvalidAvailabilityWindowError()
       return repository.copyWeekday(sourceWeekday, targets)
+    },
+
+    replaceWeekday(
+      isoWeekday: number,
+      intervals: readonly Pick<AvailabilityWindow, 'startMinute' | 'endMinute'>[],
+    ) {
+      assertWeekdayIntervals(isoWeekday, intervals)
+      return repository.replaceWeekday(isoWeekday, intervals)
     },
 
     saveOverride(
