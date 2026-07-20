@@ -119,7 +119,7 @@ export function LocaleSuggestion({ locale }: { locale: Locale }) {
           <div className="locale-suggestion-actions">
             <Button
               type="button"
-              expandHitArea
+              size="sm"
               aria-label={copy.switchAriaLabel}
               onClick={switchLocale}
             >
@@ -128,7 +128,7 @@ export function LocaleSuggestion({ locale }: { locale: Locale }) {
             <Button
               type="button"
               variant="ghost"
-              expandHitArea
+              size="sm"
               aria-label={copy.stayAriaLabel}
               lang={copy.stayLanguage}
               onClick={stay}

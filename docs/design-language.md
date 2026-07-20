@@ -729,7 +729,10 @@ explicit: switch, or stay in the current language. Either choice becomes the
 saved site preference; unsupported browser languages produce no prompt. The
 plate uses the surface ladder and `--z-toast`, with no drop shadow. It never
 redirects automatically, shifts layout, or steals focus, and disables its brief
-transform-and-opacity entrance under reduced motion.
+transform-and-opacity entrance under reduced motion. The plate is intentionally
+30px tall and uses the shared small buttons without expanded hit areas; this is
+a maintainer-approved exception to the site's usual 44px touch-target minimum
+(July 2026).
 
 Each post keeps its Chinese source in `index.mdx` and a complete English
 translation in `index.en.mdx`. The matching route renders only that source and
