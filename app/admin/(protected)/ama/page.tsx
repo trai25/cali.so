@@ -32,21 +32,57 @@ function AmaFallback() {
       <AmaHeader />
       <p className="mt-1 text-sm tabular-nums text-muted-foreground">…</p>
       <ul className="mt-6 hairline-top pt-4">
-        {Array.from({ length: 2 }, (_, index) => (
-          <li key={index} className="flex min-h-11 items-center py-1.5" aria-hidden>
-            <span className="h-4 w-full max-w-72 rounded-sm bg-surface-1" />
-          </li>
-        ))}
+        {Array.from(
+          { length: process.env.NODE_ENV === 'development' ? 3 : 2 },
+          (_, index) => (
+            <li
+              key={index}
+              className="flex min-h-11 items-center py-1.5"
+              aria-hidden
+            >
+              <span className="h-4 w-full max-w-72 rounded-sm bg-surface-1" />
+            </li>
+          ),
+        )}
       </ul>
     </div>
   )
 }
 
+function CalendarSummary({
+  status,
+}: {
+  status:
+    | 'connected'
+    | 'disconnected'
+    | 'denied-scope'
+    | 'expired'
+    | 'revoked'
+    | 'unavailable'
+}) {
+  const copy = {
+    connected: { zh: '日历已连接', en: 'calendar connected' },
+    disconnected: { zh: '日历未连接', en: 'calendar disconnected' },
+    'denied-scope': { zh: '日历权限不足', en: 'calendar permissions denied' },
+    expired: { zh: '日历连接已过期', en: 'calendar connection expired' },
+    revoked: { zh: '日历授权已撤销', en: 'calendar access revoked' },
+    unavailable: { zh: '日历暂时不可用', en: 'calendar unavailable' },
+  } as const
+  return <T zh={copy[status].zh} en={copy[status].en} />
+}
+
 async function AmaMenuLoader() {
   await requireOwnerPage('/admin/ama')
   const { availability, bookingAdmin, google } = getAmaAdminServices()
-  const [upcoming, attention, timeRequests, operations, schedule, connection] =
-    await Promise.all([
+  const [
+    upcoming,
+    attention,
+    timeRequests,
+    operations,
+    schedule,
+    connection,
+    preview,
+  ] = await Promise.all([
       bookingAdmin.searchBookings({
         view: 'upcoming',
         page: 1,
@@ -63,14 +99,31 @@ async function AmaMenuLoader() {
       bookingAdmin.listUnresolvedOperations(),
       availability.getSchedule(),
       google.getConnection(),
-    ])
+      availability.preview(),
+  ])
 
   const needsAttention =
     attention.total +
     timeRequests.length +
     operations.filter((operation) => operation.status === 'failed').length
-  const calendarConnected =
-    connection !== null && connection.status === 'connected'
+  const persistedCalendarStatus =
+    connection?.status === 'denied_scope'
+      ? 'denied-scope'
+      : connection?.status === 'error'
+        ? 'unavailable'
+        : connection?.status ?? 'disconnected'
+  const calendarStatus =
+    persistedCalendarStatus === 'connected' && preview.status !== 'connected'
+      ? preview.status
+      : persistedCalendarStatus
+  const enabledWeekdays = new Set(
+    schedule.weekdays
+      .filter((weekday) => weekday.enabled)
+      .map((weekday) => weekday.isoWeekday),
+  )
+  const enabledWindowCount = schedule.windows.filter((window) =>
+    enabledWeekdays.has(window.isoWeekday),
+  ).length
 
   return (
     <div className="pb-10">
@@ -107,13 +160,9 @@ async function AmaMenuLoader() {
           label={<T zh="设置" en="Settings" />}
           value={
             <>
-              {schedule.windows.length} <T zh="个时段" en="windows" />
+              {enabledWindowCount} <T zh="个时段" en="windows" />
               {' · '}
-              {calendarConnected ? (
-                <T zh="日历已连接" en="calendar connected" />
-              ) : (
-                <T zh="日历未连接" en="calendar off" />
-              )}
+              <CalendarSummary status={calendarStatus} />
             </>
           }
         />

@@ -1,0 +1,3632 @@
+{
+  "id": "ca9137dc-68c7-4b9c-b16a-aacb939913bb",
+  "prevId": "f62db8f4-7a77-4b31-bd0e-dfbec343b0f9",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.ama_admin_sessions": {
+      "name": "ama_admin_sessions",
+      "schema": "",
+      "columns": {
+        "token_hash": {
+          "name": "token_hash",
+          "type": "varchar(64)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "owner_email": {
+          "name": "owner_email",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revoked_at": {
+          "name": "revoked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ama_admin_sessions_expires_at_idx": {
+          "name": "ama_admin_sessions_expires_at_idx",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ama_alternate_time_requests": {
+      "name": "ama_alternate_time_requests",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "guest_name": {
+          "name": "guest_name",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "guest_email": {
+          "name": "guest_email",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "locale": {
+          "name": "locale",
+          "type": "varchar(2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "guest_time_zone": {
+          "name": "guest_time_zone",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "preferred_windows": {
+          "name": "preferred_windows",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'new'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "resolved_at": {
+          "name": "resolved_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "ama_alternate_time_requests_status_idx": {
+          "name": "ama_alternate_time_requests_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ama_alternate_time_requests_guest_check": {
+          "name": "ama_alternate_time_requests_guest_check",
+          "value": "length(btrim(\"ama_alternate_time_requests\".\"guest_name\")) > 0 AND length(btrim(\"ama_alternate_time_requests\".\"guest_email\")) > 0"
+        },
+        "ama_alternate_time_requests_locale_check": {
+          "name": "ama_alternate_time_requests_locale_check",
+          "value": "\"ama_alternate_time_requests\".\"locale\" IN ('zh', 'en')"
+        },
+        "ama_alternate_time_requests_windows_check": {
+          "name": "ama_alternate_time_requests_windows_check",
+          "value": "length(btrim(\"ama_alternate_time_requests\".\"preferred_windows\")) > 0 AND char_length(\"ama_alternate_time_requests\".\"preferred_windows\") <= 1000"
+        },
+        "ama_alternate_time_requests_note_check": {
+          "name": "ama_alternate_time_requests_note_check",
+          "value": "\"ama_alternate_time_requests\".\"note\" IS NULL OR char_length(\"ama_alternate_time_requests\".\"note\") <= 1000"
+        },
+        "ama_alternate_time_requests_status_check": {
+          "name": "ama_alternate_time_requests_status_check",
+          "value": "\"ama_alternate_time_requests\".\"status\" IN ('new', 'resolved', 'dismissed')"
+        },
+        "ama_alternate_time_requests_resolution_check": {
+          "name": "ama_alternate_time_requests_resolution_check",
+          "value": "(\"ama_alternate_time_requests\".\"status\" = 'new') = (\"ama_alternate_time_requests\".\"resolved_at\" IS NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.ama_auth_tokens": {
+      "name": "ama_auth_tokens",
+      "schema": "",
+      "columns": {
+        "token_hash": {
+          "name": "token_hash",
+          "type": "varchar(64)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "owner_email": {
+          "name": "owner_email",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "consumed_at": {
+          "name": "consumed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ama_auth_tokens_expires_at_idx": {
+          "name": "ama_auth_tokens_expires_at_idx",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ama_availability_override_windows": {
+      "name": "ama_availability_override_windows",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "override_id": {
+          "name": "override_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_minute": {
+          "name": "start_minute",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_minute": {
+          "name": "end_minute",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ama_availability_override_windows_order_idx": {
+          "name": "ama_availability_override_windows_order_idx",
+          "columns": [
+            {
+              "expression": "override_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "start_minute",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "end_minute",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "ama_availability_override_windows_override_id_ama_availability_overrides_id_fk": {
+          "name": "ama_availability_override_windows_override_id_ama_availability_overrides_id_fk",
+          "tableFrom": "ama_availability_override_windows",
+          "tableTo": "ama_availability_overrides",
+          "columnsFrom": [
+            "override_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ama_availability_override_windows_start_minute_check": {
+          "name": "ama_availability_override_windows_start_minute_check",
+          "value": "\"ama_availability_override_windows\".\"start_minute\" BETWEEN 0 AND 1439"
+        },
+        "ama_availability_override_windows_end_minute_check": {
+          "name": "ama_availability_override_windows_end_minute_check",
+          "value": "\"ama_availability_override_windows\".\"end_minute\" BETWEEN 1 AND 1440"
+        },
+        "ama_availability_override_windows_same_day_check": {
+          "name": "ama_availability_override_windows_same_day_check",
+          "value": "\"ama_availability_override_windows\".\"start_minute\" < \"ama_availability_override_windows\".\"end_minute\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.ama_availability_overrides": {
+      "name": "ama_availability_overrides",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "local_date": {
+          "name": "local_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ama_availability_overrides_local_date_uidx": {
+          "name": "ama_availability_overrides_local_date_uidx",
+          "columns": [
+            {
+              "expression": "local_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ama_availability_settings": {
+      "name": "ama_availability_settings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "default": 1
+        },
+        "time_zone": {
+          "name": "time_zone",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'Asia/Taipei'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ama_availability_settings_singleton_check": {
+          "name": "ama_availability_settings_singleton_check",
+          "value": "\"ama_availability_settings\".\"id\" = 1"
+        },
+        "ama_availability_settings_time_zone_check": {
+          "name": "ama_availability_settings_time_zone_check",
+          "value": "length(btrim(\"ama_availability_settings\".\"time_zone\")) > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.ama_availability_weekdays": {
+      "name": "ama_availability_weekdays",
+      "schema": "",
+      "columns": {
+        "iso_weekday": {
+          "name": "iso_weekday",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "enabled": {
+          "name": "enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ama_availability_weekdays_iso_weekday_check": {
+          "name": "ama_availability_weekdays_iso_weekday_check",
+          "value": "\"ama_availability_weekdays\".\"iso_weekday\" BETWEEN 1 AND 7"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.ama_availability_windows": {
+      "name": "ama_availability_windows",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "iso_weekday": {
+          "name": "iso_weekday",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_minute": {
+          "name": "start_minute",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_minute": {
+          "name": "end_minute",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ama_availability_windows_order_idx": {
+          "name": "ama_availability_windows_order_idx",
+          "columns": [
+            {
+              "expression": "iso_weekday",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "start_minute",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "end_minute",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ama_availability_windows_iso_weekday_check": {
+          "name": "ama_availability_windows_iso_weekday_check",
+          "value": "\"ama_availability_windows\".\"iso_weekday\" BETWEEN 1 AND 7"
+        },
+        "ama_availability_windows_start_minute_check": {
+          "name": "ama_availability_windows_start_minute_check",
+          "value": "\"ama_availability_windows\".\"start_minute\" BETWEEN 0 AND 1439"
+        },
+        "ama_availability_windows_end_minute_check": {
+          "name": "ama_availability_windows_end_minute_check",
+          "value": "\"ama_availability_windows\".\"end_minute\" BETWEEN 1 AND 1440"
+        },
+        "ama_availability_windows_same_day_check": {
+          "name": "ama_availability_windows_same_day_check",
+          "value": "\"ama_availability_windows\".\"start_minute\" < \"ama_availability_windows\".\"end_minute\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.ama_booking_events": {
+      "name": "ama_booking_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "booking_id": {
+          "name": "booking_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event": {
+          "name": "event",
+          "type": "varchar(48)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor": {
+          "name": "actor",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "occurred_at": {
+          "name": "occurred_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "detail": {
+          "name": "detail",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        }
+      },
+      "indexes": {
+        "ama_booking_events_booking_idx": {
+          "name": "ama_booking_events_booking_idx",
+          "columns": [
+            {
+              "expression": "booking_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "occurred_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "ama_booking_events_booking_id_ama_bookings_id_fk": {
+          "name": "ama_booking_events_booking_id_ama_bookings_id_fk",
+          "tableFrom": "ama_booking_events",
+          "tableTo": "ama_bookings",
+          "columnsFrom": [
+            "booking_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ama_booking_events_event_check": {
+          "name": "ama_booking_events_event_check",
+          "value": "length(btrim(\"ama_booking_events\".\"event\")) > 0"
+        },
+        "ama_booking_events_actor_check": {
+          "name": "ama_booking_events_actor_check",
+          "value": "\"ama_booking_events\".\"actor\" IN ('guest', 'owner', 'system', 'provider')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.ama_booking_intents": {
+      "name": "ama_booking_intents",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "hold_claim_id": {
+          "name": "hold_claim_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "guest_name": {
+          "name": "guest_name",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "guest_email": {
+          "name": "guest_email",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "locale": {
+          "name": "locale",
+          "type": "varchar(2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "guest_time_zone": {
+          "name": "guest_time_zone",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "topics": {
+          "name": "topics",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "brief_text": {
+          "name": "brief_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "brief_urls": {
+          "name": "brief_urls",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "meeting_provider": {
+          "name": "meeting_provider",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stripe_checkout_session_id": {
+          "name": "stripe_checkout_session_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ama_booking_intents_hold_claim_uidx": {
+          "name": "ama_booking_intents_hold_claim_uidx",
+          "columns": [
+            {
+              "expression": "hold_claim_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "ama_booking_intents_checkout_session_uidx": {
+          "name": "ama_booking_intents_checkout_session_uidx",
+          "columns": [
+            {
+              "expression": "stripe_checkout_session_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "ama_booking_intents_hold_claim_id_ama_slot_claims_id_fk": {
+          "name": "ama_booking_intents_hold_claim_id_ama_slot_claims_id_fk",
+          "tableFrom": "ama_booking_intents",
+          "tableTo": "ama_slot_claims",
+          "columnsFrom": [
+            "hold_claim_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ama_booking_intents_guest_check": {
+          "name": "ama_booking_intents_guest_check",
+          "value": "length(btrim(\"ama_booking_intents\".\"guest_name\")) > 0 AND length(btrim(\"ama_booking_intents\".\"guest_email\")) > 0"
+        },
+        "ama_booking_intents_locale_check": {
+          "name": "ama_booking_intents_locale_check",
+          "value": "\"ama_booking_intents\".\"locale\" IN ('zh', 'en')"
+        },
+        "ama_booking_intents_time_zone_check": {
+          "name": "ama_booking_intents_time_zone_check",
+          "value": "length(btrim(\"ama_booking_intents\".\"guest_time_zone\")) > 0"
+        },
+        "ama_booking_intents_topics_check": {
+          "name": "ama_booking_intents_topics_check",
+          "value": "jsonb_typeof(\"ama_booking_intents\".\"topics\") = 'array' AND jsonb_array_length(\"ama_booking_intents\".\"topics\") BETWEEN 1 AND 8"
+        },
+        "ama_booking_intents_brief_check": {
+          "name": "ama_booking_intents_brief_check",
+          "value": "length(btrim(\"ama_booking_intents\".\"brief_text\")) > 0 AND char_length(\"ama_booking_intents\".\"brief_text\") <= 2000"
+        },
+        "ama_booking_intents_brief_urls_check": {
+          "name": "ama_booking_intents_brief_urls_check",
+          "value": "jsonb_typeof(\"ama_booking_intents\".\"brief_urls\") = 'array' AND jsonb_array_length(\"ama_booking_intents\".\"brief_urls\") <= 5"
+        },
+        "ama_booking_intents_provider_check": {
+          "name": "ama_booking_intents_provider_check",
+          "value": "\"ama_booking_intents\".\"meeting_provider\" IN ('google-meet', 'tencent-meeting')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.ama_bookings": {
+      "name": "ama_bookings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "intent_id": {
+          "name": "intent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "claim_id": {
+          "name": "claim_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'finalizing'"
+        },
+        "guest_name": {
+          "name": "guest_name",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "guest_email": {
+          "name": "guest_email",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "locale": {
+          "name": "locale",
+          "type": "varchar(2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "guest_time_zone": {
+          "name": "guest_time_zone",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "topics": {
+          "name": "topics",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "brief_text": {
+          "name": "brief_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "brief_urls": {
+          "name": "brief_urls",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "brief_purged_at": {
+          "name": "brief_purged_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "meeting_provider": {
+          "name": "meeting_provider",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "starts_at": {
+          "name": "starts_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ends_at": {
+          "name": "ends_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stripe_checkout_session_id": {
+          "name": "stripe_checkout_session_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stripe_payment_intent_id": {
+          "name": "stripe_payment_intent_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "amount_total": {
+          "name": "amount_total",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "currency": {
+          "name": "currency",
+          "type": "varchar(8)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "refund_status": {
+          "name": "refund_status",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'none'"
+        },
+        "stripe_refund_id": {
+          "name": "stripe_refund_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refunded_at": {
+          "name": "refunded_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refund_reason": {
+          "name": "refund_reason",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancelled_at": {
+          "name": "cancelled_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancelled_by": {
+          "name": "cancelled_by",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "meeting_url": {
+          "name": "meeting_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "google_calendar_event_id": {
+          "name": "google_calendar_event_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tencent_meeting_id": {
+          "name": "tencent_meeting_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "meeting_created_at": {
+          "name": "meeting_created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "manage_token_hash": {
+          "name": "manage_token_hash",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "manage_token_issued_at": {
+          "name": "manage_token_issued_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "manage_token_revoked_at": {
+          "name": "manage_token_revoked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ama_bookings_intent_uidx": {
+          "name": "ama_bookings_intent_uidx",
+          "columns": [
+            {
+              "expression": "intent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "ama_bookings_checkout_session_uidx": {
+          "name": "ama_bookings_checkout_session_uidx",
+          "columns": [
+            {
+              "expression": "stripe_checkout_session_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "ama_bookings_manage_token_uidx": {
+          "name": "ama_bookings_manage_token_uidx",
+          "columns": [
+            {
+              "expression": "manage_token_hash",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "ama_bookings_schedule_idx": {
+          "name": "ama_bookings_schedule_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "starts_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "ama_bookings_claim_idx": {
+          "name": "ama_bookings_claim_idx",
+          "columns": [
+            {
+              "expression": "claim_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "ama_bookings_intent_id_ama_booking_intents_id_fk": {
+          "name": "ama_bookings_intent_id_ama_booking_intents_id_fk",
+          "tableFrom": "ama_bookings",
+          "tableTo": "ama_booking_intents",
+          "columnsFrom": [
+            "intent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "ama_bookings_claim_id_ama_slot_claims_id_fk": {
+          "name": "ama_bookings_claim_id_ama_slot_claims_id_fk",
+          "tableFrom": "ama_bookings",
+          "tableTo": "ama_slot_claims",
+          "columnsFrom": [
+            "claim_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ama_bookings_status_check": {
+          "name": "ama_bookings_status_check",
+          "value": "\"ama_bookings\".\"status\" IN ('finalizing', 'confirmed', 'needs_reschedule', 'cancelled')"
+        },
+        "ama_bookings_locale_check": {
+          "name": "ama_bookings_locale_check",
+          "value": "\"ama_bookings\".\"locale\" IN ('zh', 'en')"
+        },
+        "ama_bookings_provider_check": {
+          "name": "ama_bookings_provider_check",
+          "value": "\"ama_bookings\".\"meeting_provider\" IN ('google-meet', 'tencent-meeting')"
+        },
+        "ama_bookings_interval_check": {
+          "name": "ama_bookings_interval_check",
+          "value": "\"ama_bookings\".\"starts_at\" < \"ama_bookings\".\"ends_at\""
+        },
+        "ama_bookings_claim_presence_check": {
+          "name": "ama_bookings_claim_presence_check",
+          "value": "\"ama_bookings\".\"status\" IN ('needs_reschedule', 'cancelled') OR \"ama_bookings\".\"claim_id\" IS NOT NULL"
+        },
+        "ama_bookings_refund_status_check": {
+          "name": "ama_bookings_refund_status_check",
+          "value": "\"ama_bookings\".\"refund_status\" IN ('none', 'pending', 'refunded', 'failed')"
+        },
+        "ama_bookings_refund_reason_check": {
+          "name": "ama_bookings_refund_reason_check",
+          "value": "\"ama_bookings\".\"refund_reason\" IS NULL OR \"ama_bookings\".\"refund_reason\" IN ('guest_cancellation', 'owner_cancellation', 'owner_exception')"
+        },
+        "ama_bookings_cancellation_check": {
+          "name": "ama_bookings_cancellation_check",
+          "value": "(\"ama_bookings\".\"status\" = 'cancelled') = (\"ama_bookings\".\"cancelled_at\" IS NOT NULL AND \"ama_bookings\".\"cancelled_by\" IS NOT NULL)"
+        },
+        "ama_bookings_cancelled_by_check": {
+          "name": "ama_bookings_cancelled_by_check",
+          "value": "\"ama_bookings\".\"cancelled_by\" IS NULL OR \"ama_bookings\".\"cancelled_by\" IN ('guest', 'owner')"
+        },
+        "ama_bookings_brief_purge_check": {
+          "name": "ama_bookings_brief_purge_check",
+          "value": "(\"ama_bookings\".\"brief_purged_at\" IS NULL AND \"ama_bookings\".\"brief_text\" IS NOT NULL AND \"ama_bookings\".\"brief_urls\" IS NOT NULL) OR (\"ama_bookings\".\"brief_purged_at\" IS NOT NULL AND \"ama_bookings\".\"brief_text\" IS NULL AND \"ama_bookings\".\"brief_urls\" IS NULL)"
+        },
+        "ama_bookings_manage_token_check": {
+          "name": "ama_bookings_manage_token_check",
+          "value": "(\"ama_bookings\".\"manage_token_hash\" IS NULL) = (\"ama_bookings\".\"manage_token_issued_at\" IS NULL)"
+        },
+        "ama_bookings_amount_check": {
+          "name": "ama_bookings_amount_check",
+          "value": "\"ama_bookings\".\"amount_total\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.ama_durable_operations": {
+      "name": "ama_durable_operations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "kind": {
+          "name": "kind",
+          "type": "varchar(48)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dedupe_key": {
+          "name": "dedupe_key",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "booking_id": {
+          "name": "booking_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payload": {
+          "name": "payload",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "attempt_count": {
+          "name": "attempt_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "max_attempts": {
+          "name": "max_attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 8
+        },
+        "next_attempt_at": {
+          "name": "next_attempt_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lease_token": {
+          "name": "lease_token",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lease_expires_at": {
+          "name": "lease_expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_error_code": {
+          "name": "last_error_code",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ama_durable_operations_dedupe_uidx": {
+          "name": "ama_durable_operations_dedupe_uidx",
+          "columns": [
+            {
+              "expression": "dedupe_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "ama_durable_operations_due_idx": {
+          "name": "ama_durable_operations_due_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "next_attempt_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "ama_durable_operations_booking_idx": {
+          "name": "ama_durable_operations_booking_idx",
+          "columns": [
+            {
+              "expression": "booking_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "ama_durable_operations_booking_id_ama_bookings_id_fk": {
+          "name": "ama_durable_operations_booking_id_ama_bookings_id_fk",
+          "tableFrom": "ama_durable_operations",
+          "tableTo": "ama_bookings",
+          "columnsFrom": [
+            "booking_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ama_durable_operations_kind_check": {
+          "name": "ama_durable_operations_kind_check",
+          "value": "length(btrim(\"ama_durable_operations\".\"kind\")) > 0"
+        },
+        "ama_durable_operations_status_check": {
+          "name": "ama_durable_operations_status_check",
+          "value": "\"ama_durable_operations\".\"status\" IN ('pending', 'running', 'succeeded', 'failed', 'cancelled', 'resolved')"
+        },
+        "ama_durable_operations_attempts_check": {
+          "name": "ama_durable_operations_attempts_check",
+          "value": "\"ama_durable_operations\".\"attempt_count\" >= 0 AND \"ama_durable_operations\".\"max_attempts\" > 0"
+        },
+        "ama_durable_operations_lease_check": {
+          "name": "ama_durable_operations_lease_check",
+          "value": "num_nonnulls(\"ama_durable_operations\".\"lease_token\", \"ama_durable_operations\".\"lease_expires_at\") IN (0, 2)"
+        },
+        "ama_durable_operations_completion_check": {
+          "name": "ama_durable_operations_completion_check",
+          "value": "(\"ama_durable_operations\".\"status\" IN ('succeeded', 'failed', 'cancelled', 'resolved')) = (\"ama_durable_operations\".\"completed_at\" IS NOT NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.ama_google_calendar_connections": {
+      "name": "ama_google_calendar_connections",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "default": 1
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "calendar_id": {
+          "name": "calendar_id",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "calendar_email": {
+          "name": "calendar_email",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "calendar_summary": {
+          "name": "calendar_summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "granted_scopes": {
+          "name": "granted_scopes",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "refresh_token_envelope": {
+          "name": "refresh_token_envelope",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "access_token_expires_at": {
+          "name": "access_token_expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_error_code": {
+          "name": "last_error_code",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "connected_at": {
+          "name": "connected_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ama_google_calendar_connections_singleton_check": {
+          "name": "ama_google_calendar_connections_singleton_check",
+          "value": "\"ama_google_calendar_connections\".\"id\" = 1"
+        },
+        "ama_google_calendar_connections_status_check": {
+          "name": "ama_google_calendar_connections_status_check",
+          "value": "\"ama_google_calendar_connections\".\"status\" IN ('disconnected', 'connected', 'expired', 'revoked', 'denied_scope', 'error')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.ama_google_oauth_attempts": {
+      "name": "ama_google_oauth_attempts",
+      "schema": "",
+      "columns": {
+        "state_hash": {
+          "name": "state_hash",
+          "type": "varchar(64)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "owner_email": {
+          "name": "owner_email",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pkce_verifier_envelope": {
+          "name": "pkce_verifier_envelope",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "consumed_at": {
+          "name": "consumed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ama_google_oauth_attempts_expires_at_idx": {
+          "name": "ama_google_oauth_attempts_expires_at_idx",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ama_provider_events": {
+      "name": "ama_provider_events",
+      "schema": "",
+      "columns": {
+        "provider": {
+          "name": "provider",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_type": {
+          "name": "event_type",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "received_at": {
+          "name": "received_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "processed_at": {
+          "name": "processed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "outcome": {
+          "name": "outcome",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "ama_provider_events_provider_event_id_pk": {
+          "name": "ama_provider_events_provider_event_id_pk",
+          "columns": [
+            "provider",
+            "event_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ama_provider_events_provider_check": {
+          "name": "ama_provider_events_provider_check",
+          "value": "\"ama_provider_events\".\"provider\" = 'stripe'"
+        },
+        "ama_provider_events_identity_check": {
+          "name": "ama_provider_events_identity_check",
+          "value": "length(btrim(\"ama_provider_events\".\"event_id\")) > 0 AND length(btrim(\"ama_provider_events\".\"event_type\")) > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.ama_slot_claims": {
+      "name": "ama_slot_claims",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "kind": {
+          "name": "kind",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "starts_at": {
+          "name": "starts_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ends_at": {
+          "name": "ends_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "blocked_during": {
+          "name": "blocked_during",
+          "type": "tstzrange",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "released_at": {
+          "name": "released_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "release_reason": {
+          "name": "release_reason",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ama_slot_claims_active_idx": {
+          "name": "ama_slot_claims_active_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "ends_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "ama_slot_claims_expiry_idx": {
+          "name": "ama_slot_claims_expiry_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ama_slot_claims_kind_check": {
+          "name": "ama_slot_claims_kind_check",
+          "value": "\"ama_slot_claims\".\"kind\" IN ('hold', 'booking')"
+        },
+        "ama_slot_claims_status_check": {
+          "name": "ama_slot_claims_status_check",
+          "value": "\"ama_slot_claims\".\"status\" IN ('active', 'released')"
+        },
+        "ama_slot_claims_interval_check": {
+          "name": "ama_slot_claims_interval_check",
+          "value": "\"ama_slot_claims\".\"starts_at\" < \"ama_slot_claims\".\"ends_at\""
+        },
+        "ama_slot_claims_blocked_during_check": {
+          "name": "ama_slot_claims_blocked_during_check",
+          "value": "\"ama_slot_claims\".\"blocked_during\" = tstzrange(\"ama_slot_claims\".\"starts_at\" - interval '15 minutes', \"ama_slot_claims\".\"ends_at\" + interval '15 minutes', '[)')"
+        },
+        "ama_slot_claims_hold_expiry_check": {
+          "name": "ama_slot_claims_hold_expiry_check",
+          "value": "(\"ama_slot_claims\".\"kind\" = 'hold') = (\"ama_slot_claims\".\"expires_at\" IS NOT NULL)"
+        },
+        "ama_slot_claims_release_check": {
+          "name": "ama_slot_claims_release_check",
+          "value": "(\"ama_slot_claims\".\"status\" = 'active' AND \"ama_slot_claims\".\"released_at\" IS NULL AND \"ama_slot_claims\".\"release_reason\" IS NULL) OR (\"ama_slot_claims\".\"status\" = 'released' AND \"ama_slot_claims\".\"released_at\" IS NOT NULL AND \"ama_slot_claims\".\"release_reason\" IS NOT NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.media_active_photo_publication": {
+      "name": "media_active_photo_publication",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "default": 1
+        },
+        "published_selection_id": {
+          "name": "published_selection_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "media_active_photo_publication_selection_uidx": {
+          "name": "media_active_photo_publication_selection_uidx",
+          "columns": [
+            {
+              "expression": "published_selection_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "media_active_photo_publication_published_selection_id_media_published_photo_selections_id_fk": {
+          "name": "media_active_photo_publication_published_selection_id_media_published_photo_selections_id_fk",
+          "tableFrom": "media_active_photo_publication",
+          "tableTo": "media_published_photo_selections",
+          "columnsFrom": [
+            "published_selection_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "media_active_photo_publication_singleton_check": {
+          "name": "media_active_photo_publication_singleton_check",
+          "value": "\"media_active_photo_publication\".\"id\" = 1"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.media_asset_purge_jobs": {
+      "name": "media_asset_purge_jobs",
+      "schema": "",
+      "columns": {
+        "media_asset_id": {
+          "name": "media_asset_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "owner_user_id": {
+          "name": "owner_user_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "original_key": {
+          "name": "original_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "original_deleted_at": {
+          "name": "original_deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "claim_token": {
+          "name": "claim_token",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "claim_expires_at": {
+          "name": "claim_expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_error_code": {
+          "name": "last_error_code",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "media_asset_purge_jobs_owner_idx": {
+          "name": "media_asset_purge_jobs_owner_idx",
+          "columns": [
+            {
+              "expression": "owner_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "completed_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "media_asset_purge_jobs_owner_check": {
+          "name": "media_asset_purge_jobs_owner_check",
+          "value": "length(btrim(\"media_asset_purge_jobs\".\"owner_user_id\")) > 0"
+        },
+        "media_asset_purge_jobs_claim_check": {
+          "name": "media_asset_purge_jobs_claim_check",
+          "value": "num_nonnulls(\"media_asset_purge_jobs\".\"claim_token\", \"media_asset_purge_jobs\".\"claim_expires_at\") IN (0, 2)"
+        },
+        "media_asset_purge_jobs_error_check": {
+          "name": "media_asset_purge_jobs_error_check",
+          "value": "\"media_asset_purge_jobs\".\"last_error_code\" IS NULL OR length(btrim(\"media_asset_purge_jobs\".\"last_error_code\")) > 0"
+        },
+        "media_asset_purge_jobs_completion_check": {
+          "name": "media_asset_purge_jobs_completion_check",
+          "value": "(\"media_asset_purge_jobs\".\"completed_at\" IS NULL AND \"media_asset_purge_jobs\".\"original_key\" IS NOT NULL) OR (\"media_asset_purge_jobs\".\"completed_at\" IS NOT NULL AND \"media_asset_purge_jobs\".\"original_key\" IS NULL AND \"media_asset_purge_jobs\".\"original_deleted_at\" IS NOT NULL AND \"media_asset_purge_jobs\".\"claim_token\" IS NULL AND \"media_asset_purge_jobs\".\"claim_expires_at\" IS NULL AND \"media_asset_purge_jobs\".\"last_error_code\" IS NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.media_asset_purge_renditions": {
+      "name": "media_asset_purge_renditions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "media_asset_id": {
+          "name": "media_asset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "object_key": {
+          "name": "object_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "object_deleted_at": {
+          "name": "object_deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cdn_purged_at": {
+          "name": "cdn_purged_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "media_asset_purge_renditions_object_uidx": {
+          "name": "media_asset_purge_renditions_object_uidx",
+          "columns": [
+            {
+              "expression": "media_asset_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "object_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "media_asset_purge_renditions_media_asset_id_media_asset_purge_jobs_media_asset_id_fk": {
+          "name": "media_asset_purge_renditions_media_asset_id_media_asset_purge_jobs_media_asset_id_fk",
+          "tableFrom": "media_asset_purge_renditions",
+          "tableTo": "media_asset_purge_jobs",
+          "columnsFrom": [
+            "media_asset_id"
+          ],
+          "columnsTo": [
+            "media_asset_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "media_asset_purge_renditions_object_key_check": {
+          "name": "media_asset_purge_renditions_object_key_check",
+          "value": "length(btrim(\"media_asset_purge_renditions\".\"object_key\")) > 0"
+        },
+        "media_asset_purge_renditions_progress_check": {
+          "name": "media_asset_purge_renditions_progress_check",
+          "value": "\"media_asset_purge_renditions\".\"cdn_purged_at\" IS NULL OR \"media_asset_purge_renditions\".\"object_deleted_at\" IS NOT NULL"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.media_assets": {
+      "name": "media_assets",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "upload_intent_id": {
+          "name": "upload_intent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'image'"
+        },
+        "catalog_state": {
+          "name": "catalog_state",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "processing_state": {
+          "name": "processing_state",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'upload_initiated'"
+        },
+        "processing_error_code": {
+          "name": "processing_error_code",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "original_key": {
+          "name": "original_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "original_content_type": {
+          "name": "original_content_type",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "original_byte_size": {
+          "name": "original_byte_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "original_checksum_sha256": {
+          "name": "original_checksum_sha256",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "width": {
+          "name": "width",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "height": {
+          "name": "height",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "captured_at": {
+          "name": "captured_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "camera_make": {
+          "name": "camera_make",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "camera_model": {
+          "name": "camera_model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lens": {
+          "name": "lens",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "focal_length_millimeters": {
+          "name": "focal_length_millimeters",
+          "type": "numeric(8, 3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "aperture": {
+          "name": "aperture",
+          "type": "numeric(6, 3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "shutter_speed_seconds": {
+          "name": "shutter_speed_seconds",
+          "type": "numeric(12, 8)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "iso": {
+          "name": "iso",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "focal_point_x": {
+          "name": "focal_point_x",
+          "type": "numeric(5, 4)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "focal_point_y": {
+          "name": "focal_point_y",
+          "type": "numeric(5, 4)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "capture_location_envelope": {
+          "name": "capture_location_envelope",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_label_zh_hans": {
+          "name": "location_label_zh_hans",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_label_en": {
+          "name": "location_label_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "alt_text_suggestion_zh_hans": {
+          "name": "alt_text_suggestion_zh_hans",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "alt_text_suggestion_en": {
+          "name": "alt_text_suggestion_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "alt_text_suggestion_model": {
+          "name": "alt_text_suggestion_model",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "alt_text_suggested_at": {
+          "name": "alt_text_suggested_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "alt_text_zh_hans": {
+          "name": "alt_text_zh_hans",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "alt_text_en": {
+          "name": "alt_text_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "alt_text_approved_at": {
+          "name": "alt_text_approved_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "purge_started_at": {
+          "name": "purge_started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "media_assets_upload_intent_uidx": {
+          "name": "media_assets_upload_intent_uidx",
+          "columns": [
+            {
+              "expression": "upload_intent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "media_assets_original_key_uidx": {
+          "name": "media_assets_original_key_uidx",
+          "columns": [
+            {
+              "expression": "original_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "media_assets_library_idx": {
+          "name": "media_assets_library_idx",
+          "columns": [
+            {
+              "expression": "catalog_state",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "processing_state",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "media_assets_upload_intent_id_media_upload_intents_id_fk": {
+          "name": "media_assets_upload_intent_id_media_upload_intents_id_fk",
+          "tableFrom": "media_assets",
+          "tableTo": "media_upload_intents",
+          "columnsFrom": [
+            "upload_intent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "media_assets_kind_check": {
+          "name": "media_assets_kind_check",
+          "value": "\"media_assets\".\"kind\" = 'image'"
+        },
+        "media_assets_catalog_state_check": {
+          "name": "media_assets_catalog_state_check",
+          "value": "\"media_assets\".\"catalog_state\" IN ('active', 'archived', 'purging')"
+        },
+        "media_assets_processing_state_check": {
+          "name": "media_assets_processing_state_check",
+          "value": "\"media_assets\".\"processing_state\" IN ('upload_initiated', 'original_verified', 'processing', 'ready', 'retryable_failure', 'repair_required')"
+        },
+        "media_assets_processing_error_check": {
+          "name": "media_assets_processing_error_check",
+          "value": "(\"media_assets\".\"processing_state\" IN ('retryable_failure', 'repair_required')) = (\"media_assets\".\"processing_error_code\" IS NOT NULL AND length(btrim(\"media_assets\".\"processing_error_code\")) > 0)"
+        },
+        "media_assets_original_key_check": {
+          "name": "media_assets_original_key_check",
+          "value": "length(btrim(\"media_assets\".\"original_key\")) > 0"
+        },
+        "media_assets_original_content_type_check": {
+          "name": "media_assets_original_content_type_check",
+          "value": "\"media_assets\".\"original_content_type\" IN ('image/jpeg', 'image/png', 'image/heic', 'image/heif')"
+        },
+        "media_assets_original_byte_size_check": {
+          "name": "media_assets_original_byte_size_check",
+          "value": "\"media_assets\".\"original_byte_size\" BETWEEN 1 AND 52428800"
+        },
+        "media_assets_original_checksum_check": {
+          "name": "media_assets_original_checksum_check",
+          "value": "\"media_assets\".\"original_checksum_sha256\" ~ '^[0-9a-f]{64}$'"
+        },
+        "media_assets_dimensions_check": {
+          "name": "media_assets_dimensions_check",
+          "value": "num_nonnulls(\"media_assets\".\"width\", \"media_assets\".\"height\") IN (0, 2) AND (\"media_assets\".\"width\" IS NULL OR (\"media_assets\".\"width\" > 0 AND \"media_assets\".\"height\" > 0 AND (\"media_assets\".\"width\"::bigint * \"media_assets\".\"height\"::bigint) <= 100000000))"
+        },
+        "media_assets_focal_point_check": {
+          "name": "media_assets_focal_point_check",
+          "value": "num_nonnulls(\"media_assets\".\"focal_point_x\", \"media_assets\".\"focal_point_y\") IN (0, 2) AND (\"media_assets\".\"focal_point_x\" IS NULL OR (\"media_assets\".\"focal_point_x\" BETWEEN 0 AND 1 AND \"media_assets\".\"focal_point_y\" BETWEEN 0 AND 1))"
+        },
+        "media_assets_camera_values_check": {
+          "name": "media_assets_camera_values_check",
+          "value": "(\"media_assets\".\"focal_length_millimeters\" IS NULL OR \"media_assets\".\"focal_length_millimeters\" > 0) AND (\"media_assets\".\"aperture\" IS NULL OR \"media_assets\".\"aperture\" > 0) AND (\"media_assets\".\"shutter_speed_seconds\" IS NULL OR \"media_assets\".\"shutter_speed_seconds\" > 0) AND (\"media_assets\".\"iso\" IS NULL OR \"media_assets\".\"iso\" > 0)"
+        },
+        "media_assets_alt_suggestion_check": {
+          "name": "media_assets_alt_suggestion_check",
+          "value": "num_nonnulls(\"media_assets\".\"alt_text_suggestion_zh_hans\", \"media_assets\".\"alt_text_suggestion_en\", \"media_assets\".\"alt_text_suggestion_model\", \"media_assets\".\"alt_text_suggested_at\") IN (0, 4) AND (\"media_assets\".\"alt_text_suggestion_zh_hans\" IS NULL OR (length(btrim(\"media_assets\".\"alt_text_suggestion_zh_hans\")) > 0 AND length(btrim(\"media_assets\".\"alt_text_suggestion_en\")) > 0 AND length(btrim(\"media_assets\".\"alt_text_suggestion_model\")) > 0))"
+        },
+        "media_assets_alt_text_check": {
+          "name": "media_assets_alt_text_check",
+          "value": "num_nonnulls(\"media_assets\".\"alt_text_zh_hans\", \"media_assets\".\"alt_text_en\", \"media_assets\".\"alt_text_approved_at\") IN (0, 3) AND (\"media_assets\".\"alt_text_zh_hans\" IS NULL OR (length(btrim(\"media_assets\".\"alt_text_zh_hans\")) > 0 AND length(btrim(\"media_assets\".\"alt_text_en\")) > 0))"
+        },
+        "media_assets_archive_check": {
+          "name": "media_assets_archive_check",
+          "value": "(\"media_assets\".\"catalog_state\" = 'active' AND \"media_assets\".\"archived_at\" IS NULL AND \"media_assets\".\"purge_started_at\" IS NULL) OR (\"media_assets\".\"catalog_state\" = 'archived' AND \"media_assets\".\"archived_at\" IS NOT NULL AND \"media_assets\".\"purge_started_at\" IS NULL) OR (\"media_assets\".\"catalog_state\" = 'purging' AND \"media_assets\".\"archived_at\" IS NOT NULL AND \"media_assets\".\"purge_started_at\" IS NOT NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.media_photo_selection_draft_entries": {
+      "name": "media_photo_selection_draft_entries",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "draft_id": {
+          "name": "draft_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "media_asset_id": {
+          "name": "media_asset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "media_photo_selection_draft_entries_asset_uidx": {
+          "name": "media_photo_selection_draft_entries_asset_uidx",
+          "columns": [
+            {
+              "expression": "draft_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "media_asset_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "media_photo_selection_draft_entries_position_uidx": {
+          "name": "media_photo_selection_draft_entries_position_uidx",
+          "columns": [
+            {
+              "expression": "draft_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "position",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "media_photo_selection_draft_entries_draft_id_media_photo_selection_drafts_id_fk": {
+          "name": "media_photo_selection_draft_entries_draft_id_media_photo_selection_drafts_id_fk",
+          "tableFrom": "media_photo_selection_draft_entries",
+          "tableTo": "media_photo_selection_drafts",
+          "columnsFrom": [
+            "draft_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "media_photo_selection_draft_entries_media_asset_id_media_assets_id_fk": {
+          "name": "media_photo_selection_draft_entries_media_asset_id_media_assets_id_fk",
+          "tableFrom": "media_photo_selection_draft_entries",
+          "tableTo": "media_assets",
+          "columnsFrom": [
+            "media_asset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "media_photo_selection_draft_entries_position_check": {
+          "name": "media_photo_selection_draft_entries_position_check",
+          "value": "\"media_photo_selection_draft_entries\".\"position\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.media_photo_selection_drafts": {
+      "name": "media_photo_selection_drafts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "owner_user_id": {
+          "name": "owner_user_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "media_photo_selection_drafts_owner_uidx": {
+          "name": "media_photo_selection_drafts_owner_uidx",
+          "columns": [
+            {
+              "expression": "owner_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "media_photo_selection_drafts_owner_check": {
+          "name": "media_photo_selection_drafts_owner_check",
+          "value": "length(btrim(\"media_photo_selection_drafts\".\"owner_user_id\")) > 0"
+        },
+        "media_photo_selection_drafts_revision_check": {
+          "name": "media_photo_selection_drafts_revision_check",
+          "value": "\"media_photo_selection_drafts\".\"revision\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.media_published_photo_selection_entries": {
+      "name": "media_published_photo_selection_entries",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "published_selection_id": {
+          "name": "published_selection_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_media_asset_id": {
+          "name": "source_media_asset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "width": {
+          "name": "width",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "height": {
+          "name": "height",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "focal_point_x": {
+          "name": "focal_point_x",
+          "type": "numeric(5, 4)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "focal_point_y": {
+          "name": "focal_point_y",
+          "type": "numeric(5, 4)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "alt_text_zh_hans": {
+          "name": "alt_text_zh_hans",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "alt_text_en": {
+          "name": "alt_text_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "location_label_zh_hans": {
+          "name": "location_label_zh_hans",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_label_en": {
+          "name": "location_label_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "captured_at": {
+          "name": "captured_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "camera_make": {
+          "name": "camera_make",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "camera_model": {
+          "name": "camera_model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lens": {
+          "name": "lens",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "focal_length_millimeters": {
+          "name": "focal_length_millimeters",
+          "type": "numeric(8, 3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "aperture": {
+          "name": "aperture",
+          "type": "numeric(6, 3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "shutter_speed_seconds": {
+          "name": "shutter_speed_seconds",
+          "type": "numeric(12, 8)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "iso": {
+          "name": "iso",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "media_published_photo_selection_entries_asset_uidx": {
+          "name": "media_published_photo_selection_entries_asset_uidx",
+          "columns": [
+            {
+              "expression": "published_selection_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "source_media_asset_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "media_published_photo_selection_entries_position_uidx": {
+          "name": "media_published_photo_selection_entries_position_uidx",
+          "columns": [
+            {
+              "expression": "published_selection_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "position",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "media_published_photo_selection_entries_published_selection_id_media_published_photo_selections_id_fk": {
+          "name": "media_published_photo_selection_entries_published_selection_id_media_published_photo_selections_id_fk",
+          "tableFrom": "media_published_photo_selection_entries",
+          "tableTo": "media_published_photo_selections",
+          "columnsFrom": [
+            "published_selection_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "media_published_photo_selection_entries_position_check": {
+          "name": "media_published_photo_selection_entries_position_check",
+          "value": "\"media_published_photo_selection_entries\".\"position\" >= 0"
+        },
+        "media_published_photo_selection_entries_dimensions_check": {
+          "name": "media_published_photo_selection_entries_dimensions_check",
+          "value": "\"media_published_photo_selection_entries\".\"width\" > 0 AND \"media_published_photo_selection_entries\".\"height\" > 0 AND (\"media_published_photo_selection_entries\".\"width\"::bigint * \"media_published_photo_selection_entries\".\"height\"::bigint) <= 100000000"
+        },
+        "media_published_photo_selection_entries_focal_point_check": {
+          "name": "media_published_photo_selection_entries_focal_point_check",
+          "value": "num_nonnulls(\"media_published_photo_selection_entries\".\"focal_point_x\", \"media_published_photo_selection_entries\".\"focal_point_y\") IN (0, 2) AND (\"media_published_photo_selection_entries\".\"focal_point_x\" IS NULL OR (\"media_published_photo_selection_entries\".\"focal_point_x\" BETWEEN 0 AND 1 AND \"media_published_photo_selection_entries\".\"focal_point_y\" BETWEEN 0 AND 1))"
+        },
+        "media_published_photo_selection_entries_alt_text_check": {
+          "name": "media_published_photo_selection_entries_alt_text_check",
+          "value": "length(btrim(\"media_published_photo_selection_entries\".\"alt_text_zh_hans\")) > 0 AND length(btrim(\"media_published_photo_selection_entries\".\"alt_text_en\")) > 0"
+        },
+        "media_published_photo_selection_entries_camera_values_check": {
+          "name": "media_published_photo_selection_entries_camera_values_check",
+          "value": "(\"media_published_photo_selection_entries\".\"focal_length_millimeters\" IS NULL OR \"media_published_photo_selection_entries\".\"focal_length_millimeters\" > 0) AND (\"media_published_photo_selection_entries\".\"aperture\" IS NULL OR \"media_published_photo_selection_entries\".\"aperture\" > 0) AND (\"media_published_photo_selection_entries\".\"shutter_speed_seconds\" IS NULL OR \"media_published_photo_selection_entries\".\"shutter_speed_seconds\" > 0) AND (\"media_published_photo_selection_entries\".\"iso\" IS NULL OR \"media_published_photo_selection_entries\".\"iso\" > 0)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.media_published_photo_selection_renditions": {
+      "name": "media_published_photo_selection_renditions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "published_entry_id": {
+          "name": "published_entry_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "profile_width": {
+          "name": "profile_width",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "object_key": {
+          "name": "object_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "width": {
+          "name": "width",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "height": {
+          "name": "height",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "media_published_photo_selection_renditions_profile_uidx": {
+          "name": "media_published_photo_selection_renditions_profile_uidx",
+          "columns": [
+            {
+              "expression": "published_entry_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "profile_width",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "media_published_photo_selection_renditions_published_entry_id_media_published_photo_selection_entries_id_fk": {
+          "name": "media_published_photo_selection_renditions_published_entry_id_media_published_photo_selection_entries_id_fk",
+          "tableFrom": "media_published_photo_selection_renditions",
+          "tableTo": "media_published_photo_selection_entries",
+          "columnsFrom": [
+            "published_entry_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "media_published_photo_selection_renditions_profile_check": {
+          "name": "media_published_photo_selection_renditions_profile_check",
+          "value": "\"media_published_photo_selection_renditions\".\"profile_width\" IN (640, 1024, 1600, 2560)"
+        },
+        "media_published_photo_selection_renditions_object_key_check": {
+          "name": "media_published_photo_selection_renditions_object_key_check",
+          "value": "length(btrim(\"media_published_photo_selection_renditions\".\"object_key\")) > 0"
+        },
+        "media_published_photo_selection_renditions_dimensions_check": {
+          "name": "media_published_photo_selection_renditions_dimensions_check",
+          "value": "\"media_published_photo_selection_renditions\".\"width\" BETWEEN 1 AND \"media_published_photo_selection_renditions\".\"profile_width\" AND \"media_published_photo_selection_renditions\".\"height\" > 0 AND (\"media_published_photo_selection_renditions\".\"width\"::bigint * \"media_published_photo_selection_renditions\".\"height\"::bigint) <= 100000000"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.media_published_photo_selections": {
+      "name": "media_published_photo_selections",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "owner_user_id": {
+          "name": "owner_user_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idempotency_key": {
+          "name": "idempotency_key",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "draft_revision": {
+          "name": "draft_revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "item_count": {
+          "name": "item_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "published_at": {
+          "name": "published_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "media_published_photo_selections_idempotency_uidx": {
+          "name": "media_published_photo_selections_idempotency_uidx",
+          "columns": [
+            {
+              "expression": "owner_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "idempotency_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "media_published_photo_selections_draft_revision_uidx": {
+          "name": "media_published_photo_selections_draft_revision_uidx",
+          "columns": [
+            {
+              "expression": "owner_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "draft_revision",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "media_published_photo_selections_identity_check": {
+          "name": "media_published_photo_selections_identity_check",
+          "value": "length(btrim(\"media_published_photo_selections\".\"owner_user_id\")) > 0 AND length(btrim(\"media_published_photo_selections\".\"idempotency_key\")) > 0"
+        },
+        "media_published_photo_selections_revision_check": {
+          "name": "media_published_photo_selections_revision_check",
+          "value": "\"media_published_photo_selections\".\"draft_revision\" >= 0"
+        },
+        "media_published_photo_selections_item_count_check": {
+          "name": "media_published_photo_selections_item_count_check",
+          "value": "\"media_published_photo_selections\".\"item_count\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.media_renditions": {
+      "name": "media_renditions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "media_asset_id": {
+          "name": "media_asset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "profile_width": {
+          "name": "profile_width",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "object_key": {
+          "name": "object_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "checksum_sha256": {
+          "name": "checksum_sha256",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "byte_size": {
+          "name": "byte_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "width": {
+          "name": "width",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "height": {
+          "name": "height",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content_type": {
+          "name": "content_type",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'image/jpeg'"
+        },
+        "color_space": {
+          "name": "color_space",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'srgb'"
+        },
+        "progressive": {
+          "name": "progressive",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "metadata_stripped": {
+          "name": "metadata_stripped",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "media_renditions_asset_profile_uidx": {
+          "name": "media_renditions_asset_profile_uidx",
+          "columns": [
+            {
+              "expression": "media_asset_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "profile_width",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "media_renditions_object_key_uidx": {
+          "name": "media_renditions_object_key_uidx",
+          "columns": [
+            {
+              "expression": "object_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "media_renditions_media_asset_id_media_assets_id_fk": {
+          "name": "media_renditions_media_asset_id_media_assets_id_fk",
+          "tableFrom": "media_renditions",
+          "tableTo": "media_assets",
+          "columnsFrom": [
+            "media_asset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "media_renditions_object_key_check": {
+          "name": "media_renditions_object_key_check",
+          "value": "length(btrim(\"media_renditions\".\"object_key\")) > 0"
+        },
+        "media_renditions_profile_check": {
+          "name": "media_renditions_profile_check",
+          "value": "\"media_renditions\".\"profile_width\" IN (640, 1024, 1600, 2560)"
+        },
+        "media_renditions_checksum_check": {
+          "name": "media_renditions_checksum_check",
+          "value": "\"media_renditions\".\"checksum_sha256\" ~ '^[0-9a-f]{64}$'"
+        },
+        "media_renditions_dimensions_check": {
+          "name": "media_renditions_dimensions_check",
+          "value": "\"media_renditions\".\"width\" BETWEEN 1 AND \"media_renditions\".\"profile_width\" AND \"media_renditions\".\"height\" > 0 AND (\"media_renditions\".\"width\"::bigint * \"media_renditions\".\"height\"::bigint) <= 100000000"
+        },
+        "media_renditions_byte_size_check": {
+          "name": "media_renditions_byte_size_check",
+          "value": "\"media_renditions\".\"byte_size\" > 0"
+        },
+        "media_renditions_content_type_check": {
+          "name": "media_renditions_content_type_check",
+          "value": "\"media_renditions\".\"content_type\" = 'image/jpeg'"
+        },
+        "media_renditions_color_space_check": {
+          "name": "media_renditions_color_space_check",
+          "value": "\"media_renditions\".\"color_space\" = 'srgb'"
+        },
+        "media_renditions_progressive_check": {
+          "name": "media_renditions_progressive_check",
+          "value": "\"media_renditions\".\"progressive\" = true"
+        },
+        "media_renditions_metadata_stripped_check": {
+          "name": "media_renditions_metadata_stripped_check",
+          "value": "\"media_renditions\".\"metadata_stripped\" = true"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.media_upload_intents": {
+      "name": "media_upload_intents",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "owner_user_id": {
+          "name": "owner_user_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idempotency_key": {
+          "name": "idempotency_key",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "original_key": {
+          "name": "original_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content_type": {
+          "name": "content_type",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "byte_size": {
+          "name": "byte_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "checksum_sha256": {
+          "name": "checksum_sha256",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "media_upload_intents_owner_idempotency_uidx": {
+          "name": "media_upload_intents_owner_idempotency_uidx",
+          "columns": [
+            {
+              "expression": "owner_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "idempotency_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "media_upload_intents_original_key_uidx": {
+          "name": "media_upload_intents_original_key_uidx",
+          "columns": [
+            {
+              "expression": "original_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "media_upload_intents_expiry_idx": {
+          "name": "media_upload_intents_expiry_idx",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "completed_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "media_upload_intents_identity_check": {
+          "name": "media_upload_intents_identity_check",
+          "value": "length(btrim(\"media_upload_intents\".\"owner_user_id\")) > 0 AND length(btrim(\"media_upload_intents\".\"idempotency_key\")) > 0"
+        },
+        "media_upload_intents_original_key_check": {
+          "name": "media_upload_intents_original_key_check",
+          "value": "length(btrim(\"media_upload_intents\".\"original_key\")) > 0"
+        },
+        "media_upload_intents_content_type_check": {
+          "name": "media_upload_intents_content_type_check",
+          "value": "\"media_upload_intents\".\"content_type\" IN ('image/jpeg', 'image/png', 'image/heic', 'image/heif')"
+        },
+        "media_upload_intents_byte_size_check": {
+          "name": "media_upload_intents_byte_size_check",
+          "value": "\"media_upload_intents\".\"byte_size\" BETWEEN 1 AND 52428800"
+        },
+        "media_upload_intents_checksum_check": {
+          "name": "media_upload_intents_checksum_check",
+          "value": "\"media_upload_intents\".\"checksum_sha256\" ~ '^[0-9a-f]{64}$'"
+        },
+        "media_upload_intents_expiry_check": {
+          "name": "media_upload_intents_expiry_check",
+          "value": "\"media_upload_intents\".\"expires_at\" > \"media_upload_intents\".\"created_at\""
+        },
+        "media_upload_intents_completion_check": {
+          "name": "media_upload_intents_completion_check",
+          "value": "\"media_upload_intents\".\"completed_at\" IS NULL OR \"media_upload_intents\".\"completed_at\" >= \"media_upload_intents\".\"created_at\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.newsletters": {
+      "name": "newsletters",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "subject": {
+          "name": "subject",
+          "type": "varchar(200)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sent_at": {
+          "name": "sent_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.rate_limit_windows": {
+      "name": "rate_limit_windows",
+      "schema": "",
+      "columns": {
+        "scope": {
+          "name": "scope",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "key_hash": {
+          "name": "key_hash",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "request_times": {
+          "name": "request_times",
+          "type": "timestamp with time zone[]",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "window_expires_at": {
+          "name": "window_expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "rate_limit_windows_expiry_idx": {
+          "name": "rate_limit_windows_expiry_idx",
+          "columns": [
+            {
+              "expression": "window_expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "rate_limit_windows_scope_key_hash_pk": {
+          "name": "rate_limit_windows_scope_key_hash_pk",
+          "columns": [
+            "scope",
+            "key_hash"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "rate_limit_windows_request_times_check": {
+          "name": "rate_limit_windows_request_times_check",
+          "value": "cardinality(\"rate_limit_windows\".\"request_times\") > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.subscribers": {
+      "name": "subscribers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "token": {
+          "name": "token",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subscribed_at": {
+          "name": "subscribed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unsubscribed_at": {
+          "name": "unsubscribed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

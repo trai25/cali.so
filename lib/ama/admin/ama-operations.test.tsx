@@ -355,4 +355,31 @@ describe('AMA admin page', () => {
     expect(container.textContent).toContain('stripe_unavailable')
     expect(container.querySelectorAll('[role="status"]').length).toBeGreaterThan(0)
   })
+
+  it('keeps fixture navigation and recovery actions entirely local', async () => {
+    const { container } = render(
+      <AmaOperations
+        {...fixtures}
+        basePath="/admin/ama/fixtures/bookings"
+        fixtureMode
+      />,
+    )
+
+    expect(
+      container.querySelector('a[href="/admin/ama/fixtures/bookings/bk_attention"]'),
+    ).not.toBeNull()
+    expect(
+      container.querySelector('a[href="/admin/ama/bookings/bk_attention"]'),
+    ).toBeNull()
+
+    fireEvent.click(buttonWithText(container, 'Retry'))
+    await waitFor(() =>
+      expect(container.textContent).not.toContain('stripe_unavailable'),
+    )
+    fireEvent.click(buttonWithText(container, 'Resolve'))
+    await waitFor(() =>
+      expect(container.textContent).not.toContain('katherine@example.com'),
+    )
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
 })

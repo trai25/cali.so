@@ -33,6 +33,7 @@ export type AmaOperationsProps = {
   timeRequests: AlternateTimeRequestViewModel[]
   failedOperations: OperationViewModel[]
   basePath?: string
+  fixtureMode?: boolean
 }
 
 export type BookingView = 'attention' | 'upcoming' | 'past' | 'cancelled'
@@ -49,17 +50,19 @@ export type BookingFiltersViewModel = {
 function BookingRow({
   booking,
   ownerTimeZone,
+  detailBasePath,
   showPrep = false,
 }: {
   booking: BookingRowViewModel
   ownerTimeZone: string
+  detailBasePath: string
   showPrep?: boolean
 }) {
   const provider = providerLabels[booking.meetingProvider]
   return (
     <li className="grid gap-3 px-2 py-4 text-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
       <Link
-        href={`/admin/ama/bookings/${booking.id}`}
+        href={`${detailBasePath}/${booking.id}`}
         className="min-w-0 rounded-[2px] outline-none focus-visible:ring-1 focus-visible:ring-foreground"
       >
         <span className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
@@ -140,9 +143,11 @@ function BookingRow({
 function AlternateTimeRequests({
   requests: initialRequests,
   onHandled,
+  fixtureMode = false,
 }: {
   requests: AlternateTimeRequestViewModel[]
   onHandled?: () => void
+  fixtureMode?: boolean
 }) {
   const locale = useLocale()
   const [requests, setRequests] = useState(initialRequests)
@@ -161,12 +166,14 @@ function AlternateTimeRequests({
     setPending(`${request.id}:${action}`)
     setNotice(null)
     try {
-      const response = await fetch(`/api/admin/ama/time-requests/${request.id}`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ action }),
-      })
-      await responseJson(response)
+      if (!fixtureMode) {
+        const response = await fetch(`/api/admin/ama/time-requests/${request.id}`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ action }),
+        })
+        await responseJson(response)
+      }
       setRequests((current) => current.filter((item) => item.id !== request.id))
       onHandled?.()
       setNotice(
@@ -422,7 +429,7 @@ function BookingFilters({
   )
 }
 
-function BookingLedger({
+export function AmaOperations({
   view,
   bookings,
   total,
@@ -434,6 +441,7 @@ function BookingLedger({
   timeRequests,
   failedOperations,
   basePath = '/admin/ama/bookings',
+  fixtureMode = false,
 }: AmaOperationsProps) {
   const locale = useLocale()
   const [handledCount, setHandledCount] = useState(0)
@@ -545,9 +553,30 @@ function BookingLedger({
         </div>
 
         {bookings.length === 0 && (view !== 'attention' || allClear) ? (
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            <T zh={emptyCopy[view].zh} en={emptyCopy[view].en} />
-          </p>
+          <div className="mt-2 text-sm leading-6 text-muted-foreground">
+            <p>
+              <T zh={emptyCopy[view].zh} en={emptyCopy[view].en} />
+            </p>
+            {view === 'upcoming' && !hasFilters && (
+              <Button
+                asChild
+                variant="ghost"
+                size="lg"
+                className="mt-2"
+                expandHitArea
+              >
+                <Link
+                  href={
+                    fixtureMode
+                      ? '/admin/ama/fixtures/availability'
+                      : '/admin/ama/settings'
+                  }
+                >
+                  <T zh="检查可预约时间" en="Check Availability settings" />
+                </Link>
+              </Button>
+            )}
+          </div>
         ) : (
           bookings.length > 0 && (
             <ul className="mt-3 divide-y divide-border/70">
@@ -556,6 +585,7 @@ function BookingLedger({
                   key={booking.id}
                   booking={booking}
                   ownerTimeZone={ownerTimeZone}
+                  detailBasePath={basePath}
                   showPrep={view === 'upcoming'}
                 />
               ))}
@@ -573,6 +603,8 @@ function BookingLedger({
                 <OperationsList
                   operations={failedOperations}
                   removeOnResolve
+                  fixtureMode={fixtureMode}
+                  bookingBasePath={basePath}
                   onStatusChange={(from) => {
                     if (from === 'failed') {
                       setHandledCount((count) => count + 1)
@@ -583,6 +615,7 @@ function BookingLedger({
             )}
             <AlternateTimeRequests
               requests={timeRequests}
+              fixtureMode={fixtureMode}
               onHandled={() => setHandledCount((count) => count + 1)}
             />
           </>
@@ -622,8 +655,4 @@ function BookingLedger({
       </section>
     </div>
   )
-}
-
-export function AmaOperations(props: AmaOperationsProps) {
-  return <BookingLedger {...props} />
 }

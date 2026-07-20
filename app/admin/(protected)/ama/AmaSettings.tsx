@@ -17,7 +17,6 @@ import {
   SelectTrigger,
 } from '~/components/ui/select'
 import { T } from '~/lib/i18n'
-import { localize, useLocale } from '~/lib/locale-client'
 
 import {
   AvailabilityWindowForm,
@@ -27,6 +26,7 @@ import {
   DateOverrideForm,
   type DateOverrideViewModel,
 } from './DateOverrideForm'
+import { AMA_WEEKDAYS, formatScheduleMinute } from './scheduling-fields'
 
 export type { AvailabilityWindowViewModel } from './AvailabilityWindowForm'
 
@@ -54,6 +54,19 @@ export type PreviewSlotViewModel = {
   endsAt: string
 }
 
+export type AvailabilityWeekdayViewModel = {
+  isoWeekday: number
+  enabled: boolean
+}
+
+export type PreviewDiagnosis =
+  | 'open'
+  | 'calendar-unavailable'
+  | 'no-configured-hours'
+  | 'no-policy-eligible-hours'
+  | 'calendar-conflicts'
+  | 'holds-or-bookings'
+
 export type AmaSettingsNotices = {
   availability?:
     | 'saved'
@@ -67,10 +80,12 @@ export type AmaSettingsNotices = {
 
 export type AmaSettingsProps = {
   timeZone: string
+  weekdays?: readonly AvailabilityWeekdayViewModel[]
   windows: readonly AvailabilityWindowViewModel[]
   overrides: readonly DateOverrideViewModel[]
   googleConnection: GoogleConnectionViewModel
   previewSlots: readonly PreviewSlotViewModel[]
+  previewDiagnosis?: PreviewDiagnosis
   publicBookingUrl: string
   notices?: AmaSettingsNotices
   fixtureMode?: boolean
@@ -78,29 +93,12 @@ export type AmaSettingsProps = {
 
 const previewLimit = 12
 
-const weekdays = [
-  { value: 1, zh: '星期一', en: 'Monday' },
-  { value: 2, zh: '星期二', en: 'Tuesday' },
-  { value: 3, zh: '星期三', en: 'Wednesday' },
-  { value: 4, zh: '星期四', en: 'Thursday' },
-  { value: 5, zh: '星期五', en: 'Friday' },
-  { value: 6, zh: '星期六', en: 'Saturday' },
-  { value: 7, zh: '星期日', en: 'Sunday' },
-] as const
-
 function listTimeZones(selected: string) {
   const zones =
     typeof Intl.supportedValuesOf === 'function'
       ? Intl.supportedValuesOf('timeZone')
       : []
   return zones.includes(selected) ? zones : [selected, ...zones]
-}
-
-function formatMinute(minute: number) {
-  if (minute === 24 * 60) return '24:00'
-  return `${Math.floor(minute / 60)
-    .toString()
-    .padStart(2, '0')}:${(minute % 60).toString().padStart(2, '0')}`
 }
 
 function QueryNotices({
@@ -196,7 +194,6 @@ function ScheduleTimeZoneForm({
   describedBy?: string
   fixtureMode: boolean
 }) {
-  const locale = useLocale()
   const [selected, setSelected] = useState(timeZone)
   const [pending, setPending] = useState(false)
   const timeZones = useMemo(() => listTimeZones(timeZone), [timeZone])
@@ -219,7 +216,7 @@ function ScheduleTimeZoneForm({
     >
       <input type="hidden" name="intent" value="set-time-zone" />
       <div className="grid gap-1.5 text-sm">
-        <span className="text-muted-foreground">
+        <span id="schedule-time-zone-label" className="text-muted-foreground">
           <T zh="时区" en="Time zone" />
         </span>
         <Select
@@ -229,7 +226,7 @@ function ScheduleTimeZoneForm({
           readOnly={pending}
         >
           <SelectTrigger
-            aria-label={localize(locale, '日程时区', 'Schedule time zone')}
+            aria-labelledby="schedule-time-zone-label"
             className="w-full rounded-[2px] font-mono text-[13px]"
             disabled={pending}
           />
@@ -263,11 +260,13 @@ function ScheduleTimeZoneForm({
 
 function WeekdaySchedule({
   weekday,
+  enabled,
   windows,
   describedBy,
   fixtureMode,
 }: {
-  weekday: (typeof weekdays)[number]
+  weekday: (typeof AMA_WEEKDAYS)[number]
+  enabled: boolean
   windows: readonly AvailabilityWindowViewModel[]
   describedBy?: string
   fixtureMode: boolean
@@ -275,11 +274,30 @@ function WeekdaySchedule({
   const [adding, setAdding] = useState(false)
   const [copying, setCopying] = useState(false)
   const [pending, setPending] = useState(false)
-  const enabled = windows.length > 0
+  const [fixtureEnabled, setFixtureEnabled] = useState(enabled)
+  const [toggleArmed, setToggleArmed] = useState(false)
+  const currentEnabled = fixtureMode ? fixtureEnabled : enabled
 
   function mutation(event: FormEvent<HTMLFormElement>) {
     if (fixtureMode) {
       event.preventDefault()
+      return
+    }
+    setPending(true)
+  }
+
+  function toggle(event: FormEvent<HTMLFormElement>) {
+    if (!toggleArmed) {
+      event.preventDefault()
+      setToggleArmed(true)
+      setAdding(false)
+      setCopying(false)
+      return
+    }
+    if (fixtureMode) {
+      event.preventDefault()
+      setFixtureEnabled((value) => !value)
+      setToggleArmed(false)
       return
     }
     setPending(true)
@@ -296,18 +314,25 @@ function WeekdaySchedule({
             <T zh={weekday.zh} en={weekday.en} />
           </h3>
           <span className="text-xs text-muted-foreground tabular-nums">
-            {enabled ? (
+            {currentEnabled ? (
               <T
                 zh={`${windows.length} 个时段`}
                 en={`${windows.length} ${windows.length === 1 ? 'interval' : 'intervals'}`}
               />
             ) : (
-              <T zh="关闭" en="Off" />
+              <T
+                zh={windows.length > 0 ? `关闭 · 保留 ${windows.length} 个时段` : '关闭'}
+                en={
+                  windows.length > 0
+                    ? `Off · ${windows.length} saved ${windows.length === 1 ? 'interval' : 'intervals'}`
+                    : 'Off'
+                }
+              />
             )}
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-1">
-          {enabled && (
+          {currentEnabled && (
             <>
               <Button
                 type="button"
@@ -344,27 +369,53 @@ function WeekdaySchedule({
           <form
             action="/api/admin/ama/availability"
             method="post"
-            onSubmit={mutation}
+            onSubmit={toggle}
           >
             <input type="hidden" name="intent" value="set-weekday" />
             <input type="hidden" name="weekday" value={weekday.value} />
-            <input type="hidden" name="enabled" value={String(!enabled)} />
+            <input
+              type="hidden"
+              name="enabled"
+              value={String(!currentEnabled)}
+            />
             <Button
               type="submit"
-              variant={enabled ? 'tertiary' : 'primary'}
+              variant={currentEnabled ? 'tertiary' : 'primary'}
               size="lg"
-              aria-pressed={enabled}
+              aria-pressed={currentEnabled}
               disabled={pending}
               loading={pending}
+              destructive={toggleArmed && currentEnabled}
               expandHitArea
             >
-              {enabled ? <T zh="开启" en="On" /> : <T zh="关闭" en="Off" />}
+              {toggleArmed ? (
+                currentEnabled ? (
+                  <T zh="确认关闭？" en="Turn off?" />
+                ) : (
+                  <T zh="确认开启？" en="Turn on?" />
+                )
+              ) : currentEnabled ? (
+                <T zh="开启" en="On" />
+              ) : (
+                <T zh="关闭" en="Off" />
+              )}
             </Button>
           </form>
+          {toggleArmed && !pending && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="lg"
+              onClick={() => setToggleArmed(false)}
+              expandHitArea
+            >
+              <T zh="取消" en="Cancel" />
+            </Button>
+          )}
         </div>
       </div>
 
-      {enabled && (
+      {currentEnabled && (
         <div className="mt-2 grid gap-3">
           {windows.map((window) => (
             <AvailabilityWindowForm
@@ -403,7 +454,7 @@ function WeekdaySchedule({
               <T zh="复制到" en="Copy to" />
             </legend>
             <div className="mt-2 grid grid-cols-2 gap-1 sm:grid-cols-3">
-              {weekdays
+              {AMA_WEEKDAYS
                 .filter((target) => target.value !== weekday.value)
                 .map((target) => (
                   <label
@@ -461,20 +512,11 @@ function DateOverrideItem({
   const [editing, setEditing] = useState(false)
   const [deleteArmed, setDeleteArmed] = useState(false)
   const [pending, setPending] = useState(false)
-  const timerRef = useRef<number | null>(null)
-
-  useEffect(
-    () => () => {
-      if (timerRef.current !== null) window.clearTimeout(timerRef.current)
-    },
-    [],
-  )
 
   function remove(event: FormEvent<HTMLFormElement>) {
     if (!deleteArmed) {
       event.preventDefault()
       setDeleteArmed(true)
-      timerRef.current = window.setTimeout(() => setDeleteArmed(false), 4000)
       return
     }
     if (fixtureMode) {
@@ -502,8 +544,8 @@ function DateOverrideItem({
               override.intervals.map((interval, index) => (
                 <span key={`${interval.startMinute}-${interval.endMinute}`}>
                   {index > 0 && ', '}
-                  {formatMinute(interval.startMinute)}–
-                  {formatMinute(interval.endMinute)}
+                  {formatScheduleMinute(interval.startMinute)}–
+                  {formatScheduleMinute(interval.endMinute)}
                 </span>
               ))
             )}
@@ -546,6 +588,17 @@ function DateOverrideItem({
               )}
             </Button>
           </form>
+          {deleteArmed && !pending && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="lg"
+              onClick={() => setDeleteArmed(false)}
+              expandHitArea
+            >
+              <T zh="取消" en="Cancel" />
+            </Button>
+          )}
         </div>
       </div>
       {editing && (
@@ -637,22 +690,31 @@ function DateOverridesSection({
 }
 
 function ReadinessSection({
+  weekdays,
   windows,
   overrides,
   connection,
   slots,
+  diagnosis,
   publicBookingUrl,
 }: {
+  weekdays: readonly AvailabilityWeekdayViewModel[]
   windows: readonly AvailabilityWindowViewModel[]
   overrides: readonly DateOverrideViewModel[]
   connection: GoogleConnectionViewModel
   slots: readonly PreviewSlotViewModel[]
+  diagnosis: PreviewDiagnosis
   publicBookingUrl: string
 }) {
   const [copied, setCopied] = useState(false)
   const copiedTimerRef = useRef<number | null>(null)
   const hasHours =
-    windows.length > 0 ||
+    windows.some(
+      (window) =>
+        weekdays.find(
+          (weekday) => weekday.isoWeekday === window.isoWeekday,
+        )?.enabled !== false,
+    ) ||
     overrides.some((override) => override.intervals.length > 0)
 
   useEffect(
@@ -690,41 +752,78 @@ function ReadinessSection({
     },
   }
 
+  const previewFailures: Record<
+    Exclude<PreviewDiagnosis, 'open'>,
+    { zh: string; en: string }
+  > = {
+    'calendar-unavailable': {
+      zh: '日历恢复后才能生成开放时间预览。',
+      en: 'Open-time preview is blocked until Calendar is healthy.',
+    },
+    'no-configured-hours': {
+      zh: '没有已启用的每周时段或自定义日期时段。',
+      en: 'No enabled weekly or custom date hours are configured.',
+    },
+    'no-policy-eligible-hours': {
+      zh: '已保存的时段无法满足 60 分钟、提前 24 小时和未来 30 天的规则。',
+      en: 'Saved hours produce no 60-minute times inside the 24-hour notice and 30-day policy.',
+    },
+    'calendar-conflicts': {
+      zh: '符合规则的时间都被 Google 日历中的忙碌安排占用。',
+      en: 'Google Calendar conflicts block every policy-eligible time.',
+    },
+    'holds-or-bookings': {
+      zh: '符合规则且日历空闲的时间都被暂存或现有预约占用。',
+      en: 'Active holds or existing Bookings block every remaining time.',
+    },
+  }
+
+  const calendarBroken = [
+    'expired',
+    'revoked',
+    'denied-scope',
+    'unavailable',
+  ].includes(connection.status)
+
   const checks = [
     hasHours
       ? {
           ready: true,
+          broken: false,
           zh: '至少有一个可预约时段。',
           en: 'At least one availability interval is configured.',
         }
       : {
           ready: false,
+          broken: false,
           zh: '开启至少一天，或添加带自定义时段的日期覆盖。',
           en: 'Turn on at least one weekday or add a date override with custom hours.',
         },
     connection.status === 'connected'
       ? {
           ready: true,
+          broken: false,
           zh: 'Google 日历已连接，可以检查冲突。',
           en: 'Google Calendar is connected and conflict checks are available.',
         }
-      : { ready: false, ...calendarFailures[connection.status] },
-    slots.length > 0
+      : {
+          ready: false,
+          broken: calendarBroken,
+          ...calendarFailures[connection.status],
+        },
+    diagnosis === 'open' && slots.length > 0
       ? {
           ready: true,
+          broken: false,
           zh: `未来 30 天有 ${slots.length} 个开放时间。`,
           en: `${slots.length} open ${slots.length === 1 ? 'time' : 'times'} in the next 30 days.`,
         }
       : {
           ready: false,
-          zh:
-            connection.status === 'connected'
-              ? '未来 30 天没有开放时间。检查时段、日历冲突和提前预约规则。'
-              : '日历连接恢复后，才能生成开放时间预览。',
-          en:
-            connection.status === 'connected'
-              ? 'No open times in the next 30 days. Check hours, Calendar conflicts, and notice rules.'
-              : 'Open-time preview is blocked until Calendar is healthy.',
+          broken: diagnosis === 'calendar-unavailable' && calendarBroken,
+          ...previewFailures[
+            diagnosis === 'open' ? 'no-policy-eligible-hours' : diagnosis
+          ],
         },
   ]
 
@@ -755,10 +854,14 @@ function ReadinessSection({
             <span
               aria-hidden="true"
               className={`mt-2 size-1.5 shrink-0 rounded-full ${
-                check.ready ? 'bg-foreground' : 'bg-destructive'
+                check.ready
+                  ? 'bg-foreground'
+                  : check.broken
+                    ? 'bg-destructive'
+                    : 'bg-muted-foreground'
               }`}
             />
-            <span className={check.ready ? undefined : 'text-destructive'}>
+            <span className="tabular-nums">
               <T zh={check.zh} en={check.en} />
             </span>
           </li>
@@ -805,16 +908,6 @@ function GoogleCalendarSection({
 }) {
   const [pending, setPending] = useState<'connect' | 'disconnect' | null>(null)
   const [disconnectArmed, setDisconnectArmed] = useState(false)
-  const disconnectTimerRef = useRef<number | null>(null)
-
-  useEffect(
-    () => () => {
-      if (disconnectTimerRef.current !== null) {
-        window.clearTimeout(disconnectTimerRef.current)
-      }
-    },
-    [],
-  )
 
   function connect(event: FormEvent<HTMLFormElement>) {
     if (pending !== null) {
@@ -828,8 +921,6 @@ function GoogleCalendarSection({
     setPending('connect')
   }
 
-  // Disconnecting is a two-step armed action: the first press asks for
-  // confirmation on the button itself and disarms after 4 seconds.
   function disconnect(event: FormEvent<HTMLFormElement>) {
     if (pending !== null) {
       event.preventDefault()
@@ -838,17 +929,7 @@ function GoogleCalendarSection({
     if (!disconnectArmed) {
       event.preventDefault()
       setDisconnectArmed(true)
-      if (disconnectTimerRef.current !== null) {
-        window.clearTimeout(disconnectTimerRef.current)
-      }
-      disconnectTimerRef.current = window.setTimeout(
-        () => setDisconnectArmed(false),
-        4000,
-      )
       return
-    }
-    if (disconnectTimerRef.current !== null) {
-      window.clearTimeout(disconnectTimerRef.current)
     }
     if (fixtureMode) {
       event.preventDefault()
@@ -947,6 +1028,17 @@ function GoogleCalendarSection({
               </Button>
             </form>
           )}
+          {disconnectArmed && pending === null && (
+            <Button
+              variant="ghost"
+              size="md"
+              type="button"
+              onClick={() => setDisconnectArmed(false)}
+              expandHitArea
+            >
+              <T zh="取消" en="Cancel" />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -995,9 +1087,11 @@ function GoogleCalendarSection({
 function SlotPreview({
   slots,
   timeZone,
+  diagnosis,
 }: {
   slots: readonly PreviewSlotViewModel[]
   timeZone: string
+  diagnosis: PreviewDiagnosis
 }) {
   const visibleSlots = slots.slice(0, previewLimit)
   const formatters = useMemo(() => {
@@ -1024,6 +1118,31 @@ function SlotPreview({
       },
     }
   }, [timeZone])
+  const emptyCopy: Record<Exclude<PreviewDiagnosis, 'open'>, {
+    zh: string
+    en: string
+  }> = {
+    'calendar-unavailable': {
+      zh: 'Google 日历恢复后才能生成预览。',
+      en: 'The preview will return after Google Calendar is healthy.',
+    },
+    'no-configured-hours': {
+      zh: '没有已启用的每周时段或自定义日期时段。',
+      en: 'No enabled weekly or custom date hours are configured.',
+    },
+    'no-policy-eligible-hours': {
+      zh: '已保存的时段都在预约规则之外，或不足 60 分钟。',
+      en: 'Saved hours fall outside the booking policy or are shorter than 60 minutes.',
+    },
+    'calendar-conflicts': {
+      zh: 'Google 日历冲突占用了所有符合规则的时间。',
+      en: 'Google Calendar conflicts occupy every policy-eligible time.',
+    },
+    'holds-or-bookings': {
+      zh: '暂存或现有预约占用了所有剩余时间。',
+      en: 'Active holds or existing Bookings occupy every remaining time.',
+    },
+  }
 
   return (
     <section className="mt-8 hairline-top pt-6" aria-labelledby="preview-heading">
@@ -1039,8 +1158,8 @@ function SlotPreview({
       {visibleSlots.length === 0 ? (
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
           <T
-            zh="未来 30 天没有开放时间。添加可预约时段，或检查 Google 日历连接。"
-            en="No open times in the next 30 days. Add an Availability Window or check Google Calendar."
+            zh={emptyCopy[diagnosis === 'open' ? 'no-policy-eligible-hours' : diagnosis].zh}
+            en={emptyCopy[diagnosis === 'open' ? 'no-policy-eligible-hours' : diagnosis].en}
           />
         </p>
       ) : (
@@ -1086,10 +1205,12 @@ function SlotPreview({
 
 export function AmaSettings({
   timeZone = 'Asia/Taipei',
+  weekdays: persistedWeekdays,
   windows,
   overrides = [],
   googleConnection,
   previewSlots,
+  previewDiagnosis,
   publicBookingUrl = '/ama/book',
   notices,
   fixtureMode = false,
@@ -1098,6 +1219,21 @@ export function AmaSettings({
     notices?.availability && notices.availability !== 'saved'
       ? 'availability-notice'
       : undefined
+  const weekdayStates =
+    persistedWeekdays ??
+    AMA_WEEKDAYS.map((weekday) => ({
+      isoWeekday: weekday.value,
+      enabled: windows.some(
+        (window) => window.isoWeekday === weekday.value,
+      ),
+    }))
+  const diagnosis =
+    previewDiagnosis ??
+    (previewSlots.length > 0
+      ? 'open'
+      : googleConnection.status === 'connected'
+        ? 'no-configured-hours'
+        : 'calendar-unavailable')
 
   return (
     <div className="pb-10">
@@ -1137,10 +1273,15 @@ export function AmaSettings({
         />
 
         <div className="mt-6">
-          {weekdays.map((weekday) => (
+          {AMA_WEEKDAYS.map((weekday) => (
             <WeekdaySchedule
               key={weekday.value}
               weekday={weekday}
+              enabled={
+                weekdayStates.find(
+                  (state) => state.isoWeekday === weekday.value,
+                )?.enabled ?? false
+              }
               windows={windows.filter(
                 (window) => window.isoWeekday === weekday.value,
               )}
@@ -1165,13 +1306,19 @@ export function AmaSettings({
         fixtureMode={fixtureMode}
       />
       <ReadinessSection
+        weekdays={weekdayStates}
         windows={windows}
         overrides={overrides}
         connection={googleConnection}
         slots={previewSlots}
+        diagnosis={diagnosis}
         publicBookingUrl={publicBookingUrl}
       />
-      <SlotPreview slots={previewSlots} timeZone={timeZone} />
+      <SlotPreview
+        slots={previewSlots}
+        timeZone={timeZone}
+        diagnosis={diagnosis}
+      />
     </div>
   )
 }

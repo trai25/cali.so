@@ -7,12 +7,14 @@ import { PixelCluster } from '~/components/pixel-cluster'
 import { requireOwnerPage } from '~/lib/admin/server'
 import { T } from '~/lib/i18n'
 import { nonPublicRobots } from '~/lib/non-public-metadata'
+import { firstSearchParam } from '~/lib/search-params'
 
 import {
   AmaOperations,
   type BookingFiltersViewModel,
   type BookingView,
 } from '../../AmaOperations'
+import { AmaBookingsSkeleton } from '../../AmaSkeletons'
 import type {
   AlternateTimeRequestViewModel,
   BookingRowViewModel,
@@ -45,10 +47,6 @@ type FixtureSearchParams = Promise<{
   to?: string | string[]
 }>
 
-function first(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value
-}
-
 function fixtureHeader() {
   return (
     <>
@@ -62,6 +60,21 @@ function fixtureHeader() {
         <PixelCluster variant={7} className="shrink-0" />
       </div>
     </>
+  )
+}
+
+function BookingFixturesFallback() {
+  return (
+    <div className="pb-10" aria-busy="true">
+      {fixtureHeader()}
+      <p className="mt-1 text-sm leading-6 text-muted-foreground">
+        <T
+          zh="本页使用确定性的本地数据，可安全测试筛选、分页和长文本。"
+          en="Deterministic local data for safely testing filters, pagination, and long content."
+        />
+      </p>
+      <AmaBookingsSkeleton />
+    </div>
   )
 }
 
@@ -178,17 +191,18 @@ async function BookingFixtures({
 }) {
   await requireOwnerPage('/admin/ama/fixtures/bookings')
   const params = await searchParams
-  const requestedView = first(params.view)
+  const requestedView = firstSearchParam(params.view)
   const view = views.has(requestedView as BookingView)
     ? (requestedView as BookingView)
     : 'attention'
   const filters: BookingFiltersViewModel = {
-    guestName: first(params.guestName) ?? '',
-    guestEmail: first(params.guestEmail) ?? '',
-    bookingId: first(params.bookingId) ?? '',
-    status: (first(params.status) as BookingFiltersViewModel['status']) ?? '',
-    from: first(params.from) ?? '',
-    to: first(params.to) ?? '',
+    guestName: firstSearchParam(params.guestName) ?? '',
+    guestEmail: firstSearchParam(params.guestEmail) ?? '',
+    bookingId: firstSearchParam(params.bookingId) ?? '',
+    status:
+      (firstSearchParam(params.status) as BookingFiltersViewModel['status']) ?? '',
+    from: firstSearchParam(params.from) ?? '',
+    to: firstSearchParam(params.to) ?? '',
   }
   const source =
     view === 'attention'
@@ -199,7 +213,7 @@ async function BookingFixtures({
           ? pastBookings
           : cancelledBookings
   const filtered = source.filter((item) => matchesFilters(item, filters))
-  const requestedPage = Number(first(params.page))
+  const requestedPage = Number(firstSearchParam(params.page))
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize))
   const page = Math.min(
     pageCount,
@@ -229,6 +243,7 @@ async function BookingFixtures({
         timeRequests={timeRequests}
         failedOperations={failedOperations}
         basePath="/admin/ama/fixtures/bookings"
+        fixtureMode
       />
     </div>
   )
@@ -241,7 +256,7 @@ export default function AdminAmaBookingFixturesPage({
 }) {
   if (process.env.NODE_ENV !== 'development') notFound()
   return (
-    <Suspense fallback={fixtureHeader()}>
+    <Suspense fallback={<BookingFixturesFallback />}>
       <BookingFixtures searchParams={searchParams} />
     </Suspense>
   )

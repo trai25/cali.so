@@ -4,6 +4,7 @@ import { AMA_BOOKING_POLICY } from './policy'
 import {
   computeAvailableSlots,
   type AvailabilityOverride,
+  type AvailabilityWeekday,
   type AvailabilityWindow,
   type SlotHold,
   type TimeInterval,
@@ -19,6 +20,7 @@ export interface AvailabilityRepository {
   getTimeZone(): Promise<string>
   setTimeZone(timeZone: string): Promise<string>
   list(): Promise<AvailabilityWindowRecord[]>
+  listWeekdayStates(): Promise<AvailabilityWeekday[]>
   listOverrides(): Promise<AvailabilityOverrideRecord[]>
   create(input: AvailabilityWindow): Promise<AvailabilityWindowRecord>
   update(id: number, input: AvailabilityWindow): Promise<AvailabilityWindowRecord | null>
@@ -32,6 +34,11 @@ export interface AvailabilityRepository {
     isoWeekday: number,
     intervals: AvailabilityOverride['intervals'],
   ): Promise<void>
+  setWeekdayEnabled(
+    isoWeekday: number,
+    enabled: boolean,
+    defaultIntervals: AvailabilityOverride['intervals'],
+  ): Promise<AvailabilityWeekday>
   copyWeekday(sourceWeekday: number, targetWeekdays: readonly number[]): Promise<void>
 }
 
@@ -55,6 +62,14 @@ export interface CalendarAvailability {
     busy: TimeInterval[]
   }>
 }
+
+export type AvailabilityPreviewDiagnosis =
+  | 'open'
+  | 'calendar-unavailable'
+  | 'no-configured-hours'
+  | 'no-policy-eligible-hours'
+  | 'calendar-conflicts'
+  | 'holds-or-bookings'
 
 type AvailabilityServiceDependencies = {
   repository: AvailabilityRepository
@@ -153,12 +168,13 @@ export function createAvailabilityService(dependencies: AvailabilityServiceDepen
     },
 
     async getSchedule() {
-      const [timeZone, windows, overrides] = await Promise.all([
+      const [timeZone, weekdays, windows, overrides] = await Promise.all([
         repository.getTimeZone(),
+        repository.listWeekdayStates(),
         repository.list(),
         repository.listOverrides(),
       ])
-      return { timeZone, windows, overrides }
+      return { timeZone, weekdays, windows, overrides }
     },
 
     setTimeZone(timeZone: string) {
@@ -167,15 +183,11 @@ export function createAvailabilityService(dependencies: AvailabilityServiceDepen
 
     async setWeekday(isoWeekday: number, enabled: boolean) {
       assertWeekday(isoWeekday)
-      if (!enabled) {
-        await repository.replaceWeekday(isoWeekday, [])
-        return
-      }
-      const windows = await repository.list()
-      if (windows.some((window) => window.isoWeekday === isoWeekday)) return
-      await repository.replaceWeekday(isoWeekday, [
-        { startMinute: 9 * 60, endMinute: 12 * 60 },
-      ])
+      await repository.setWeekdayEnabled(
+        isoWeekday,
+        enabled,
+        enabled ? [{ startMinute: 9 * 60, endMinute: 12 * 60 }] : [],
+      )
     },
 
     copyWeekday(sourceWeekday: number, targetWeekdays: readonly number[]) {
@@ -218,41 +230,101 @@ export function createAvailabilityService(dependencies: AvailabilityServiceDepen
       bookings?: readonly TimeInterval[]
     } = {}) {
       const now = clock.now()
-      const calendarResult = await calendar.queryFreeBusy({
-        timeMin: new Date(
-          now.getTime() +
-            (AMA_BOOKING_POLICY.minimumNoticeMinutes -
-              AMA_BOOKING_POLICY.bufferBeforeMinutes) *
-              60_000,
-        ),
-        timeMax: new Date(
-          now.getTime() +
-            (AMA_BOOKING_POLICY.horizonDays * 24 * 60 +
-              AMA_BOOKING_POLICY.sessionMinutes +
-              AMA_BOOKING_POLICY.bufferAfterMinutes) *
-              60_000,
-        ),
-      })
-      if (calendarResult.status !== 'connected') {
-        return { status: calendarResult.status, slots: [] }
+      const [calendarResult, [ownerTimeZone, weekdays, windows, overrides]] =
+        await Promise.all([
+          calendar.queryFreeBusy({
+            timeMin: new Date(
+              now.getTime() +
+                (AMA_BOOKING_POLICY.minimumNoticeMinutes -
+                  AMA_BOOKING_POLICY.bufferBeforeMinutes) *
+                  60_000,
+            ),
+            timeMax: new Date(
+              now.getTime() +
+                (AMA_BOOKING_POLICY.horizonDays * 24 * 60 +
+                  AMA_BOOKING_POLICY.sessionMinutes +
+                  AMA_BOOKING_POLICY.bufferAfterMinutes) *
+                  60_000,
+            ),
+          }),
+          Promise.all([
+            repository.getTimeZone(),
+            repository.listWeekdayStates(),
+            repository.list(),
+            repository.listOverrides(),
+          ]),
+        ])
+      const common = {
+        now,
+        ownerTimeZone,
+        weekdays,
+        windows,
+        overrides,
+      }
+      const hasConfiguredHours =
+        windows.some(
+          (window) =>
+            weekdays.find(
+              (weekday) => weekday.isoWeekday === window.isoWeekday,
+            )?.enabled !== false,
+        ) || overrides.some((override) => override.intervals.length > 0)
+      if (!hasConfiguredHours) {
+        return {
+          status: calendarResult.status,
+          diagnosis: 'no-configured-hours' as const,
+          slots: [],
+        }
       }
 
-      const [ownerTimeZone, windows, overrides] = await Promise.all([
-        repository.getTimeZone(),
-        repository.list(),
-        repository.listOverrides(),
-      ])
+      const policyEligible = computeAvailableSlots({
+        ...common,
+        googleBusy: [],
+        slotHolds: [],
+        bookings: [],
+      })
+      if (policyEligible.length === 0) {
+        return {
+          status: calendarResult.status,
+          diagnosis: 'no-policy-eligible-hours' as const,
+          slots: [],
+        }
+      }
+
+      if (calendarResult.status !== 'connected') {
+        return {
+          status: calendarResult.status,
+          diagnosis: 'calendar-unavailable' as const,
+          slots: [],
+        }
+      }
+
+      const afterCalendar = computeAvailableSlots({
+        ...common,
+        googleBusy: calendarResult.busy,
+        slotHolds: [],
+        bookings: [],
+      })
+      if (afterCalendar.length === 0) {
+        return {
+          status: 'connected' as const,
+          diagnosis: 'calendar-conflicts' as const,
+          slots: [],
+        }
+      }
+
+      const slots = computeAvailableSlots({
+        ...common,
+        googleBusy: calendarResult.busy,
+        slotHolds: input.slotHolds ?? [],
+        bookings: input.bookings ?? [],
+      })
       return {
         status: 'connected' as const,
-        slots: computeAvailableSlots({
-          now,
-          ownerTimeZone,
-          windows,
-          overrides,
-          googleBusy: calendarResult.busy,
-          slotHolds: input.slotHolds ?? [],
-          bookings: input.bookings ?? [],
-        }),
+        diagnosis:
+          slots.length > 0
+            ? ('open' as const)
+            : ('holds-or-bookings' as const),
+        slots,
       }
     },
   }

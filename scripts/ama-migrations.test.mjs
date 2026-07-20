@@ -16,6 +16,10 @@ const migrationUrls = {
     '../db/migrations/0013_ama_availability_overrides.sql',
     import.meta.url,
   ),
+  availabilityWeekdays: new URL(
+    '../db/migrations/0014_ama_availability_weekdays.sql',
+    import.meta.url,
+  ),
 }
 
 async function readMigration(url) {
@@ -129,6 +133,17 @@ test('AMA schedule migration adds replacing date overrides and a singleton time 
     /"start_minute" < "ama_availability_override_windows"\."end_minute"/,
   )
   assert.doesNotMatch(sql, /\b(drop|truncate)\s+table\b/)
+})
+
+test('AMA weekday-state migration preserves recurring intervals', async () => {
+  const sql = await readMigration(migrationUrls.availabilityWeekdays)
+
+  assert.match(sql, /create table "ama_availability_weekdays"/)
+  assert.match(sql, /"iso_weekday" integer primary key not null/)
+  assert.match(sql, /"enabled" boolean not null/)
+  assert.match(sql, /"iso_weekday" between 1 and 7/)
+  assert.doesNotMatch(sql, /\b(delete|drop|truncate|alter)\b/)
+  assert.doesNotMatch(sql, /ama_availability_windows/)
 })
 
 test('AMA migrations never mutate legacy subscriber or newsletter tables', async () => {

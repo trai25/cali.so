@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useId, useState, type FormEvent } from 'react'
 
 import { Button } from '~/components/ui/button'
 import {
@@ -10,7 +10,13 @@ import {
   SelectTrigger,
 } from '~/components/ui/select'
 import { T } from '~/lib/i18n'
-import { localize, useLocale } from '~/lib/locale-client'
+
+import {
+  AMA_END_OPTIONS,
+  AMA_START_OPTIONS,
+  formatScheduleMinute,
+  parseScheduleMinute,
+} from './scheduling-fields'
 
 export type DateOverrideViewModel = {
   id: number
@@ -34,31 +40,14 @@ type EditableInterval = {
   end: string
 }
 
-function formatMinute(minute: number) {
-  if (minute === 24 * 60) return '24:00'
-  const hour = Math.floor(minute / 60)
-  return `${hour.toString().padStart(2, '0')}:${(minute % 60).toString().padStart(2, '0')}`
-}
-
-function timeOptions(firstMinute: number, lastMinute: number) {
-  const options: number[] = []
-  for (let minute = firstMinute; minute <= lastMinute; minute += 30) {
-    options.push(minute)
-  }
-  return options
-}
-
-const startOptions = timeOptions(0, 23 * 60 + 30)
-const endOptions = timeOptions(30, 24 * 60)
-
 function initialIntervals(override?: DateOverrideViewModel): EditableInterval[] {
   if (!override || override.intervals.length === 0) {
     return [{ key: 1, start: '09:00', end: '12:00' }]
   }
   return override.intervals.map((interval, index) => ({
     key: index + 1,
-    start: formatMinute(interval.startMinute),
-    end: formatMinute(interval.endMinute),
+    start: formatScheduleMinute(interval.startMinute),
+    end: formatScheduleMinute(interval.endMinute),
   }))
 }
 
@@ -68,14 +57,31 @@ export function DateOverrideForm({
   fixtureMode = false,
   onCancel,
 }: DateOverrideFormProps) {
-  const locale = useLocale()
+  const fieldId = useId()
   const [mode, setMode] = useState<'closed' | 'custom'>(
     override && override.intervals.length === 0 ? 'closed' : 'custom',
   )
   const [intervals, setIntervals] = useState(() => initialIntervals(override))
   const [pending, setPending] = useState(false)
+  const [invalidIntervals, setInvalidIntervals] = useState<Set<number>>(
+    () => new Set(),
+  )
 
   function submit(event: FormEvent<HTMLFormElement>) {
+    const invalid =
+      mode === 'custom'
+        ? intervals.filter(
+            (interval) =>
+              parseScheduleMinute(interval.start) >=
+              parseScheduleMinute(interval.end),
+          )
+        : []
+    if (invalid.length > 0) {
+      event.preventDefault()
+      setInvalidIntervals(new Set(invalid.map((interval) => interval.key)))
+      return
+    }
+    setInvalidIntervals(new Set())
     if (fixtureMode) {
       event.preventDefault()
       return
@@ -167,7 +173,10 @@ export function DateOverrideForm({
               className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end"
             >
               <div className="grid gap-1.5 text-sm">
-                <span className="text-muted-foreground">
+                <span
+                  id={`${fieldId}-${interval.key}-start-label`}
+                  className="text-muted-foreground"
+                >
                   <T zh="开始" en="Start" />
                 </span>
                 <Select
@@ -179,30 +188,35 @@ export function DateOverrideForm({
                   readOnly={pending}
                 >
                   <SelectTrigger
-                    aria-label={localize(
-                      locale,
-                      `第 ${index + 1} 个时段的开始时间`,
-                      `Interval ${index + 1} start time`,
-                    )}
+                    aria-labelledby={`${fieldId}-${interval.key}-start-label`}
+                    aria-invalid={invalidIntervals.has(interval.key) || undefined}
+                    aria-describedby={
+                      invalidIntervals.has(interval.key)
+                        ? `${fieldId}-${interval.key}-error`
+                        : describedBy
+                    }
                     className="w-full tabular-nums"
                     disabled={pending}
                   />
                   <SelectContent>
-                    {startOptions.map((minute, optionIndex) => (
+                    {AMA_START_OPTIONS.map((minute, optionIndex) => (
                       <SelectItem
                         key={minute}
-                        value={formatMinute(minute)}
+                        value={formatScheduleMinute(minute)}
                         index={optionIndex}
                         className="tabular-nums"
                       >
-                        {formatMinute(minute)}
+                        {formatScheduleMinute(minute)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-1.5 text-sm">
-                <span className="text-muted-foreground">
+                <span
+                  id={`${fieldId}-${interval.key}-end-label`}
+                  className="text-muted-foreground"
+                >
                   <T zh="结束" en="End" />
                 </span>
                 <Select
@@ -214,23 +228,25 @@ export function DateOverrideForm({
                   readOnly={pending}
                 >
                   <SelectTrigger
-                    aria-label={localize(
-                      locale,
-                      `第 ${index + 1} 个时段的结束时间`,
-                      `Interval ${index + 1} end time`,
-                    )}
+                    aria-labelledby={`${fieldId}-${interval.key}-end-label`}
+                    aria-invalid={invalidIntervals.has(interval.key) || undefined}
+                    aria-describedby={
+                      invalidIntervals.has(interval.key)
+                        ? `${fieldId}-${interval.key}-error`
+                        : describedBy
+                    }
                     className="w-full tabular-nums"
                     disabled={pending}
                   />
                   <SelectContent>
-                    {endOptions.map((minute, optionIndex) => (
+                    {AMA_END_OPTIONS.map((minute, optionIndex) => (
                       <SelectItem
                         key={minute}
-                        value={formatMinute(minute)}
+                        value={formatScheduleMinute(minute)}
                         index={optionIndex}
                         className="tabular-nums"
                       >
-                        {formatMinute(minute)}
+                        {formatScheduleMinute(minute)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -250,6 +266,18 @@ export function DateOverrideForm({
               >
                 <T zh="移除" en="Remove" />
               </Button>
+              {invalidIntervals.has(interval.key) && (
+                <p
+                  id={`${fieldId}-${interval.key}-error`}
+                  role="alert"
+                  className="text-sm leading-5 text-destructive sm:col-span-full"
+                >
+                  <T
+                    zh={`第 ${index + 1} 个时段的结束时间必须晚于开始时间。`}
+                    en={`Interval ${index + 1} must end after it starts.`}
+                  />
+                </p>
+              )}
             </div>
           ))}
           <Button

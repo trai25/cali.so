@@ -14,12 +14,14 @@ import type {
 } from '~/lib/ama/booking/repository'
 import type { DurableOperationRecord } from '~/lib/ama/operations/repository'
 import { nonPublicRobots } from '~/lib/non-public-metadata'
+import { firstSearchParam } from '~/lib/search-params'
 
 import {
   AmaOperations,
   type BookingFiltersViewModel,
   type BookingView,
 } from '../AmaOperations'
+import { AmaBookingsSkeleton } from '../AmaSkeletons'
 import type {
   AlternateTimeRequestViewModel,
   BookingRowViewModel,
@@ -103,14 +105,7 @@ function BookingsFallback() {
   return (
     <div className="pb-10" aria-busy="true">
       <BookingsHeader />
-      <p className="mt-1 text-sm tabular-nums text-muted-foreground">…</p>
-      <ul className="mt-6 hairline-top pt-4">
-        {Array.from({ length: 3 }, (_, index) => (
-          <li key={index} className="flex min-h-11 items-center py-1.5" aria-hidden>
-            <span className="h-4 w-full max-w-72 rounded-sm bg-surface-1" />
-          </li>
-        ))}
-      </ul>
+      <AmaBookingsSkeleton />
     </div>
   )
 }
@@ -140,12 +135,8 @@ type BookingsSearchParams = Promise<{
   to?: string | string[]
 }>
 
-function first(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value
-}
-
 function shortValue(value: string | string[] | undefined, limit: number) {
-  return (first(value) ?? '').trim().slice(0, limit)
+  return (firstSearchParam(value) ?? '').trim().slice(0, limit)
 }
 
 function localDateBoundary(
@@ -179,15 +170,15 @@ async function BookingsLoader({
     searchParams,
     availability.getSchedule(),
   ])
-  const requestedView = first(params.view)
+  const requestedView = firstSearchParam(params.view)
   const view = bookingViews.has(requestedView as BookingView)
     ? (requestedView as BookingView)
     : 'attention'
-  const requestedPage = Number(first(params.page))
+  const requestedPage = Number(firstSearchParam(params.page))
   const page = Number.isSafeInteger(requestedPage) && requestedPage > 0
     ? requestedPage
     : 1
-  const statusValue = first(params.status)
+  const statusValue = firstSearchParam(params.status)
   const status = bookingStatuses.has(statusValue as BookingStatus)
     ? (statusValue as BookingStatus)
     : ''

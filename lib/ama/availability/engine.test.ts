@@ -133,6 +133,36 @@ describe('computeAvailableSlots', () => {
     expect(result.some((start) => start.startsWith('2026-07-21'))).toBe(true)
   })
 
+  it('skips a disabled recurring weekday without deleting its windows', () => {
+    const result = starts(
+      baseInput({
+        weekdays: [{ isoWeekday: 2, enabled: false }],
+      }),
+    )
+
+    expect(result).toEqual([])
+  })
+
+  it('allows a date override to open a disabled recurring weekday', () => {
+    const result = starts(
+      baseInput({
+        weekdays: [{ isoWeekday: 2, enabled: false }],
+        overrides: [
+          {
+            localDate: '2026-07-14',
+            intervals: [{ startMinute: 14 * 60, endMinute: 16 * 60 }],
+          },
+        ],
+      }),
+    ).filter((start) => start.startsWith('2026-07-14'))
+
+    expect(result).toEqual([
+      '2026-07-14T14:00:00.000Z',
+      '2026-07-14T14:30:00.000Z',
+      '2026-07-14T15:00:00.000Z',
+    ])
+  })
+
   it('uses custom date-override intervals instead of the recurring hours', () => {
     const result = starts(
       baseInput({

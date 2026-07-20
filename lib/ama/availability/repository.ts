@@ -7,6 +7,7 @@ import {
   amaAvailabilityOverrides,
   amaAvailabilityOverrideWindows,
   amaAvailabilitySettings,
+  amaAvailabilityWeekdays,
   amaAvailabilityWindows,
 } from '~/db/schema'
 
@@ -24,6 +25,11 @@ export type AvailabilityOverrideIntervalInput = Pick<
   AvailabilityWindowInput,
   'startMinute' | 'endMinute'
 >
+
+export type AvailabilityWeekdayRecord = {
+  isoWeekday: number
+  enabled: boolean
+}
 
 export function createAvailabilityRepository(database: () => AvailabilityDatabase) {
   return {
@@ -46,6 +52,70 @@ export function createAvailabilityRepository(database: () => AvailabilityDatabas
         })
         .returning({ timeZone: amaAvailabilitySettings.timeZone })
       return settings.timeZone
+    },
+
+    async listWeekdayStates(): Promise<AvailabilityWeekdayRecord[]> {
+      const [states, windows] = await Promise.all([
+        database()
+          .select({
+            isoWeekday: amaAvailabilityWeekdays.isoWeekday,
+            enabled: amaAvailabilityWeekdays.enabled,
+          })
+          .from(amaAvailabilityWeekdays)
+          .orderBy(asc(amaAvailabilityWeekdays.isoWeekday)),
+        database()
+          .select({ isoWeekday: amaAvailabilityWindows.isoWeekday })
+          .from(amaAvailabilityWindows),
+      ])
+      const persisted = new Map(
+        states.map((state) => [state.isoWeekday, state.enabled]),
+      )
+      const weekdaysWithWindows = new Set(
+        windows.map((window) => window.isoWeekday),
+      )
+      return Array.from({ length: 7 }, (_, index) => {
+        const isoWeekday = index + 1
+        return {
+          isoWeekday,
+          enabled:
+            persisted.get(isoWeekday) ?? weekdaysWithWindows.has(isoWeekday),
+        }
+      })
+    },
+
+    async setWeekdayEnabled(
+      isoWeekday: number,
+      enabled: boolean,
+      defaultIntervals: readonly AvailabilityOverrideIntervalInput[] = [],
+    ) {
+      return database().transaction(async (transaction) => {
+        const [state] = await transaction
+          .insert(amaAvailabilityWeekdays)
+          .values({ isoWeekday, enabled })
+          .onConflictDoUpdate({
+            target: amaAvailabilityWeekdays.isoWeekday,
+            set: { enabled, updatedAt: sql`now()` },
+          })
+          .returning({
+            isoWeekday: amaAvailabilityWeekdays.isoWeekday,
+            enabled: amaAvailabilityWeekdays.enabled,
+          })
+
+        if (enabled && defaultIntervals.length > 0) {
+          const [existing] = await transaction
+            .select({ id: amaAvailabilityWindows.id })
+            .from(amaAvailabilityWindows)
+            .where(eq(amaAvailabilityWindows.isoWeekday, isoWeekday))
+            .limit(1)
+          if (!existing) {
+            await transaction.insert(amaAvailabilityWindows).values(
+              defaultIntervals.map((interval) => ({ isoWeekday, ...interval })),
+            )
+          }
+        }
+
+        return state
+      })
     },
 
     async listOverrides() {
@@ -134,6 +204,13 @@ export function createAvailabilityRepository(database: () => AvailabilityDatabas
             asc(amaAvailabilityWindows.id),
           )
 
+        const [sourceState] = await transaction
+          .select({ enabled: amaAvailabilityWeekdays.enabled })
+          .from(amaAvailabilityWeekdays)
+          .where(eq(amaAvailabilityWeekdays.isoWeekday, sourceWeekday))
+          .limit(1)
+        const sourceEnabled = sourceState?.enabled ?? source.length > 0
+
         await transaction
           .delete(amaAvailabilityWindows)
           .where(inArray(amaAvailabilityWindows.isoWeekday, targets))
@@ -145,6 +222,19 @@ export function createAvailabilityRepository(database: () => AvailabilityDatabas
             ),
           )
         }
+
+        await transaction
+          .insert(amaAvailabilityWeekdays)
+          .values(
+            targets.map((isoWeekday) => ({
+              isoWeekday,
+              enabled: sourceEnabled,
+            })),
+          )
+          .onConflictDoUpdate({
+            target: amaAvailabilityWeekdays.isoWeekday,
+            set: { enabled: sourceEnabled, updatedAt: sql`now()` },
+          })
       })
     },
 

@@ -109,6 +109,22 @@ export const amaAvailabilityWindows = pgTable(
   ],
 )
 
+export const amaAvailabilityWeekdays = pgTable(
+  'ama_availability_weekdays',
+  {
+    isoWeekday: integer('iso_weekday').primaryKey(),
+    enabled: boolean('enabled').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    check(
+      'ama_availability_weekdays_iso_weekday_check',
+      sql`${table.isoWeekday} BETWEEN 1 AND 7`,
+    ),
+  ],
+)
+
 export const amaAvailabilitySettings = pgTable(
   'ama_availability_settings',
   {

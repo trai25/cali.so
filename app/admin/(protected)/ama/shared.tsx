@@ -187,12 +187,16 @@ export function OperationStatusBadge({ status }: { status: DurableOperationStatu
 export function OperationsList({
   operations: initialOperations,
   showBookingLink = true,
+  bookingBasePath = '/admin/ama/bookings',
   removeOnResolve = false,
+  fixtureMode = false,
   onStatusChange,
 }: {
   operations: OperationViewModel[]
   showBookingLink?: boolean
+  bookingBasePath?: string
   removeOnResolve?: boolean
+  fixtureMode?: boolean
   onStatusChange?: (
     from: DurableOperationStatus,
     to: DurableOperationStatus,
@@ -213,12 +217,14 @@ export function OperationsList({
     setPending(`${operation.id}:${action}`)
     setNotice(null)
     try {
-      const response = await fetch(`/api/admin/ama/operations/${operation.id}`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ action }),
-      })
-      await responseJson(response)
+      if (!fixtureMode) {
+        const response = await fetch(`/api/admin/ama/operations/${operation.id}`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ action }),
+        })
+        await responseJson(response)
+      }
       if (action === 'retry') {
         setOperations((current) =>
           current.map((item) =>
@@ -326,7 +332,7 @@ export function OperationsList({
                     )}
                     {showBookingLink && operation.bookingId && (
                       <Link
-                        href={`/admin/ama/bookings/${operation.bookingId}`}
+                        href={`${bookingBasePath}/${operation.bookingId}`}
                         className="underline decoration-border underline-offset-2 outline-none hover:decoration-foreground focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
                       >
                         <T zh="查看预约" en="View Booking" />

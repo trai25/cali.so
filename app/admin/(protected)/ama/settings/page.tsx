@@ -7,9 +7,11 @@ import { requireOwnerPage } from '~/lib/admin/server'
 import { getAmaAdminServices } from '~/lib/ama/admin/server'
 import { T } from '~/lib/i18n'
 import { nonPublicRobots } from '~/lib/non-public-metadata'
+import { firstSearchParam } from '~/lib/search-params'
 
 import { AmaSettings } from '../AmaSettings'
 import type { AmaSettingsNotices, GoogleConnectionStatus } from '../AmaSettings'
+import { AmaSettingsSkeleton } from '../AmaSkeletons'
 
 export const metadata: Metadata = {
   title: 'AMA Settings',
@@ -35,16 +37,12 @@ const calendarNotices = new Set([
   'unavailable',
 ] as const)
 
-function first(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value
-}
-
 function queryNotices(input: {
   availability?: string | string[]
   calendar?: string | string[]
 }): AmaSettingsNotices {
-  const availability = first(input.availability)
-  const calendar = first(input.calendar)
+  const availability = firstSearchParam(input.availability)
+  const calendar = firstSearchParam(input.calendar)
   return {
     availability: availabilityNotices.has(
       availability as AmaSettingsNotices['availability'] & string,
@@ -91,10 +89,7 @@ function SettingsFallback() {
   return (
     <div className="pb-10" aria-busy="true">
       <SettingsHeader />
-      <p className="mt-1 text-sm leading-6 text-muted-foreground">…</p>
-      <div className="mt-6 hairline-top pt-5" aria-hidden>
-        <span className="block h-4 w-full max-w-72 rounded-sm bg-surface-1" />
-      </div>
+      <AmaSettingsSkeleton />
     </div>
   )
 }
@@ -124,6 +119,7 @@ async function SettingsLoader({
       <SettingsHeader />
       <AmaSettings
         timeZone={schedule.timeZone}
+        weekdays={schedule.weekdays}
         windows={schedule.windows.map(({ id, isoWeekday, startMinute, endMinute }) => ({
           id,
           isoWeekday,
@@ -153,6 +149,7 @@ async function SettingsLoader({
           startsAt: slot.startsAt.toISOString(),
           endsAt: slot.endsAt.toISOString(),
         }))}
+        previewDiagnosis={preview.diagnosis}
         publicBookingUrl={new URL('/ama/book', baseUrl).toString()}
         notices={queryNotices(params)}
       />

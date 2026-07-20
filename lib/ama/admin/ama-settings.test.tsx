@@ -75,6 +75,43 @@ describe('AMA settings UI contract', () => {
     expect(html).toContain('href="https://cali.so/ama/book"')
   })
 
+  it.each([
+    ['no-configured-hours', 'No enabled weekly or custom date hours are configured.'],
+    [
+      'no-policy-eligible-hours',
+      'Saved hours produce no 60-minute times inside the 24-hour notice and 30-day policy.',
+    ],
+    ['calendar-conflicts', 'Google Calendar conflicts block every policy-eligible time.'],
+    [
+      'holds-or-bookings',
+      'Active holds or existing Bookings block every remaining time.',
+    ],
+  ] as const)(
+    'renders the exact %s preview diagnosis without destructive body copy',
+    (previewDiagnosis, expected) => {
+      const props = settingsProps('connected')
+      const { container } = render(
+        <AmaSettings
+          {...props}
+          windows={previewDiagnosis === 'no-configured-hours' ? [] : props.windows}
+          overrides={[]}
+          previewSlots={[]}
+          previewDiagnosis={previewDiagnosis}
+          notices={undefined}
+        />,
+      )
+      const readiness = container.querySelector('#readiness-heading')!.closest('section')!
+
+      expect(readiness.textContent).toContain(expected)
+      expect(
+        [...readiness.querySelectorAll('span')].find((span) =>
+          span.textContent?.includes(expected),
+        )?.className,
+      ).toContain('tabular-nums')
+      expect(readiness.querySelector('.text-destructive')).toBeNull()
+    },
+  )
+
   it('reveals copy and date-override forms in place', () => {
     const { container } = render(<AmaSettings {...settingsProps('connected')} />)
     const buttons = [...container.querySelectorAll<HTMLButtonElement>('button')]
@@ -89,6 +126,41 @@ describe('AMA settings UI contract', () => {
     )
     expect(
       container.querySelector('input[name="intent"][value="save-override"]'),
+    ).not.toBeNull()
+  })
+
+  it('keeps saved intervals while a fixture weekday is switched off and on', () => {
+    const props = settingsProps('connected')
+    const { container } = render(
+      <AmaSettings
+        {...props}
+        weekdays={[
+          { isoWeekday: 1, enabled: true },
+          ...Array.from({ length: 6 }, (_, index) => ({
+            isoWeekday: index + 2,
+            enabled: false,
+          })),
+        ]}
+        fixtureMode
+      />,
+    )
+    const toggle = container
+      .querySelector<HTMLInputElement>('input[name="weekday"][value="1"]')!
+      .closest('form')!
+
+    expect(fireEvent.submit(toggle)).toBe(false)
+    expect(toggle.textContent).toContain('Turn off?')
+    expect(fireEvent.submit(toggle)).toBe(false)
+    expect(container.textContent).toContain('Off · 1 saved interval')
+    expect(
+      container.querySelector('input[name="id"][value="1"]'),
+    ).toBeNull()
+
+    expect(fireEvent.submit(toggle)).toBe(false)
+    expect(toggle.textContent).toContain('Turn on?')
+    expect(fireEvent.submit(toggle)).toBe(false)
+    expect(
+      container.querySelector('input[name="id"][value="1"]'),
     ).not.toBeNull()
   })
 
@@ -149,8 +221,7 @@ describe('AMA settings UI contract', () => {
     expect(repeatSubmit).toBe(false)
   })
 
-  it('requires arming disconnect before the form posts, and disarms after 4s', () => {
-    vi.useFakeTimers()
+  it('keeps disconnect armed until confirmation or explicit dismissal', () => {
     const { container } = render(
       <AmaSettings
         timeZone="Asia/Taipei"
@@ -178,14 +249,15 @@ describe('AMA settings UI contract', () => {
     expect(armed).toBe(false)
     expect(button.textContent).toContain('Confirm disconnect?')
 
-    // Left alone, the armed state expires.
-    act(() => {
-      vi.advanceTimersByTime(4000)
-    })
+    fireEvent.click(
+      [...container.querySelectorAll<HTMLButtonElement>('button')].find(
+        (item) => item.textContent?.includes('Cancel'),
+      )!,
+    )
     expect(button.textContent).toContain('Disconnect')
     expect(button.textContent).not.toContain('Confirm')
 
-    // Arm again and confirm within the window: the form posts.
+    // Arm again and confirm: the form posts.
     fireEvent.submit(form)
     const confirmed = fireEvent.submit(form)
     expect(confirmed).toBe(true)
@@ -259,8 +331,7 @@ describe('AMA settings UI contract', () => {
     expect(document.activeElement?.getAttribute('tabindex')).toBe('-1')
   })
 
-  it('requires arming delete before the form posts, and disarms after 4s', () => {
-    vi.useFakeTimers()
+  it('keeps delete armed until confirmation or explicit dismissal', () => {
     const { container } = render(
       <AvailabilityWindowForm
         window={{ id: 1, isoWeekday: 1, startMinute: 540, endMinute: 720 }}
@@ -275,16 +346,39 @@ describe('AMA settings UI contract', () => {
     expect(remove.disabled).toBe(false)
     expect(remove.textContent).toContain('Confirm delete?')
 
-    // Left alone, the armed state expires.
-    act(() => {
-      vi.advanceTimersByTime(4000)
-    })
+    fireEvent.click(
+      [...container.querySelectorAll<HTMLButtonElement>('button')].find(
+        (item) => item.textContent?.includes('Cancel'),
+      )!,
+    )
     expect(remove.textContent).not.toContain('Confirm')
 
-    // Arm again and confirm within the window: the delete submits.
+    // Arm again and confirm: the delete submits.
     fireEvent.click(remove)
     fireEvent.click(remove)
     expect(remove.disabled).toBe(true)
     expect(remove.querySelector('svg')).not.toBeNull()
+  })
+
+  it('associates visible field labels and reports an invalid interval in place', () => {
+    const { container } = render(
+      <AvailabilityWindowForm
+        window={{ id: 1, isoWeekday: 1, startMinute: 720, endMinute: 600 }}
+      />,
+    )
+    const form = container.querySelector('form')!
+    const triggers = container.querySelectorAll<HTMLButtonElement>(
+      'button[role="combobox"]',
+    )
+
+    for (const trigger of triggers) {
+      const labelledBy = trigger.getAttribute('aria-labelledby')
+      expect(labelledBy).toBeTruthy()
+      expect(container.querySelector(`#${labelledBy}`)).not.toBeNull()
+    }
+
+    expect(fireEvent.submit(form)).toBe(false)
+    expect(container.textContent).toContain('End time must be later than start time.')
+    expect(container.querySelectorAll('[aria-invalid="true"]')).toHaveLength(2)
   })
 })

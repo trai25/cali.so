@@ -31,6 +31,7 @@ function fixture() {
 
   let previewResult: PreviewResult = {
     status: 'connected',
+    diagnosis: 'open',
     slots: [{ startsAt: SLOT_START, endsAt: SLOT_END }],
   }
   const previewCalls: PreviewInput[] = []
@@ -173,7 +174,11 @@ describe('Booking service slots', () => {
 
   it('reports unavailable when the calendar preview is not connected', async () => {
     const f = fixture()
-    f.setPreview({ status: 'disconnected', slots: [] })
+    f.setPreview({
+      status: 'disconnected',
+      diagnosis: 'calendar-unavailable',
+      slots: [],
+    })
 
     await expect(f.service.computeSlots()).resolves.toEqual({ status: 'unavailable' })
   })
@@ -221,7 +226,11 @@ describe('Booking service createHold', () => {
 
   it('fails closed when the calendar is unavailable', async () => {
     const f = fixture()
-    f.setPreview({ status: 'unavailable', slots: [] })
+    f.setPreview({
+      status: 'unavailable',
+      diagnosis: 'calendar-unavailable',
+      slots: [],
+    })
 
     await expect(f.service.createHold(intake())).resolves.toEqual({
       outcome: 'unavailable',

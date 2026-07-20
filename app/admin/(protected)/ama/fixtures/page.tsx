@@ -31,10 +31,9 @@ function FixtureHeader() {
   )
 }
 
-async function FixtureIndex() {
-  await requireOwnerPage('/admin/ama/fixtures')
+function FixtureContent({ busy = false }: { busy?: boolean }) {
   return (
-    <div className="pb-10">
+    <div className="pb-10" aria-busy={busy || undefined}>
       <FixtureHeader />
       <p className="mt-1 text-sm leading-6 text-muted-foreground">
         <T
@@ -58,10 +57,15 @@ async function FixtureIndex() {
   )
 }
 
+async function FixtureIndex() {
+  await requireOwnerPage('/admin/ama/fixtures')
+  return <FixtureContent />
+}
+
 export default function AdminAmaFixturesPage() {
   if (process.env.NODE_ENV !== 'development') notFound()
   return (
-    <Suspense fallback={<FixtureHeader />}>
+    <Suspense fallback={<FixtureContent busy />}>
       <FixtureIndex />
     </Suspense>
   )

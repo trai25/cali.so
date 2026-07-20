@@ -15,6 +15,7 @@ describe('Availability Window repository', () => {
     '0001_ama_owner_auth.sql',
     '0002_ama_availability.sql',
     '0013_ama_availability_overrides.sql',
+    '0014_ama_availability_weekdays.sql',
   ])
   let repository: ReturnType<typeof createAvailabilityRepository>
 
@@ -47,6 +48,28 @@ describe('Availability Window repository', () => {
     await repository.setTimeZone('America/Los_Angeles')
 
     await expect(repository.getTimeZone()).resolves.toBe('America/Los_Angeles')
+  })
+
+  it('persists weekday state separately from retained intervals', async () => {
+    await repository.create({
+      isoWeekday: 3,
+      startMinute: 9 * 60,
+      endMinute: 12 * 60,
+    })
+
+    await expect(repository.listWeekdayStates()).resolves.toContainEqual({
+      isoWeekday: 3,
+      enabled: true,
+    })
+    await repository.setWeekdayEnabled(3, false)
+
+    await expect(repository.listWeekdayStates()).resolves.toContainEqual({
+      isoWeekday: 3,
+      enabled: false,
+    })
+    await expect(repository.list()).resolves.toMatchObject([
+      { isoWeekday: 3, startMinute: 540, endMinute: 720 },
+    ])
   })
 
   it('stores a closed date override as an override without intervals', async () => {
@@ -111,6 +134,7 @@ describe('Availability Window repository', () => {
     await repository.create({ isoWeekday: 2, startMinute: 540, endMinute: 720 })
     await repository.create({ isoWeekday: 2, startMinute: 780, endMinute: 1020 })
     await repository.create({ isoWeekday: 4, startMinute: 600, endMinute: 660 })
+    await repository.setWeekdayEnabled(2, false)
 
     await repository.copyWeekday(2, [4, 5])
 
@@ -129,6 +153,12 @@ describe('Availability Window repository', () => {
       { isoWeekday: 5, startMinute: 540, endMinute: 720 },
       { isoWeekday: 5, startMinute: 780, endMinute: 1020 },
     ])
+    await expect(repository.listWeekdayStates()).resolves.toEqual(
+      expect.arrayContaining([
+        { isoWeekday: 4, enabled: false },
+        { isoWeekday: 5, enabled: false },
+      ]),
+    )
   })
 
   it('replaces a weekday with enabled or disabled hours', async () => {

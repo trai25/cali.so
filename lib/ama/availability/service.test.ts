@@ -15,6 +15,10 @@ function fixture() {
   let id = 3
   let timeZone = 'Asia/Taipei'
   let overrides: Awaited<ReturnType<AvailabilityRepository['listOverrides']>> = []
+  const weekdays = Array.from({ length: 7 }, (_, index) => ({
+    isoWeekday: index + 1,
+    enabled: index + 1 === 3,
+  }))
   const windows = [
     {
       id: 1,
@@ -40,6 +44,28 @@ function fixture() {
     async setTimeZone(value) {
       timeZone = value
       return value
+    },
+    async listWeekdayStates() {
+      return weekdays.map((weekday) => ({ ...weekday }))
+    },
+    async setWeekdayEnabled(isoWeekday, enabled, defaultIntervals) {
+      const weekday = weekdays.find((item) => item.isoWeekday === isoWeekday)!
+      weekday.enabled = enabled
+      if (
+        enabled &&
+        !windows.some((window) => window.isoWeekday === isoWeekday)
+      ) {
+        for (const interval of defaultIntervals) {
+          windows.push({
+            id: id++,
+            isoWeekday,
+            ...interval,
+            createdAt: new Date('2026-07-14T00:00:00.000Z'),
+            updatedAt: new Date('2026-07-14T00:00:00.000Z'),
+          })
+        }
+      }
+      return { ...weekday }
     },
     async listOverrides() {
       return overrides
@@ -134,6 +160,7 @@ function fixture() {
   return {
     service,
     windows,
+    weekdays,
     setCalendarResult(value: typeof calendarResult) {
       calendarResult = value
     },
@@ -148,6 +175,10 @@ describe('Availability Window service', () => {
 
     await expect(f.service.getSchedule()).resolves.toMatchObject({
       timeZone: 'Asia/Taipei',
+      weekdays: expect.arrayContaining([
+        { isoWeekday: 3, enabled: true },
+        { isoWeekday: 5, enabled: false },
+      ]),
       windows: [{ id: 1 }, { id: 2 }],
       overrides: [{ localDate: '2026-07-16', intervals: [] }],
     })
@@ -167,16 +198,22 @@ describe('Availability Window service', () => {
     )
   })
 
-  it('turns weekdays off and restores a useful default interval', async () => {
+  it('turns weekdays off without deleting their intervals and restores them', async () => {
     const f = fixture()
 
     await f.service.setWeekday(3, false)
-    expect(f.windows).toEqual([])
+    expect(f.windows).toHaveLength(2)
+    expect(f.weekdays[2]).toEqual({ isoWeekday: 3, enabled: false })
+
+    await f.service.setWeekday(3, true)
+    expect(f.windows).toHaveLength(2)
+    expect(f.weekdays[2]).toEqual({ isoWeekday: 3, enabled: true })
 
     await f.service.setWeekday(5, true)
-    expect(f.windows).toMatchObject([
-      { isoWeekday: 5, startMinute: 540, endMinute: 720 },
-    ])
+    expect(
+      f.windows.filter((window) => window.isoWeekday === 5),
+    ).toMatchObject([{ isoWeekday: 5, startMinute: 540, endMinute: 720 }])
+    expect(f.weekdays[4]).toEqual({ isoWeekday: 5, enabled: true })
   })
 
   it('copies one day to selected weekdays', async () => {
@@ -258,6 +295,7 @@ describe('Availability Window service', () => {
     const preview = await f.service.preview()
 
     expect(preview.status).toBe('connected')
+    expect(preview.diagnosis).toBe('open')
     expect(preview.slots.slice(0, 3).map((slot) => slot.startsAt.toISOString())).toEqual([
       '2026-07-15T05:00:00.000Z',
       '2026-07-15T05:30:00.000Z',
@@ -290,6 +328,59 @@ describe('Availability Window service', () => {
 
     await expect(f.service.preview()).resolves.toEqual({
       status: 'disconnected',
+      diagnosis: 'calendar-unavailable',
+      slots: [],
+    })
+  })
+
+  it('distinguishes each exact empty-preview cause', async () => {
+    const noHours = fixture()
+    await noHours.service.setWeekday(3, false)
+    noHours.setCalendarResult({ status: 'disconnected', busy: [] })
+    await expect(noHours.service.preview()).resolves.toMatchObject({
+      status: 'disconnected',
+      diagnosis: 'no-configured-hours',
+      slots: [],
+    })
+
+    const noPolicyHours = fixture()
+    noPolicyHours.windows.splice(0, noPolicyHours.windows.length, {
+      ...noPolicyHours.windows[0],
+      startMinute: 9 * 60,
+      endMinute: 9 * 60 + 30,
+    })
+    await expect(noPolicyHours.service.preview()).resolves.toMatchObject({
+      diagnosis: 'no-policy-eligible-hours',
+      slots: [],
+    })
+
+    const calendarBlocked = fixture()
+    calendarBlocked.setCalendarResult({
+      status: 'connected',
+      busy: [
+        {
+          startsAt: new Date('2026-07-14T00:00:00.000Z'),
+          endsAt: new Date('2026-08-14T00:00:00.000Z'),
+        },
+      ],
+    })
+    await expect(calendarBlocked.service.preview()).resolves.toMatchObject({
+      diagnosis: 'calendar-conflicts',
+      slots: [],
+    })
+
+    const bookingBlocked = fixture()
+    await expect(
+      bookingBlocked.service.preview({
+        bookings: [
+          {
+            startsAt: new Date('2026-07-14T00:00:00.000Z'),
+            endsAt: new Date('2026-08-14T00:00:00.000Z'),
+          },
+        ],
+      }),
+    ).resolves.toMatchObject({
+      diagnosis: 'holds-or-bookings',
       slots: [],
     })
   })
