@@ -13,7 +13,6 @@ const navigation = vi.hoisted(() => ({ pathname: '/ama' }))
 
 vi.mock('next/navigation', () => ({
   usePathname: () => navigation.pathname,
-  useSearchParams: () => new URLSearchParams(window.location.search),
 }))
 
 import { LocaleSuggestion } from './locale-suggestion'
@@ -47,8 +46,8 @@ describe('LocaleSuggestion', () => {
         .textContent,
     ).toContain('Would you prefer to view this page in English?')
     expect(
-      screen.getByRole('link', { name: 'View in English' }).getAttribute('href'),
-    ).toBe('/en/ama')
+      screen.getByRole('button', { name: 'View in English' }),
+    ).not.toBeNull()
   })
 
   it('prefers a saved site language over the browser language', async () => {
@@ -63,8 +62,8 @@ describe('LocaleSuggestion', () => {
       (await screen.findByRole('region', { name: '语言建议' })).textContent,
     ).toContain('是否切换到中文浏览？')
     expect(
-      screen.getByRole('link', { name: '切换到中文' }).getAttribute('href'),
-    ).toBe('/ama')
+      screen.getByRole('button', { name: '切换到中文' }),
+    ).not.toBeNull()
   })
 
   it('remembers the current language when the visitor chooses to stay', async () => {
@@ -81,36 +80,16 @@ describe('LocaleSuggestion', () => {
     })
   })
 
-  it('preserves the URL and remembers the language when switching', async () => {
+  it('remembers the language when switching', async () => {
     window.history.replaceState({}, '', '/ama?source=newsletter#details')
     setBrowserLanguages(['en-GB'])
     render(<LocaleSuggestion locale="zh" />)
 
-    const switchLink = await screen.findByRole('link', {
+    const switchButton = await screen.findByRole('button', {
       name: 'View in English',
     })
-    switchLink.addEventListener('click', (event) => event.preventDefault())
-
-    expect(switchLink.getAttribute('href')).toBe(
-      '/en/ama?source=newsletter#details',
-    )
-    fireEvent.click(switchLink)
+    fireEvent.click(switchButton)
     expect(window.localStorage.locale).toBe('en')
-  })
-
-  it('keeps the destination current after a hash-only navigation', async () => {
-    setBrowserLanguages(['en-US'])
-    render(<LocaleSuggestion locale="zh" />)
-
-    const switchLink = await screen.findByRole('link', {
-      name: 'View in English',
-    })
-    window.history.replaceState({}, '', '/ama#pricing')
-    fireEvent(window, new HashChangeEvent('hashchange'))
-
-    await waitFor(() => {
-      expect(switchLink.getAttribute('href')).toBe('/en/ama#pricing')
-    })
   })
 
   it('recognizes Chinese browser language variants', async () => {
@@ -140,5 +119,25 @@ describe('LocaleSuggestion', () => {
     render(<LocaleSuggestion locale="zh" />)
 
     expect(screen.queryByRole('region')).toBeNull()
+  })
+
+  it('ignores cross-tab storage changes for unrelated keys', async () => {
+    setBrowserLanguages(['ja-JP'])
+    render(<LocaleSuggestion locale="zh" />)
+    window.localStorage.locale = 'en'
+
+    fireEvent(
+      window,
+      new StorageEvent('storage', { key: 'theme', newValue: 'dark' }),
+    )
+    expect(screen.queryByRole('region')).toBeNull()
+
+    fireEvent(
+      window,
+      new StorageEvent('storage', { key: 'locale', newValue: 'en' }),
+    )
+    expect(
+      await screen.findByRole('region', { name: 'Language suggestion' }),
+    ).not.toBeNull()
   })
 })

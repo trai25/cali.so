@@ -1,6 +1,6 @@
 'use client'
 
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 import { Button } from '~/components/ui/button'
@@ -59,9 +59,7 @@ function rememberLocale(locale: Locale) {
 
 export function LocaleSuggestion({ locale }: { locale: Locale }) {
   const pathname = usePathname()
-  const searchParams = useSearchParams()
   const [suggestedLocale, setSuggestedLocale] = useState<Locale | null>(null)
-  const [hash, setHash] = useState('')
 
   useEffect(() => {
     const resolveSuggestion = () => {
@@ -77,24 +75,22 @@ export function LocaleSuggestion({ locale }: { locale: Locale }) {
     }
 
     resolveSuggestion()
-    window.addEventListener('storage', resolveSuggestion)
-    return () => window.removeEventListener('storage', resolveSuggestion)
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === 'locale' || event.key === null) resolveSuggestion()
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
   }, [locale])
-
-  useEffect(() => {
-    const updateHash = () => setHash(window.location.hash)
-    updateHash()
-    window.addEventListener('hashchange', updateHash)
-    return () => window.removeEventListener('hashchange', updateHash)
-  }, [])
 
   if (!suggestedLocale) return null
 
   const copy = SUGGESTION_COPY[suggestedLocale]
-  // useSearchParams keeps this render current, while location.search retains
-  // the browser's exact escaping and parameter order for the full navigation.
-  const search = searchParams.toString() ? window.location.search : ''
-  const currentPath = `${pathname}${search}${hash}`
+  const switchLocale = () => {
+    rememberLocale(suggestedLocale)
+    // Assigning only pathname keeps the browser-owned query and fragment while
+    // localePath validates that the destination remains a local route.
+    window.location.pathname = localePath(suggestedLocale, pathname)
+  }
   const stay = () => {
     rememberLocale(locale)
     setSuggestedLocale(null)
@@ -115,13 +111,13 @@ export function LocaleSuggestion({ locale }: { locale: Locale }) {
       >
         <p className="locale-suggestion-copy">{copy.message}</p>
         <div className="locale-suggestion-actions">
-          <Button asChild size="lg" expandHitArea>
-            <a
-              href={localePath(suggestedLocale, currentPath)}
-              onClick={() => rememberLocale(suggestedLocale)}
-            >
-              {copy.switchLabel}
-            </a>
+          <Button
+            type="button"
+            size="lg"
+            expandHitArea
+            onClick={switchLocale}
+          >
+            {copy.switchLabel}
           </Button>
           <Button
             type="button"
