@@ -65,8 +65,7 @@ export async function responseJson(response: Response) {
 }
 
 const dateTimeFormatters = new Map<string, Intl.DateTimeFormat>()
-const timeFormatters = new Map<string, Intl.DateTimeFormat>()
-const dayKeyFormatters = new Map<string, Intl.DateTimeFormat>()
+const offsetFormatters = new Map<string, Intl.DateTimeFormat>()
 
 function zonedFormatter(zone: string, locale: Locale) {
   const key = `${zone}:${locale}`
@@ -99,60 +98,49 @@ export function zonedDateTime(iso: string, zone: string, locale: Locale) {
   return zonedFormatter(zone, locale).format(new Date(iso))
 }
 
-function zonedTimeFormatter(zone: string, locale: Locale) {
-  const key = `${zone}:${locale}`
-  let formatter = timeFormatters.get(key)
+function offsetFormatter(zone: string) {
+  let formatter = offsetFormatters.get(zone)
   if (!formatter) {
     const options: Intl.DateTimeFormatOptions = {
       timeZone: zone,
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
+      timeZoneName: 'longOffset',
     }
     try {
-      formatter = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', options)
+      formatter = new Intl.DateTimeFormat('en-US', options)
     } catch {
-      formatter = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
+      formatter = new Intl.DateTimeFormat('en-US', {
         ...options,
         timeZone: 'UTC',
       })
     }
-    timeFormatters.set(key, formatter)
+    offsetFormatters.set(zone, formatter)
   }
   return formatter
 }
 
-export function zonedTime(iso: string, zone: string, locale: Locale) {
-  return zonedTimeFormatter(zone, locale).format(new Date(iso))
+function zonedOffsetMinutes(iso: string, zone: string) {
+  const name = offsetFormatter(zone)
+    .formatToParts(new Date(iso))
+    .find((part) => part.type === 'timeZoneName')?.value
+  if (!name || name === 'GMT') return 0
+  const match = /^GMT([+-])(\d{2}):(\d{2})$/.exec(name)
+  if (!match) return 0
+  const minutes = Number(match[2]) * 60 + Number(match[3])
+  return match[1] === '+' ? minutes : -minutes
 }
 
-function dayKeyFormatter(zone: string) {
-  let formatter = dayKeyFormatters.get(zone)
-  if (!formatter) {
-    const options: Intl.DateTimeFormatOptions = {
-      timeZone: zone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }
-    try {
-      formatter = new Intl.DateTimeFormat('en-CA', options)
-    } catch {
-      formatter = new Intl.DateTimeFormat('en-CA', {
-        ...options,
-        timeZone: 'UTC',
-      })
-    }
-    dayKeyFormatters.set(zone, formatter)
-  }
-  return formatter
+export function zonedOffsetDifference(
+  iso: string,
+  ownerZone: string,
+  guestZone: string,
+) {
+  return zonedOffsetMinutes(iso, guestZone) - zonedOffsetMinutes(iso, ownerZone)
 }
 
-export function zonedDayKey(iso: string, zone: string) {
-  const parts = dayKeyFormatter(zone).formatToParts(new Date(iso))
-  const value = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((part) => part.type === type)?.value ?? ''
-  return `${value('year')}-${value('month')}-${value('day')}`
+export function formatOffsetDifference(minutes: number) {
+  const sign = minutes === 0 ? '±' : minutes > 0 ? '+' : '−'
+  const absolute = Math.abs(minutes)
+  return `${sign}${String(Math.floor(absolute / 60)).padStart(2, '0')}:${String(absolute % 60).padStart(2, '0')}`
 }
 
 export const bookingStatusLabels: Record<BookingStatus, { zh: string; en: string }> = {

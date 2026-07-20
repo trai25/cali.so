@@ -10,14 +10,14 @@ import { localize, useLocale } from '~/lib/locale-client'
 
 import {
   BookingStatusBadge,
+  formatOffsetDifference,
   OperationsList,
   OWNER_TIME_ZONE,
   providerLabels,
   refundStatusLabels,
   responseJson,
-  zonedDayKey,
   zonedDateTime,
-  zonedTime,
+  zonedOffsetDifference,
   type AlternateTimeRequestViewModel,
   type BookingRowViewModel,
   type OperationViewModel,
@@ -63,9 +63,13 @@ function BookingRow({
   showPrep?: boolean
 }) {
   const provider = providerLabels[booking.meetingProvider]
-  const sameLocalDate =
-    zonedDayKey(booking.startsAt, ownerTimeZone) ===
-    zonedDayKey(booking.startsAt, booking.guestTimeZone)
+  const guestOffset = formatOffsetDifference(
+    zonedOffsetDifference(
+      booking.startsAt,
+      ownerTimeZone,
+      booking.guestTimeZone,
+    ),
+  )
   return (
     <li className="px-2 py-5 text-sm">
       <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -96,26 +100,19 @@ function BookingRow({
           </dt>
           <dd className="min-w-0 text-muted-foreground">
             <span data-booking-time="owner" className="block tabular-nums">
-              <T
-                zh={zonedDateTime(booking.startsAt, ownerTimeZone, 'zh')}
-                en={zonedDateTime(booking.startsAt, ownerTimeZone, 'en')}
-              />
-              {' '}({ownerTimeZone})
+              <span className="booking-owner-time">
+                <T
+                  zh={zonedDateTime(booking.startsAt, ownerTimeZone, 'zh')}
+                  en={zonedDateTime(booking.startsAt, ownerTimeZone, 'en')}
+                />
+                {' '}({ownerTimeZone})
+              </span>
             </span>
-            <span data-booking-time="guest" className="mt-1 block tabular-nums">
-              <T
-                zh={
-                  sameLocalDate
-                    ? zonedTime(booking.startsAt, booking.guestTimeZone, 'zh')
-                    : zonedDateTime(booking.startsAt, booking.guestTimeZone, 'zh')
-                }
-                en={
-                  sameLocalDate
-                    ? zonedTime(booking.startsAt, booking.guestTimeZone, 'en')
-                    : zonedDateTime(booking.startsAt, booking.guestTimeZone, 'en')
-                }
-              />
-              {' '}({booking.guestTimeZone})
+            <span
+              data-booking-time="guest"
+              className="mt-2 block tabular-nums text-muted-foreground"
+            >
+              {guestOffset} ({booking.guestTimeZone})
             </span>
           </dd>
         </div>
