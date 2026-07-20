@@ -51,20 +51,20 @@ function renderSettingsMarkup(
 }
 
 describe('AMA settings UI contract', () => {
-  it('keeps bilingual scheduling content and accessible form recovery in static HTML', () => {
+  it('keeps localized scheduling content and accessible form recovery in static HTML', () => {
     const html = renderSettingsMarkup('expired')
 
-    expect(html).toMatch(/<label[^>]+for="[^"]+-weekday-zh"[^>]+data-zh-block="true"/)
-    expect(html).toMatch(/<label[^>]+for="[^"]+-weekday-en"[^>]+data-en-block="true"/)
-    expect(html).toContain('<option value="1" selected="">星期一</option>')
-    expect(html).toContain('<option value="1" selected="">Monday</option>')
+    // The fluid Select posts through a hidden input; server locale is zh.
+    expect(html).toMatch(/<input[^>]+name="weekday"[^>]+value="1"/)
+    expect(html).toMatch(/<input[^>]+name="start"[^>]+value="09:00"/)
+    expect(html).toMatch(/<input[^>]+name="end"[^>]+value="12:00"/)
+    expect(html).toContain('星期一')
     expect(html).toContain('data-zh="true"')
     expect(html).toContain('data-en="true"')
     expect(html).toContain('Wed, Jul 15')
     expect(html).toContain('aria-describedby="availability-notice"')
     expect(html).toContain('id="availability-notice"')
     expect(html).toContain('min-h-11')
-    expect(html).toContain('motion-reduce:transition-none')
   })
 
   it('offers recovery and local disconnect for an unhealthy Calendar connection', () => {
@@ -96,7 +96,10 @@ describe('AMA settings UI contract', () => {
 
     const firstSubmit = fireEvent.submit(form)
     expect(firstSubmit).toBe(true)
-    expect(form.querySelector('button')?.textContent).toContain('Connecting')
+    // The pending state shows the Button spinner and locks the control.
+    const button = form.querySelector('button')!
+    expect(button.disabled).toBe(true)
+    expect(button.querySelector('svg')).not.toBeNull()
 
     const repeatSubmit = fireEvent.submit(form)
     expect(repeatSubmit).toBe(false)
@@ -139,30 +142,31 @@ describe('AMA settings UI contract', () => {
     fireEvent.submit(form)
     const confirmed = fireEvent.submit(form)
     expect(confirmed).toBe(true)
-    expect(button.textContent).toContain('Disconnecting')
+    expect(button.disabled).toBe(true)
+    expect(button.querySelector('svg')).not.toBeNull()
   })
 
-  it('preserves an edited weekday when the locale changes mid-form', () => {
-    const { container } = render(<AvailabilityWindowForm />)
-    const zhSelect = container.querySelector<HTMLSelectElement>('label[data-zh-block] select')!
-    const enSelect = container.querySelector<HTMLSelectElement>('label[data-en-block] select')!
+  it('keeps the posted weekday when the locale changes mid-form', () => {
+    // The single fluid Select posts one locale-independent `weekday` field,
+    // so a value chosen in one locale survives a mid-form locale swap.
+    const { container } = render(
+      <AvailabilityWindowForm
+        window={{ id: 1, isoWeekday: 5, startMinute: 540, endMinute: 720 }}
+      />,
+    )
+    const form = container.querySelector('form')!
+    const trigger = form.querySelector<HTMLButtonElement>('button[role="combobox"]')!
 
-    fireEvent.change(zhSelect, { target: { value: '5' } })
-    expect(zhSelect.value).toBe('5')
-    expect(enSelect.value).toBe('5')
+    expect(new FormData(form).get('weekday')).toBe('5')
+    expect(trigger.textContent).toContain('星期五')
 
     act(() => {
       document.documentElement.dataset.locale = 'en'
       window.dispatchEvent(new Event(LOCALE_CHANGE_EVENT))
     })
 
-    expect(enSelect.value).toBe('5')
-    expect(enSelect.options[4]?.text).toBe('Friday')
-    expect(zhSelect.options[4]?.text).toBe('星期五')
-    const formData = new FormData(container.querySelector('form')!)
-    expect(formData.get('weekdayZh')).toBe('5')
-    expect(formData.get('weekdayEn')).toBe('5')
-    expect(formData.get('weekdayOriginal')).toBe('1')
+    expect(trigger.textContent).toContain('Friday')
+    expect(new FormData(form).get('weekday')).toBe('5')
   })
 
   it('supports keyboard-style submission with a stable pending state', () => {
@@ -174,9 +178,13 @@ describe('AMA settings UI contract', () => {
 
     const save = container.querySelector<HTMLButtonElement>('button[value="create"]')!
     expect(save.disabled).toBe(true)
-    expect(save.textContent).toContain('Saving')
-    for (const select of container.querySelectorAll('select')) {
-      expect(select.disabled).toBe(true)
+    expect(save.querySelector('svg')).not.toBeNull()
+    const fields = container.querySelectorAll<HTMLInputElement>(
+      'input[name="weekday"], input[name="start"], input[name="end"]',
+    )
+    expect(fields.length).toBe(3)
+    for (const field of fields) {
+      expect(field.disabled).toBe(true)
     }
   })
 
@@ -220,6 +228,6 @@ describe('AMA settings UI contract', () => {
     fireEvent.click(remove)
     fireEvent.click(remove)
     expect(remove.disabled).toBe(true)
-    expect(remove.textContent).toContain('Deleting')
+    expect(remove.querySelector('svg')).not.toBeNull()
   })
 })

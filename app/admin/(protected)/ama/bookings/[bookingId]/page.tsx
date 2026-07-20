@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 
+import { PixelCluster } from '~/components/pixel-cluster'
 import { requireOwnerPage } from '~/lib/admin/server'
 import { getAmaAdminServices } from '~/lib/ama/admin/server'
 import { T } from '~/lib/i18n'
@@ -83,10 +84,13 @@ function operationViewModel(operation: DurableOperationRecord): OperationViewMod
 function BookingFallback() {
   return (
     <div className="pb-10" aria-busy="true">
-      <p className="text-sm font-medium tracking-[-0.011em] text-muted-foreground">
-        <T zh="咨询预约" en="AMA BOOKING" />
-      </p>
-      <div className="mt-2 h-5 w-44 rounded-sm bg-surface-1" aria-hidden />
+      <div className="flex items-center justify-between gap-4">
+        <p className="page-eyebrow">
+          <T zh="咨询预约" en="AMA Booking" />
+        </p>
+        <PixelCluster variant={10} className="shrink-0" />
+      </div>
+      <div className="mt-1 h-5 w-44 rounded-sm bg-surface-1" aria-hidden />
       <div className="mt-6 grid gap-4 hairline-top pt-4" aria-hidden>
         <div className="h-4 w-full max-w-80 rounded-sm bg-surface-1" />
         <div className="h-4 w-full max-w-64 rounded-sm bg-surface-1" />

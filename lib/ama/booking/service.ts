@@ -60,7 +60,19 @@ export type HoldStateResult =
     }
   | { state: 'expired' }
   | { state: 'processing' }
-  | { state: 'paid'; bookingStatus: 'finalizing' | 'confirmed' | 'needs_reschedule' }
+  | {
+      state: 'paid'
+      bookingStatus: 'finalizing' | 'confirmed' | 'needs_reschedule'
+      /** The confirmed session's facts — no guest identity, only what the
+       *  confirmation page prints on its plate. The meeting link rides along
+       *  once finalization has created it; possession of the hold id is the
+       *  same capability the checkout return already granted. */
+      startsAt: Date
+      endsAt: Date
+      meetingProvider: MeetingProviderName
+      guestTimeZone: string
+      meetingUrl: string | null
+    }
   | { state: 'cancelled' }
   | { state: 'unknown' }
 
@@ -273,7 +285,15 @@ export function createBookingService(dependencies: BookingServiceDependencies) {
         )
         if (booking) {
           if (booking.status === 'cancelled') return { state: 'cancelled' }
-          return { state: 'paid', bookingStatus: booking.status }
+          return {
+            state: 'paid',
+            bookingStatus: booking.status,
+            startsAt: booking.startsAt,
+            endsAt: booking.endsAt,
+            meetingProvider: booking.meetingProvider,
+            guestTimeZone: booking.guestTimeZone,
+            meetingUrl: booking.meetingUrl,
+          }
         }
       }
 

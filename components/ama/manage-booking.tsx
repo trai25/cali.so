@@ -3,9 +3,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { SlotPicker, type PublicSlot } from '~/components/ama/slot-picker'
+import { Barcode } from '~/components/barcode'
+import { Button } from '~/components/ui/button'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '~/components/ui/dialog'
+import { Tooltip } from '~/components/ui/tooltip'
 import { T } from '~/lib/i18n'
 import { localize, useLocale } from '~/lib/locale-client'
-import { cn } from '~/lib/utils'
 
 type ManagedBooking = {
   status: string
@@ -64,11 +75,24 @@ const RESCHEDULE_NOTICES: Record<Exclude<RescheduleNotice, null>, { zh: string; 
   },
 }
 
-const primaryButtonClassName =
-  'inline-flex min-h-11 touch-manipulation items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background outline-none transition-transform duration-100 ease-[ease] active:scale-[0.97] disabled:pointer-events-none disabled:opacity-60 focus-visible:ring-1 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transform-none motion-reduce:transition-none'
-
-const quietButtonClassName =
-  'inline-flex min-h-11 touch-manipulation items-center justify-center rounded-md px-4 text-sm text-muted-foreground outline-none transition-colors duration-150 hover:text-foreground focus-visible:ring-1 focus-visible:ring-foreground disabled:pointer-events-none disabled:opacity-60'
+/** The ornamental barcode label: the session's date in the guest's zone. */
+function sessionDateCode(iso: string, timeZone: string) {
+  const options: Intl.DateTimeFormatOptions = {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }
+  try {
+    return new Intl.DateTimeFormat('en-CA', options)
+      .format(new Date(iso))
+      .replaceAll('-', '')
+  } catch {
+    return new Intl.DateTimeFormat('en-CA', { ...options, timeZone: 'UTC' })
+      .format(new Date(iso))
+      .replaceAll('-', '')
+  }
+}
 
 function bookingTime(booking: ManagedBooking, timeZone: string) {
   const start = new Date(booking.startsAt)
@@ -288,35 +312,40 @@ export function ManageBooking({ token }: { token: string }) {
         </p>
       )}
 
-      <section
-        aria-label={localize(locale, '预订详情', 'Booking details')}
-        className="rounded-md px-4 py-5 shadow-[0_0_0_1px_var(--border)]"
-      >
-        <dl className="grid gap-4 text-sm">
-          <div className="grid gap-1">
-            <dt className="text-muted-foreground">
+      {/* The booking as a nameplate: the data is the session's own
+          specification, so it takes the boxed plate register the AMA page
+          established. Secondary notes ride inside the value cell; the
+          meeting link lives in the plate once it exists — the guest's copy
+          of the session's spec sheet. */}
+      <section aria-label={localize(locale, '预订详情', 'Booking details')}>
+        <dl className="spec-nameplate">
+          {/* The zone label is supplementary: hovering the time reveals it
+              as a tooltip. The printed time is already in the guest's zone. */}
+          <div>
+            <dt>
               <T zh="时间" en="Time" />
             </dt>
-            <dd className="font-medium tabular-nums">
-              {time && <T zh={time.zh} en={time.en} />}
+            <dd className="min-w-0 break-words">
+              <Tooltip content={booking.guestTimeZone}>
+                <span>{time && <T zh={time.zh} en={time.en} />}</span>
+              </Tooltip>
             </dd>
-            <dd className="text-[13px] text-muted-foreground">{booking.guestTimeZone}</dd>
           </div>
 
-          <div className="grid gap-1">
-            <dt className="text-muted-foreground">
+          <div>
+            <dt>
               <T zh="会议方式" en="Meeting" />
             </dt>
-            <dd className="font-medium">
+            <dd className="min-w-0 break-words">
               <T zh={providerLabel.zh} en={providerLabel.en} />
             </dd>
           </div>
 
-          <div className="grid gap-1">
-            <dt className="text-muted-foreground">
+          <div>
+            <dt>
               <T zh="状态" en="Status" />
             </dt>
-            <dd className="font-medium">
+            <dd className="min-w-0 break-words">
               {isCancelled ? (
                 <T zh="已取消" en="Cancelled" />
               ) : isFinalizing ? (
@@ -324,43 +353,45 @@ export function ManageBooking({ token }: { token: string }) {
               ) : (
                 <T zh="已确认" en="Confirmed" />
               )}
-            </dd>
-            {isFinalizing && (
-              <dd className="text-[13px] leading-5 text-muted-foreground">
-                <T
-                  zh="会议链接正在创建，准备好后会通过邮件送达。"
-                  en="The meeting link is being created and will arrive by email once ready."
-                />
-              </dd>
-            )}
-            {booking.refundStatus && booking.refundStatus !== 'none' && (
-              <dd className="text-[13px] leading-5 text-muted-foreground">
-                {booking.refundStatus === 'refunded' ? (
-                  <T zh="退款已完成。" en="Refund completed." />
-                ) : (
-                  // 'pending' and 'failed' both read as in-progress: a failed
-                  // automatic refund is retried or handled by hand, and the
-                  // guest never owes the difference.
+              {isFinalizing && (
+                <span className="block leading-5 text-muted-foreground">
                   <T
-                    zh="退款处理中，通常几个工作日内原路退回。"
-                    en="Refund in progress; it usually returns to your card within a few business days."
+                    zh="会议链接正在创建，准备好后会通过邮件送达。"
+                    en="The meeting link is being created and will arrive by email once ready."
                   />
-                )}
-              </dd>
-            )}
+                </span>
+              )}
+              {booking.refundStatus && booking.refundStatus !== 'none' && (
+                <span className="block leading-5 text-muted-foreground">
+                  {booking.refundStatus === 'refunded' ? (
+                    <T zh="退款已完成。" en="Refund completed." />
+                  ) : (
+                    // 'pending' and 'failed' both read as in-progress: a failed
+                    // automatic refund is retried or handled by hand, and the
+                    // guest never owes the difference.
+                    <T
+                      zh="退款处理中，通常几个工作日内原路退回。"
+                      en="Refund in progress; it usually returns to your card within a few business days."
+                    />
+                  )}
+                </span>
+              )}
+            </dd>
           </div>
 
           {booking.meetingUrl && !isCancelled && (
-            <div className="grid justify-items-start gap-1">
-              <dt className="sr-only">{localize(locale, '会议链接', 'Meeting link')}</dt>
-              <dd>
+            <div>
+              <dt>
+                <T zh="会议链接" en="Link" />
+              </dt>
+              <dd className="min-w-0 break-all">
                 <a
                   href={booking.meetingUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className={primaryButtonClassName}
+                  className="underline decoration-current/35 underline-offset-2 outline-none transition-colors duration-150 hover:decoration-current focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-current motion-reduce:transition-none"
                 >
-                  <T zh="打开会议链接" en="Open meeting link" />
+                  {booking.meetingUrl.replace(/^https?:\/\//, '')}
                 </a>
               </dd>
             </div>
@@ -382,23 +413,26 @@ export function ManageBooking({ token }: { token: string }) {
           {booking.canReschedule && (
             <div className="flex flex-col gap-4">
               {!rescheduleOpen ? (
-                <div>
-                  <button
-                    type="button"
+                <div className="flex justify-center">
+                  <Button
+                    variant="tertiary"
+                    size="lg"
                     aria-expanded={rescheduleOpen}
                     onClick={openReschedule}
-                    className={cn(
-                      quietButtonClassName,
-                      'px-4 shadow-[0_0_0_1px_var(--border)] hover:shadow-[0_0_0_1px_var(--foreground)]',
-                    )}
+                    expandHitArea
                   >
                     <T zh="改期" en="Reschedule" />
-                  </button>
+                  </Button>
                 </div>
               ) : (
-                <div className="flex flex-col gap-4">
-                  <h2 className="text-sm font-medium text-muted-foreground">
-                    <T zh="选择新时间" en="Pick a new time" />
+                <div className="flex flex-col gap-4 hairline-top pt-5">
+                  {/* The flow heading in the heading-ornament register:
+                      standalone hatch chip + tracked mono label. */}
+                  <h2 className="section-tag">
+                    <span className="section-tag-hatch" aria-hidden />
+                    <span className="section-tag-label">
+                      <T zh="选择新时间" en="Pick a new time" />
+                    </span>
                   </h2>
                   {slots === null && !slotsUnavailable && (
                     <div role="status" aria-live="polite">
@@ -439,30 +473,27 @@ export function ManageBooking({ token }: { token: string }) {
                     />
                   )}
                   <div className="flex flex-wrap items-center gap-3">
-                    <button
-                      type="button"
+                    <Button
+                      variant="primary"
+                      size="lg"
                       disabled={pending !== null || !selected}
+                      loading={pending === 'reschedule'}
                       onClick={() => void confirmReschedule()}
-                      className={primaryButtonClassName}
                     >
-                      {pending === 'reschedule' ? (
-                        <T zh="正在改期…" en="Rescheduling…" />
-                      ) : (
-                        <T zh="确认改期" en="Confirm new time" />
-                      )}
-                    </button>
-                    <button
-                      type="button"
+                      <T zh="确认改期" en="Confirm new time" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="lg"
                       disabled={pending !== null}
                       onClick={() => {
                         setRescheduleOpen(false)
                         setSelected(null)
                         setNotice(null)
                       }}
-                      className={quietButtonClassName}
                     >
                       <T zh="保持原时间" en="Keep the current time" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -470,21 +501,34 @@ export function ManageBooking({ token }: { token: string }) {
           )}
 
           {booking.canCancel && (
-            <div className="flex flex-col gap-3">
-              {!confirmingCancel ? (
-                <div>
-                  <button
-                    type="button"
-                    disabled={pending !== null}
-                    onClick={() => setConfirmingCancel(true)}
-                    className={quietButtonClassName}
-                  >
-                    <T zh="取消预订" en="Cancel booking" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-3 rounded-md px-4 py-4 shadow-[0_0_0_1px_var(--border)]">
-                  <p className="text-sm leading-6">
+            <>
+              {/* Hazard tape flanks the destructive doorway, centered like a
+                  document-foot action; the confirmation is a hazard-marked
+                  dialog on the surface ladder. */}
+              <div className="flex items-center justify-center gap-3">
+                <span className="ama-hazard-strip" aria-hidden />
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  destructive
+                  disabled={pending !== null}
+                  onClick={() => setConfirmingCancel(true)}
+                  aria-haspopup="dialog"
+                  expandHitArea
+                >
+                  <T zh="取消预订" en="Cancel booking" />
+                </Button>
+                <span className="ama-hazard-strip" aria-hidden />
+              </div>
+
+              <Dialog open={confirmingCancel} onOpenChange={setConfirmingCancel}>
+                <DialogContent size="sm" className="ama-cancel-dialog">
+                  <DialogHeader className="pt-5">
+                    <DialogTitle>
+                      <T zh="取消预订" en="Cancel this booking" />
+                    </DialogTitle>
+                  </DialogHeader>
+                  <DialogDescription>
                     {booking.refundOnCancel ? (
                       <T
                         zh="确定取消吗？付款会自动全额退款，原路退回。"
@@ -496,34 +540,37 @@ export function ManageBooking({ token }: { token: string }) {
                         en="Cancel this booking? The session starts in less than 24 hours, so there is no automatic refund."
                       />
                     )}
-                  </p>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <button
-                      type="button"
+                  </DialogDescription>
+                  {notice && (
+                    <p role="alert" className="mt-3 px-5 text-sm leading-6">
+                      <T
+                        zh={RESCHEDULE_NOTICES[notice].zh}
+                        en={RESCHEDULE_NOTICES[notice].en}
+                      />
+                    </p>
+                  )}
+                  <DialogFooter className="mt-4">
+                    <DialogClose size="lg" disabled={pending !== null}>
+                      <T zh="保留预订" en="Keep the booking" />
+                    </DialogClose>
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      destructive
                       disabled={pending !== null}
+                      loading={pending === 'cancel'}
                       onClick={() => void confirmCancel()}
-                      className={primaryButtonClassName}
                     >
-                      {pending === 'cancel' ? (
-                        <T zh="正在取消…" en="Cancelling…" />
-                      ) : booking.refundOnCancel ? (
+                      {booking.refundOnCancel ? (
                         <T zh="取消并退款" en="Cancel and refund" />
                       ) : (
                         <T zh="仍然取消" en="Cancel anyway" />
                       )}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={pending !== null}
-                      onClick={() => setConfirmingCancel(false)}
-                      className={quietButtonClassName}
-                    >
-                      <T zh="保留预订" en="Keep the booking" />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </>
           )}
         </section>
       )}
@@ -540,6 +587,12 @@ export function ManageBooking({ token }: { token: string }) {
           )}
         </p>
       )}
+
+      {/* Ornamental proof-sheet foot — the session date as its label. */}
+      <Barcode
+        code={`AMA-${sessionDateCode(booking.startsAt, booking.guestTimeZone)}`}
+        className="ama-success-barcode"
+      />
     </div>
   )
 }

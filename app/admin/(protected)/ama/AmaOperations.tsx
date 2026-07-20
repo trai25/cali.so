@@ -3,10 +3,11 @@
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 
+import { SectionTag } from '~/components/section-tag'
+import { Button } from '~/components/ui/button'
 import { T } from '~/lib/i18n'
 import { localize, useLocale } from '~/lib/locale-client'
 
-import { AmaSettings, type AmaSettingsProps } from './AmaSettings'
 import {
   BookingStatusBadge,
   OperationsList,
@@ -26,7 +27,6 @@ export type AmaOperationsProps = {
   attention: BookingRowViewModel[]
   timeRequests: AlternateTimeRequestViewModel[]
   failedOperations: OperationViewModel[]
-  settings: AmaSettingsProps
 }
 
 function BookingRow({
@@ -176,7 +176,7 @@ function AlternateTimeRequests({
                 <div className="min-w-0 max-w-xl">
                   <p className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
                     <span className="font-medium">{request.guestName}</span>
-                    <span className="break-all text-muted-foreground">
+                    <span className="break-all font-mono text-xs text-muted-foreground">
                       {request.guestEmail}
                     </span>
                   </p>
@@ -200,31 +200,27 @@ function AlternateTimeRequests({
                     </p>
                   )}
                 </div>
+                {/* Dense stacked rows: the row itself is the tap target — no
+                    hit-area extension on these compact pills. */}
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
+                  <Button
+                    variant="primary"
+                    size="sm"
                     disabled={pending !== null}
+                    loading={pending === `${request.id}:resolve`}
                     onClick={() => void act(request, 'resolve')}
-                    className="min-h-11 rounded-full bg-foreground px-4 text-sm font-medium text-background outline-none transition-transform duration-100 active:scale-[0.97] disabled:opacity-50 focus-visible:ring-1 focus-visible:ring-foreground focus-visible:ring-offset-2 motion-reduce:transform-none"
                   >
-                    {pending === `${request.id}:resolve` ? (
-                      <T zh="正在标记…" en="Resolving…" />
-                    ) : (
-                      <T zh="标记已处理" en="Resolve" />
-                    )}
-                  </button>
-                  <button
-                    type="button"
+                    <T zh="标记已处理" en="Resolve" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     disabled={pending !== null}
+                    loading={pending === `${request.id}:dismiss`}
                     onClick={() => void act(request, 'dismiss')}
-                    className="min-h-11 px-3 text-sm text-muted-foreground outline-none disabled:opacity-50 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
                   >
-                    {pending === `${request.id}:dismiss` ? (
-                      <T zh="正在忽略…" en="Dismissing…" />
-                    ) : (
-                      <T zh="忽略" en="Dismiss" />
-                    )}
-                  </button>
+                    <T zh="忽略" en="Dismiss" />
+                  </Button>
                 </div>
               </li>
             ))}
@@ -253,10 +249,10 @@ export function AmaOperations({
   attention,
   timeRequests,
   failedOperations,
-  settings,
 }: AmaOperationsProps) {
   const locale = useLocale()
   const [handledCount, setHandledCount] = useState(0)
+  const [pastOpen, setPastOpen] = useState(false)
   const attentionTotal = Math.max(
     0,
     attention.length + failedOperations.length + timeRequests.length - handledCount,
@@ -268,9 +264,6 @@ export function AmaOperations({
 
   return (
     <div className="pb-10">
-      <h1 className="text-sm font-medium text-muted-foreground">
-        <T zh="咨询" en="AMA" />
-      </h1>
       <p className="mt-1 text-sm tabular-nums text-muted-foreground">
         {upcoming.length} <T zh="场即将进行" en="upcoming" />
         {' · '}
@@ -278,9 +271,9 @@ export function AmaOperations({
       </p>
 
       <section aria-labelledby="attention-heading" className="mt-6 hairline-top pt-6">
-        <h2 id="attention-heading" className="text-sm font-medium">
+        <SectionTag index={1} id="attention-heading">
           <T zh="需要处理" en="Needs attention" />
-        </h2>
+        </SectionTag>
         {allClear ? (
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
             <T zh="一切正常。" en="All clear." />
@@ -317,9 +310,9 @@ export function AmaOperations({
       </section>
 
       <section aria-labelledby="upcoming-heading" className="mt-8 hairline-top pt-6">
-        <h2 id="upcoming-heading" className="text-sm font-medium">
+        <SectionTag index={2} id="upcoming-heading">
           <T zh="即将进行" en="Upcoming" />
-        </h2>
+        </SectionTag>
         {upcoming.length === 0 ? (
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
             <T zh="没有即将进行的预约。" en="There are no upcoming Bookings." />
@@ -336,43 +329,48 @@ export function AmaOperations({
       <section aria-labelledby="past-heading" className="mt-8 hairline-top pt-6">
         {past.length === 0 ? (
           <>
-            <h2 id="past-heading" className="text-sm font-medium">
+            <SectionTag index={3} id="past-heading">
               <T zh="已结束" en="Past" />
-            </h2>
+            </SectionTag>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               <T zh="还没有已结束的预约。" en="There are no past Bookings yet." />
             </p>
           </>
         ) : (
-          <details className="group">
-            <summary
-              aria-label={localize(locale, '已结束的预约', 'Past Bookings')}
-              className="flex min-h-11 list-none items-center justify-between gap-4 outline-none focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground [&::-webkit-details-marker]:hidden"
-            >
-              <h2 id="past-heading" className="text-sm font-medium">
+          <>
+            <div className="flex min-h-11 items-center justify-between gap-4">
+              <SectionTag index={3} id="past-heading">
                 <T zh="已结束" en="Past" />
-              </h2>
-              <span className="text-sm tabular-nums text-muted-foreground">
-                {past.length}
-                <span aria-hidden="true"> · </span>
-                <span className="group-open:hidden">
-                  <T zh="展开" en="Show" />
-                </span>
-                <span className="hidden group-open:inline">
-                  <T zh="收起" en="Hide" />
-                </span>
-              </span>
-            </summary>
-            <ul className="mt-3 divide-y divide-border/70">
-              {past.map((booking) => (
-                <BookingRow key={booking.id} booking={booking} />
-              ))}
-            </ul>
-          </details>
+              </SectionTag>
+              <Button
+                variant="ghost"
+                size="sm"
+                active={pastOpen}
+                expandHitArea
+                aria-expanded={pastOpen}
+                aria-controls="past-bookings"
+                aria-label={localize(
+                  locale,
+                  pastOpen ? '收起已结束的预约' : '展开已结束的预约',
+                  pastOpen ? 'Hide past Bookings' : 'Show past Bookings',
+                )}
+                onClick={() => setPastOpen((current) => !current)}
+              >
+                <span className="tabular-nums">{past.length}</span>
+                <span aria-hidden> · </span>
+                {pastOpen ? <T zh="收起" en="Hide" /> : <T zh="展开" en="Show" />}
+              </Button>
+            </div>
+            {pastOpen && (
+              <ul id="past-bookings" className="mt-3 divide-y divide-border/70">
+                {past.map((booking) => (
+                  <BookingRow key={booking.id} booking={booking} />
+                ))}
+              </ul>
+            )}
+          </>
         )}
       </section>
-
-      <AmaSettings {...settings} />
     </div>
   )
 }

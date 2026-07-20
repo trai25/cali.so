@@ -12,14 +12,13 @@ import {
   Children,
   cloneElement,
   isValidElement,
+  type ComponentType,
   type ComponentPropsWithoutRef,
 } from "react";
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
-import type { IconComponent } from "~/lib/icon-context";
 import { cn } from "~/lib/utils";
-import { useShape } from "~/lib/shape-context";
 import { useSurface } from "~/lib/surface-context";
-import { surfaceClasses } from "~/lib/surface-classes";
+import { SURFACE_BG, surfaceClasses } from "~/lib/surface-classes";
 import { useProximityHover } from "~/hooks/use-proximity-hover";
 
 /* ─────────────────────── Contexts ─────────────────────── */
@@ -32,11 +31,20 @@ interface TabsValueOrderContextValue {
 
 const TabsValueOrderContext = createContext<TabsValueOrderContextValue | null>(null);
 
+type TabsVariant = "segmented" | "subtle";
+
+type TabIcon = ComponentType<{
+  size?: number;
+  strokeWidth?: number;
+  className?: string;
+}>;
+
 interface TabsListContextValue {
   registerTab: (index: number, value: string, el: HTMLElement | null) => void;
   hoveredIndex: number | null;
   selectedValue: string | undefined;
   setOptimisticIdx: (index: number) => void;
+  variant: TabsVariant;
 }
 
 const TabsListContext = createContext<TabsListContextValue | null>(null);
@@ -147,18 +155,29 @@ Tabs.displayName = "Tabs";
 
 /* ─────────────────────── TabsList ─────────────────────── */
 
-type TabsListProps = ComponentPropsWithoutRef<typeof TabsPrimitive.List>;
+type TabsListProps = ComponentPropsWithoutRef<typeof TabsPrimitive.List> & {
+  /**
+   * `segmented` (default) is the filled 52px track with a lifted active pill.
+   * `subtle` drops the track for a 32px row of quiet chips — for dense chrome
+   * where the switch should not outweigh the content it filters. Items keep a
+   * 44px hit target through a pseudo-element.
+   */
+  variant?: TabsVariant;
+};
 
 const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
-  ({ children, className, ...props }, ref) => {
+  ({ children, className, variant = "segmented", ...props }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const isMouseInside = useRef(false);
-    const shape = useShape();
     const substrate = useSurface();
     // Active pill lifts 3 levels above substrate (1 above the muted track + 2 for pop).
     // On the page (substrate 1) this lands on surface 4 — matches the original design.
     // Inside a dialog (substrate 5) it lifts to surface 8 instead of staying at 4.
     const indicatorLevel = Math.min(substrate + 3, 8);
+    // Without the muted track underneath, the active chip only needs to clear
+    // the page by one step — and it carries no shadow, so the row stays flat.
+    const subtleIndicatorClass =
+      SURFACE_BG[Math.round(Math.max(1, Math.min(8, substrate + 1)))];
     const valueOrderCtx = useContext(TabsValueOrderContext);
     const [optimisticIdx, setOptimisticIdx] = useState<number | null>(null);
 
@@ -239,6 +258,7 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
           hoveredIndex,
           selectedValue,
           setOptimisticIdx,
+          variant,
         }}
       >
         <TabsPrimitive.List
@@ -275,8 +295,9 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
             setHoveredIndex(null);
           }}
           className={cn(
-            "relative inline-flex items-center gap-0.5 p-1 select-none bg-muted",
-            shape.container,
+            "relative inline-flex items-center select-none",
+            variant === "subtle" ? "gap-1" : "gap-0.5 p-1 bg-muted",
+            "rounded-3xl",
             className
           )}
           {...props}
@@ -287,8 +308,10 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
               data-tabs-indicator="selected"
               className={cn(
                 "absolute pointer-events-none",
-                surfaceClasses(indicatorLevel),
-                shape.bg
+                variant === "subtle"
+                  ? subtleIndicatorClass
+                  : surfaceClasses(indicatorLevel),
+                "rounded-[20px]"
               )}
               style={{
                 left: selectedRect.left,
@@ -305,7 +328,7 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
             <div
               className={cn(
                 "absolute pointer-events-none bg-hover",
-                shape.bg
+                "rounded-[20px]"
               )}
               style={{
                 left: hoverRect.left,
@@ -322,7 +345,7 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
             <div
               className={cn(
                 "absolute pointer-events-none z-20 border border-[color:var(--focus-ring)]",
-                shape.focusRing
+                "rounded-[22px]"
               )}
               style={{
                 left: focusRect.left - 2,
@@ -347,7 +370,7 @@ TabsList.displayName = "TabsList";
 interface TabItemProps
   extends ComponentPropsWithoutRef<typeof TabsPrimitive.Tab> {
   value: string;
-  icon?: IconComponent;
+  icon?: TabIcon;
   label: string;
   /** @internal Auto-assigned by TabsList. */
   _index?: number;
@@ -356,7 +379,8 @@ interface TabItemProps
 const TabItem = forwardRef<HTMLButtonElement, TabItemProps>(
   ({ value, icon: Icon, label, _index = 0, className, ...props }, ref) => {
     const internalRef = useRef<HTMLButtonElement>(null);
-    const { registerTab, hoveredIndex, selectedValue, setOptimisticIdx } = useTabsList();
+    const { registerTab, hoveredIndex, selectedValue, setOptimisticIdx, variant } =
+      useTabsList();
 
     useEffect(() => {
       registerTab(_index, value, internalRef.current);
@@ -384,7 +408,12 @@ const TabItem = forwardRef<HTMLButtonElement, TabItemProps>(
         className={cn(
           // Fixed height (not py) so the text-box trim below doesn't shrink
           // the tab — browsers without text-box support render identically.
-          "relative z-10 flex h-11 min-w-11 items-center justify-center gap-1.5 px-2 cursor-pointer bg-transparent border-none outline-none",
+          "relative z-10 flex items-center justify-center gap-1.5 cursor-pointer bg-transparent border-none outline-none",
+          variant === "subtle"
+            ? // The chip is 32px; the pseudo restores the 44px hit target
+              // (the .btn-cta recipe) without adding visible height.
+              "h-8 min-w-8 px-2.5 before:absolute before:inset-x-0 before:top-1/2 before:h-11 before:-translate-y-1/2 before:content-['']"
+            : "h-11 min-w-11 px-2",
           className
         )}
         {...props}

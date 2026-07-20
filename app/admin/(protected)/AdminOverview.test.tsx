@@ -33,7 +33,7 @@ describe('Admin overview', () => {
     const { container } = render(<AdminOverview {...fixtures} />)
     const text = container.textContent!
 
-    const attentionRow = linkWithHref(container, '/admin/ama')!
+    const attentionRow = linkWithHref(container, '/admin/ama/bookings')!
     expect(attentionRow).not.toBeNull()
     expect(text).toContain('Needs attention')
     expect(text).toContain('2')

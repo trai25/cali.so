@@ -11,16 +11,21 @@ import {
   useMemo,
   createContext,
   useContext,
+  type ComponentType,
   type ReactNode,
   type HTMLAttributes,
 } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Select as SelectPrimitive } from "@base-ui/react/select";
-import type { IconComponent } from "~/lib/icon-context";
 import { cn } from "~/lib/utils";
 import { useProximityHover } from "~/hooks/use-proximity-hover";
-import { useShape } from "~/lib/shape-context";
 import { Elevated } from "~/lib/elevated";
+
+type SelectIcon = ComponentType<{
+  size?: number;
+  strokeWidth?: number;
+  className?: string;
+}>;
 
 // ---------------------------------------------------------------------------
 // Select context
@@ -155,8 +160,8 @@ Select.displayName = "Select";
 
 const triggerVariants = cva(
   [
-    "group inline-flex items-center justify-between gap-2 outline-none cursor-pointer",
-    "min-h-11 min-w-24 px-2 text-[14px]",
+    "group relative inline-flex items-center justify-between gap-2 outline-none cursor-pointer",
+    "min-w-24 text-[14px]",
     "transition-[background-color,color,border-color,box-shadow] duration-150",
     "disabled:opacity-50 disabled:pointer-events-none",
     "focus-visible:ring-1 focus-visible:ring-[color:var(--focus-ring)]",
@@ -169,9 +174,16 @@ const triggerVariants = cva(
         borderless:
           "border border-transparent bg-transparent text-foreground hover:bg-hover",
       },
+      size: {
+        // Control-row height (matches Button lg / subtle tabs); the pseudo
+        // restores the 44px hit target without visible height.
+        md: "h-8 px-2.5 before:absolute before:inset-x-0 before:top-1/2 before:h-11 before:-translate-y-1/2 before:content-['']",
+        tall: "min-h-11 px-2",
+      },
     },
     defaultVariants: {
       variant: "bordered",
+      size: "md",
     },
   }
 );
@@ -179,26 +191,24 @@ const triggerVariants = cva(
 interface SelectTriggerProps
   extends Omit<HTMLAttributes<HTMLButtonElement>, "children">,
     VariantProps<typeof triggerVariants> {
-  icon?: IconComponent;
+  icon?: SelectIcon;
   placeholder?: string;
   error?: string;
 }
 
 const SelectTrigger = forwardRef<HTMLButtonElement, SelectTriggerProps>(
   (
-    { className, variant, icon: Icon, placeholder = "Select…", error, ...props },
+    { className, variant, size, icon: Icon, placeholder = "Select…", error, ...props },
     ref
   ) => {
-    const shape = useShape();
-
     return (
       <div className="flex flex-col gap-1">
         <SelectPrimitive.Trigger
           ref={ref}
           aria-invalid={!!error || undefined}
           className={cn(
-            triggerVariants({ variant }),
-            shape.input,
+            triggerVariants({ variant, size }),
+            "rounded-[20px]",
             error && "border-destructive/50 hover:border-destructive/50",
             className
           )}
@@ -258,7 +268,6 @@ interface SelectContentProps {
 const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
   ({ className, children }, ref) => {
     const { open, value } = useSelectContext();
-    const shape = useShape();
     const containerRef = useRef<HTMLDivElement>(null);
 
     const {
@@ -370,14 +379,14 @@ const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
                 className={cn(
                   // min-w tracks the trigger via the Positioner's --anchor-width
                   // var, matching the pre-migration minWidth: triggerRect.width.
-                  `relative flex flex-col gap-0.5 min-w-[var(--anchor-width)] max-h-[min(300px,var(--available-height))] overflow-y-auto ${shape.container} p-1 select-none outline-none`,
+                  "relative flex flex-col gap-0.5 min-w-[var(--anchor-width)] max-h-[min(300px,var(--available-height))] overflow-y-auto rounded-3xl p-1 select-none outline-none",
                   className
                 )}
               >
                 {/* Selected background */}
                 {checkedRect && (
                   <div
-                    className={`absolute ${shape.bg} bg-active pointer-events-none`}
+                    className="absolute rounded-[20px] bg-active pointer-events-none"
                     style={{
                       top: checkedRect.top,
                       left: checkedRect.left,
@@ -391,7 +400,7 @@ const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
                 {/* Hover background */}
                 {activeRect && (
                   <div
-                    className={`absolute ${shape.bg} bg-hover pointer-events-none`}
+                    className="absolute rounded-[20px] bg-hover pointer-events-none"
                     style={{
                       top: activeRect.top,
                       left: activeRect.left,
@@ -404,7 +413,7 @@ const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
                 {/* Focus ring */}
                 {focusRect && (
                   <div
-                    className={`absolute ${shape.focusRing} pointer-events-none z-20 border border-[color:var(--focus-ring)]`}
+                    className="absolute rounded-[22px] pointer-events-none z-20 border border-[color:var(--focus-ring)]"
                     style={{
                       left: focusRect.left - 2,
                       top: focusRect.top - 2,
@@ -431,7 +440,7 @@ SelectContent.displayName = "SelectContent";
 // ---------------------------------------------------------------------------
 
 interface SelectItemProps extends HTMLAttributes<HTMLDivElement> {
-  icon?: IconComponent;
+  icon?: SelectIcon;
   index: number;
   value: string;
   disabled?: boolean;
@@ -453,7 +462,6 @@ const SelectItem = forwardRef<HTMLDivElement, SelectItemProps>(
     const selectCtx = useSelectContext();
     const contentCtx = useContext(SelectContentContext);
     const internalRef = useRef<HTMLDivElement>(null);
-    const shape = useShape();
 
     // Register with proximity hover
     useEffect(() => {
@@ -485,7 +493,10 @@ const SelectItem = forwardRef<HTMLDivElement, SelectItemProps>(
             className={cn(
               // Fixed height (was py-2 around a 19.5px line box ≈ 35.5px) so
               // the text-box trim on the item text doesn't shrink the row.
-              `relative z-10 flex h-11 items-center gap-2 ${shape.item} px-2 text-[14px] cursor-pointer outline-none select-none`,
+              // shrink-0 is load-bearing: the popup is a flex column, so a
+              // long list (every IANA zone) would otherwise squash every
+              // row well under its 44px target.
+              "relative z-10 flex h-11 shrink-0 items-center gap-2 rounded-[20px] px-2 text-[14px] cursor-pointer outline-none select-none",
               isActive || isChecked
                 ? "text-foreground"
                 : "text-muted-foreground",

@@ -529,19 +529,29 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
 - **Nameplate** (`.spec-nameplate`): the boxed variant of the spec plate —
   label and value cells separated by hairline rules inside a hairline
   frame, like an equipment serial plate. Used where the data is a
-  product's own specification (the AMA session specs). Same mono
+  product's own specification: the AMA session specs, the guest manage
+  page's booking details, and the owner Booking detail's data sections
+  (schedule, guest, payment, meeting) — booking data is the session's
+  spec sheet. Unlike the unboxed plates, nameplate content is real data:
+  it stays selectable, and links keep working inside value cells. Same mono
   typography as the plate; labels uppercase at 11px, values tabular.
 - **Status ladder** (`.status-ladder`): journey steps as mono rows —
   two-digit index, label, and a 5px state cell at the row's end. Done is
   filled ink, pending is a hairline outline, and the current step carries
   the lit signal cell. Decorative reinforcement only (`aria-hidden`): the
   prose beside it always announces the same state. Lives on the AMA
-  confirmation, driven by the server's real hold state — a ladder must
-  never show state the page cannot prove.
+  confirmation's waiting and needs-reschedule states (the paid stage
+  carries the session nameplate instead) and on the admin Booking
+  detail's linear states, driven by the server's real state — a ladder
+  must never show state the page cannot prove.
 - **Certification stamp** (`.cert-stamp`): a hairline-bordered mono
   uppercase chip ("已确认 / Confirmed +") with the lit cell, for terminal
-  confirmed states. A stamp is applied once, at the end — never as a
-  badge on lists or previews.
+  states. A stamp is applied once, at the end — never as a badge on lists
+  or previews, and never on a transient state. The paid confirmation
+  presses a stamp in the heading-ornament (section-tag) composition —
+  boxed lit signal cell, hazard-hatch chip, tracked mono "已确认 +" — at
+  −3° over its session plate's top rule (`.ama-plate-stamp`), confirmed
+  state only; finalizing stays unstamped.
 - **Section tags** (`.section-tag`): section h2s on the homepage and the
   AMA page are set as index tags — a boxed two-digit number, a
   hazard-hatch chip (fine diagonal strokes in a bordered cell), and a
@@ -603,8 +613,10 @@ typewriter/ascii textures, measuring ticks, registration marks. Rules:
 - **Barcode** (`components/barcode.tsx`): a decorative label-graphic
   barcode whose bar widths derive deterministically from its code string
   (stable across SSR), with the human-readable code beneath. It scans as
-  ornament, not data (`aria-hidden`). One per surface, currently the
-  error proof sheets (`ERR-404-CALI-SO`, `ERR-500-CALI-SO`) at 38% ink.
+  ornament, not data (`aria-hidden`). One per surface: the error proof
+  sheets (`ERR-404-CALI-SO`, `ERR-500-CALI-SO`) at 38% ink, and the AMA
+  confirmation's proof-sheet foot (`AMA-<hold prefix>`) in the stage's
+  faded paper ink.
 - **Ghost folio numerals** (`.ghost-folio`): the writing index's year
   sections carry the year's last two digits as an oversized pixel-face
   numeral in `--ghost-ink`, top-right behind the rows — the folio-number
@@ -781,7 +793,16 @@ or shader initialization failure retain only the static traces.
 ## AMA confirmation
 
 The public confirmation route reserves its full celebration for a server-proven
-paid AMA Session whose Booking is `finalizing` or `confirmed`. Those two states
+paid AMA Session whose Booking is `finalizing` or `confirmed`. The guest manage
+page shares the same dark stage shell (`AmaStage`: the shader field, static
+plate, and page tokens flipped to the stage's paper-on-dark set, including a
+solid surface ramp so ladder-riding sheets stay dark in either page theme)
+with left-aligned form content, but the celebration extras — confetti and the
+confirmation seal — remain exclusive to the paid confirmation. On the manage
+page the destructive doorway is centered and flanked by hazard tape, and its
+confirmation is a dialog wearing a hazard band along the top edge; the
+reschedule flow opens under a hatch-chip heading with mono, square-cornered
+time chips. Those two states
 become one full-viewport dark stage using the Shaders **Undertones 8** preset
 (`bb1fda80-5ce2-4072-b528-9837f6e7aff7`) as its background: `Swirl` and
 `ChromaFlow`, refracted once through `FlutedGlass`, with the preset's restrained
@@ -792,9 +813,22 @@ without WebGPU. The field covers the full visual viewport behind the site
 chrome and confirmation copy; it is not framed as a card inside the content
 column.
 
-Two twelve-piece registration-color confetti bursts launch once from the lower
-left and lower right corners, arc inward across the viewport, and settle toward
-the center while a centered check mark arrives over the field. The pieces use
+Two eighteen-piece registration-color confetti bursts launch once from the
+lower left and lower right corners and arc inward across the viewport with
+real ballistics — a decaying horizontal drive, a rise that decelerates into
+the apex and a fall that accelerates out of it, and a finite 3D tumble that
+flashes each paper's thin edge — fading while still falling, never hanging in
+air. Meanwhile the confirmation seal arrives over the field: a square
+hairline plate on the register's 2px corner, calibration brackets outside it,
+hazard-hatch bands along its top and bottom edges behind the check, stamped at
+a settled −4° — an inspection stamp in the stage's paper ink. Beneath the
+copy, the booked session prints as a spec nameplate (time in the guest's zone,
+length, meeting provider) from server-sent facts only — the page never
+fabricates plate content — and the foot carries an ornamental barcode derived
+from the hold id, so every confirmation prints its own label. Everything on
+the stage reads in paper ink regardless of page theme. The journey ladder
+remains on the waiting and needs-reschedule states, where position in the
+journey is the message; the paid stage carries the plate instead. The pieces use
 only transform and opacity and never loop. Reduced motion keeps the static dark
 plate and check mark but omits both the shader and confetti.
 `needs_reschedule` is deliberately not celebratory: payment landed, but the
@@ -832,12 +866,46 @@ public analytics, social reads, and route view transitions. Its contract:
   when the Preferences panel opens; a remembered confirmation arms it
   instantly on later visits). Visitors never see owner chrome and public
   pages stay fully static.
-- **Quiet headers.** Admin pages open like public views: an h1 at 14px
-  medium muted ink with a tabular count line. Structure comes from
-  `hairline-top` separators and spacing, not from heavier type.
+- **Depth over stacking.** A surface that holds more than one job is a
+  menu, not a scroll: `/admin/ama` lists Bookings and Settings as catalog
+  rows (`components/admin-nav.tsx` `AdminMenu`/`AdminMenuRow`, the
+  Overview's dotted-leader grammar) with each row's own summary as its
+  value, and each job owns a page. Every subpage opens with an
+  `AdminBackLink` — a mono back mark naming its parent — above the header.
+  The dock still points at the menu; the Overview deep-links past it to
+  the page that answers the row.
+- **Print headers.** Admin pages open in the technical-print register: the
+  h1 is a `.page-eyebrow` mono mark with the pixel-cluster masthead pinned
+  top-right on the eyebrow line — exactly one per page, rendered statically
+  (admin markup never takes the public `.enter` classes). Each surface owns
+  a fixed cluster variant (Overview, AMA, Media, Photos, Booking detail),
+  so the prefetched static shell and the streamed page carry the same
+  stamp. The tabular count line keeps its place under the eyebrow;
+  structure still comes from `hairline-top` separators and spacing, not
+  heavier type. Multi-section pages set their h2s as `.section-tag` index
+  tags numbered in render order; h3s and entity titles (a guest's name)
+  stay plain 14px.
+- **Protocol state.** The Booking detail reinforces its lifecycle with the
+  `.status-ladder` (finalizing → confirmed → session held), driven only by
+  server-confirmed status; diverged states (needs reschedule, cancelled)
+  show no ladder — a ladder never shows state the page cannot prove. The
+  `.cert-stamp` is applied once, at the terminal held state, when the
+  ladder has no current step — so a page carries the masthead cell plus at
+  most one lit protocol cell, the sanctioned coexistence defined in Color.
+  Status dots stay round, amber for in-flight, red only for broken or
+  destructive; they never become signal cells.
+- **Prints under the pointer.** Admin photo tiles (curation prints, the
+  media contact sheet) develop `.calibration-corners` under fine-pointer
+  hover or focus, exactly as public tiles do; touch and reduced motion stay
+  static. Admin ornament is limited to the print, plate, and mark registers
+  — no rasters, instruments, or ghost art in daily-use chrome. Machine text
+  (ids, emails, event codes, capture data) is mono; counts stay
+  `tabular-nums`.
 - **Surfaces.** Inspectors and pickers are dialogs on the surface ladder
   (`Elevated` offset 4); popovers stay at offset 2. Never a native
-  `confirm()`/`prompt()`.
+  `confirm()`/`prompt()`. Dialogs wear the printed-label chrome the hover
+  cards established: the register's 2px corner, a hairline frame, and
+  ruled full-bleed head/foot rows (`components/ui/dialog.tsx`).
 - **Confirmation grammar.** Reversible-but-notable actions (archive,
   disconnect) use a two-step armed button that relaxes after ~4s.
   Irreversible actions (Purge) require the typed confirmation word inside
