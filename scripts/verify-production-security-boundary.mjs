@@ -163,20 +163,23 @@ async function verifyAdminPages(baseUrl) {
       `${path} Clerk return path`,
     )
     const policy = response.headers.get('content-security-policy') ?? ''
+    const policyDirectives = policy
+      .split(';')
+      .map((directive) => directive.trim())
     if (path === '/admin/ama/settings') {
       const rawHeaders = await fetchRawHeaders(baseUrl, path, documentRequest)
       const policies = rawHeaderValues(rawHeaders, 'content-security-policy')
       assert.equal(policies.length, 1, `${path} CSP header count`)
       assert.equal(policies[0], policy, `${path} raw CSP header`)
-      assert.match(
-        policy,
-        /form-action 'self' https:\/\/accounts\.google\.com(?:;|$)/,
+      assert.ok(
+        policyDirectives.includes(
+          "form-action 'self' https://accounts.google.com",
+        ),
         `${path} Google OAuth form destination`,
       )
     } else {
-      assert.doesNotMatch(
-        policy,
-        /https:\/\/accounts\.google\.com/,
+      assert.ok(
+        !policy.includes('https://accounts.google.com'),
         `${path} Google OAuth policy scope`,
       )
     }
