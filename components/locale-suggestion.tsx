@@ -114,7 +114,9 @@ export function LocaleSuggestion({ locale }: { locale: Locale }) {
       >
         <span aria-hidden="true" className="locale-suggestion-screw" />
         <span aria-hidden="true" className="locale-suggestion-meta">
-          LANG / {suggestedLocale.toUpperCase()}
+          <span>LANG</span>
+          <span>/</span>
+          <span>{suggestedLocale.toUpperCase()}</span>
         </span>
         <p className="locale-suggestion-copy">{copy.message}</p>
         <div className="locale-suggestion-actions">
