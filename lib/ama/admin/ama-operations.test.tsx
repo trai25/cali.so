@@ -222,18 +222,19 @@ describe('AMA admin page', () => {
     )
   })
 
-  it('highlights owner time and renders the guest zone as an offset delta', () => {
+  it('highlights owner time and omits a repeated guest date', () => {
     const { container } = render(<AmaOperations {...fixtures} />)
     const ownerLine = container.querySelector('[data-booking-time="owner"]')
     const guestLine = container.querySelector('[data-booking-time="guest"]')
+    const guestEnglish = guestLine?.querySelector('[data-en]')?.textContent
 
     expect(ownerLine?.className).toContain('block')
     expect(ownerLine?.querySelector('.booking-owner-time')).not.toBeNull()
     expect(guestLine?.className).toContain('block')
-    expect(guestLine?.textContent).toBe('+01:00 (Asia/Tokyo)')
+    expect(guestEnglish).toMatch(/^\d{2}:\d{2}$/)
   })
 
-  it('uses a DST-aware negative offset for the guest zone', () => {
+  it('keeps the absolute guest date across a calendar-day boundary', () => {
     const { container } = render(
       <AmaOperations
         {...fixtures}
@@ -242,11 +243,11 @@ describe('AMA admin page', () => {
         total={1}
       />,
     )
-    const guestTime = container.querySelector(
-      '[data-booking-time="guest"]',
+    const guestEnglish = container.querySelector(
+      '[data-booking-time="guest"] [data-en]',
     )?.textContent
 
-    expect(guestTime).toBe('−12:00 (America/New_York)')
+    expect(guestEnglish).not.toMatch(/^\d{2}:\d{2}$/)
   })
 
   it('renders past Bookings as a first-class URL view', () => {

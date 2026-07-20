@@ -10,14 +10,14 @@ import { localize, useLocale } from '~/lib/locale-client'
 
 import {
   BookingStatusBadge,
-  formatOffsetDifference,
   OperationsList,
   OWNER_TIME_ZONE,
   providerLabels,
   refundStatusLabels,
   responseJson,
+  zonedDayKey,
   zonedDateTime,
-  zonedOffsetDifference,
+  zonedTime,
   type AlternateTimeRequestViewModel,
   type BookingRowViewModel,
   type OperationViewModel,
@@ -63,13 +63,9 @@ function BookingRow({
   showPrep?: boolean
 }) {
   const provider = providerLabels[booking.meetingProvider]
-  const guestOffset = formatOffsetDifference(
-    zonedOffsetDifference(
-      booking.startsAt,
-      ownerTimeZone,
-      booking.guestTimeZone,
-    ),
-  )
+  const sameLocalDate =
+    zonedDayKey(booking.startsAt, ownerTimeZone) ===
+    zonedDayKey(booking.startsAt, booking.guestTimeZone)
   return (
     <li className="px-2 py-5 text-sm">
       <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -112,7 +108,19 @@ function BookingRow({
               data-booking-time="guest"
               className="mt-2 block tabular-nums text-muted-foreground"
             >
-              {guestOffset} ({booking.guestTimeZone})
+              <T
+                zh={
+                  sameLocalDate
+                    ? zonedTime(booking.startsAt, booking.guestTimeZone, 'zh')
+                    : zonedDateTime(booking.startsAt, booking.guestTimeZone, 'zh')
+                }
+                en={
+                  sameLocalDate
+                    ? zonedTime(booking.startsAt, booking.guestTimeZone, 'en')
+                    : zonedDateTime(booking.startsAt, booking.guestTimeZone, 'en')
+                }
+              />
+              {' '}({booking.guestTimeZone})
             </span>
           </dd>
         </div>
