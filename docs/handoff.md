@@ -76,11 +76,16 @@ Current as of July 2026.
   streams behind per-page Suspense loaders that each call
   `requireOwnerPage` before touching data; `clerkMiddleware` still gates
   every request, and `/admin/login` stays a deliberate `instant = false`
-  redirect. Consequences: the admin has no client-side ClerkProvider (no
-  Clerk JS ships to the admin at all), and the former per-request nonce
-  admin CSP is retired because nonces force dynamic rendering. Admin pages
-  use the static site policy from `lib/security/headers.ts`; AMA settings
-  extends only `form-action` for the redirect to Google OAuth.
+  redirect. Consequences: the former per-request nonce admin CSP is
+  retired because nonces force dynamic rendering. The admin ships one
+  non-dynamic `ClerkProvider` (no UI, no request data, shell still
+  prerenders) purely so clerk-js keeps refreshing Clerk's 60-second
+  session-token cookie — without it, every idle minute ended in a
+  handshake redirect or an admin API 401 full-page reload. Admin pages
+  therefore use a static admin policy from `lib/security/headers.ts` that
+  extends `script-src` and `connect-src` with the Clerk instance origin
+  (derived from the publishable key); AMA settings additionally extends
+  `form-action` for the redirect to Google OAuth.
 - The complete paid AMA booking system (#79, slices #82 through #87) is
   implemented and enabled by default (maintainer decision, July 2026; the
   former `AMA_*_ENABLED` switches are removed): public `/ama` and

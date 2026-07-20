@@ -33,6 +33,47 @@ describe('site security headers', () => {
     expect(headers['permissions-policy']).toContain('payment=()')
   })
 
+  it('allows the Clerk instance origins only on the admin policies', async () => {
+    vi.stubEnv(
+      'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY',
+      `pk_test_${Buffer.from('example.clerk.accounts.dev$').toString('base64')}`,
+    )
+    const {
+      adminSecurityHeader,
+      googleOAuthFormSecurityHeader,
+      securityHeaders: configuredHeaders,
+    } = await import('./headers')
+    const publicPolicy = configuredHeaders.find(
+      ({ key }) => key === 'Content-Security-Policy',
+    )?.value
+
+    for (const policy of [
+      adminSecurityHeader.value,
+      googleOAuthFormSecurityHeader.value,
+    ]) {
+      expect(policy).toContain(
+        "script-src 'self' 'unsafe-inline' https://example.clerk.accounts.dev",
+      )
+      expect(policy).toContain(
+        "connect-src 'self' https://example.clerk.accounts.dev",
+      )
+    }
+    expect(googleOAuthFormSecurityHeader.value).toContain(
+      "form-action 'self' https://accounts.google.com",
+    )
+    expect(publicPolicy).not.toContain('clerk')
+  })
+
+  it('omits Clerk origins when the publishable key is missing or malformed', async () => {
+    vi.stubEnv('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY', 'pk_live_not-base64!!')
+    const { adminSecurityHeader } = await import('./headers')
+
+    expect(adminSecurityHeader.value).toContain(
+      "script-src 'self' 'unsafe-inline'; ",
+    )
+    expect(adminSecurityHeader.value).toContain("connect-src 'self'; ")
+  })
+
   it('allows only the configured Bunny Media origin for images', async () => {
     vi.stubEnv(
       'BUNNY_MEDIA_CDN_URL',
