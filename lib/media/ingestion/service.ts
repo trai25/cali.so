@@ -244,6 +244,7 @@ const PROCESSING_STALE_AFTER_MS = 5 * 60 * 1000
 async function verifyOriginal(
   storage: MediaIngestionDependencies['storage'],
   intent: UploadIntentRecord,
+  recoverIncompleteTransfer: boolean,
 ) {
   let object
   try {
@@ -256,10 +257,15 @@ async function verifyOriginal(
     const chunks: Uint8Array[] = []
     let byteSize = 0
     for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex += 1) {
-      const chunk = await storage.readOriginalChunk(
-        intent.originalKey,
-        chunkIndex,
-      )
+      let chunk: Uint8Array
+      try {
+        chunk = await storage.readOriginalChunk(intent.originalKey, chunkIndex)
+      } catch (error) {
+        if (recoverIncompleteTransfer && error instanceof BunnyStorageError) {
+          throw new MediaIngestionError('original_mismatch')
+        }
+        throw error
+      }
       const expectedByteSize = originalUploadChunkByteLength(
         intent.byteSize,
         chunkIndex,
@@ -460,7 +466,7 @@ export function createMediaIngestionService({
 
       let bytes: Uint8Array
       try {
-        bytes = await verifyOriginal(storage, intent)
+        bytes = await verifyOriginal(storage, intent, asset === null)
       } catch (error) {
         if (!asset) throw error
         const failure = safeFailure(error)

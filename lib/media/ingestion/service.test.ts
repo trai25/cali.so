@@ -428,6 +428,33 @@ describe('Media Library ingestion service', () => {
     ])
   })
 
+  it.each(['not_found', 'provider_unavailable'] as const)(
+    'reports a %s chunk read failure as an Original mismatch',
+    async (code) => {
+      const f = fixture()
+      const intent = await f.service.createUploadIntent({
+        ownerUserId: 'owner_01',
+        idempotencyKey: 'upload_01',
+        contentType: 'image/jpeg',
+        byteSize: originalBytes.byteLength,
+        checksumSha256: originalChecksum,
+      })
+      f.setOriginalMissing(true)
+      f.storage.readOriginalChunk.mockRejectedValueOnce(
+        new BunnyStorageError(code),
+      )
+
+      await expect(
+        f.service.completeUploadIntent({
+          ownerUserId: 'owner_01',
+          uploadIntentId: intent.id,
+        }),
+      ).rejects.toEqual(new MediaIngestionError('original_mismatch'))
+      expect(f.assets).toHaveLength(0)
+      expect(f.storage.storeOriginal).not.toHaveBeenCalled()
+    },
+  )
+
   it('returns a ready Media Asset idempotently without repeating side effects', async () => {
     const f = fixture()
     const intent = await f.service.createUploadIntent({
