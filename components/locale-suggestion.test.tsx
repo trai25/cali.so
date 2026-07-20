@@ -47,9 +47,9 @@ describe('LocaleSuggestion', () => {
     ).toContain('View in English?')
     const switchButton = screen.getByRole('button', { name: 'View in English' })
     expect(switchButton.textContent).toBe('Yes')
-    expect(screen.getByRole('button', { name: '继续使用中文' }).textContent).toBe(
-      'No',
-    )
+    const stayButton = screen.getByRole('button', { name: '继续使用中文' })
+    expect(stayButton.textContent).toBe('No')
+    expect(stayButton.hasAttribute('lang')).toBe(false)
     expect(
       screen
         .getByRole('region', { name: 'Language suggestion' })

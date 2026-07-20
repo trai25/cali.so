@@ -15,7 +15,6 @@ const SUGGESTION_COPY = {
     stayLabel: '否',
     stayAriaLabel: 'Continue in English',
     language: 'zh-CN',
-    stayLanguage: 'en',
   },
   en: {
     regionLabel: 'Language suggestion',
@@ -25,7 +24,6 @@ const SUGGESTION_COPY = {
     stayLabel: 'No',
     stayAriaLabel: '继续使用中文',
     language: 'en',
-    stayLanguage: 'zh-CN',
   },
 } as const satisfies Record<
   Locale,
@@ -37,7 +35,6 @@ const SUGGESTION_COPY = {
     stayLabel: string
     stayAriaLabel: string
     language: string
-    stayLanguage: string
   }
 >
 
@@ -130,7 +127,6 @@ export function LocaleSuggestion({ locale }: { locale: Locale }) {
               variant="ghost"
               size="sm"
               aria-label={copy.stayAriaLabel}
-              lang={copy.stayLanguage}
               onClick={stay}
             >
               {copy.stayLabel}
