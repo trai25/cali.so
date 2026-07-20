@@ -14,6 +14,7 @@ are promotional artwork from Apple Music, publishers, authors, or retailers.
 | File | Source |
 | --- | --- |
 | `public/images/records/trench.jpg` | [Apple Music](https://music.apple.com/us/album/trench/1422828208) |
+| `public/images/records/clancy.jpg` | [Apple Music](https://music.apple.com/us/album/clancy/1733370881) |
 | `public/images/records/tim.jpg` | [Apple Music](https://music.apple.com/us/album/tim/1462628887) |
 | `public/images/records/the-fall-off.jpg` | [Apple Music](https://music.apple.com/us/album/the-fall-off/1875080726) |
 | `public/images/records/hope.jpg` | [Apple Music](https://music.apple.com/us/album/hope/1670412644) |
@@ -22,6 +23,10 @@ are promotional artwork from Apple Music, publishers, authors, or retailers.
 | `public/images/records/after-hours.jpg` | [Apple Music](https://music.apple.com/us/album/after-hours/1499378108) |
 | `public/images/records/2001.jpg` | [Apple Music](https://music.apple.com/us/album/2001/1440782221) |
 | `public/images/records/death-of-slim-shady.jpg` | [Apple Music](https://music.apple.com/us/album/the-death-of-slim-shady-coup-de-gr%C3%A2ce/1755022177) |
+| `public/images/records/starboy.jpg` | [Apple Music](https://music.apple.com/us/album/starboy/1440870373) |
+| `public/images/records/random-access-memories.jpg` | [Apple Music](https://music.apple.com/us/album/random-access-memories/617154241) |
+| `public/images/records/hurry-up-tomorrow.jpg` | [Apple Music](https://music.apple.com/us/album/hurry-up-tomorrow/1793702595) |
+| `public/images/records/urban-flora.jpg` | [Apple Music](https://music.apple.com/us/album/urban-flora/982629045) |
 
 ## Book covers
 

@@ -32,15 +32,20 @@ export interface Record_ {
 
 // 定番唱片 — spine colors are sampled once from the local cover art.
 export const records: Record_[] = [
-  { artist: 'twenty one pilots', album: 'Trench', year: 2018, genre: 'Alternative', spineColor: '#38351e', spineInk: '#f7f4ed', art: '/images/records/trench.jpg', url: 'https://music.apple.com/us/album/trench/1422828208' },
   { artist: 'Avicii', album: 'TIM', year: 2019, genre: 'Dance', spineColor: '#8f8a89', spineInk: '#171717', art: '/images/records/tim.jpg', url: 'https://music.apple.com/us/album/tim/1462628887' },
   { artist: 'J. Cole', album: 'The Fall-Off', year: 2026, genre: 'Hip-Hop/Rap', spineColor: '#a07e75', spineInk: '#171717', art: '/images/records/the-fall-off.jpg', url: 'https://music.apple.com/us/album/the-fall-off/1875080726' },
   { artist: 'NF', album: 'HOPE', year: 2023, genre: 'Hip-Hop/Rap', spineColor: '#353f3f', spineInk: '#f7f4ed', art: '/images/records/hope.jpg', url: 'https://music.apple.com/us/album/hope/1670412644' },
-  { artist: 'twenty one pilots', album: 'Breach', year: 2025, genre: 'Alternative', spineColor: '#762b27', spineInk: '#f7f4ed', art: '/images/records/breach.jpg', url: 'https://music.apple.com/us/album/breach/1827507396' },
   { artist: 'CRO', album: 'Melodie', year: 2014, genre: 'Hip-Hop/Rap', spineColor: '#cac9cb', spineInk: '#171717', art: '/images/records/melodie.jpg', url: 'https://music.apple.com/us/album/melodie/1806154705' },
-  { artist: 'The Weeknd', album: 'After Hours', year: 2020, genre: 'R&B/Soul', spineColor: '#423427', spineInk: '#f7f4ed', art: '/images/records/after-hours.jpg', url: 'https://music.apple.com/us/album/after-hours/1499378108' },
   { artist: 'Dr. Dre', album: '2001', year: 1999, genre: 'Hip-Hop/Rap', spineColor: '#08090a', spineInk: '#f7f4ed', art: '/images/records/2001.jpg', url: 'https://music.apple.com/us/album/2001/1440782221' },
+  { artist: 'twenty one pilots', album: 'Trench', year: 2018, genre: 'Alternative', spineColor: '#38351e', spineInk: '#f7f4ed', art: '/images/records/trench.jpg', url: 'https://music.apple.com/us/album/trench/1422828208' },
+  { artist: 'twenty one pilots', album: 'Clancy', year: 2024, genre: 'Alternative', spineColor: '#af5833', spineInk: '#171717', art: '/images/records/clancy.jpg', url: 'https://music.apple.com/us/album/clancy/1733370881' },
+  { artist: 'twenty one pilots', album: 'Breach', year: 2025, genre: 'Alternative', spineColor: '#762b27', spineInk: '#f7f4ed', art: '/images/records/breach.jpg', url: 'https://music.apple.com/us/album/breach/1827507396' },
+  { artist: 'The Weeknd', album: 'Starboy', year: 2016, genre: 'R&B/Soul', spineColor: '#451b2c', spineInk: '#f7f4ed', art: '/images/records/starboy.jpg', url: 'https://music.apple.com/us/album/starboy/1440870373' },
+  { artist: 'The Weeknd', album: 'After Hours', year: 2020, genre: 'R&B/Soul', spineColor: '#423427', spineInk: '#f7f4ed', art: '/images/records/after-hours.jpg', url: 'https://music.apple.com/us/album/after-hours/1499378108' },
+  { artist: 'The Weeknd', album: 'Hurry Up Tomorrow', year: 2025, genre: 'R&B/Soul', spineColor: '#3f2316', spineInk: '#f7f4ed', art: '/images/records/hurry-up-tomorrow.jpg', url: 'https://music.apple.com/us/album/hurry-up-tomorrow/1793702595' },
   { artist: 'Eminem', album: 'The Death of Slim Shady (Coup De Grâce)', year: 2024, genre: 'Hip-Hop/Rap', spineColor: '#1c1420', spineInk: '#f7f4ed', art: '/images/records/death-of-slim-shady.jpg', url: 'https://music.apple.com/us/album/the-death-of-slim-shady-coup-de-gr%C3%A2ce/1755022177' },
+  { artist: 'Daft Punk', album: 'Random Access Memories', year: 2013, genre: 'Pop', spineColor: '#303134', spineInk: '#f7f4ed', art: '/images/records/random-access-memories.jpg', url: 'https://music.apple.com/us/album/random-access-memories/617154241' },
+  { artist: 'Alina Baraz & Galimatias', album: 'Urban Flora', year: 2015, genre: 'Electronic', spineColor: '#9ea09a', spineInk: '#171717', art: '/images/records/urban-flora.jpg', url: 'https://music.apple.com/us/album/urban-flora/982629045' },
 ]
 
 export interface Book {
