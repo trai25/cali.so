@@ -6142,13 +6142,13 @@ html[data-locale='en'] [data-en-block] {
 
 .ama-introduction-stage[data-shader-ready='true']
   .ama-conversation-shader-layer {
-  opacity: 0.1;
+  opacity: 0.06;
 }
 
 .dark
   .ama-introduction-stage[data-shader-ready='true']
   .ama-conversation-shader-layer {
-  opacity: 0.12;
+  opacity: 0.075;
 }
 
 .ama-introduction-content {
