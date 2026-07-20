@@ -68,7 +68,7 @@ function BookingRow({
     zonedDayKey(booking.startsAt, booking.guestTimeZone)
   return (
     <li className="px-2 py-5 text-sm">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2">
         <span className="section-tag shrink-0" aria-hidden>
           <span className="section-tag-index">
             {String(position).padStart(2, '0')}
@@ -89,7 +89,7 @@ function BookingRow({
         </span>
       </div>
 
-      <dl className="spec-nameplate spec-nameplate-compact mt-4">
+      <dl className="spec-nameplate spec-nameplate-compact">
         <div>
           <dt>
             <T zh="时间" en="Time" />
