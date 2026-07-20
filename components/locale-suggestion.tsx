@@ -10,9 +10,9 @@ const SUGGESTION_COPY = {
   zh: {
     regionLabel: '语言建议',
     message: '切换到中文？',
-    switchLabel: '中文',
+    switchLabel: '是',
     switchAriaLabel: '切换到中文',
-    stayLabel: 'English',
+    stayLabel: '否',
     stayAriaLabel: 'Continue in English',
     language: 'zh-CN',
     stayLanguage: 'en',
@@ -20,9 +20,9 @@ const SUGGESTION_COPY = {
   en: {
     regionLabel: 'Language suggestion',
     message: 'View in English?',
-    switchLabel: 'English',
+    switchLabel: 'Yes',
     switchAriaLabel: 'View in English',
-    stayLabel: '中文',
+    stayLabel: 'No',
     stayAriaLabel: '继续使用中文',
     language: 'en',
     stayLanguage: 'zh-CN',
@@ -114,17 +114,14 @@ export function LocaleSuggestion({ locale }: { locale: Locale }) {
       >
         <span aria-hidden="true" className="locale-suggestion-screw" />
         <span aria-hidden="true" className="locale-suggestion-meta">
-          <span>LANG / 01</span>
-          <span>PREF / {suggestedLocale.toUpperCase()}</span>
+          LANG / {suggestedLocale.toUpperCase()}
         </span>
         <p className="locale-suggestion-copy">{copy.message}</p>
         <div className="locale-suggestion-actions">
           <Button
             type="button"
-            size="lg"
             expandHitArea
             aria-label={copy.switchAriaLabel}
-            className="locale-suggestion-action"
             onClick={switchLocale}
           >
             {copy.switchLabel}
@@ -132,10 +129,8 @@ export function LocaleSuggestion({ locale }: { locale: Locale }) {
           <Button
             type="button"
             variant="ghost"
-            size="lg"
             expandHitArea
             aria-label={copy.stayAriaLabel}
-            className="locale-suggestion-action"
             lang={copy.stayLanguage}
             onClick={stay}
           >

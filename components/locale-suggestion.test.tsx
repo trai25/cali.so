@@ -46,8 +46,11 @@ describe('LocaleSuggestion', () => {
         .textContent,
     ).toContain('View in English?')
     const switchButton = screen.getByRole('button', { name: 'View in English' })
-    expect(switchButton.textContent).toBe('English')
-    expect(screen.getByText('PREF / EN')).not.toBeNull()
+    expect(switchButton.textContent).toBe('Yes')
+    expect(screen.getByRole('button', { name: '继续使用中文' }).textContent).toBe(
+      'No',
+    )
+    expect(screen.getByText('LANG / EN')).not.toBeNull()
   })
 
   it('prefers a saved site language over the browser language', async () => {
@@ -61,9 +64,12 @@ describe('LocaleSuggestion', () => {
     expect(
       (await screen.findByRole('region', { name: '语言建议' })).textContent,
     ).toContain('切换到中文？')
+    expect(screen.getByRole('button', { name: '切换到中文' }).textContent).toBe(
+      '是',
+    )
     expect(
-      screen.getByRole('button', { name: '切换到中文' }),
-    ).not.toBeNull()
+      screen.getByRole('button', { name: 'Continue in English' }).textContent,
+    ).toBe('否')
   })
 
   it('remembers the current language when the visitor chooses to stay', async () => {

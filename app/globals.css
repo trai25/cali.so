@@ -4567,7 +4567,7 @@ a:focus-visible .external-label .external-mark {
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-columns: 0.75rem 6.75rem minmax(0, 1fr) auto 0.75rem;
+  grid-template-columns: 0.75rem 4.75rem minmax(0, 1fr) auto 0.75rem;
   align-items: center;
   min-height: 3.75rem;
   border: var(--border-hairline) solid var(--border);
@@ -4604,9 +4604,8 @@ a:focus-visible .external-label .external-mark {
 .locale-suggestion-meta {
   align-self: stretch;
   display: flex;
-  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  gap: 0.1875rem;
   padding: 0 0.75rem;
   border-right: var(--border-hairline) solid var(--border);
   color: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
@@ -4640,16 +4639,6 @@ a:focus-visible .external-label .external-mark {
   border-left: var(--border-hairline) solid var(--border);
 }
 
-.locale-suggestion-action {
-  min-width: 3.25rem;
-  border-radius: 1px;
-  font-family: var(--font-geist-mono), var(--font-frex-gb, ui-monospace), ui-monospace, monospace;
-  font-size: 0.6875rem;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
 @keyframes locale-suggestion-enter {
   from {
     opacity: 0;
@@ -4663,7 +4652,7 @@ a:focus-visible .external-label .external-mark {
 
 @media (max-width: 39.999rem) {
   .locale-suggestion {
-    grid-template-columns: 0.625rem 4.625rem minmax(0, 1fr) auto 0.625rem;
+    grid-template-columns: 0.625rem 3.875rem minmax(0, 1fr) auto 0.625rem;
   }
 
   .locale-suggestion-meta {
@@ -4677,11 +4666,6 @@ a:focus-visible .external-label .external-mark {
 
   .locale-suggestion-actions {
     padding-inline: 0.375rem;
-  }
-
-  .locale-suggestion-action {
-    min-width: auto;
-    padding-inline: 0.625rem;
   }
 }
 
