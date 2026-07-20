@@ -4533,9 +4533,8 @@ a:focus-visible .external-label .external-mark {
   position: fixed;
   z-index: var(--z-toast);
   top: env(safe-area-inset-top);
-  left: 50%;
-  width: min(37.5rem, calc(100vw - 1rem));
-  transform: translateX(-50%);
+  left: 0;
+  width: 100%;
   pointer-events: none;
 }
 
@@ -4566,16 +4565,22 @@ a:focus-visible .external-label .external-mark {
 .locale-suggestion {
   position: relative;
   isolation: isolate;
-  display: grid;
-  grid-template-columns: 0.75rem 3rem minmax(0, 1fr) auto 0.75rem;
-  align-items: center;
-  min-height: 3.75rem;
-  border: var(--border-hairline) solid var(--border);
-  border-top: 0;
-  border-radius: 0 0 2px 2px;
+  width: 100%;
+  border-bottom: var(--border-hairline) solid var(--border);
   background: var(--surface-2);
   pointer-events: auto;
   animation: locale-suggestion-enter 150ms var(--ease-swift) backwards;
+}
+
+.locale-suggestion-inner {
+  display: grid;
+  grid-template-columns: 0.75rem 3rem minmax(0, 1fr) auto 0.75rem;
+  align-items: center;
+  width: min(37.5rem, calc(100vw - 1rem));
+  min-height: 3.75rem;
+  margin: 0 auto;
+  border-right: var(--border-hairline) solid var(--border);
+  border-left: var(--border-hairline) solid var(--border);
 }
 
 .locale-suggestion-screw {
@@ -4601,22 +4606,16 @@ a:focus-visible .external-label .external-mark {
   transform: translate(-50%, -50%) rotate(-42deg);
 }
 
-.locale-suggestion-meta {
+.locale-suggestion-hatch {
   align-self: stretch;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.0625rem;
-  padding: 0 0.5rem;
   border-right: var(--border-hairline) solid var(--border);
-  color: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
-  font-family: var(--font-geist-mono), var(--font-frex-gb, ui-monospace), ui-monospace, monospace;
-  font-size: 0.625rem;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.08em;
-  line-height: 1.25;
-  white-space: nowrap;
+  background: repeating-linear-gradient(
+    -45deg,
+    color-mix(in oklab, var(--muted-foreground) 55%, transparent) 0,
+    color-mix(in oklab, var(--muted-foreground) 55%, transparent) 1px,
+    transparent 1px,
+    transparent 3.5px
+  );
   user-select: none;
 }
 
@@ -4644,22 +4643,17 @@ a:focus-visible .external-label .external-mark {
 @keyframes locale-suggestion-enter {
   from {
     opacity: 0;
-    transform: translateY(-4px) scale(0.985);
+    transform: translateY(-4px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
 @media (max-width: 39.999rem) {
-  .locale-suggestion {
+  .locale-suggestion-inner {
     grid-template-columns: 0.625rem 2.625rem minmax(0, 1fr) auto 0.625rem;
-  }
-
-  .locale-suggestion-meta {
-    padding: 0 0.375rem;
-    font-size: 0.5625rem;
   }
 
   .locale-suggestion-copy {

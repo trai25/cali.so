@@ -112,34 +112,32 @@ export function LocaleSuggestion({ locale }: { locale: Locale }) {
         data-locale-suggestion={suggestedLocale}
         className="locale-suggestion"
       >
-        <span aria-hidden="true" className="locale-suggestion-screw" />
-        <span aria-hidden="true" className="locale-suggestion-meta">
-          <span>LANG</span>
-          <span>/</span>
-          <span>{suggestedLocale.toUpperCase()}</span>
-        </span>
-        <p className="locale-suggestion-copy">{copy.message}</p>
-        <div className="locale-suggestion-actions">
-          <Button
-            type="button"
-            expandHitArea
-            aria-label={copy.switchAriaLabel}
-            onClick={switchLocale}
-          >
-            {copy.switchLabel}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            expandHitArea
-            aria-label={copy.stayAriaLabel}
-            lang={copy.stayLanguage}
-            onClick={stay}
-          >
-            {copy.stayLabel}
-          </Button>
+        <div className="locale-suggestion-inner">
+          <span aria-hidden="true" className="locale-suggestion-screw" />
+          <span aria-hidden="true" className="locale-suggestion-hatch" />
+          <p className="locale-suggestion-copy">{copy.message}</p>
+          <div className="locale-suggestion-actions">
+            <Button
+              type="button"
+              expandHitArea
+              aria-label={copy.switchAriaLabel}
+              onClick={switchLocale}
+            >
+              {copy.switchLabel}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              expandHitArea
+              aria-label={copy.stayAriaLabel}
+              lang={copy.stayLanguage}
+              onClick={stay}
+            >
+              {copy.stayLabel}
+            </Button>
+          </div>
+          <span aria-hidden="true" className="locale-suggestion-screw" />
         </div>
-        <span aria-hidden="true" className="locale-suggestion-screw" />
       </section>
     </div>
   )

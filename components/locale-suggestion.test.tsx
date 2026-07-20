@@ -50,8 +50,12 @@ describe('LocaleSuggestion', () => {
     expect(screen.getByRole('button', { name: '继续使用中文' }).textContent).toBe(
       'No',
     )
-    expect(screen.getByText('LANG')).not.toBeNull()
-    expect(screen.getByText('EN')).not.toBeNull()
+    expect(
+      screen
+        .getByRole('region', { name: 'Language suggestion' })
+        .querySelector('.locale-suggestion-hatch'),
+    ).not.toBeNull()
+    expect(screen.queryByText('LANG')).toBeNull()
   })
 
   it('prefers a saved site language over the browser language', async () => {
