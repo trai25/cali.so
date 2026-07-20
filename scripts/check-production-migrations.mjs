@@ -56,6 +56,10 @@ const reviewedMigrationDigests = new Map([
     'db/migrations/0012_high_fidelity_photo_renditions.sql',
     '8cc70af11f2357a3147b41a937864f13b349958e3ffa4e8382fe98bd46a129dc',
   ],
+  [
+    'db/migrations/0013_brief_yellowjacket.sql',
+    '4b684dc6d280978e76d23600cc21ed731f87df52bef96bcbfc55bb71c1d200fa',
+  ],
 ])
 
 function dollarDelimiterAt(sql, index) {

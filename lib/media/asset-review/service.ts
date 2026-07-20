@@ -159,7 +159,9 @@ function unwrapAsset(result: CatalogStateResult) {
   return unwrapCatalogState(result).asset
 }
 
-const ARCHIVE_UNDO_WINDOW_MS = 10_000
+// The UI offers Undo for 10 seconds. Keep server-side validation open longer
+// so response transit and a cold-started Undo request do not consume that time.
+const ARCHIVE_UNDO_WINDOW_MS = 30_000
 
 export function createMediaAssetReviewService({
   repository,

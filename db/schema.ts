@@ -532,7 +532,7 @@ export const mediaPublishedPhotoSelections = pgTable(
     uniqueIndex('media_published_photo_selections_draft_revision_uidx').on(
       table.ownerUserId,
       table.draftRevision,
-    ).where(sql`${table.publicationKind} = 'draft'`),
+    ),
     check(
       'media_published_photo_selections_identity_check',
       sql`length(btrim(${table.ownerUserId})) > 0 AND length(btrim(${table.idempotencyKey})) > 0`,
@@ -543,6 +543,10 @@ export const mediaPublishedPhotoSelections = pgTable(
     ),
     check(
       'media_published_photo_selections_revision_check',
+      sql`${table.draftRevision} >= 0`,
+    ),
+    check(
+      'media_published_photo_selections_kind_revision_check',
       sql`(${table.publicationKind} = 'draft' AND ${table.draftRevision} >= 0) OR (${table.publicationKind} = 'withdrawal' AND ${table.draftRevision} IS NULL)`,
     ),
     check(
