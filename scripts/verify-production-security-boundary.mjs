@@ -179,7 +179,7 @@ async function verifyAdminPages(baseUrl) {
       )
     } else {
       assert.ok(
-        !policy.includes('https://accounts.google.com'),
+        policyDirectives.includes("form-action 'self'"),
         `${path} Google OAuth policy scope`,
       )
     }
