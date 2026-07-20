@@ -16,6 +16,7 @@ import { MediaGeocodingError } from '../geocoding/service'
 import { MediaPurgeError } from '../purge/service'
 import { MediaReconciliationError } from '../reconciliation/service'
 import { PhotoSelectionError } from '../photo-selection/service'
+import { originalUploadChunkCount } from '../storage/transfer'
 import { storeOriginalChunkFromSameOriginRequest } from '../storage/upload'
 
 type Authenticator = {
@@ -635,6 +636,17 @@ export function createMediaOriginalUploadHandler(
       return json(503, { error: 'dependency_unavailable' })
     }
     if (!intent) return json(404, { error: 'not_found' })
+    const chunk = new URL(request.url).searchParams.get('chunk')
+    const chunkIndex = chunk !== null && /^\d+$/.test(chunk)
+      ? Number(chunk)
+      : Number.NaN
+    if (
+      !Number.isSafeInteger(chunkIndex) ||
+      chunkIndex < 0 ||
+      chunkIndex >= originalUploadChunkCount(intent.byteSize)
+    ) {
+      return json(422, { error: 'invalid_request' })
+    }
     let rateLimit
     try {
       rateLimit = await dependencies.uploadChunkRateLimiter.limit(
@@ -654,10 +666,6 @@ export function createMediaOriginalUploadHandler(
         ),
       })
     }
-    const chunk = new URL(request.url).searchParams.get('chunk')
-    const chunkIndex = chunk !== null && /^\d+$/.test(chunk)
-      ? Number(chunk)
-      : Number.NaN
     return storeOriginalChunkFromSameOriginRequest({
       request,
       canonicalBaseUrl: dependencies.baseUrl,

@@ -872,6 +872,45 @@ describe('Media admin HTTP contract', () => {
     })
   })
 
+  it.each([
+    '/api/admin/media/upload-intents/upload_01/original',
+    '/api/admin/media/upload-intents/upload_01/original?chunk=invalid',
+    '/api/admin/media/upload-intents/upload_01/original?chunk=1',
+  ])('rejects an invalid chunk index before rate limiting: %s', async (path) => {
+    const f = fixture(false)
+    const limit = vi.fn(async () => ({ success: true }))
+    const handler = createMediaOriginalUploadHandler({
+      authenticator: f.authenticator,
+      security: f.security,
+      baseUrl: new URL('https://cali.so'),
+      ingestionRepository: {
+        async claimUploadIntentTransfer() {
+          return {
+            originalKey: 'originals/upload_01.jpg',
+            contentType: 'image/jpeg',
+            byteSize: 1,
+            checksumSha256: '0'.repeat(64),
+          }
+        },
+      },
+      storage: {
+        async inspectOriginalChunk() {
+          throw new Error('an invalid chunk must not reach storage')
+        },
+        async storeOriginalChunk() {
+          throw new Error('an invalid chunk must not reach storage')
+        },
+      },
+      uploadChunkRateLimiter: { retryAfterSeconds: 60, limit },
+    })
+
+    const response = await handler(request(path, { method: 'PUT' }), 'upload_01')
+
+    expect(response.status).toBe(422)
+    await expect(response.json()).resolves.toEqual({ error: 'invalid_request' })
+    expect(limit).not.toHaveBeenCalled()
+  })
+
   it('rate limits repeated chunks per Upload Intent without touching storage', async () => {
     const f = fixture(false)
     const bytes = 'private image bytes'
