@@ -196,6 +196,12 @@ describe('Availability Window service', () => {
     expect(() => f.service.setTimeZone('Not/AZone')).toThrow(
       InvalidAvailabilityTimeZoneError,
     )
+    expect(() => f.service.setTimeZone(' '.repeat(65))).toThrow(
+      InvalidAvailabilityTimeZoneError,
+    )
+    expect(() => f.service.setTimeZone(`Etc/${'A'.repeat(61)}`)).toThrow(
+      InvalidAvailabilityTimeZoneError,
+    )
   })
 
   it('turns weekdays off without deleting their intervals and restores them', async () => {

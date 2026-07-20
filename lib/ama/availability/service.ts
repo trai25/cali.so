@@ -123,12 +123,12 @@ function assertWeekday(isoWeekday: number) {
 
 function normalizeTimeZone(value: string) {
   const timeZone = value.trim()
+  if (timeZone.length === 0 || timeZone.length > 64) {
+    throw new InvalidAvailabilityTimeZoneError()
+  }
   try {
     new Intl.DateTimeFormat('en-US', { timeZone }).format()
   } catch {
-    throw new InvalidAvailabilityTimeZoneError()
-  }
-  if (timeZone.length === 0 || timeZone.length > 64) {
     throw new InvalidAvailabilityTimeZoneError()
   }
   return timeZone
