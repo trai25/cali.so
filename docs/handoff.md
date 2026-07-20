@@ -94,16 +94,18 @@ Current as of July 2026.
   fail closed with 503 while they are not.
   `docs/ama-booking-operations.md` is the environment and operations
   reference.
-- Rate limits use Upstash only in Production. Preview persists its limits in
-  the isolated Neon database, while Local and CI use process-local limits.
+- Rate limits use Upstash only in Production. Staging and Preview persist their
+  limits in isolated Neon databases, while Local and CI use process-local
+  limits.
 - GitHub Actions owns deployment ordering. `dev` migrates the persistent Neon
   `staging` branch before deploying Vercel Staging. Internal feature branches
   use persistent `preview/<git-branch>` children of Staging. Production lives
   in a separate Neon project; every commit reaching `main` automatically uses
   the `main`-only Production environment to migrate before deploying.
 - Security baseline controls from PR #97 remain mandatory: CSP and security
-  headers, same-origin mutation policy, rate limits, kill switches,
-  privacy-safe audit events, isolated credentials, and security automation.
+  headers, same-origin mutation policy, rate limits, credential-driven
+  fail-closed provider controls, privacy-safe audit events, isolated
+  credentials, and security automation.
 - Playwright is the browser release gate. Quality runs the complete production-
   build Chromium suite plus a WebKit smoke matrix, while Preview and Staging
   rerun the read-only hosted subset against the exact deployment URL.
@@ -121,7 +123,8 @@ Current as of July 2026.
   Text when none exists yet (upload-to-archive needs no review step; edits
   and regeneration remain available in the inspector). Location Label
   suggestions follow their provider credential.
-  Before deploying ADR-0013, set `BUNNY_MEDIA_ZONE`,
+  Before promoting the one-zone Media contract to Production, set
+  `BUNNY_MEDIA_ZONE`,
   `BUNNY_MEDIA_PASSWORD`, and `BUNNY_MEDIA_CDN_URL` from the existing
   Rendition zone, then add the two protected-path Edge Rules. Remove the old
   Original and Rendition variable names only after the new contract verifies.
@@ -133,8 +136,8 @@ Current as of July 2026.
 1. Preserve every legacy public URL through native content, a static archive,
    or an intentional permanent replacement. Drive verification from one
    checked-in manifest, not spot checks.
-2. Complete all three issue #91 stages: Cache Components baseline,
-   route-by-route Instant Navigations, then Partial Prefetching.
+2. Preserve the completed issue #91 baseline: Cache Components,
+   route-by-route Instant Navigations, and Partial Prefetching.
 3. Keep owner admin authenticated and reachable, and keep AMA capabilities
    whose provider credentials are absent failing closed with 503.
 4. Validate from a frozen-lockfile install: types, all tests, migrations,
@@ -233,17 +236,21 @@ The Vercel runtime receives only the CRUD-only `DATABASE_URL`. Never put
   always-required values (`ADMIN_EMAIL`, `AMA_ENCRYPTION_KEY`,
   `RATE_LIMIT_HASH_KEY`, `SITE_URL`, Bunny media) must be present.
 
-## Post-launch work
+## Current work queue
 
-- #93's passkey-first high-impact boundary was retired in July 2026
-  (maintainer decision): the owner admin has no step-up verification, and
-  passkeys remain only as the Clerk sign-in method. Hosted setup, session
-  revocation, and credential rotation stay documented in
-  `docs/security/clerk-admin-operations.md`. The public AMA product slices
-  (#82 through #87) are implemented and enabled by default; going live end
-  to end only needs the provider credential pairs and hosted checks in
-  `docs/ama-booking-operations.md`.
-- Revisit Bunny S3 preview constraints and provider capabilities before
-  expanding the Media Library beyond the curated photo workflow.
-- Re-enable private capabilities only after their provider, retention,
-  incident-response, and hosted-control checks are complete.
+GitHub Issues is the canonical planning surface. Refresh every issue's live
+assumptions immediately before implementation.
+
+1. #176 consolidates duplicated test infrastructure and CI ownership.
+2. #180 adds the committed Site Profile. #181 depends on it and makes the
+   Operator Stack optional per site without adding an environment kill switch.
+3. #182 depends on #180 and #181 and documents the supported fork workflow.
+4. #183 makes route-motion state explicit and fail-closed.
+5. #89, #94, and #95 remain needs-triage follow-ups for public accounts,
+   privacy, and incident-response operations.
+
+The retired #93 passkey boundary remains documented in
+`docs/security/clerk-admin-operations.md`. Revisit Bunny S3 preview constraints
+before expanding Media beyond curated photos, and configure private provider
+capabilities only after their retention, incident-response, and hosted-control
+checks are complete.

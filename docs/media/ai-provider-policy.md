@@ -16,7 +16,7 @@ generative editing.
 - Both model identifiers are server configuration and can be replaced without
   changing the application service.
 - This routing preserves model-level fallback but not provider-level outage
-  isolation; that tradeoff is accepted for the owner-only Staging feature.
+  isolation; that tradeoff is accepted for this owner-only Media capability.
 
 ## Data boundary
 

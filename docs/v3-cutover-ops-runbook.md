@@ -78,23 +78,26 @@ from the isolated `target/` working directory.
 
 ## 2. Require Quality and CodeQL on both branches
 
-The `dev` ruleset (`18920686`) already requires `Quality` and `CodeQL`
-alongside its deletion, non-fast-forward, and pull-request rules. Do not append
-a duplicate required-check rule.
+Both branches use active repository rulesets as the canonical protection
+source:
 
-Protect `main` as well (PUT replaces the whole protection object; force pushes
-and deletions stay disabled by default):
+- `dev`: ruleset `18920686`, `Protect dev integration`;
+- `main`: ruleset `19171463`, `Protect production`.
+
+Each ruleset requires pull requests, `Quality`, and `CodeQL`, and blocks branch
+deletion and non-fast-forward updates. Verify the live rulesets read-only:
 
 ```bash
-gh api -X PUT repos/CaliCastle/cali.so/branches/main/protection --input - <<'JSON'
-{
-  "required_status_checks": { "strict": false, "contexts": ["Quality", "CodeQL"] },
-  "enforce_admins": false,
-  "required_pull_request_reviews": null,
-  "restrictions": null
-}
-JSON
+gh api repos/CaliCastle/cali.so/rulesets/18920686 \
+  --jq '{name, enforcement, conditions, rules}'
+gh api repos/CaliCastle/cali.so/rulesets/19171463 \
+  --jq '{name, enforcement, conditions, rules}'
 ```
+
+Do not add legacy branch-protection settings on top of these rulesets or append
+duplicate required-check rules. Recreating or changing either ruleset is shared
+repository state and requires fresh confirmation plus a full before/after
+review of its conditions, bypass actors, and rules.
 
 ## 3. Isolate Staging, Preview, and Production credentials
 
@@ -110,15 +113,17 @@ JSON
   Redis store: Staging and Preview rate limits use their isolated Neon
   branches.
 
-- The first successful Staging workflow applies migrations `0010` and `0011`
-  with the separately scoped GitHub migration role before deployment. Verify
-  the Staging runtime role has only required CRUD access to
-  `rate_limit_windows` and the AMA booking tables; it must not own tables or
-  receive DDL privileges.
+- Staging and internal Preview workflows apply every reviewed migration in
+  `db/migrations/` with the separately scoped GitHub migration role before
+  deployment.
+  Verify the Staging runtime role has only required CRUD access to
+  `rate_limit_windows`, the AMA booking tables, and current Media tables; it
+  must not own tables or receive DDL privileges.
   Staging and Preview have no Redis fallback: if the table or grants are missing,
   rate-limited admin mutations fail closed with 503. Because the Redis
-  variables are already absent, do not count mutation checks as passed
-  until this migration and grant verification succeeds.
+  variables are already absent, a successful migration workflow proves
+  ordering but not the live runtime grants. Do not count mutation checks as
+  passed until the exact deployment and grant verification succeed.
 
 - Keep the non-production Clerk keys isolated to Preview and Staging. Never
   copy the Production Clerk secret into either environment.
