@@ -33,6 +33,7 @@ export interface Record_ {
 // 定番唱片 — spine colors are sampled once from the local cover art.
 export const records: Record_[] = [
   { artist: 'twenty one pilots', album: 'Trench', year: 2018, genre: 'Alternative', spineColor: '#38351e', spineInk: '#f7f4ed', art: '/images/records/trench.jpg', url: 'https://music.apple.com/us/album/trench/1422828208' },
+  { artist: 'twenty one pilots', album: 'Clancy', year: 2024, genre: 'Alternative', spineColor: '#af5833', spineInk: '#171717', art: '/images/records/clancy.jpg', url: 'https://music.apple.com/us/album/clancy/1733370881' },
   { artist: 'twenty one pilots', album: 'Breach', year: 2025, genre: 'Alternative', spineColor: '#762b27', spineInk: '#f7f4ed', art: '/images/records/breach.jpg', url: 'https://music.apple.com/us/album/breach/1827507396' },
   { artist: 'Avicii', album: 'TIM', year: 2019, genre: 'Dance', spineColor: '#8f8a89', spineInk: '#171717', art: '/images/records/tim.jpg', url: 'https://music.apple.com/us/album/tim/1462628887' },
   { artist: 'J. Cole', album: 'The Fall-Off', year: 2026, genre: 'Hip-Hop/Rap', spineColor: '#a07e75', spineInk: '#171717', art: '/images/records/the-fall-off.jpg', url: 'https://music.apple.com/us/album/the-fall-off/1875080726' },

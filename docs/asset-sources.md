@@ -14,6 +14,7 @@ are promotional artwork from Apple Music, publishers, authors, or retailers.
 | File | Source |
 | --- | --- |
 | `public/images/records/trench.jpg` | [Apple Music](https://music.apple.com/us/album/trench/1422828208) |
+| `public/images/records/clancy.jpg` | [Apple Music](https://music.apple.com/us/album/clancy/1733370881) |
 | `public/images/records/tim.jpg` | [Apple Music](https://music.apple.com/us/album/tim/1462628887) |
 | `public/images/records/the-fall-off.jpg` | [Apple Music](https://music.apple.com/us/album/the-fall-off/1875080726) |
 | `public/images/records/hope.jpg` | [Apple Music](https://music.apple.com/us/album/hope/1670412644) |
