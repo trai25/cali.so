@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { readFileSync, realpathSync } from 'node:fs'
+import { existsSync, readFileSync, realpathSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
@@ -19,6 +19,10 @@ it('warns only once when TypeGPU falls back under a strict CSP', () => {
     resolve(process.cwd(), 'node_modules/shaders'),
   )
   const compiledIoPath = resolve(shadersDir, '../typegpu/data/compiledIO.js')
+  expect(
+    existsSync(compiledIoPath),
+    `typegpu is no longer linked beside shaders (${compiledIoPath}) — update this test's resolution path`,
+  ).toBe(true)
   expect(
     readFileSync(compiledIoPath, 'utf8'),
     'patches/typegpu@0.11.9.patch is not applied — run pnpm install',
