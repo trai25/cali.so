@@ -13,6 +13,16 @@ vi.mock('next/navigation', () => ({
 import { PhotoCuration } from '../../../app/admin/(protected)/photos/PhotoCuration'
 import type { MediaAssetReviewRecord } from '../asset-review/service'
 
+// jsdom ships no ResizeObserver; the picker dialog's scrollable body
+// observes its viewport to drive the edge fades. Assigned directly (not
+// vi.stubGlobal) so afterEach's unstubAllGlobals leaves it in place.
+class ResizeObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+globalThis.ResizeObserver = ResizeObserverStub as unknown as typeof ResizeObserver
+
 function asset(id: string, name: string): MediaAssetReviewRecord {
   return {
     id,

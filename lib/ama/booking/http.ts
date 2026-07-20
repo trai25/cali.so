@@ -201,7 +201,15 @@ export function createHoldStateHandler({ service }: HoldStateDependencies) {
       }
       if (state.state === 'paid') {
         return json(200, {
-          hold: { state: 'paid', bookingStatus: state.bookingStatus },
+          hold: {
+            state: 'paid',
+            bookingStatus: state.bookingStatus,
+            startsAt: state.startsAt.toISOString(),
+            endsAt: state.endsAt.toISOString(),
+            meetingProvider: state.meetingProvider,
+            guestTimeZone: state.guestTimeZone,
+            meetingUrl: state.meetingUrl,
+          },
         })
       }
       return json(200, { hold: { state: state.state } })

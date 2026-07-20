@@ -1,6 +1,5 @@
 'use client'
 
-import { Dialog } from '@base-ui/react/dialog'
 import { useRouter } from 'next/navigation'
 import {
   useCallback,
@@ -11,7 +10,17 @@ import {
   type DragEvent,
 } from 'react'
 
-import { Elevated } from '~/lib/elevated'
+import { PixelCluster } from '~/components/pixel-cluster'
+import { Button } from '~/components/ui/button'
+import {
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '~/components/ui/dialog'
 import { T } from '~/lib/i18n'
 import { localize, useLocale } from '~/lib/locale-client'
 import {
@@ -57,7 +66,7 @@ function Print({
       className="polaroid polaroid-tilted block rounded-[3px] pb-0"
       style={{ '--tilt': `${(tiltFromSlug(asset?.id ?? 'missing') / 2).toFixed(2)}deg` } as React.CSSProperties}
     >
-      <span className="polaroid-photo aspect-square overflow-hidden">
+      <span className="polaroid-photo photo-frame relative aspect-square overflow-hidden">
         {asset?.previewRendition ? (
           // Bunny is the delivery and cache layer for Renditions.
           // eslint-disable-next-line @next/next/no-img-element
@@ -78,6 +87,7 @@ function Print({
             <T zh="成品不可用" en="No Rendition" />
           </span>
         )}
+        <span className="calibration-corners" aria-hidden />
       </span>
       <span className="polaroid-caption justify-between tabular-nums">
         <span>{String(index + 1).padStart(2, '0')}</span>
@@ -315,39 +325,42 @@ export function PhotoCuration({
 
   return (
     <div className="pb-10">
-      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
-        <div>
-          <h1 className="text-sm font-medium text-muted-foreground">
-            <T zh="照片选集" en="Photo Selection" />
-          </h1>
-          <p className="mt-1 text-sm tabular-nums text-muted-foreground">
-            {order.length} <T zh="张照片 · 前三张在首页" en="photos · first three on the homepage" />
-          </p>
-        </div>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="page-eyebrow">
+          <T zh="照片选集" en="Photo Selection" />
+        </h1>
+        <PixelCluster variant={9} className="shrink-0" />
+      </div>
+      <div className="mt-1 flex min-h-8 flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <p className="text-sm tabular-nums text-muted-foreground">
+          {order.length}{' '}
+          <T
+            zh="张照片 · 前三张兼作首页预览"
+            en="photos · first three double as the homepage preview"
+          />
+        </p>
         <div className="flex items-center gap-3">
           <span aria-live="polite" className="text-sm text-muted-foreground">
             {saveState === 'saving' && <T zh="保存中…" en="Saving…" />}
             {saveState === 'saved' && <T zh="草稿已保存" en="Draft saved" />}
             {saveState === 'error' && (
-              <button
-                type="button"
-                onClick={() => void runSave()}
-                className="min-h-11 text-sm underline decoration-dotted underline-offset-4 outline-none focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
-              >
+              <Button variant="ghost" size="sm" onClick={() => void runSave()}>
                 <T zh="保存失败 · 重试" en="Save failed · retry" />
-              </button>
+              </Button>
             )}
           </span>
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            size="lg"
+            active={confirming}
+            expandHitArea
             disabled={
               busy || conflict || saveState === 'error' || ineligibleIds.length > 0
             }
             onClick={() => setConfirming((current) => !current)}
-            className="min-h-11 rounded-full bg-foreground px-5 text-sm font-medium text-background outline-none transition-transform duration-100 active:scale-[0.97] disabled:opacity-50 focus-visible:ring-1 focus-visible:ring-foreground focus-visible:ring-offset-2 motion-reduce:transform-none"
           >
             <T zh="发布" en="Publish" />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -359,13 +372,9 @@ export function PhotoCuration({
               en="The Draft changed in another tab."
             />
           </p>
-          <button
-            type="button"
-            onClick={() => router.refresh()}
-            className="min-h-11 px-3 text-sm font-medium outline-none focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
-          >
+          <Button variant="secondary" size="sm" onClick={() => router.refresh()}>
             <T zh="重新载入草稿" en="Reload draft" />
-          </button>
+          </Button>
         </div>
       )}
 
@@ -408,26 +417,22 @@ export function PhotoCuration({
             )}
           </p>
           <div className="flex items-center gap-1">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
               disabled={busy}
               onClick={() => setConfirming(false)}
-              className="min-h-11 px-3 text-sm text-muted-foreground outline-none focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
             >
               <T zh="取消" en="Cancel" />
-            </button>
-            <button
-              type="button"
-              disabled={busy}
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              loading={publishing}
               onClick={() => void publish()}
-              className="min-h-11 rounded-full bg-foreground px-4 text-sm font-medium text-background outline-none disabled:opacity-50 focus-visible:ring-1 focus-visible:ring-foreground focus-visible:ring-offset-2"
             >
-              {publishing ? (
-                <T zh="正在发布…" en="Publishing…" />
-              ) : (
-                <T zh="确认发布" en="Confirm publish" />
-              )}
-            </button>
+              <T zh="确认发布" en="Confirm publish" />
+            </Button>
           </div>
         </div>
       )}
@@ -453,55 +458,55 @@ export function PhotoCuration({
       )}
 
       {selectedId && selectedIndex >= 0 && (
-        <div className="mt-4 flex flex-wrap items-center gap-1 rounded-md bg-surface-1 px-3 py-1.5">
+        <div className="mt-4 flex min-h-11 flex-wrap items-center gap-1 rounded-md bg-surface-1 px-3 py-1.5">
           <span className="px-2 text-sm tabular-nums text-muted-foreground">
             {String(selectedIndex + 1).padStart(2, '0')} / {order.length}
           </span>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon-sm"
             disabled={busy || selectedIndex === 0}
             onClick={() => moveTo(selectedId, selectedIndex - 1)}
             aria-label={localize(locale, '前移', 'Move earlier')}
-            className="min-h-11 min-w-11 text-sm outline-none disabled:opacity-30 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
           >
             ←
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
             disabled={busy || selectedIndex === order.length - 1}
             onClick={() => moveTo(selectedId, selectedIndex + 1)}
             aria-label={localize(locale, '后移', 'Move later')}
-            className="min-h-11 min-w-11 text-sm outline-none disabled:opacity-30 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
           >
             →
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             disabled={busy || selectedIndex === 0}
             onClick={() => moveTo(selectedId, 0)}
-            className="min-h-11 px-3 text-sm outline-none disabled:opacity-30 focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
           >
             <T zh="移到最前" en="To front" />
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             disabled={busy}
             onClick={() => {
               applyOrder(orderRef.current.filter((id) => id !== selectedId))
               setSelectedId(null)
             }}
-            className="min-h-11 px-3 text-sm text-muted-foreground outline-none focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
           >
             <T zh="移除" en="Remove" />
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={() => setSelectedId(null)}
             aria-label={localize(locale, '取消选择', 'Deselect')}
-            className="min-h-11 min-w-11 text-sm text-muted-foreground outline-none focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
           >
             ✕
-          </button>
+          </Button>
         </div>
       )}
 
@@ -579,34 +584,30 @@ export function PhotoCuration({
         </li>
       </ul>
 
-      <Dialog.Root open={pickerOpen} onOpenChange={setPickerOpen}>
-        <Dialog.Portal>
-          <Dialog.Backdrop className="fixed inset-0 z-[var(--z-card)] bg-background/70 backdrop-blur-[6px] transition-opacity duration-200 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0 motion-reduce:transition-none" />
-          <Dialog.Popup
-            render={<Elevated offset={4} shadowLevel={4} />}
-            className="fixed left-1/2 top-1/2 z-[var(--z-card)] max-h-[85dvh] w-[min(34rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl p-5 outline-none transition-[opacity,transform] duration-200 ease-[var(--ease-swift)] data-[ending-style]:scale-[0.97] data-[ending-style]:opacity-0 data-[starting-style]:scale-[0.97] data-[starting-style]:opacity-0 motion-reduce:transition-none"
-          >
-            <div className="flex items-baseline justify-between gap-4">
-              <Dialog.Title className="text-sm font-medium">
-                <T zh="从档案添加" en="Add from the archive" />
-              </Dialog.Title>
-              <Dialog.Close className="min-h-11 px-2 text-sm text-muted-foreground outline-none focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground">
-                <T zh="完成" en="Done" />
-              </Dialog.Close>
-            </div>
-            {candidates.length === 0 ? (
-              <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                <T
-                  zh="档案里的照片都已经在选集里了。"
-                  en="Every archive photo is already in the selection."
-                />
-              </p>
-            ) : (
-              <>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  <T zh="点一下即可加入选集末尾。" en="Tap a photo to append it to the selection." />
-                </p>
-                <ul className="mt-4 grid grid-cols-3 gap-2">
+      <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
+        <DialogContent size="lg">
+          <DialogHeader>
+            <DialogTitle>
+              <T zh="从档案添加" en="Add from the archive" />
+            </DialogTitle>
+            <DialogClose>
+              <T zh="完成" en="Done" />
+            </DialogClose>
+          </DialogHeader>
+          {candidates.length === 0 ? (
+            <p className="mt-4 text-sm leading-6 text-muted-foreground">
+              <T
+                zh="档案里的照片都已经在选集里了。"
+                en="Every archive photo is already in the selection."
+              />
+            </p>
+          ) : (
+            <>
+              <DialogDescription>
+                <T zh="点一下即可加入选集末尾。" en="Tap a photo to append it to the selection." />
+              </DialogDescription>
+              <DialogBody className="mt-4">
+                <ul className="grid grid-cols-3 gap-2">
                   {candidates.map((asset) => {
                     const reason = ineligibilityReason(asset)
                     return (
@@ -662,11 +663,11 @@ export function PhotoCuration({
                     />
                   </p>
                 )}
-              </>
-            )}
-          </Dialog.Popup>
-        </Dialog.Portal>
-      </Dialog.Root>
+              </DialogBody>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

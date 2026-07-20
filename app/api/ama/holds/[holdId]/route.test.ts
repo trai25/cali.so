@@ -28,8 +28,21 @@ describe('local AMA confirmation fixtures', () => {
     )
 
     expect(response.status).toBe(200)
+    // Session facts mirror the real paid payload; the fixture dates are
+    // relative to now, so only their presence and shape are asserted.
     await expect(response.json()).resolves.toEqual({
-      hold: { state: 'paid', bookingStatus },
+      hold: {
+        state: 'paid',
+        bookingStatus,
+        startsAt: expect.stringMatching(/T.*Z$/),
+        endsAt: expect.stringMatching(/T.*Z$/),
+        meetingProvider: 'google-meet',
+        guestTimeZone: 'Asia/Taipei',
+        meetingUrl:
+          bookingStatus === 'confirmed'
+            ? 'https://meet.google.com/abc-defg-hij'
+            : null,
+      },
     })
     expect(getAmaBookingServices).not.toHaveBeenCalled()
   })

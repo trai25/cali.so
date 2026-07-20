@@ -60,9 +60,13 @@ Current as of July 2026.
 - The admin was redesigned in July 2026 to share the public design language
   (warm paper, 37.5rem column, an owner dock; spec in
   `docs/design-language.md` § Owner admin). IA: `/admin` is a one-screen
-  overview, `/admin/ama` holds all AMA operations plus availability and
-  Google Calendar settings, `/admin/media` is the upload-to-archive library,
-  and `/admin/photos` is the Photo Selection curation room. The owner enters
+  overview, `/admin/ama` is a menu over `/admin/ama/bookings` (operations,
+  time requests, failed operations) and `/admin/ama/settings` (availability
+  windows, Google Calendar, open-time preview) — settings form POSTs
+  redirect back to `/admin/ama/settings` — `/admin/media` is the
+  upload-to-archive library, and `/admin/photos` is the Photo Selection
+  curation room. Surfaces holding more than one job become menus with
+  back-marked subpages rather than one stacked screen. The owner enters
   from the public dock's Preferences panel (owner-only row, or G then D),
   backed by a client probe to `GET /api/admin/session` so public pages stay
   static and Clerk stays off public routes.
@@ -203,6 +207,14 @@ The Vercel runtime receives only the CRUD-only `DATABASE_URL`. Never put
   configured, while manual labels remain available without it.
 - Design references are private. Public code and documentation use only the
   vocabulary in `docs/design-language.md`.
+- In development the photo-selection dev fixture masks an empty or failed
+  public read (production renders the empty state). The published-selection
+  cache is a `'use cache'` function invalidated by publish via
+  `revalidateTag(tag, { expire: 0 })`; a redeploy also rebuilds it fresh.
+  A failing read aborts Vercel builds loudly (`VERCEL_ENV` set) instead of
+  silently shipping an empty photos page; local builds with the usual
+  shaped-but-unreachable `DATABASE_URL` still pass and render the empty
+  state, with the failure logged.
 - Local builds validate the full server environment. Keep `.env.local`
   aligned with `.env.example`; blank provider placeholders are fine, but the
   always-required values (`ADMIN_EMAIL`, `AMA_ENCRYPTION_KEY`,
