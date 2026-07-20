@@ -177,10 +177,8 @@ describe('AMA booking detail', () => {
     expect(fetchMock).not.toHaveBeenCalled()
 
     // More than 24 hours out, the full-refund choice defaults to checked.
-    const checkbox = container.querySelector<HTMLInputElement>(
-      'input[type="checkbox"]',
-    )!
-    expect(checkbox.checked).toBe(true)
+    const refundSwitch = container.querySelector('[role="switch"]')!
+    expect(refundSwitch.getAttribute('aria-checked')).toBe('true')
 
     fireEvent.click(buttonWithText(container, 'Confirm cancellation'))
 

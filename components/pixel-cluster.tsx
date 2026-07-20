@@ -12,6 +12,12 @@ const VARIANTS = [
   ['b', '', 's', 'a'],
   ['a', 'b', 's', ''],
   ['', 'a', 'b', 's'],
+  // admin surfaces: Overview, AMA, Media, Photos, Booking detail
+  ['s', '', 'a', 'b'],
+  ['b', 's', 'a', ''],
+  ['', 'b', 's', 'a'],
+  ['a', '', 'b', 's'],
+  ['s', 'b', '', 'a'],
 ] as const
 
 export function PixelCluster({

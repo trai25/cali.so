@@ -111,32 +111,42 @@ describe('BookingSuccessStage', () => {
 
     expect(container.querySelector('[data-success-shader-ready]')).toBeNull()
     expect(container.querySelector('.ama-success-static-background')).not.toBeNull()
-    expect(container.querySelectorAll('[data-ama-confetti-piece]').length).toBe(24)
+    expect(container.querySelectorAll('[data-ama-confetti-piece]').length).toBe(36)
     expect(
       container.querySelectorAll('[data-ama-confetti-origin="left"]').length,
-    ).toBe(12)
+    ).toBe(18)
     expect(
       container.querySelectorAll('[data-ama-confetti-origin="right"]').length,
-    ).toBe(12)
+    ).toBe(18)
 
+    // Left pieces launch from beyond the left edge and drive rightward;
+    // right pieces mirror. The fall layer starts below the viewport.
     const leftBurst = container.querySelector<HTMLElement>(
       '[data-ama-confetti-origin="left"]',
     )
     const rightBurst = container.querySelector<HTMLElement>(
       '[data-ama-confetti-origin="right"]',
     )
-    expect(
-      leftBurst?.style.getPropertyValue('--ama-confetti-origin-x'),
-    ).toContain('safe-area-inset-left')
-    expect(leftBurst?.style.getPropertyValue('--ama-confetti-apex-x')).toBe(
-      '30vw',
+    expect(leftBurst?.style.getPropertyValue('--ama-confetti-x-from')).toBe(
+      '-4vw',
     )
     expect(
-      rightBurst?.style.getPropertyValue('--ama-confetti-origin-x'),
-    ).toContain('safe-area-inset-right')
-    expect(rightBurst?.style.getPropertyValue('--ama-confetti-apex-x')).toBe(
-      '70vw',
+      Number.parseFloat(
+        leftBurst?.style.getPropertyValue('--ama-confetti-x-to') ?? '',
+      ),
+    ).toBeGreaterThan(-4)
+    expect(rightBurst?.style.getPropertyValue('--ama-confetti-x-from')).toBe(
+      '104vw',
     )
+    expect(
+      Number.parseFloat(
+        rightBurst?.style.getPropertyValue('--ama-confetti-x-to') ?? '',
+      ),
+    ).toBeLessThan(104)
+    expect(leftBurst?.style.getPropertyValue('--ama-confetti-y-from')).toBe(
+      '104dvh',
+    )
+    expect(leftBurst?.querySelector('.ama-success-confetti-card')).not.toBeNull()
   })
 
   it('does not mount a pending shader after reduced motion is enabled', async () => {

@@ -4,7 +4,9 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
+import { Barcode } from '~/components/barcode'
 import { BookingSuccessStage } from '~/components/ama/booking-success-stage'
+import { Tooltip } from '~/components/ui/tooltip'
 import { trackFunnelEvent } from '~/lib/analytics'
 import { T } from '~/lib/i18n'
 import { localize, useLocale } from '~/lib/locale-client'
@@ -14,12 +16,26 @@ const POLL_INTERVAL_MS = 3000
 /** ~2 minutes of polling before settling into the still-processing note. */
 const MAX_POLLS = 40
 
+/** The session facts the paid endpoint prints on the confirmation plate. */
+type PaidSession = {
+  startsAt: string
+  endsAt: string
+  meetingProvider: 'google-meet' | 'tencent-meeting'
+  guestTimeZone: string
+  /** Present once finalization has created the meeting. */
+  meetingUrl: string | null
+}
+
 type ConfirmationState =
   | { kind: 'missing' }
   | { kind: 'checking' }
   | { kind: 'processing' }
   | { kind: 'still-processing' }
-  | { kind: 'paid'; bookingStatus: 'finalizing' | 'confirmed' | 'needs_reschedule' }
+  | {
+      kind: 'paid'
+      bookingStatus: 'finalizing' | 'confirmed' | 'needs_reschedule'
+      session: PaidSession | null
+    }
   | { kind: 'expired' }
   | { kind: 'cancelled' }
 
@@ -55,6 +71,99 @@ function StatusLadder({ current }: { current: number }) {
   )
 }
 
+const PROVIDER_LABELS: Record<PaidSession['meetingProvider'], { zh: string; en: string }> = {
+  'google-meet': { zh: 'Google Meet', en: 'Google Meet' },
+  'tencent-meeting': { zh: '腾讯会议', en: 'Tencent Meeting' },
+}
+
+function sessionTime(iso: string, timeZone: string, locale: 'zh' | 'en') {
+  const options: Intl.DateTimeFormatOptions = {
+    timeZone,
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }
+  try {
+    return new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', options).format(
+      new Date(iso),
+    )
+  } catch {
+    return new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
+      ...options,
+      timeZone: 'UTC',
+    }).format(new Date(iso))
+  }
+}
+
+// The booked session as its spec sheet — the nameplate register, printed in
+// the stage's paper ink. Rendered only from server-sent facts.
+function SessionPlate({ session }: { session: PaidSession }) {
+  const minutes = Math.round(
+    (Date.parse(session.endsAt) - Date.parse(session.startsAt)) / 60_000,
+  )
+  const provider = PROVIDER_LABELS[session.meetingProvider] ?? {
+    zh: session.meetingProvider,
+    en: session.meetingProvider,
+  }
+  return (
+    <dl className="spec-nameplate text-left">
+      {/* The zone label is supplementary: hovering the time reveals it as a
+          tooltip. The printed time is already in the guest's own zone. */}
+      <div>
+        <dt>
+          <T zh="时间" en="Time" />
+        </dt>
+        <dd className="min-w-0 break-words">
+          <Tooltip content={session.guestTimeZone}>
+            <span>
+              <T
+                zh={sessionTime(session.startsAt, session.guestTimeZone, 'zh')}
+                en={sessionTime(session.startsAt, session.guestTimeZone, 'en')}
+              />
+            </span>
+          </Tooltip>
+        </dd>
+      </div>
+      <div>
+        <dt>
+          <T zh="时长" en="Length" />
+        </dt>
+        <dd className="min-w-0">
+          {minutes} <T zh="分钟" en="minutes" />
+        </dd>
+      </div>
+      <div>
+        <dt>
+          <T zh="会议方式" en="Meeting" />
+        </dt>
+        <dd className="min-w-0 break-words">
+          <T zh={provider.zh} en={provider.en} />
+        </dd>
+      </div>
+      {session.meetingUrl && (
+        <div>
+          <dt>
+            <T zh="会议链接" en="Link" />
+          </dt>
+          <dd className="min-w-0 break-all">
+            <a
+              href={session.meetingUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="underline decoration-current/35 underline-offset-2 outline-none transition-colors duration-150 hover:decoration-current focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-current motion-reduce:transition-none"
+            >
+              {session.meetingUrl.replace(/^https?:\/\//, '')}
+            </a>
+          </dd>
+        </div>
+      )}
+    </dl>
+  )
+}
+
 /**
  * The post-checkout landing. It never claims success it cannot prove: the
  * page reflects the server's hold state and keeps polling while payment is
@@ -86,10 +195,29 @@ export function BookingConfirmation() {
           const body = (await response.json()) as {
             hold:
               | { state: 'active' | 'processing' | 'expired' | 'cancelled' }
-              | { state: 'paid'; bookingStatus: 'finalizing' | 'confirmed' | 'needs_reschedule' }
+              | ({
+                  state: 'paid'
+                  bookingStatus: 'finalizing' | 'confirmed' | 'needs_reschedule'
+                } & Partial<PaidSession>)
           }
           if (body.hold.state === 'paid') {
-            next = { kind: 'paid', bookingStatus: body.hold.bookingStatus }
+            // Session facts are printed only when the server sent them —
+            // the page never fabricates plate content.
+            const { startsAt, endsAt, meetingProvider, guestTimeZone } = body.hold
+            next = {
+              kind: 'paid',
+              bookingStatus: body.hold.bookingStatus,
+              session:
+                startsAt && endsAt && meetingProvider && guestTimeZone
+                  ? {
+                      startsAt,
+                      endsAt,
+                      meetingProvider,
+                      guestTimeZone,
+                      meetingUrl: body.hold.meetingUrl ?? null,
+                    }
+                  : null,
+            }
           } else if (body.hold.state === 'expired') {
             next = { kind: 'expired' }
           } else if (body.hold.state === 'cancelled') {
@@ -250,36 +378,57 @@ export function BookingConfirmation() {
     )
   }
 
-  const confirmed = state.bookingStatus === 'confirmed'
-
   return (
     <BookingSuccessStage>
       <div role="status" className="flex flex-col gap-3">
-        {confirmed && (
-          <p className="cert-stamp self-start" aria-hidden>
-            <span className="spec-signal" />
-            <T zh="已确认" en="Confirmed" /> +
-          </p>
-        )}
         <p className="text-sm font-medium">
           <T zh="付款已确认。" en="Payment confirmed." />
         </p>
         {state.bookingStatus === 'finalizing' ? (
-          <p className="text-sm leading-6 text-muted-foreground">
+          <p className="text-balance text-sm leading-6 text-muted-foreground">
             <T
               zh="会议细节正在生成，确认邮件很快就到。日历邀请、会议链接和管理链接都会发到你的邮箱。"
               en="Your meeting details are being finalized; the confirmation email is on its way. The calendar invite, meeting link, and your Manage Link all arrive by email."
             />
           </p>
         ) : (
-          <p className="text-sm leading-6 text-muted-foreground">
+          <p className="text-balance text-sm leading-6 text-muted-foreground">
             <T
               zh="确认邮件已经出发，里面有日历邀请、会议链接和专属管理链接。到时见。"
               en="A confirmation email is on its way with the calendar invite, meeting link, and your private Manage Link. See you then."
             />
           </p>
         )}
-        <StatusLadder current={confirmed ? 4 : 3} />
+        {state.session && (
+          <div className="mt-3">
+            {state.bookingStatus === 'confirmed' && (
+              // The heading-ornament composition as a stamp: boxed signal
+              // cell, hazard-hatch chip, tracked mono label — pressed over
+              // the plate's top rule. Terminal states only; the heading
+              // still announces the state.
+              <div className="flex justify-end">
+                <p className="section-tag ama-plate-stamp" aria-hidden>
+                  <span className="section-tag-index">
+                    <span className="spec-signal" />
+                  </span>
+                  <span className="section-tag-hatch" />
+                  <span className="section-tag-label">
+                    <T zh="已确认" en="Confirmed" /> +
+                  </span>
+                </p>
+              </div>
+            )}
+            <SessionPlate session={state.session} />
+          </div>
+        )}
+        {/* Ornamental proof-sheet foot: the barcode derives from the hold id,
+            so every confirmation prints its own label. Ornament, not data. */}
+        {holdId && (
+          <Barcode
+            code={`AMA-${holdId.split('-')[0].toUpperCase()}`}
+            className="ama-success-barcode"
+          />
+        )}
       </div>
     </BookingSuccessStage>
   )

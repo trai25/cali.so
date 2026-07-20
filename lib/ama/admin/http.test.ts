@@ -188,7 +188,7 @@ describe('AMA admin HTTP contract', () => {
     for (const response of [createResponse, updateResponse, deleteResponse]) {
       expect(response.status).toBe(303)
       expect(response.headers.get('location')).toBe(
-        'https://cali.so/admin/ama?availability=saved',
+        'https://cali.so/admin/ama/settings?availability=saved',
       )
     }
   })
@@ -212,7 +212,7 @@ describe('AMA admin HTTP contract', () => {
     )
 
     expect(response.headers.get('location')).toBe(
-      'https://cali.so/admin/ama?availability=invalid',
+      'https://cali.so/admin/ama/settings?availability=invalid',
     )
     expect(f.mutations).toEqual([])
   })
@@ -241,7 +241,7 @@ describe('AMA admin HTTP contract', () => {
       ['create', { isoWeekday: 5, startMinute: 540, endMinute: 720 }],
     ])
     expect(response.headers.get('location')).toBe(
-      'https://cali.so/admin/ama?availability=saved',
+      'https://cali.so/admin/ama/settings?availability=saved',
     )
   })
 
@@ -289,7 +289,7 @@ describe('AMA admin HTTP contract', () => {
       ['complete', { state: 's', code: 'c', error: null }],
     ])
     expect(response.headers.get('location')).toBe(
-      'https://cali.so/admin/ama?calendar=connected',
+      'https://cali.so/admin/ama/settings?calendar=connected',
     )
   })
 
@@ -309,7 +309,7 @@ describe('AMA admin HTTP contract', () => {
     expect(f.googleEvents).toEqual([['disconnect']])
     expect(f.mutations).toEqual([])
     expect(response.headers.get('location')).toBe(
-      'https://cali.so/admin/ama?calendar=disconnected',
+      'https://cali.so/admin/ama/settings?calendar=disconnected',
     )
   })
 

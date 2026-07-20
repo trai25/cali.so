@@ -155,8 +155,8 @@ Select.displayName = "Select";
 
 const triggerVariants = cva(
   [
-    "group inline-flex items-center justify-between gap-2 outline-none cursor-pointer",
-    "min-h-11 min-w-24 px-2 text-[14px]",
+    "group relative inline-flex items-center justify-between gap-2 outline-none cursor-pointer",
+    "min-w-24 text-[14px]",
     "transition-[background-color,color,border-color,box-shadow] duration-150",
     "disabled:opacity-50 disabled:pointer-events-none",
     "focus-visible:ring-1 focus-visible:ring-[color:var(--focus-ring)]",
@@ -169,9 +169,16 @@ const triggerVariants = cva(
         borderless:
           "border border-transparent bg-transparent text-foreground hover:bg-hover",
       },
+      size: {
+        // Control-row height (matches Button lg / subtle tabs); the pseudo
+        // restores the 44px hit target without visible height.
+        md: "h-8 px-2.5 before:absolute before:inset-x-0 before:top-1/2 before:h-11 before:-translate-y-1/2 before:content-['']",
+        tall: "min-h-11 px-2",
+      },
     },
     defaultVariants: {
       variant: "bordered",
+      size: "md",
     },
   }
 );
@@ -186,7 +193,7 @@ interface SelectTriggerProps
 
 const SelectTrigger = forwardRef<HTMLButtonElement, SelectTriggerProps>(
   (
-    { className, variant, icon: Icon, placeholder = "Select…", error, ...props },
+    { className, variant, size, icon: Icon, placeholder = "Select…", error, ...props },
     ref
   ) => {
     const shape = useShape();
@@ -197,7 +204,7 @@ const SelectTrigger = forwardRef<HTMLButtonElement, SelectTriggerProps>(
           ref={ref}
           aria-invalid={!!error || undefined}
           className={cn(
-            triggerVariants({ variant }),
+            triggerVariants({ variant, size }),
             shape.input,
             error && "border-destructive/50 hover:border-destructive/50",
             className
@@ -485,7 +492,10 @@ const SelectItem = forwardRef<HTMLDivElement, SelectItemProps>(
             className={cn(
               // Fixed height (was py-2 around a 19.5px line box ≈ 35.5px) so
               // the text-box trim on the item text doesn't shrink the row.
-              `relative z-10 flex h-11 items-center gap-2 ${shape.item} px-2 text-[14px] cursor-pointer outline-none select-none`,
+              // shrink-0 is load-bearing: the popup is a flex column, so a
+              // long list (every IANA zone) would otherwise squash every
+              // row well under its 44px target.
+              `relative z-10 flex h-11 shrink-0 items-center gap-2 ${shape.item} px-2 text-[14px] cursor-pointer outline-none select-none`,
               isActive || isChecked
                 ? "text-foreground"
                 : "text-muted-foreground",

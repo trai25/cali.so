@@ -7,6 +7,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MediaLibrary } from '../../../app/admin/(protected)/media/MediaLibrary'
 import type { MediaAssetReviewRecord } from '../asset-review/service'
 
+// jsdom ships no ResizeObserver; the inspector dialog's scrollable body
+// observes its viewport to drive the edge fades. Assigned directly (not
+// vi.stubGlobal) so afterEach's unstubAllGlobals leaves it in place.
+class ResizeObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+globalThis.ResizeObserver = ResizeObserverStub as unknown as typeof ResizeObserver
+
 const activeAsset: MediaAssetReviewRecord = {
   id: '11111111-1111-4111-8111-111111111111',
   createdAt: new Date('2026-07-15T12:00:00.000Z'),
@@ -89,7 +99,8 @@ describe('Media archive UI contract', () => {
     expect(html).toContain('aria-haspopup="dialog"')
     // The selection mark shows what the photos page is using.
     expect(html).toContain('In use')
-    expect(html).toContain('min-h-11')
+    // Compact 32px controls restore their 44px hit target with a pseudo.
+    expect(html).toContain('before:h-11')
     expect(html).not.toMatch(/latitude|longitude|originals\//i)
   })
 

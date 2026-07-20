@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 
+import { AmaStage } from '~/components/ama/booking-success-stage'
 import { ManageBooking } from '~/components/ama/manage-booking'
 import { PixelCluster } from '~/components/pixel-cluster'
 import { T } from '~/lib/i18n'
@@ -32,8 +33,13 @@ export function AmaManagePageView({ token }: { token: string }) {
         <PixelCluster variant={2} className="enter shrink-0" />
       </header>
 
-      <div className="enter mt-10 pb-4" style={{ '--enter-delay': '70ms' } as React.CSSProperties}>
-        <ManageBooking token={token} />
+      {/* The manage surface shares the confirmation's dark stage shell —
+          shader field and flipped tokens — without the celebration extras
+          (confetti and the seal stay exclusive to the paid confirmation). */}
+      <div className="enter mt-6" style={{ '--enter-delay': '70ms' } as React.CSSProperties}>
+        <AmaStage align="start">
+          <ManageBooking token={token} />
+        </AmaStage>
       </div>
     </div>
   )

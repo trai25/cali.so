@@ -326,21 +326,34 @@ describe('Booking service getHoldState', () => {
     await f.service.createCheckout(f.holdId)
     await f.service.processWebhookEvent(completedEvent('cs_test_1'))
 
+    // Paid states carry the session facts the confirmation plate prints.
+    const booking = f.repo.bookings[0]
+    const sessionFacts = {
+      startsAt: booking.startsAt,
+      endsAt: booking.endsAt,
+      meetingProvider: booking.meetingProvider,
+      guestTimeZone: booking.guestTimeZone,
+      meetingUrl: booking.meetingUrl,
+    }
+
     await expect(f.service.getHoldState(f.holdId)).resolves.toEqual({
       state: 'paid',
       bookingStatus: 'finalizing',
+      ...sessionFacts,
     })
 
     f.repo.bookings[0].status = 'confirmed'
     await expect(f.service.getHoldState(f.holdId)).resolves.toEqual({
       state: 'paid',
       bookingStatus: 'confirmed',
+      ...sessionFacts,
     })
 
     f.repo.bookings[0].status = 'needs_reschedule'
     await expect(f.service.getHoldState(f.holdId)).resolves.toEqual({
       state: 'paid',
       bookingStatus: 'needs_reschedule',
+      ...sessionFacts,
     })
   })
 

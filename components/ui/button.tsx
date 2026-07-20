@@ -66,6 +66,14 @@ interface ButtonProps
    *  external open piece of UI (a popover, dropdown, etc.) so it reads as
    *  engaged while the menu is showing. */
   active?: boolean;
+  /** Destructive tone: primary becomes a filled destructive pill; the other
+   *  variants read destructive ink with a destructive-tinted hover. The focus
+   *  ring stays neutral — signal color never marks focus. */
+  destructive?: boolean;
+  /** Restore the 44px minimum hit target with a pseudo-element when the
+   *  visible pill is shorter (the .btn-cta::before recipe). Only for buttons
+   *  with ≥16px vertical clearance — never in dense stacked rows. */
+  expandHitArea?: boolean;
 }
 
 const bgVariants: Record<string, string> = {
@@ -82,6 +90,39 @@ const activeBgVariants: Record<string, string> = {
   ghost: "bg-active",
 };
 
+// Destructive tone. Filled primary mirrors the foreground recipe on
+// bg-destructive (label matches the existing bg-destructive/text-white
+// admin confirms); the quieter variants keep destructive ink over a
+// /10-alpha tinted hover.
+const destructiveRootVariants: Record<string, string> = {
+  primary: "text-white",
+  secondary: "text-destructive",
+  tertiary: "text-destructive",
+  ghost: "text-destructive hover:text-destructive",
+};
+
+const destructiveBgVariants: Record<string, string> = {
+  primary:
+    "bg-destructive group-hover:bg-destructive/90 group-active:bg-destructive/80",
+  secondary:
+    "bg-destructive/10 group-hover:bg-destructive/15 group-active:bg-destructive/20",
+  tertiary:
+    "bg-transparent group-hover:bg-destructive/10 group-active:bg-destructive/15",
+  ghost:
+    "bg-transparent group-hover:bg-destructive/10 group-active:bg-destructive/15",
+};
+
+const destructiveActiveBgVariants: Record<string, string> = {
+  primary: "bg-destructive/80",
+  secondary: "bg-destructive/20",
+  tertiary: "bg-destructive/15",
+  ghost: "bg-destructive/15",
+};
+
+// Vertical-only hit-target extension to 44px (mirrors .btn-cta::before).
+const expandHitAreaClasses =
+  "before:absolute before:inset-x-0 before:top-1/2 before:h-11 before:-translate-y-1/2 before:content-['']";
+
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
@@ -93,6 +134,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       leadingIcon: LeadingIcon,
       trailingIcon: TrailingIcon,
       active = false,
+      destructive = false,
+      expandHitArea = false,
       disabled,
       children,
       style,
@@ -127,8 +170,12 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           ? "h-4 w-4"
           : "h-3.5 w-3.5";
     const bgClass = active
-      ? activeBgVariants[variant ?? "primary"]
-      : bgVariants[variant ?? "primary"];
+      ? (destructive ? destructiveActiveBgVariants : activeBgVariants)[
+          variant ?? "primary"
+        ]
+      : (destructive ? destructiveBgVariants : bgVariants)[
+          variant ?? "primary"
+        ];
 
     const internals = (
       <>
@@ -209,6 +256,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         iconLeft: !isIconOnly && !!LeadingIcon,
         iconRight: !isIconOnly && !!TrailingIcon,
       }),
+      destructive && destructiveRootVariants[variant ?? "primary"],
+      expandHitArea && expandHitAreaClasses,
       className
     );
 

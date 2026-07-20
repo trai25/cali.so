@@ -1,5 +1,6 @@
 import Link from 'next/link'
 
+import { PixelCluster } from '~/components/pixel-cluster'
 import { T } from '~/lib/i18n'
 
 export type NextBookingViewModel = {
@@ -30,7 +31,7 @@ const nextSessionOptions: Intl.DateTimeFormatOptions = {
   hour12: false,
 }
 const nextSessionFormatters = {
-  zh: new Intl.DateTimeFormat('zh-TW', nextSessionOptions),
+  zh: new Intl.DateTimeFormat('zh-CN', nextSessionOptions),
   en: new Intl.DateTimeFormat('en-US', nextSessionOptions),
 }
 
@@ -79,20 +80,25 @@ export function AdminOverview({
 }: AdminOverviewProps) {
   return (
     <div className="pb-10">
-      <h1 className="text-sm font-medium text-muted-foreground">
-        <T zh="总览" en="Overview" />
-      </h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="page-eyebrow">
+          <T zh="总览" en="Overview" />
+        </h1>
+        <PixelCluster variant={6} className="shrink-0" />
+      </div>
 
       <ul className="mt-6 hairline-top pt-4">
         <OverviewRow
-          href="/admin/ama"
+          href="/admin/ama/bookings"
           label={<T zh="需要处理" en="Needs attention" />}
           value={attentionCount}
           destructive={attentionCount > 0}
         />
         <OverviewRow
           href={
-            nextBooking ? `/admin/ama/bookings/${nextBooking.id}` : '/admin/ama'
+            nextBooking
+              ? `/admin/ama/bookings/${nextBooking.id}`
+              : '/admin/ama/bookings'
           }
           label={<T zh="下一场咨询" en="Next session" />}
           value={
@@ -111,7 +117,7 @@ export function AdminOverview({
           }
         />
         <OverviewRow
-          href="/admin/ama"
+          href="/admin/ama/bookings"
           label={<T zh="时间请求" en="Time requests" />}
           value={
             <>

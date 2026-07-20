@@ -1,7 +1,13 @@
 'use client'
 
-import { useId, useMemo } from 'react'
+import { useMemo } from 'react'
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from '~/components/ui/select'
 import { T } from '~/lib/i18n'
 import { localize, useLocale } from '~/lib/locale-client'
 import { cn } from '~/lib/utils'
@@ -51,7 +57,6 @@ export function SlotPicker({
   disabled = false,
 }: SlotPickerProps) {
   const locale = useLocale()
-  const timeZoneSelectId = useId()
 
   const timeZones = useMemo(() => listTimeZones(timeZone), [timeZone])
 
@@ -131,22 +136,31 @@ export function SlotPicker({
   return (
     <div className="flex flex-col gap-6">
       <div className="grid gap-1.5 text-sm">
-        <label htmlFor={timeZoneSelectId} className="text-muted-foreground">
+        <span className="text-muted-foreground">
           <T zh="时区" en="Time zone" />
-        </label>
-        <select
-          id={timeZoneSelectId}
+        </span>
+        <Select
           value={timeZone}
+          onValueChange={onTimeZoneChange}
           disabled={disabled}
-          onChange={(event) => onTimeZoneChange(event.target.value)}
-          className="min-h-11 w-full touch-manipulation rounded-md bg-background px-3 text-base shadow-[0_0_0_1px_var(--border)] outline-none focus-visible:shadow-[0_0_0_1px_var(--foreground)]"
         >
-          {timeZones.map((zone) => (
-            <option key={zone} value={zone}>
-              {zone}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger
+            aria-label={localize(locale, '时区', 'Time zone')}
+            className="w-full rounded-[2px] font-mono text-[13px]"
+          />
+          <SelectContent>
+            {timeZones.map((zone, index) => (
+              <SelectItem
+                key={zone}
+                value={zone}
+                index={index}
+                className="font-mono text-[13px]"
+              >
+                {zone}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <p className="text-[13px] text-muted-foreground">
           <T zh="以下时间均按你选择的时区显示。" en="All times are shown in your selected time zone." />
         </p>
@@ -155,7 +169,9 @@ export function SlotPicker({
       <div className="flex flex-col gap-5">
         {groups.map((group) => (
           <section key={group.key} aria-label={localize(locale, group.zhHeading, group.enHeading)}>
-            <h3 className="text-sm font-medium text-muted-foreground">
+            {/* Day headings take the plate-label register: machine chrome
+                over the mono time chips below. */}
+            <h3 className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
               <T zh={group.zhHeading} en={group.enHeading} />
             </h3>
             <ul className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -170,7 +186,7 @@ export function SlotPicker({
                       aria-label={localize(locale, slot.zhLabel, slot.enLabel)}
                       onClick={() => onSelect(slot.startsAt)}
                       className={cn(
-                        'min-h-11 w-full touch-manipulation rounded-md text-sm tabular-nums outline-none transition-colors duration-150',
+                        'min-h-11 w-full touch-manipulation rounded-[2px] font-mono text-[13px] tabular-nums outline-none transition-colors duration-150',
                         'focus-visible:ring-1 focus-visible:ring-[var(--focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                         isSelected
                           ? 'bg-foreground text-background shadow-[0_0_0_1px_var(--foreground)]'
