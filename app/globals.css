@@ -1377,6 +1377,11 @@
   font-variant-numeric: tabular-nums;
 }
 
+.spec-nameplate-compact dt,
+.spec-nameplate-compact dd {
+  padding-block: 0.625rem;
+}
+
 /* ── Status ladder: journey steps as state cells ──────────────────── */
 
 /* Decorative reinforcement of state the prose already announces:

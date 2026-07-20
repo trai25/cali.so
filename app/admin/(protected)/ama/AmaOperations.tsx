@@ -89,7 +89,7 @@ function BookingRow({
         </span>
       </div>
 
-      <dl className="spec-nameplate spec-nameplate-compact mt-3">
+      <dl className="spec-nameplate spec-nameplate-compact mt-4">
         <div>
           <dt>
             <T zh="时间" en="Time" />
@@ -148,7 +148,7 @@ function BookingRow({
         </div>
       </dl>
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+      <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
         <span className="text-muted-foreground">
           <T zh={provider.zh} en={provider.en} />
         </span>
