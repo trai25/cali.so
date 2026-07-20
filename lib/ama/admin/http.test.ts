@@ -13,9 +13,16 @@ import {
 } from './http'
 import { createAmaSecurity, type SecurityAuditEvent } from '../security/service'
 
-function formRequest(path: string, values: Record<string, string>, authenticated = true) {
+function formRequest(
+  path: string,
+  values: Record<string, string | readonly string[]>,
+  authenticated = true,
+) {
   const body = new FormData()
-  for (const [key, value] of Object.entries(values)) body.set(key, value)
+  for (const [key, value] of Object.entries(values)) {
+    if (typeof value === 'string') body.set(key, value)
+    else for (const item of value) body.append(key, item)
+  }
   return new Request(`https://cali.so${path}`, {
     method: 'POST',
     headers: {
@@ -40,6 +47,21 @@ function fixture(rateLimitAllows = true) {
     },
   }
   const availability: AvailabilityMutationService = {
+    async setTimeZone(timeZone) {
+      mutations.push(['set-time-zone', timeZone])
+    },
+    async setWeekday(isoWeekday, enabled) {
+      mutations.push(['set-weekday', isoWeekday, enabled])
+    },
+    async copyWeekday(sourceWeekday, targetWeekdays) {
+      mutations.push(['copy-weekday', sourceWeekday, targetWeekdays])
+    },
+    async saveOverride(localDate, intervals) {
+      mutations.push(['save-override', localDate, intervals])
+    },
+    async deleteOverride(localDate) {
+      mutations.push(['delete-override', localDate])
+    },
     async create(input) {
       mutations.push(['create', input])
     },
@@ -215,6 +237,114 @@ describe('AMA admin HTTP contract', () => {
       'https://cali.so/admin/ama/settings?availability=invalid',
     )
     expect(f.mutations).toEqual([])
+  })
+
+  it('updates the schedule time zone through the authenticated mutation boundary', async () => {
+    const f = fixture()
+    const handler = createAvailabilityMutationHandler({
+      authenticator: f.authenticator,
+      service: f.availability,
+      security: f.security,
+      baseUrl: new URL('https://cali.so'),
+    })
+
+    const response = await handler(
+      formRequest('/api/admin/ama/availability', {
+        intent: 'set-time-zone',
+        timeZone: 'America/Los_Angeles',
+      }),
+    )
+
+    expect(f.mutations).toEqual([
+      ['set-time-zone', 'America/Los_Angeles'],
+    ])
+    expect(response.headers.get('location')).toBe(
+      'https://cali.so/admin/ama/settings?availability=saved',
+    )
+  })
+
+  it('turns weekdays on and off and copies hours to selected weekdays', async () => {
+    const f = fixture()
+    const handler = createAvailabilityMutationHandler({
+      authenticator: f.authenticator,
+      service: f.availability,
+      security: f.security,
+      baseUrl: new URL('https://cali.so'),
+    })
+
+    await handler(
+      formRequest('/api/admin/ama/availability', {
+        intent: 'set-weekday',
+        weekday: '2',
+        enabled: 'true',
+      }),
+    )
+    await handler(
+      formRequest('/api/admin/ama/availability', {
+        intent: 'set-weekday',
+        weekday: '6',
+        enabled: 'false',
+      }),
+    )
+    await handler(
+      formRequest('/api/admin/ama/availability', {
+        intent: 'copy-weekday',
+        weekday: '2',
+        targetWeekday: ['1', '4', '5'],
+      }),
+    )
+
+    expect(f.mutations).toEqual([
+      ['set-weekday', 2, true],
+      ['set-weekday', 6, false],
+      ['copy-weekday', 2, [1, 4, 5]],
+    ])
+  })
+
+  it('saves closed and custom date overrides and restores weekly hours', async () => {
+    const f = fixture()
+    const handler = createAvailabilityMutationHandler({
+      authenticator: f.authenticator,
+      service: f.availability,
+      security: f.security,
+      baseUrl: new URL('https://cali.so'),
+    })
+
+    await handler(
+      formRequest('/api/admin/ama/availability', {
+        intent: 'save-override',
+        localDate: '2026-07-22',
+        overrideMode: 'closed',
+      }),
+    )
+    await handler(
+      formRequest('/api/admin/ama/availability', {
+        intent: 'save-override',
+        localDate: '2026-07-23',
+        overrideMode: 'custom',
+        overrideStart: ['09:00', '14:00'],
+        overrideEnd: ['11:00', '17:00'],
+      }),
+    )
+    await handler(
+      formRequest('/api/admin/ama/availability', {
+        intent: 'delete-override',
+        localDate: '2026-07-22',
+      }),
+    )
+
+    expect(f.mutations).toEqual([
+      ['save-override', '2026-07-22', []],
+      [
+        'save-override',
+        '2026-07-23',
+        [
+          { startMinute: 540, endMinute: 660 },
+          { startMinute: 840, endMinute: 1020 },
+        ],
+      ],
+      ['delete-override', '2026-07-22'],
+    ])
   })
 
   it('accepts the locale-specific weekday changed before hydration', async () => {

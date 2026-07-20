@@ -11,6 +11,20 @@ export type AvailabilityWindow = {
   endMinute: number
 }
 
+export type AvailabilityOverride = {
+  /** ISO calendar date in the schedule time zone. */
+  localDate: string
+  /** An empty list closes the date; otherwise these intervals replace the week. */
+  intervals: readonly Pick<AvailabilityWindow, 'startMinute' | 'endMinute'>[]
+}
+
+export type AvailabilityWeekday = {
+  /** ISO weekday: Monday is 1 and Sunday is 7. */
+  isoWeekday: number
+  /** Disabled recurring weekdays retain their saved windows for later reuse. */
+  enabled: boolean
+}
+
 export type TimeInterval = {
   startsAt: Date
   endsAt: Date
@@ -24,6 +38,8 @@ export type AvailabilityInput = {
   now: Date
   ownerTimeZone: string
   windows: readonly AvailabilityWindow[]
+  weekdays?: readonly AvailabilityWeekday[]
+  overrides?: readonly AvailabilityOverride[]
   googleBusy: readonly TimeInterval[]
   slotHolds: readonly SlotHold[]
   bookings: readonly TimeInterval[]
@@ -129,6 +145,29 @@ export function computeAvailableSlots(input: AvailabilityInput): AvailableSlot[]
 
   for (const window of input.windows) assertWindow(window)
 
+  const disabledWeekdays = new Set<number>()
+  for (const weekday of input.weekdays ?? []) {
+    if (
+      !Number.isInteger(weekday.isoWeekday) ||
+      weekday.isoWeekday < 1 ||
+      weekday.isoWeekday > 7
+    ) {
+      throw new RangeError(
+        'Availability weekday must be an ISO weekday from 1 through 7',
+      )
+    }
+    if (!weekday.enabled) disabledWeekdays.add(weekday.isoWeekday)
+  }
+
+  const overrides = new Map<string, AvailabilityOverride['intervals']>()
+  for (const override of input.overrides ?? []) {
+    const localDate = Temporal.PlainDate.from(override.localDate).toString()
+    for (const interval of override.intervals) {
+      assertWindow({ ...interval, isoWeekday: 1 })
+    }
+    overrides.set(localDate, override.intervals)
+  }
+
   const activeHolds = input.slotHolds
     .filter((hold) => hold.expiresAt.getTime() > input.now.getTime())
     .map(intervalMilliseconds)
@@ -141,7 +180,17 @@ export function computeAvailableSlots(input: AvailabilityInput): AvailableSlot[]
   const slots = new Map<number, AvailableSlot>()
   let ownerDate = ownerNow.toPlainDate()
   while (Temporal.PlainDate.compare(ownerDate, lastOwnerDate) <= 0) {
-    for (const window of input.windows) {
+    const overrideIntervals = overrides.get(ownerDate.toString())
+    const windowsForDate = overrideIntervals
+      ? overrideIntervals.map((interval) => ({
+          ...interval,
+          isoWeekday: ownerDate.dayOfWeek,
+        }))
+      : disabledWeekdays.has(ownerDate.dayOfWeek)
+        ? []
+        : input.windows
+
+    for (const window of windowsForDate) {
       if (window.isoWeekday !== ownerDate.dayOfWeek) continue
 
       const windowStart = windowBoundary(

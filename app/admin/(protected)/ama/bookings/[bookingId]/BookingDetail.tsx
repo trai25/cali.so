@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 
+import { AdminBackLink } from '~/components/admin-nav'
 import { PixelCluster } from '~/components/pixel-cluster'
 import { Button } from '~/components/ui/button'
 import { InputCopy } from '~/components/ui/input-copy'
@@ -219,10 +220,16 @@ export function BookingDetail({
   booking,
   events,
   operations,
+  backHref = '/admin/ama/bookings',
+  fixtureMode = false,
+  fixtureSlots = [],
 }: {
   booking: BookingViewModel
   events: BookingEventViewModel[]
   operations: OperationViewModel[]
+  backHref?: string
+  fixtureMode?: boolean
+  fixtureSlots?: SlotViewModel[]
 }) {
   const locale = useLocale()
   const router = useRouter()
@@ -248,6 +255,7 @@ export function BookingDetail({
   }, [notice])
 
   async function performBookingAction(body: Record<string, unknown>) {
+    if (fixtureMode) return { result: 'fixture' }
     const response = await fetch(`/api/admin/ama/bookings/${booking.id}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -258,6 +266,11 @@ export function BookingDetail({
 
   async function loadSlots() {
     setSlotsState('loading')
+    if (fixtureMode) {
+      setSlots(fixtureSlots)
+      setSlotsState('ready')
+      return
+    }
     try {
       const body = await responseJson(await fetch('/api/ama/slots', { cache: 'no-store' }))
       setSlots((body.slots as SlotViewModel[]) ?? [])
@@ -290,7 +303,7 @@ export function BookingDetail({
           ? localize(locale, '预约已取消，退款正在处理。', 'The Booking was cancelled and the refund is in progress.')
           : localize(locale, '预约已取消。', 'The Booking was cancelled.'),
       )
-      router.refresh()
+      if (!fixtureMode) router.refresh()
     } catch (error) {
       if (error instanceof Error && error.message === 'already_cancelled') {
         setStatus('cancelled')
@@ -298,7 +311,7 @@ export function BookingDetail({
         setNotice(
           localize(locale, '这个预约已经取消过了。', 'This Booking was already cancelled.'),
         )
-        router.refresh()
+        if (!fixtureMode) router.refresh()
       } else {
         setNotice(
           localize(
@@ -332,7 +345,7 @@ export function BookingDetail({
           'Rescheduled. Meeting artifacts and email update automatically.',
         ),
       )
-      router.refresh()
+      if (!fixtureMode) router.refresh()
     } catch (error) {
       if (
         error instanceof Error &&
@@ -352,7 +365,7 @@ export function BookingDetail({
         setNotice(
           localize(locale, '这个预约已经取消，无法改期。', 'This Booking is cancelled and cannot be rescheduled.'),
         )
-        router.refresh()
+        if (!fixtureMode) router.refresh()
       } else {
         setNotice(
           localize(
@@ -377,7 +390,7 @@ export function BookingDetail({
       setNotice(
         localize(locale, '退款例外已批准，退款正在处理。', 'The refund exception was granted and the refund is in progress.'),
       )
-      router.refresh()
+      if (!fixtureMode) router.refresh()
     } catch (error) {
       if (error instanceof Error && error.message === 'not_applicable') {
         setNotice(
@@ -387,7 +400,7 @@ export function BookingDetail({
             'This payment is already refunded or refunding. Nothing was changed.',
           ),
         )
-        router.refresh()
+        if (!fixtureMode) router.refresh()
       } else {
         setNotice(
           localize(
@@ -442,6 +455,9 @@ export function BookingDetail({
 
   return (
     <div className="pb-10">
+      <AdminBackLink href={backHref}>
+        <T zh={fixtureMode ? '预约演示' : '预约'} en={fixtureMode ? 'Booking fixtures' : 'Bookings'} />
+      </AdminBackLink>
       <div className="flex items-center justify-between gap-4">
         <p className="page-eyebrow">
           <T zh="咨询预约" en="AMA Booking" />
@@ -935,7 +951,11 @@ export function BookingDetail({
           <T zh="后台操作" en="Operations" />
         </h2>
         <div className="mt-3">
-          <OperationsList operations={operations} showBookingLink={false} />
+        <OperationsList
+          operations={operations}
+          showBookingLink={false}
+          fixtureMode={fixtureMode}
+        />
         </div>
       </section>
 

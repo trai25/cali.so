@@ -41,9 +41,9 @@ unconfigured returns 503 before touching provider code.
 ## Lifecycle summary
 
 1. `/ama` presents the offer; `/ama/book` collects intake and shows slots from
-   the availability engine (owner windows in Asia/Taipei, Google free/busy,
-   active Slot Holds, Bookings, 24h notice, 30-day horizon, 15-minute
-   buffers).
+   the availability engine (recurring owner windows and replacing Date
+   Overrides in the configured Schedule Time Zone, Google free/busy, active
+   Slot Holds, Bookings, 24h notice, 30-day horizon, and 15-minute buffers).
 2. Selecting a time creates a 15-minute Slot Hold. Postgres enforces
    non-overlap through an exclusion constraint on the buffered interval, so
    racing guests cannot both win.
@@ -61,7 +61,9 @@ unconfigured returns 503 before touching provider code.
 5. Guests manage Bookings through the Manage Link: reschedule or cancel until
    24 hours before the session; eligible cancellations refund automatically
    and idempotently. Admin (`/admin/ama`) operates Bookings, Alternate Time
-   Requests, refund exceptions, retries, and manual resolution.
+   Requests, refund exceptions, retries, and manual resolution. The Bookings
+   ledger provides attention, upcoming, past, and cancelled views with
+   owner-side filters and paginated totals.
 
 ## Scheduled work
 

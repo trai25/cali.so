@@ -7,9 +7,11 @@ import { requireOwnerPage } from '~/lib/admin/server'
 import { getAmaAdminServices } from '~/lib/ama/admin/server'
 import { T } from '~/lib/i18n'
 import { nonPublicRobots } from '~/lib/non-public-metadata'
+import { firstSearchParam } from '~/lib/search-params'
 
 import { AmaSettings } from '../AmaSettings'
 import type { AmaSettingsNotices, GoogleConnectionStatus } from '../AmaSettings'
+import { AmaSettingsSkeleton } from '../AmaSkeletons'
 
 export const metadata: Metadata = {
   title: 'AMA Settings',
@@ -18,7 +20,14 @@ export const metadata: Metadata = {
 
 export const instant = true
 
-const availabilityNotices = new Set(['saved', 'invalid', 'failed'] as const)
+const availabilityNotices = new Set([
+  'saved',
+  'invalid',
+  'invalid-time-zone',
+  'invalid-override',
+  'invalid-copy',
+  'failed',
+] as const)
 const calendarNotices = new Set([
   'disconnected',
   'connected',
@@ -28,16 +37,12 @@ const calendarNotices = new Set([
   'unavailable',
 ] as const)
 
-function first(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value
-}
-
 function queryNotices(input: {
   availability?: string | string[]
   calendar?: string | string[]
 }): AmaSettingsNotices {
-  const availability = first(input.availability)
-  const calendar = first(input.calendar)
+  const availability = firstSearchParam(input.availability)
+  const calendar = firstSearchParam(input.calendar)
   return {
     availability: availabilityNotices.has(
       availability as AmaSettingsNotices['availability'] & string,
@@ -84,10 +89,7 @@ function SettingsFallback() {
   return (
     <div className="pb-10" aria-busy="true">
       <SettingsHeader />
-      <p className="mt-1 text-sm leading-6 text-muted-foreground">…</p>
-      <div className="mt-6 hairline-top pt-5" aria-hidden>
-        <span className="block h-4 w-full max-w-72 rounded-sm bg-surface-1" />
-      </div>
+      <AmaSettingsSkeleton />
     </div>
   )
 }
@@ -98,9 +100,9 @@ async function SettingsLoader({
   searchParams: SettingsSearchParams
 }) {
   await requireOwnerPage('/admin/ama/settings')
-  const { availability, google } = getAmaAdminServices()
-  const [windows, connection, preview, params] = await Promise.all([
-    availability.list(),
+  const { availability, google, baseUrl } = getAmaAdminServices()
+  const [schedule, connection, preview, params] = await Promise.all([
+    availability.getSchedule(),
     google.getConnection(),
     availability.preview(),
     searchParams,
@@ -116,11 +118,21 @@ async function SettingsLoader({
     <>
       <SettingsHeader />
       <AmaSettings
-        windows={windows.map(({ id, isoWeekday, startMinute, endMinute }) => ({
+        timeZone={schedule.timeZone}
+        weekdays={schedule.weekdays}
+        windows={schedule.windows.map(({ id, isoWeekday, startMinute, endMinute }) => ({
           id,
           isoWeekday,
           startMinute,
           endMinute,
+        }))}
+        overrides={schedule.overrides.map((override) => ({
+          id: override.id,
+          localDate: override.localDate,
+          intervals: override.intervals.map(({ startMinute, endMinute }) => ({
+            startMinute,
+            endMinute,
+          })),
         }))}
         googleConnection={{
           status,
@@ -137,6 +149,8 @@ async function SettingsLoader({
           startsAt: slot.startsAt.toISOString(),
           endsAt: slot.endsAt.toISOString(),
         }))}
+        previewDiagnosis={preview.diagnosis}
+        publicBookingUrl={new URL('/ama/book', baseUrl).toString()}
         notices={queryNotices(params)}
       />
     </>

@@ -24,6 +24,16 @@ A recurring period when Cali is generally open to AMA Sessions; actual open
 times also account for calendar conflicts and booking rules.
 _Avoid_: Slot, office hours
 
+**Date Override**:
+A schedule date that replaces its recurring Availability Windows with either
+no hours or one or more custom intervals.
+_Avoid_: Exception slot, blackout event
+
+**Schedule Time Zone**:
+The IANA time zone used to interpret recurring Availability Windows and Date
+Overrides. It is an owner setting, not the Guest's display time zone.
+_Avoid_: Local time, browser time
+
 **Slot Hold**:
 A 15-minute temporary claim on an available start time while a guest completes
 payment.
