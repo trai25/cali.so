@@ -85,6 +85,14 @@ headers. Bunny's reviewed documentation does not specify the resulting
 or a declarative S3 CORS document format, so validate those in a non-production
 zone before allowing browser uploads. [Bunny S3 documentation](https://docs.bunny.net/storage/s3) · [Pull Zone update API](https://docs.bunny.net/api-reference/core/pull-zone/update-pull-zone) · [Edge Rules](https://docs.bunny.net/cdn/edge-rules/index)
 
+The Production S3 endpoint was checked with a credential-free browser-style
+`OPTIONS` request on 2026-07-20. It returned `204` without any
+`Access-Control-Allow-*` headers, matching the documented limitation. Because
+the private Original zone deliberately has no Pull Zone, cali.so cannot use
+direct browser `PUT` requests there. Originals use bounded same-origin chunks
+instead; this also keeps every request below Vercel's fixed 4.5 MB Function
+payload limit.
+
 ## Delivery, replication, and cost model
 
 Create a Pull Zone whose origin type is the Bunny Storage Zone. Files are then

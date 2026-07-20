@@ -55,6 +55,89 @@ describe('Bunny Media Storage', () => {
     })
   })
 
+  it('stores, reads, and deletes an Original transfer chunk only in the private zone', async () => {
+    const bytes = new TextEncoder().encode('private chunk bytes')
+    const checksum = createHash('sha256').update(bytes).digest('hex')
+    const send = vi.fn(async (command: unknown) => {
+      if (command instanceof GetObjectCommand) {
+        return { Body: { transformToByteArray: async () => bytes } }
+      }
+      if (command instanceof HeadObjectCommand) {
+        return {
+          ContentLength: bytes.byteLength,
+          ContentType: 'application/octet-stream',
+          LastModified: new Date('2026-07-20T00:00:00.000Z'),
+        }
+      }
+      return {}
+    })
+    const storage = createBunnyStorage(config, {
+      originalsClient: { send } as never,
+    })
+
+    await storage.storeOriginalChunk({
+      originalKey: 'originals/asset_01/revision_01.heic',
+      chunkIndex: 2,
+      bytes,
+      checksumSha256: checksum,
+    })
+    await expect(
+      storage.readOriginalChunk(
+        'originals/asset_01/revision_01.heic',
+        2,
+      ),
+    ).resolves.toEqual(bytes)
+    await expect(
+      storage.inspectOriginalChunk(
+        'originals/asset_01/revision_01.heic',
+        2,
+      ),
+    ).resolves.toMatchObject({
+      byteSize: bytes.byteLength,
+      contentType: 'application/octet-stream',
+    })
+    await storage.deleteOriginalChunk(
+      'originals/asset_01/revision_01.heic',
+      2,
+    )
+
+    const expectedKey =
+      'transfer-chunks/originals/asset_01/revision_01.heic/2.part'
+    const [put, get, head, remove] = send.mock.calls.map(([command]) => command)
+    expect(put).toBeInstanceOf(PutObjectCommand)
+    expect(get).toBeInstanceOf(GetObjectCommand)
+    expect(head).toBeInstanceOf(HeadObjectCommand)
+    expect(remove).toBeInstanceOf(DeleteObjectCommand)
+    if (
+      !(put instanceof PutObjectCommand) ||
+      !(get instanceof GetObjectCommand) ||
+      !(head instanceof HeadObjectCommand) ||
+      !(remove instanceof DeleteObjectCommand)
+    ) {
+      throw new TypeError('Expected private chunk commands')
+    }
+    expect(put.input).toEqual({
+      Bucket: 'cali-media-originals-preview',
+      Key: expectedKey,
+      Body: bytes,
+      ContentLength: bytes.byteLength,
+      ContentType: 'application/octet-stream',
+      ChecksumSHA256: Buffer.from(checksum, 'hex').toString('base64'),
+    })
+    expect(get.input).toEqual({
+      Bucket: 'cali-media-originals-preview',
+      Key: expectedKey,
+    })
+    expect(head.input).toEqual({
+      Bucket: 'cali-media-originals-preview',
+      Key: expectedKey,
+    })
+    expect(remove.input).toEqual({
+      Bucket: 'cali-media-originals-preview',
+      Key: expectedKey,
+    })
+  })
+
   it('normalizes provider failures while storing an Original', async () => {
     const storage = createBunnyStorage(config, {
       originalsClient: {

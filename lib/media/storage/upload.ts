@@ -2,7 +2,17 @@ import 'server-only'
 
 import { createHash, timingSafeEqual } from 'node:crypto'
 
-export const MAX_ORIGINAL_UPLOAD_BYTES = 50 * 1024 * 1024
+import {
+  MAX_ORIGINAL_UPLOAD_BYTES,
+  MAX_ORIGINAL_UPLOAD_CHUNK_BYTES,
+  originalUploadChunkByteLength,
+  originalUploadChunkCount,
+} from './transfer'
+
+export {
+  MAX_ORIGINAL_UPLOAD_BYTES,
+  MAX_ORIGINAL_UPLOAD_CHUNK_BYTES,
+} from './transfer'
 
 const originalContentTypes = new Set([
   'image/heic',
@@ -18,21 +28,24 @@ export type OriginalUploadExpectation = {
   checksumSha256: string
 }
 
-type OriginalStorage = {
-  storeOriginal(input: {
-    key: string
-    bytes: Uint8Array
-    contentType: string
-    checksumSha256: string
-  }): Promise<void>
-}
-
-type SameOriginOriginalUpload = {
+type SameOriginOriginalChunkUpload = {
   request: Request
   canonicalBaseUrl: URL
   expectation: OriginalUploadExpectation
+  chunkIndex: number
   authorize(request: Request): boolean | Promise<boolean>
-  storage: OriginalStorage
+  storage: {
+    inspectOriginalChunk(
+      originalKey: string,
+      chunkIndex: number,
+    ): Promise<{ byteSize: number; contentType: string } | null>
+    storeOriginalChunk(input: {
+      originalKey: string
+      chunkIndex: number
+      bytes: Uint8Array
+      checksumSha256: string
+    }): Promise<void>
+  }
 }
 
 function uploadResponse(status: number, headers?: HeadersInit) {
@@ -81,17 +94,18 @@ async function readBoundedBody(request: Request, maximumBytes: number) {
 }
 
 /**
- * Server-side transfer boundary for an owner-authorized Upload Intent.
- * The caller resolves the intent and supplies its immutable expectations;
- * this function never exposes Bunny credentials or a provider upload URL.
+ * Bounded server-side transfer boundary for an owner-authorized Upload Intent.
+ * Each request stays below the hosting platform body limit, and the caller
+ * resolves the private Original key without exposing Bunny credentials.
  */
-export async function storeOriginalFromSameOriginRequest({
+export async function storeOriginalChunkFromSameOriginRequest({
   request,
   canonicalBaseUrl,
   expectation,
+  chunkIndex,
   authorize,
   storage,
-}: SameOriginOriginalUpload) {
+}: SameOriginOriginalChunkUpload) {
   if (request.method !== 'PUT') {
     return uploadResponse(405, { allow: 'PUT' })
   }
@@ -114,52 +128,76 @@ export async function storeOriginalFromSameOriginRequest({
   if (
     !Number.isSafeInteger(expectation.byteSize) ||
     expectation.byteSize <= 0 ||
-    expectation.byteSize > MAX_ORIGINAL_UPLOAD_BYTES
+    expectation.byteSize > MAX_ORIGINAL_UPLOAD_BYTES ||
+    !originalContentTypes.has(expectation.contentType)
   ) {
     return uploadResponse(413)
   }
+  const chunkCount = originalUploadChunkCount(expectation.byteSize)
   if (
-    !originalContentTypes.has(expectation.contentType) ||
-    request.headers.get('content-type') !== expectation.contentType
-  ) {
-    return uploadResponse(415)
-  }
-  if (
-    request.headers.get('x-media-checksum-sha256') !==
-    expectation.checksumSha256
+    !Number.isSafeInteger(chunkIndex) ||
+    chunkIndex < 0 ||
+    chunkIndex >= chunkCount
   ) {
     return uploadResponse(422)
   }
+  if (request.headers.get('content-type') !== 'application/octet-stream') {
+    return uploadResponse(415)
+  }
 
+  if (chunkIndex > 0) {
+    let previousChunk
+    try {
+      previousChunk = await storage.inspectOriginalChunk(
+        expectation.key,
+        chunkIndex - 1,
+      )
+    } catch {
+      return uploadResponse(503, { 'retry-after': '5' })
+    }
+    if (
+      !previousChunk ||
+      previousChunk.byteSize !== MAX_ORIGINAL_UPLOAD_CHUNK_BYTES ||
+      previousChunk.contentType !== 'application/octet-stream'
+    ) {
+      return uploadResponse(409)
+    }
+  }
+
+  const checksumSha256 = request.headers.get('x-media-chunk-sha256') ?? ''
+  const expectedByteSize = originalUploadChunkByteLength(
+    expectation.byteSize,
+    chunkIndex,
+  )
   const declaredByteSize = request.headers.get('content-length')
   if (
     declaredByteSize !== null &&
     (!/^\d+$/.test(declaredByteSize) ||
-      Number(declaredByteSize) !== expectation.byteSize)
+      Number(declaredByteSize) !== expectedByteSize)
   ) {
     return uploadResponse(422)
   }
 
   let bytes: Uint8Array | null
   try {
-    bytes = await readBoundedBody(request, expectation.byteSize)
+    bytes = await readBoundedBody(request, expectedByteSize)
   } catch {
     return uploadResponse(400)
   }
   if (
     !bytes ||
-    bytes.byteLength !== expectation.byteSize ||
-    !checksumMatches(bytes, expectation.checksumSha256)
+    bytes.byteLength !== expectedByteSize ||
+    !checksumMatches(bytes, checksumSha256)
   ) {
     return uploadResponse(422)
   }
 
   try {
-    await storage.storeOriginal({
-      key: expectation.key,
+    await storage.storeOriginalChunk({
+      originalKey: expectation.key,
+      chunkIndex,
       bytes,
-      contentType: expectation.contentType,
-      checksumSha256: expectation.checksumSha256,
+      checksumSha256,
     })
   } catch {
     return uploadResponse(503, { 'retry-after': '5' })

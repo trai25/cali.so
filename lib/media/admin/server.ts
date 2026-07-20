@@ -70,6 +70,15 @@ function createPageServices() {
 function createServices() {
   const environment = getServerEnv()
   const storage = getMediaStorage()
+  const uploadChunkRateLimitWindowSeconds = 60
+  const uploadChunkRateLimiter = createRateLimiter(
+    environment.rateLimitBackend,
+    {
+      prefix: 'cali:media:upload-chunk',
+      maxRequests: 40,
+      windowSeconds: uploadChunkRateLimitWindowSeconds,
+    },
+  )
   const { database, review, selection } = createCatalogServices(
     storage.publicRenditionUrl,
   )
@@ -129,6 +138,10 @@ function createServices() {
     selection,
     security: getOwnerAdminSecurity(),
     storage,
+    uploadChunkRateLimiter: {
+      retryAfterSeconds: uploadChunkRateLimitWindowSeconds,
+      limit: (key: string) => uploadChunkRateLimiter.limit(key),
+    },
   }
 }
 

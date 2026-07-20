@@ -54,7 +54,12 @@ the Media Library does not turn Bunny or Neon into a general-purpose CMS.
 - Rendition keys are versioned and never overwritten. Pull Zone cache policy is
   configured at the CDN because Bunny does not accept the needed object cache
   headers.
-- Browser upload transport must pass an exact-origin non-production contract
-  test. If the private zone cannot support it safely, the application uses a
-  bounded server-mediated transfer rather than making Originals public.
+- Bunny S3 supports presigned URLs but cannot configure CORS on the private
+  Storage endpoint; CORS requires a CDN Pull Zone, which Originals must not
+  have. The browser therefore sends 4 MiB same-origin chunks through bounded
+  owner-authorized Route Handler requests, with enforced chunk order and a
+  dedicated per-Upload-Intent rate limit. Completion assembles and verifies the
+  full Original in the private zone before processing. Reconciliation claims
+  stale Upload Intents after a 15-minute activity lease before removing
+  abandoned chunks so cleanup cannot race an active transfer.
 - Git-owned writing and non-photo assets remain outside this context.

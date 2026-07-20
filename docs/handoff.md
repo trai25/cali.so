@@ -108,8 +108,12 @@ Current as of July 2026.
   build Chromium suite plus a WebKit smoke matrix, while Preview and Staging
   rerun the read-only hosted subset against the exact deployment URL.
 - The Bunny-backed Media Library in ADR-0007 owns the curated photo workflow.
-  Private Originals stay server-only, while `/photos` and homepage previews
-  consume the active Published Photo Selection from Bunny Renditions. Media
+  Private Originals stay server-only. Browser transfers use retryable 4 MiB
+  same-origin chunks so the 50 MiB product limit stays below Vercel's 4.5 MB
+  per-request ceiling; completion assembles and verifies the Original in Bunny,
+  and lease-claimed reconciliation removes abandoned chunks without racing an
+  active transfer. `/photos` and homepage previews consume
+  the active Published Photo Selection from Bunny Renditions. Media
   capabilities have no runtime feature switches: Alt Text Suggestions are on
   by default and, since July 2026, auto-apply as the approved bilingual Alt
   Text when none exists yet (upload-to-archive needs no review step; edits

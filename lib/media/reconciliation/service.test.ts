@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('server-only', () => ({}))
 
 import type { MediaAssetRecord } from '../ingestion/service'
+import { MAX_ORIGINAL_UPLOAD_CHUNK_BYTES } from '../storage/transfer'
 import type { MediaRecoveryCandidate } from './repository'
 import {
   createMediaReconciliationService,
@@ -42,6 +43,7 @@ function fixture() {
     listRecoveryCandidates: vi.fn(
       async (): Promise<MediaRecoveryCandidate[]> => [],
     ),
+    claimAbandonedUploadIntent: vi.fn(async () => true),
     markRecoveryAttempted: vi.fn(async () => {}),
     deleteAbandonedUploadIntent: vi.fn(async () => true),
     listReadyWithoutAltTextSuggestion: vi.fn(
@@ -59,7 +61,10 @@ function fixture() {
   const ingestion = {
     completeUploadIntent: vi.fn(async () => readyAsset()),
   }
-  const storage = { deleteOriginal: vi.fn(async () => {}) }
+  const storage = {
+    deleteOriginal: vi.fn(async () => {}),
+    deleteOriginalChunk: vi.fn(async () => {}),
+  }
   const altText = { generateSuggestion: vi.fn(async () => ({})) }
   return {
     repository,
@@ -85,7 +90,9 @@ describe('Media reconciliation service', () => {
         uploadIntentId,
         mediaAssetId,
         originalKey: `originals/${uploadIntentId}.jpg`,
+        byteSize: 1000,
         expiresAt: new Date('2026-07-16T00:00:00.000Z'),
+        lastActiveAt: new Date('2026-07-15T10:00:00.000Z'),
       },
     ])
     f.repository.listReadyWithoutAltTextSuggestion.mockResolvedValueOnce([
@@ -97,6 +104,12 @@ describe('Media reconciliation service', () => {
       cleaned: 0,
       suggested: 1,
       failed: 0,
+    })
+    expect(f.repository.listRecoveryCandidates).toHaveBeenCalledWith({
+      createdBefore: new Date('2026-07-15T11:55:00.000Z'),
+      abandonedStaleBefore: new Date('2026-07-15T11:45:00.000Z'),
+      processingStaleBefore: new Date('2026-07-15T11:55:00.000Z'),
+      limit: 5,
     })
     expect(f.ingestion.completeUploadIntent).toHaveBeenCalledWith({
       ownerUserId: 'owner_01',
@@ -121,7 +134,9 @@ describe('Media reconciliation service', () => {
         uploadIntentId,
         mediaAssetId: null,
         originalKey: `originals/${uploadIntentId}.jpg`,
+        byteSize: MAX_ORIGINAL_UPLOAD_CHUNK_BYTES * 2 + 1,
         expiresAt: new Date('2026-07-15T11:00:00.000Z'),
+        lastActiveAt: new Date('2026-07-15T10:00:00.000Z'),
       },
     ])
 
@@ -129,15 +144,45 @@ describe('Media reconciliation service', () => {
     expect(f.storage.deleteOriginal).toHaveBeenCalledWith(
       `originals/${uploadIntentId}.jpg`,
     )
+    expect(f.storage.deleteOriginalChunk.mock.calls).toEqual([
+      [`originals/${uploadIntentId}.jpg`, 0],
+      [`originals/${uploadIntentId}.jpg`, 1],
+      [`originals/${uploadIntentId}.jpg`, 2],
+    ])
     expect(f.repository.deleteAbandonedUploadIntent).toHaveBeenCalledWith({
       uploadIntentId,
       expiredBefore: now,
+      cleanupClaimedAt: now,
     })
-    expect(f.repository.markRecoveryAttempted).toHaveBeenCalledWith({
+    expect(f.repository.claimAbandonedUploadIntent).toHaveBeenCalledWith({
       uploadIntentId,
-      attemptedAt: now,
+      expectedLastActiveAt: new Date('2026-07-15T10:00:00.000Z'),
+      expiredBefore: now,
+      claimedAt: now,
     })
+    expect(f.repository.markRecoveryAttempted).not.toHaveBeenCalled()
     expect(f.ingestion.completeUploadIntent).not.toHaveBeenCalled()
+  })
+
+  it('does not delete chunks when upload activity wins the cleanup claim', async () => {
+    const f = fixture()
+    f.repository.claimAbandonedUploadIntent.mockResolvedValueOnce(false)
+    f.repository.listRecoveryCandidates.mockResolvedValueOnce([
+      {
+        ownerUserId: 'owner_01',
+        uploadIntentId,
+        mediaAssetId: null,
+        originalKey: `originals/${uploadIntentId}.jpg`,
+        byteSize: 1000,
+        expiresAt: new Date('2026-07-15T11:00:00.000Z'),
+        lastActiveAt: new Date('2026-07-15T10:00:00.000Z'),
+      },
+    ])
+
+    await expect(f.service.run()).resolves.toMatchObject({ cleaned: 0 })
+    expect(f.storage.deleteOriginal).not.toHaveBeenCalled()
+    expect(f.storage.deleteOriginalChunk).not.toHaveBeenCalled()
+    expect(f.repository.deleteAbandonedUploadIntent).not.toHaveBeenCalled()
   })
 
   it('lets the owner resume one recoverable Media Asset without AI coupling', async () => {
@@ -166,7 +211,9 @@ describe('Media reconciliation service', () => {
         uploadIntentId,
         mediaAssetId,
         originalKey: `originals/${uploadIntentId}.jpg`,
+        byteSize: 1000,
         expiresAt: new Date('2026-07-16T00:00:00.000Z'),
+        lastActiveAt: new Date('2026-07-15T10:00:00.000Z'),
       },
     ])
     f.repository.listReadyWithoutAltTextSuggestion.mockRejectedValueOnce(

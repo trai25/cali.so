@@ -25,6 +25,11 @@ import { T } from '~/lib/i18n'
 import { localize, useLocale } from '~/lib/locale-client'
 import { isMediaAssetEligible } from '~/lib/media/asset-review/eligibility'
 import type { MediaAssetReviewRecord } from '~/lib/media/asset-review/service'
+import {
+  MAX_ORIGINAL_UPLOAD_BYTES,
+  MAX_ORIGINAL_UPLOAD_CHUNK_BYTES,
+  originalUploadChunkCount,
+} from '~/lib/media/storage/transfer'
 
 type LibraryView = 'active' | 'archived'
 type QueueStatus = 'hashing' | 'uploading' | 'processing' | 'ready' | 'failed'
@@ -35,7 +40,7 @@ type QueueItem = {
   idempotencyKey?: string
   uploadIntentId?: string
   checksumSha256?: string
-  originalUploaded?: boolean
+  uploadedChunkCount?: number
   status: QueueStatus
   error?: string
 }
@@ -57,8 +62,8 @@ function fileContentType(file: File) {
   return null
 }
 
-async function checksum(file: File) {
-  const bytes = await file.arrayBuffer()
+async function checksum(blob: Blob) {
+  const bytes = await blob.arrayBuffer()
   const digest = await crypto.subtle.digest('SHA-256', bytes)
   return Array.from(new Uint8Array(digest), (byte) =>
     byte.toString(16).padStart(2, '0'),
@@ -979,7 +984,7 @@ export function MediaLibrary({
 
   async function upload(item: QueueItem) {
     const contentType = fileContentType(item.file)
-    if (!contentType || item.file.size > 50 * 1024 * 1024) {
+    if (!contentType || item.file.size > MAX_ORIGINAL_UPLOAD_BYTES) {
       patchQueue(item.id, { status: 'failed', error: 'invalid_file' })
       return
     }
@@ -1021,21 +1026,36 @@ export function MediaLibrary({
         patchQueue(item.id, { checksumSha256: sha256 })
       }
 
-      if (!item.originalUploaded) {
+      const chunkCount = originalUploadChunkCount(item.file.size)
+      let uploadedChunkCount = item.uploadedChunkCount ?? 0
+      while (uploadedChunkCount < chunkCount) {
         patchQueue(item.id, { status: 'uploading' })
+        const start = uploadedChunkCount * MAX_ORIGINAL_UPLOAD_CHUNK_BYTES
+        const chunk = item.file.slice(
+          start,
+          Math.min(start + MAX_ORIGINAL_UPLOAD_CHUNK_BYTES, item.file.size),
+        )
+        const chunkChecksumSha256 = await checksum(chunk)
         const uploadResponse = await fetch(
-          `/api/admin/media/upload-intents/${uploadIntentId}/original`,
+          `/api/admin/media/upload-intents/${uploadIntentId}/original?chunk=${uploadedChunkCount}`,
           {
             method: 'PUT',
             headers: {
-              'content-type': contentType,
-              'x-media-checksum-sha256': sha256,
+              'content-type': 'application/octet-stream',
+              'x-media-chunk-sha256': chunkChecksumSha256,
             },
-            body: item.file,
+            body: chunk,
           },
         )
-        if (!uploadResponse.ok) throw new Error('upload_failed')
-        patchQueue(item.id, { originalUploaded: true })
+        if (!uploadResponse.ok) {
+          if (uploadResponse.status === 409) {
+            uploadedChunkCount = 0
+            patchQueue(item.id, { uploadedChunkCount: 0 })
+          }
+          throw new Error('upload_failed')
+        }
+        uploadedChunkCount += 1
+        patchQueue(item.id, { uploadedChunkCount })
       }
 
       patchQueue(item.id, { uploadIntentId, status: 'processing' })
@@ -1043,7 +1063,15 @@ export function MediaLibrary({
         `/api/admin/media/upload-intents/${uploadIntentId}/complete`,
         { method: 'POST' },
       )
-      const completionBody = await responseJson(completionResponse)
+      let completionBody
+      try {
+        completionBody = await responseJson(completionResponse)
+      } catch (error) {
+        if (error instanceof Error && error.message === 'original_mismatch') {
+          patchQueue(item.id, { uploadedChunkCount: 0 })
+        }
+        throw error
+      }
       const mediaAsset = completionBody.mediaAsset as {
         id: string
         processingState: string

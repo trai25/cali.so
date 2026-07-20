@@ -254,7 +254,7 @@ describe('Media archive UI contract', () => {
       subtle: { digest: vi.fn().mockResolvedValue(digest) },
     })
 
-    let originalAttempts = 0
+    const originalAttempts: string[] = []
     const fetchMock = vi.fn(
       async (input: RequestInfo | URL, _init?: RequestInit) => {
         const url = String(input)
@@ -268,10 +268,16 @@ describe('Media archive UI contract', () => {
             { status: 201 },
           )
         }
-        if (url.endsWith('/original')) {
-          originalAttempts += 1
+        if (url.includes('/original?chunk=')) {
+          originalAttempts.push(url)
+          const secondChunkAttempts = originalAttempts.filter((attempt) =>
+            attempt.endsWith('?chunk=1'),
+          ).length
           return new Response(null, {
-            status: originalAttempts === 1 ? 503 : 204,
+            status:
+              url.endsWith('?chunk=1') && secondChunkAttempts === 1
+                ? 503
+                : 204,
           })
         }
         if (url.endsWith('/complete')) {
@@ -296,12 +302,16 @@ describe('Media archive UI contract', () => {
     const { container, getByRole } = render(
       <MediaLibrary initialActive={[]} initialArchived={[]} selectionIds={[]} />,
     )
-    const file = new File([new Uint8Array([1, 2, 3])], 'photo.jpg', {
+    const file = new File(
+      [new Uint8Array(4 * 1024 * 1024 + 3)],
+      'photo.jpg',
+      {
       type: 'image/jpeg',
-    })
+      },
+    )
     if (!file.arrayBuffer) {
       Object.defineProperty(file, 'arrayBuffer', {
-        value: async () => new Uint8Array([1, 2, 3]).buffer,
+        value: async () => new Uint8Array(4 * 1024 * 1024 + 3).buffer,
       })
     }
     fireEvent.change(container.querySelector('input[type="file"]')!, {
@@ -311,7 +321,11 @@ describe('Media archive UI contract', () => {
     await waitFor(() => expect(getByRole('button', { name: /Retry/ })).toBeTruthy())
     fireEvent.click(getByRole('button', { name: /Retry/ }))
     await waitFor(() => {
-      expect(originalAttempts).toBe(2)
+      expect(originalAttempts).toEqual([
+        '/api/admin/media/upload-intents/22222222-2222-4222-8222-222222222222/original?chunk=0',
+        '/api/admin/media/upload-intents/22222222-2222-4222-8222-222222222222/original?chunk=1',
+        '/api/admin/media/upload-intents/22222222-2222-4222-8222-222222222222/original?chunk=1',
+      ])
       expect(
         fetchMock.mock.calls.some(([input]) => String(input).endsWith('/complete')),
       ).toBe(true)
@@ -319,8 +333,17 @@ describe('Media archive UI contract', () => {
 
     const urls = fetchMock.mock.calls.map(([input]) => String(input))
     expect(urls.filter((url) => url === '/api/admin/media/upload-intents')).toHaveLength(1)
-    expect(urls.filter((url) => url.endsWith('/original'))).toHaveLength(2)
+    expect(urls.filter((url) => url.includes('/original?chunk='))).toHaveLength(3)
     expect(urls.filter((url) => url.endsWith('/complete'))).toHaveLength(1)
+    const chunkBodies = fetchMock.mock.calls
+      .filter(([input]) => String(input).includes('/original?chunk='))
+      .map(([, init]) => init?.body as Blob)
+    expect(chunkBodies.map((body) => body.size)).toEqual([
+      4 * 1024 * 1024,
+      3,
+      3,
+    ])
+    expect(chunkBodies.every((body) => body.size < 4_500_000)).toBe(true)
     // The auto-approve request follows completion without user action.
     expect(urls.some((url) => url.endsWith('/alt-text'))).toBe(true)
     const intentBody = JSON.parse(
@@ -401,7 +424,9 @@ describe('Media archive UI contract', () => {
           uploadIntent: { id: '22222222-2222-4222-8222-222222222222' },
         })
       }
-      if (url.endsWith('/original')) return new Response(null, { status: 204 })
+      if (url.includes('/original?chunk=')) {
+        return new Response(null, { status: 204 })
+      }
       if (url.endsWith('/complete')) {
         return Response.json({
           mediaAsset: { id: activeAsset.id, processingState: 'ready' },

@@ -84,6 +84,14 @@ function assertObjectKey(key: string) {
   }
 }
 
+function originalChunkObjectKey(originalKey: string, chunkIndex: number) {
+  assertObjectKey(originalKey)
+  if (!Number.isSafeInteger(chunkIndex) || chunkIndex < 0) {
+    throw new TypeError('Invalid Original transfer chunk index')
+  }
+  return `transfer-chunks/${originalKey}/${chunkIndex}.part`
+}
+
 export function createPublicRenditionUrl(cdnBaseUrl: URL) {
   return function publicRenditionUrl(key: string) {
     assertObjectKey(key)
@@ -219,12 +227,62 @@ export function createBunnyStorage(
       }
     },
 
+    async storeOriginalChunk(input: {
+      originalKey: string
+      chunkIndex: number
+      bytes: Uint8Array
+      checksumSha256: string
+    }) {
+      const key = originalChunkObjectKey(
+        input.originalKey,
+        input.chunkIndex,
+      )
+      const checksum = checksumBase64(input.checksumSha256)
+      try {
+        await originals.send(
+          new PutObjectCommand({
+            Bucket: config.originals.zone,
+            Key: key,
+            Body: input.bytes,
+            ContentLength: input.bytes.byteLength,
+            ContentType: 'application/octet-stream',
+            ChecksumSHA256: checksum,
+          }),
+        )
+      } catch {
+        throw new BunnyStorageError('provider_unavailable')
+      }
+    },
+
     async inspectOriginal(key: string) {
       return inspectObject(originals, config.originals.zone, key)
     },
 
     async readOriginal(key: string) {
       return readObject(originals, config.originals.zone, key)
+    },
+
+    readOriginalChunk(originalKey: string, chunkIndex: number) {
+      return readObject(
+        originals,
+        config.originals.zone,
+        originalChunkObjectKey(originalKey, chunkIndex),
+      )
+    },
+
+    async inspectOriginalChunk(originalKey: string, chunkIndex: number) {
+      try {
+        return await inspectObject(
+          originals,
+          config.originals.zone,
+          originalChunkObjectKey(originalKey, chunkIndex),
+        )
+      } catch (error) {
+        if (error instanceof BunnyStorageError && error.code === 'not_found') {
+          return null
+        }
+        throw error
+      }
     },
 
     async storeRendition(input: {
@@ -265,6 +323,14 @@ export function createBunnyStorage(
 
     deleteOriginal(key: string) {
       return deleteObject(originals, config.originals.zone, key)
+    },
+
+    deleteOriginalChunk(originalKey: string, chunkIndex: number) {
+      return deleteObject(
+        originals,
+        config.originals.zone,
+        originalChunkObjectKey(originalKey, chunkIndex),
+      )
     },
 
     deleteRendition(key: string) {

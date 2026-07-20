@@ -55,6 +55,35 @@ describe('Media Library ingestion repository', () => {
     expect(stored.rows).toHaveLength(1)
   })
 
+  it('claims only an active owner Upload Intent for chunk transfer', async () => {
+    const intent = await repository.createUploadIntent(intentInput)
+    const activeAt = new Date('2026-07-15T01:00:00.000Z')
+
+    await expect(
+      repository.claimUploadIntentTransfer(
+        intent.ownerUserId,
+        intent.id,
+        activeAt,
+      ),
+    ).resolves.toMatchObject({ id: intent.id })
+    await expect(
+      repository.claimUploadIntentTransfer('other_owner', intent.id, activeAt),
+    ).resolves.toBeNull()
+    await expect(
+      repository.claimUploadIntentTransfer(
+        intent.ownerUserId,
+        intent.id,
+        intent.expiresAt,
+      ),
+    ).resolves.toBeNull()
+
+    const stored = await client.query(
+      'select updated_at from media_upload_intents where id = $1',
+      [intent.id],
+    )
+    expect(stored.rows[0]).toMatchObject({ updated_at: activeAt })
+  })
+
   it('atomically completes a late Upload Intent and claims one processor', async () => {
     const intent = await repository.createUploadIntent(intentInput)
     const completedAt = new Date('2026-07-17T00:00:00.000Z')
