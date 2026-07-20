@@ -1,0 +1,12 @@
+diff --git a/data/compiledIO.js b/data/compiledIO.js
+index bae66ba574cdc04dd09202b9fbdb58ab65c7a68e..3c6c9d56c4da5de1c69a973e50d2003d494e0980 100644
+--- a/data/compiledIO.js
++++ b/data/compiledIO.js
+@@ -18,0 +19 @@ const compiledWriters = /* @__PURE__ */ new WeakMap();
++let didWarnAboutEvalFallback = false;
+@@ -214 +215,4 @@ function getCompiledWriter(schema) {
+-		console.warn("This environment does not allow eval - using default writer as fallback");
++		if (!didWarnAboutEvalFallback) {
++			console.warn("This environment does not allow eval - using default writer as fallback");
++			didWarnAboutEvalFallback = true;
++		}

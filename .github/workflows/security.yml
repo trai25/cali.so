@@ -1,0 +1,170 @@
+name: Security
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+  pull_request:
+  schedule:
+    - cron: "17 1 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: postgresql://runtime:runtime@127.0.0.1:5432/cali
+      # Publishable keys are public by design; CI uses the site's real Clerk
+      # frontend so signed-out redirects can be verified without a secret.
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_live_Y2xlcmsuY2FsaS5zbyQ
+      CLERK_SECRET_KEY: sk_live_ci_secret_not_real
+      ADMIN_EMAIL: owner@example.com
+      AMA_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      MEDIA_ENCRYPTION_KEY: BQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQU=
+      RATE_LIMIT_HASH_KEY: AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI=
+      GOOGLE_CLIENT_ID: ci.apps.googleusercontent.com
+      GOOGLE_CLIENT_SECRET: ci-google-secret
+      SITE_URL: https://cali.so
+      BUNNY_MEDIA_REGION: ny
+      BUNNY_ORIGINALS_ZONE: ci-media-originals
+      BUNNY_ORIGINALS_PASSWORD: ci-originals-password
+      BUNNY_RENDITIONS_ZONE: ci-media-renditions
+      BUNNY_RENDITIONS_PASSWORD: ci-renditions-password
+      BUNNY_RENDITIONS_CDN_URL: https://media-ci.example.com
+      BUNNY_CDN_API_KEY: ci-cdn-api-key
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test unit and integration suites
+        run: pnpm test:unit
+
+      - name: Test AMA and migrations
+        run: pnpm test:ama
+
+      - name: Test deployment workflows
+        run: pnpm test:deployment
+
+      - name: Check Production migration compatibility
+        if: github.event_name == 'pull_request' && github.base_ref == 'main'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/check-production-migrations.mjs "$BASE_SHA" "$HEAD_SHA"
+
+      - name: Test security controls
+        run: pnpm test:security
+
+      - name: Test media storage contract
+        run: pnpm test:media:storage
+
+      - name: Test media catalog constraints
+        run: pnpm test:media:catalog
+
+      - name: Test media image processing
+        run: pnpm test:media:processing
+
+      - name: Test media ingestion workflow
+        run: pnpm test:media:ingestion
+
+      - name: Test media reconciliation
+        run: pnpm test:media:reconciliation
+
+      - name: Test media Location Label suggestions
+        run: pnpm test:media:geocoding
+
+      - name: Test media Alt Text Suggestions
+        run: pnpm test:media:alt-text
+
+      - name: Test Photo Selection publication
+        run: pnpm test:media:photo-selection
+
+      - name: Test Media Asset review
+        run: pnpm test:media:asset-review
+
+      - name: Test Media admin
+        run: pnpm test:media:admin
+
+      - name: Test Media Asset Purge
+        run: pnpm test:media:purge
+
+      - name: Test localization
+        run: pnpm test:localization
+
+      - name: Audit production dependencies
+        run: pnpm audit:prod
+
+      - name: Build
+        run: pnpm build
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium webkit
+
+      - name: Test browser release gate
+        run: pnpm test:browser
+
+      - name: Verify public links
+        run: pnpm verify:links
+        env:
+          # Forks may validate external URL shape but must not turn the hosted
+          # runner into a network probe for contributor-controlled targets.
+          VERIFY_EXTERNAL_LINKS: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && '1' || '0' }}
+
+      - name: Verify legacy URL contract
+        run: pnpm verify:legacy-urls
+
+      - name: Verify public discovery and failure handling
+        run: pnpm verify:public-discovery
+
+      - name: Verify production security boundary
+        run: pnpm verify:security-boundary
+
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@3c3833e0f8c1c83d449a7478aa59c036a9165498 # v3.29.11
+        with:
+          languages: javascript-typescript
+          build-mode: none
+          queries: security-extended
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@3c3833e0f8c1c83d449a7478aa59c036a9165498 # v3.29.11
+        with:
+          category: /language:javascript-typescript

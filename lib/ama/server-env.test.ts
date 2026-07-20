@@ -1,0 +1,505 @@
+import { describe, expect, it } from 'vitest'
+
+import { parseAmaFeatures, parseServerEnv } from './server-env-schema'
+
+const validEnvironment = {
+  DATABASE_URL: 'postgresql://user:password@example.neon.tech/site',
+  ADMIN_EMAIL: 'owner@example.com',
+  AMA_ENCRYPTION_KEY: Buffer.alloc(32).toString('base64'),
+  RATE_LIMIT_HASH_KEY: Buffer.alloc(32, 2).toString('base64'),
+  GOOGLE_CLIENT_ID: 'google-client-id.apps.googleusercontent.com',
+  GOOGLE_CLIENT_SECRET: 'google-client-secret',
+  UPSTASH_REDIS_REST_URL: 'https://example.upstash.io',
+  UPSTASH_REDIS_REST_TOKEN: 'redis-secret',
+  SITE_URL: 'https://cali.so',
+  VERCEL_ENV: 'production',
+}
+
+describe('AMA server environment', () => {
+  it('enables public mutations by default and derives providers from configuration', () => {
+    expect(parseAmaFeatures({})).toEqual({
+      publicMutations: true,
+      payments: false,
+      bookingFinalization: false,
+      google: false,
+      tencent: false,
+    })
+    expect(
+      parseAmaFeatures({
+        GOOGLE_CLIENT_ID: 'client-id',
+        GOOGLE_CLIENT_SECRET: 'client-secret',
+        STRIPE_SECRET_KEY: '   ',
+      }),
+    ).toEqual({
+      publicMutations: true,
+      payments: false,
+      bookingFinalization: false,
+      google: true,
+      tencent: false,
+    })
+  })
+
+  it('accepts the complete server-only configuration', () => {
+    const environment = parseServerEnv(validEnvironment)
+
+    expect(environment.ADMIN_EMAIL).toBe('owner@example.com')
+    expect(environment.ADMIN_MUTATION_RATE_LIMIT_MAX_REQUESTS).toBe(30)
+    expect(environment.rateLimitBackend).toEqual({
+      kind: 'upstash',
+      url: 'https://example.upstash.io',
+      token: 'redis-secret',
+    })
+    expect(environment.features).toEqual({
+      publicMutations: true,
+      payments: false,
+      bookingFinalization: false,
+      google: true,
+      tencent: false,
+    })
+  })
+
+  it('uses an explicit Preview site URL for custom deployment aliases', () => {
+    const environment = parseServerEnv({
+      ...validEnvironment,
+      VERCEL_ENV: 'preview',
+      VERCEL_URL: 'cali-preview-cali.vercel.app',
+      SITE_URL: 'https://beta.cali.so',
+    })
+
+    expect(environment.SITE_URL.href).toBe('https://beta.cali.so/')
+    expect(environment.browserMutationBaseUrl.href).toBe(
+      'https://beta.cali.so/',
+    )
+  })
+
+  it.each([undefined, ''])(
+    'rejects Preview without a trusted Vercel deployment hostname',
+    (VERCEL_URL) => {
+      expect(() =>
+        parseServerEnv({
+          ...validEnvironment,
+          VERCEL_ENV: 'preview',
+          VERCEL_URL,
+        }),
+      ).toThrowError(/VERCEL_URL/)
+    },
+  )
+
+  it('derives the Preview site URL when no canonical URL is configured', () => {
+    const { SITE_URL: _siteUrl, ...withoutSiteUrl } = validEnvironment
+    const environment = parseServerEnv({
+      ...withoutSiteUrl,
+      VERCEL_ENV: 'preview',
+      VERCEL_URL: 'cali-preview-cali.vercel.app',
+    })
+
+    expect(environment.SITE_URL.href).toBe(
+      'https://cali-preview-cali.vercel.app/',
+    )
+    expect(environment.browserMutationBaseUrl.href).toBe(
+      environment.SITE_URL.href,
+    )
+  })
+
+  it('requires a canonical site URL outside Preview', () => {
+    const { SITE_URL: _siteUrl, ...withoutSiteUrl } = validEnvironment
+
+    expect(() => parseServerEnv(withoutSiteUrl)).toThrowError(/SITE_URL/)
+  })
+
+  it('keeps Production mutations pinned to the canonical site', () => {
+    const environment = parseServerEnv({
+      ...validEnvironment,
+      VERCEL_URL: 'cali-production-cali.vercel.app',
+    })
+
+    expect(environment.browserMutationBaseUrl.href).toBe('https://cali.so/')
+  })
+
+  it('rejects untrusted Vercel deployment host overrides', () => {
+    expect(() =>
+      parseServerEnv({
+        ...validEnvironment,
+        VERCEL_ENV: 'preview',
+        VERCEL_URL: 'cali-preview.vercel.app.attacker.example',
+      }),
+    ).toThrowError(/VERCEL_URL/)
+  })
+
+  it('treats Google as unconfigured without its credential pair', () => {
+    const {
+      GOOGLE_CLIENT_ID: _clientId,
+      GOOGLE_CLIENT_SECRET: _clientSecret,
+      ...withoutGoogle
+    } = validEnvironment
+
+    expect(parseServerEnv(withoutGoogle).features.google).toBe(false)
+    expect(() =>
+      parseServerEnv({ ...withoutGoogle, GOOGLE_CLIENT_ID: 'client-id-only' }),
+    ).toThrowError(/GOOGLE_CLIENT_SECRET/)
+  })
+
+  it('accepts Vercel Marketplace Redis aliases', () => {
+    const {
+      UPSTASH_REDIS_REST_URL: _upstashUrl,
+      UPSTASH_REDIS_REST_TOKEN: _upstashToken,
+      ...withoutUpstash
+    } = validEnvironment
+    const environment = parseServerEnv({
+      ...withoutUpstash,
+      KV_REST_API_URL: 'https://marketplace.upstash.io',
+      KV_REST_API_TOKEN: 'marketplace-secret',
+    })
+
+    expect(environment.rateLimitBackend).toEqual({
+      kind: 'upstash',
+      url: 'https://marketplace.upstash.io',
+      token: 'marketplace-secret',
+    })
+    expect(environment).not.toHaveProperty('UPSTASH_REDIS_REST_URL')
+    expect(environment).not.toHaveProperty('UPSTASH_REDIS_REST_TOKEN')
+    expect(environment).not.toHaveProperty('KV_REST_API_URL')
+    expect(environment).not.toHaveProperty('KV_REST_API_TOKEN')
+  })
+
+  it('prefers native Upstash credentials when both pairs are complete', () => {
+    const environment = parseServerEnv({
+      ...validEnvironment,
+      KV_REST_API_URL: 'https://marketplace.upstash.io',
+      KV_REST_API_TOKEN: 'marketplace-secret',
+    })
+
+    expect(environment.rateLimitBackend).toEqual({
+      kind: 'upstash',
+      url: validEnvironment.UPSTASH_REDIS_REST_URL,
+      token: validEnvironment.UPSTASH_REDIS_REST_TOKEN,
+    })
+  })
+
+  it('uses the database rate limiter in Preview without Redis credentials', () => {
+    const {
+      UPSTASH_REDIS_REST_URL: _upstashUrl,
+      UPSTASH_REDIS_REST_TOKEN: _upstashToken,
+      ...withoutUpstash
+    } = validEnvironment
+
+    expect(
+      parseServerEnv({
+        ...withoutUpstash,
+        VERCEL_ENV: 'preview',
+        VERCEL_URL: 'cali-preview-cali.vercel.app',
+      })
+        .rateLimitBackend,
+    ).toEqual({ kind: 'database' })
+  })
+
+  it('ignores transitional Redis credentials outside Production', () => {
+    const {
+      UPSTASH_REDIS_REST_URL: _upstashUrl,
+      UPSTASH_REDIS_REST_TOKEN: _upstashToken,
+      ...withoutUpstash
+    } = validEnvironment
+    const previewEnvironment = parseServerEnv({
+      ...withoutUpstash,
+      VERCEL_ENV: 'preview',
+      VERCEL_URL: 'cali-preview-cali.vercel.app',
+      KV_REST_API_URL: 'https://marketplace.upstash.io',
+      KV_REST_API_TOKEN: 'marketplace-secret',
+      KV_REST_API_READ_ONLY_TOKEN: 'marketplace-read-only-secret',
+      KV_URL: 'redis://default:secret@example.upstash.io:6379',
+      REDIS_URL: 'redis://default:secret@example.upstash.io:6379',
+    })
+
+    expect(previewEnvironment.rateLimitBackend).toEqual({ kind: 'database' })
+    for (const field of [
+      'KV_REST_API_URL',
+      'KV_REST_API_TOKEN',
+      'KV_REST_API_READ_ONLY_TOKEN',
+      'KV_URL',
+      'REDIS_URL',
+    ]) {
+      expect(previewEnvironment).not.toHaveProperty(field)
+    }
+
+    expect(
+      parseServerEnv({ ...validEnvironment, VERCEL_ENV: 'development' })
+        .rateLimitBackend,
+    ).toEqual({ kind: 'memory' })
+  })
+
+  it('uses an in-memory rate limiter outside Vercel', () => {
+    const {
+      UPSTASH_REDIS_REST_URL: _upstashUrl,
+      UPSTASH_REDIS_REST_TOKEN: _upstashToken,
+      VERCEL_ENV: _vercelEnvironment,
+      ...localEnvironment
+    } = validEnvironment
+
+    expect(parseServerEnv(localEnvironment).rateLimitBackend).toEqual({
+      kind: 'memory',
+    })
+  })
+
+  it('rejects partial Redis credential pairs', () => {
+    const {
+      UPSTASH_REDIS_REST_URL: _upstashUrl,
+      UPSTASH_REDIS_REST_TOKEN: _upstashToken,
+      ...withoutUpstash
+    } = validEnvironment
+
+    expect(() =>
+      parseServerEnv({
+        ...withoutUpstash,
+        KV_REST_API_URL: 'https://marketplace.upstash.io',
+      }),
+    ).toThrowError(/KV_REST_API_TOKEN/)
+
+    const { UPSTASH_REDIS_REST_TOKEN: _missingToken, ...partialUpstash } =
+      validEnvironment
+    expect(() =>
+      parseServerEnv({
+        ...partialUpstash,
+        KV_REST_API_URL: 'https://marketplace.upstash.io',
+        KV_REST_API_TOKEN: 'marketplace-secret',
+      }),
+    ).toThrowError(/UPSTASH_REDIS_REST_TOKEN/)
+
+    for (const partialPair of [
+      { UPSTASH_REDIS_REST_URL: 'https://example.upstash.io' },
+      { UPSTASH_REDIS_REST_TOKEN: 'partial-secret' },
+      { KV_REST_API_TOKEN: 'partial-secret' },
+      {
+        UPSTASH_REDIS_REST_URL: 'https://example.upstash.io',
+        KV_REST_API_TOKEN: 'partial-secret',
+      },
+      {
+        UPSTASH_REDIS_REST_TOKEN: 'partial-secret',
+        KV_REST_API_URL: 'https://marketplace.upstash.io',
+      },
+    ]) {
+      expect(() =>
+        parseServerEnv({ ...withoutUpstash, ...partialPair }),
+      ).toThrow()
+    }
+  })
+
+  it('rejects missing or non-HTTPS Redis configuration', () => {
+    const {
+      UPSTASH_REDIS_REST_URL: _upstashUrl,
+      UPSTASH_REDIS_REST_TOKEN: _upstashToken,
+      ...withoutUpstash
+    } = validEnvironment
+
+    expect(() => parseServerEnv(withoutUpstash)).toThrowError(
+      /UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN/,
+    )
+    expect(() =>
+      parseServerEnv({
+        ...validEnvironment,
+        UPSTASH_REDIS_REST_URL: 'http://example.upstash.io',
+      }),
+    ).toThrowError(/UPSTASH_REDIS_REST_URL/)
+    expect(() =>
+      parseServerEnv({
+        ...validEnvironment,
+        UPSTASH_REDIS_REST_URL: 'not-a-url',
+      }),
+    ).toThrowError(/UPSTASH_REDIS_REST_URL/)
+    expect(() =>
+      parseServerEnv({
+        ...validEnvironment,
+        UPSTASH_REDIS_REST_TOKEN: '   ',
+      }),
+    ).toThrowError(/UPSTASH_REDIS_REST_TOKEN/)
+    expect(() =>
+      parseServerEnv({
+        ...withoutUpstash,
+        KV_REST_API_URL: 'http://marketplace.upstash.io',
+        KV_REST_API_TOKEN: 'do-not-print-me',
+      }),
+    ).toThrowError(/KV_REST_API_URL/)
+    expect(() =>
+      parseServerEnv({
+        ...withoutUpstash,
+        KV_REST_API_URL: 'https://marketplace.upstash.io',
+        KV_REST_API_TOKEN: '   ',
+      }),
+    ).toThrowError(/KV_REST_API_TOKEN/)
+
+    try {
+      parseServerEnv({
+        ...withoutUpstash,
+        KV_REST_API_URL: 'http://marketplace.upstash.io',
+        KV_REST_API_TOKEN: 'do-not-print-me',
+      })
+    } catch (error) {
+      expect(String(error)).not.toContain('do-not-print-me')
+      expect(String(error)).not.toContain('marketplace.upstash.io')
+    }
+  })
+
+  it('enables every capability once its provider credentials are configured', () => {
+    const environment = parseServerEnv({
+      ...validEnvironment,
+      STRIPE_SECRET_KEY: 'sk_test_secret',
+      STRIPE_WEBHOOK_SECRET: 'whsec_secret',
+      RESEND_API_KEY: 're_secret',
+      AMA_EMAIL_FROM: 'Cali Castle <ama@cali.so>',
+      TENCENT_MEETING_MCP_URL: 'https://mcp.example.com/tencent',
+      TENCENT_MEETING_MCP_TOKEN: 'tencent-token',
+    })
+
+    expect(environment.features).toEqual({
+      publicMutations: true,
+      payments: true,
+      bookingFinalization: true,
+      google: true,
+      tencent: true,
+    })
+  })
+
+  it('rejects migration credentials in the runtime environment', () => {
+    expect(() =>
+      parseServerEnv({
+        ...validEnvironment,
+        MIGRATION_DATABASE_URL: 'postgresql://migration:secret@db.example/cali',
+      }),
+    ).toThrowError(/MIGRATION_DATABASE_URL/)
+  })
+
+  it('reports invalid field names without exposing secret values', () => {
+    expect(() =>
+      parseServerEnv({
+        ...validEnvironment,
+        AMA_ENCRYPTION_KEY: 'another-production-secret',
+      }),
+    ).toThrowError(/AMA_ENCRYPTION_KEY/)
+
+    try {
+      parseServerEnv({
+        ...validEnvironment,
+        AMA_ENCRYPTION_KEY: 'do-not-print-me',
+      })
+    } catch (error) {
+      expect(String(error)).not.toContain('do-not-print-me')
+    }
+  })
+
+  it('rejects a half configured Google pair without exposing secret values', () => {
+    const { GOOGLE_CLIENT_SECRET: _missing, ...missingSecret } = validEnvironment
+    expect(() => parseServerEnv(missingSecret)).toThrowError(/GOOGLE_CLIENT_SECRET/)
+
+    try {
+      parseServerEnv({ ...validEnvironment, GOOGLE_CLIENT_SECRET: '' })
+    } catch (error) {
+      expect(String(error)).not.toContain('google-client-secret')
+    }
+  })
+
+  it('requires the Stripe credential pair to be complete', () => {
+    expect(parseServerEnv(validEnvironment).STRIPE_SECRET_KEY).toBeUndefined()
+    expect(parseServerEnv(validEnvironment).features.payments).toBe(false)
+
+    expect(() =>
+      parseServerEnv({ ...validEnvironment, STRIPE_SECRET_KEY: 'sk_test_secret' }),
+    ).toThrowError(/STRIPE_WEBHOOK_SECRET/)
+
+    const environment = parseServerEnv({
+      ...validEnvironment,
+      STRIPE_SECRET_KEY: 'sk_test_secret',
+      STRIPE_WEBHOOK_SECRET: 'whsec_secret',
+    })
+    expect(environment.features.payments).toBe(true)
+
+    try {
+      parseServerEnv({ ...validEnvironment, STRIPE_SECRET_KEY: 'sk_test_secret' })
+    } catch (error) {
+      expect(String(error)).not.toContain('sk_test')
+    }
+  })
+
+  it('requires the Resend delivery pair to be complete', () => {
+    expect(parseServerEnv(validEnvironment).features.bookingFinalization).toBe(false)
+    expect(() =>
+      parseServerEnv({ ...validEnvironment, RESEND_API_KEY: 're_secret' }),
+    ).toThrowError(/AMA_EMAIL_FROM/)
+
+    const environment = parseServerEnv({
+      ...validEnvironment,
+      RESEND_API_KEY: 're_secret',
+      AMA_EMAIL_FROM: 'Cali Castle <ama@cali.so>',
+    })
+    expect(environment.features.bookingFinalization).toBe(true)
+    expect(environment.AMA_EMAIL_FROM).toBe('Cali Castle <ama@cali.so>')
+
+    for (const malformed of ['@', '@cali.so', 'ama@', 'Cali <not-an-address>']) {
+      expect(() =>
+        parseServerEnv({
+          ...validEnvironment,
+          RESEND_API_KEY: 're_secret',
+          AMA_EMAIL_FROM: malformed,
+        }),
+      ).toThrowError(/AMA_EMAIL_FROM/)
+    }
+    expect(
+      parseServerEnv({
+        ...validEnvironment,
+        RESEND_API_KEY: 're_secret',
+        AMA_EMAIL_FROM: 'ama@cali.so',
+      }).AMA_EMAIL_FROM,
+    ).toBe('ama@cali.so')
+  })
+
+  it('requires a complete secure Tencent MCP bridge configuration', () => {
+    expect(parseServerEnv(validEnvironment).features.tencent).toBe(false)
+    expect(() =>
+      parseServerEnv({
+        ...validEnvironment,
+        TENCENT_MEETING_MCP_TOKEN: 'tencent-token',
+      }),
+    ).toThrowError(/TENCENT_MEETING_MCP_URL/)
+
+    expect(() =>
+      parseServerEnv({
+        ...validEnvironment,
+        TENCENT_MEETING_MCP_URL: 'http://insecure.example.com/mcp',
+        TENCENT_MEETING_MCP_TOKEN: 'tencent-token',
+      }),
+    ).toThrowError(/TENCENT_MEETING_MCP_URL/)
+
+    const environment = parseServerEnv({
+      ...validEnvironment,
+      TENCENT_MEETING_MCP_URL: 'https://mcp.example.com/tencent',
+      TENCENT_MEETING_MCP_TOKEN: 'tencent-token',
+    })
+    expect(environment.features.tencent).toBe(true)
+  })
+
+  it('treats blank provider placeholders like absent configuration', () => {
+    const environment = parseServerEnv({
+      ...validEnvironment,
+      STRIPE_SECRET_KEY: '',
+      STRIPE_WEBHOOK_SECRET: '  ',
+      RESEND_API_KEY: '',
+      AMA_EMAIL_FROM: '',
+      TENCENT_MEETING_MCP_URL: '',
+      TENCENT_MEETING_MCP_TOKEN: '',
+    })
+    expect(environment.STRIPE_SECRET_KEY).toBeUndefined()
+    expect(environment.RESEND_API_KEY).toBeUndefined()
+    expect(environment.TENCENT_MEETING_MCP_URL).toBeUndefined()
+  })
+
+  it('reads public booking rate limits with safe defaults', () => {
+    const environment = parseServerEnv(validEnvironment)
+    expect(environment.AMA_PUBLIC_RATE_LIMIT_MAX_REQUESTS).toBe(10)
+    expect(environment.AMA_PUBLIC_RATE_LIMIT_WINDOW_SECONDS).toBe(60)
+
+    expect(() =>
+      parseServerEnv({
+        ...validEnvironment,
+        AMA_PUBLIC_RATE_LIMIT_MAX_REQUESTS: '0',
+      }),
+    ).toThrowError(/AMA_PUBLIC_RATE_LIMIT_MAX_REQUESTS/)
+  })
+})

@@ -1,0 +1,172 @@
+---
+title: "React or Vue? My Take on the State of Web Development"
+description: "I've worked in frontend for years. Here is how I see React.js and Vue.js, based on the products, tools, and communities around them."
+---
+
+## Before we start
+
+Frontend may be the most fiercely competitive part of tech right now. It also changes absurdly fast. There are so many frameworks and tools that Chinese-speaking developers have learned a whole new English vocabulary just to keep up 😅.
+
+Now for a tongue twister:
+
+React, Vue, Svelte, Angular, Preact, Solid, Qwik, Lit, Ember, Alpine...
+
+Webpack, Vite, Rollup, esbuild, Parcel, Babel, Vitest, Jest, Playwright, Cypress, ESLint, Prettier, Husky, rspack, Rust everything...
+
+Those are only the common ones. Have some sympathy for frontend developers. This job is not easy.
+
+This article is about the two biggest frontend frameworks and the question beginners ask me most often: should I use React or Vue?
+
+Before I compare them, someone will probably ask, "Haven't you always used React? What qualifies you to compare them?"
+
+So let's start with my history with Vue.js.
+
+## How Vue/Nuxt shaped me
+
+Back in 2015, I was using Laravel/PHP to build sites for Abletive, a Chinese music community, when I found Vue.js. At the time, Laravel creator [Taylor Otwell](https://twitter.com/taylorotwell) was pushing Vue.js as the scaffold for new Laravel projects. It clicked with me immediately.
+
+I was still using jQuery. After learning a few Vue.js 0.1 features, I remember thinking: frontend can be this simple?
+
+From that point on, I started writing everything frontend-related in Vue.js.
+
+Two years later, I moved to Seattle. For my graduation project at City University of Seattle, I built an internal photo-sharing platform, basically an on-campus Instagram, with Laravel + Vue.js.
+
+The project got some attention and led to a workshop at the university, where I preached the virtues of my two favorite frameworks.
+
+![](./image-1.jpg#1597x1355 "Me speaking at City University of Seattle")
+
+Another two years passed. In 2019, I was working at the Seattle game studio very very spaceship. We were developing [Transformers: Heavy Metal](https://tfwiki.net/wiki/Transformers:_Heavy_Metal), an AR location-based mobile game similar to Pokémon GO. I spent a week rebuilding the entire game administration interface and architecture in Nuxt.js. (The old dashboard was painfully ugly. Imagine plain HTML pages with no CSS at all...)
+
+I cannot show it because of the NDA, but the new dashboard was easier to use and looked much better. Vue and Nuxt are what let me move that quickly.
+
+I also sold every backend engineer at the company on Vue.js, because they would be maintaining it and adding features later 🤣. From then on, Vue became required knowledge for our backend team.
+
+Later, I tried giving it a small visual refresh:
+
+![](./image-2.jpg#2880x2048)
+
+All of this is to say: I love Vue.js. I love Nuxt.js too.
+
+They helped me find my feet in frontend development. I still sponsor [Evan You](https://evanyou.me) and [Anthony Fu](https://antfu.me) every month, and I recently began sponsoring [Daniel Roe](https://roe.dev) and patak to thank them.
+
+If you or your company has built a successful business on these open-source projects, please give something back when you can. Maintaining an open-source library is hard work.
+
+## My first real experience with React
+
+I first encountered React in 2018. I used Preact to build controls for an interactive Microsoft Mixer livestream. Players could enter the stream, join the game, and control one of its characters from the web.
+
+My first impression was that React was hard to use and took a lot of code. (Hooks did not exist yet. Everything was a Class Component, and even `this.setState` felt awkward.)
+
+Sometimes you have to struggle with one tool before you can appreciate a better one.
+
+React first impressed me when Hooks arrived. The whole community rushed toward this "new" functional style, and it was a big improvement over Class Components.
+
+Vue 3 shared some of those ideas but found its own style. I preferred the new Composition API and its way of working to the old Options API.
+
+Then I found Next.js. Pairing it with one-click deployments on Vercel's PaaS, back when Vercel was still called ZEIT, German for "time," felt perfect. I was hooked. (Vue 3 was already out, but Nuxt 3 took forever. I waited until the flowers wilted, then finally jumped into the arms of React.js/Next.js 😅.)
+
+## There is no perfect framework
+
+A framework is only a tool for getting somewhere. Look honestly at each framework's strengths and weaknesses, then try it yourself. That is how you find out which one suits you.
+
+Do not learn only the quirks of whichever framework you use. Learn framework-agnostic skills too, including design patterns and approaches you can carry between tools.
+
+Then you understand frontend itself, and switching tools becomes much easier.
+
+It reminds me of Tony Stark's line in the movie *Spider-Man: Homecoming*:
+
+![](./image-3.gif#640x412 "If you’re nothing without the suit, then you shouldn’t have it. ")
+
+The same goes for engineers. If you cannot do frontend work without a framework, you should not be using one.
+
+## Products using each framework
+
+I have noticed that international products seem much more likely to use React.
+
+> Note that the examples here are mainly international products or SaaS products.
+
+Here are a few:
+
+[Twitter](https://twitter.com), [Discord](https://discord.com), [Slack](https://slack.com), [Figma](https://figma.com), [Framer](https://framer.com), [ChatGPT](https://chat.openai.com), [Medium](https://medium.com), [Notion](https://notion.so), [Sentry](https://sentry.io), [Vercel](https://vercel.com), [CodeSandbox](https://codesandbox.io), [Linear](https://linear.app), [Raycast](https://raycast.com), [Fey](https://feyapp.com), [Liveblocks](https://liveblocks.io), [Clerk](https://clerk.dev), [Resend](https://resend.com), Diagram, [Evervault](https://evervault.com/)...
+
+There are many more than I could fit on this page...
+
+By 2023, React had become the default choice for many product frontends. React Server Components also brought server rendering back into focus and blurred the line between frontend and backend work.
+
+On the Vue side, there are:
+
+[OpenAI's homepage](https://openai.com), [TikTok For Business](https://www.tiktok.com/business/en), [Google Careers](https://careers.google.com/), [Ecosia](https://www.ecosia.org/), [GitLab](https://gitlab.com), [Apple's SwiftUI tutorials/documentation](https://developer.apple.com/tutorials/swiftui), [Icons8](https://icons8.com), [Upwork](https://upwork.com), [Volta](https://volta.net/), PornHub...
+
+There still seem to be fewer **outstanding products** built with Vue, and I do not understand why. My view is limited to the products I know, of course, so please add other examples in the comments.
+
+Vue itself is excellent. Why have more companies not used it to build and promote products or SaaS?
+
+### Design engineers
+
+I care about aesthetics as much as I care about the technology. I want the interfaces I build to look good, work well, and make sense. I hold the products I use to the same standard before I decide to keep them around.
+
+Almost every Design Engineer I know and admire uses React to build websites or apps. It matches the product examples above.
+
+Examples include [Rauno](https://rauno.me), [Paco](https://paco.me), [Shu](https://shud.in), [Joe](https://joebell.co.uk/), [Emil](https://emilkowal.ski/), [Jordan](https://twitter.com/jsngr), Brotzky, [Marc](https://twitter.com/marcbouchenoire), and others.
+
+On the Vue side, [Anthony Fu](https://antfu.me) is the only person I know right now whose design work stands out.
+
+If products and design matter to you, **React is the current winner**.
+
+## Versatility
+
+Now let us look beyond the web.
+
+First, React:
+
+- Want to write iOS and Android apps from one codebase? Use [React Native](https://reactnative.dev/).
+
+- Want to write email templates? Use [React Email](https://react.email).
+
+- Want to write command-line applications? Use [Ink](https://github.com/vadimdemedes/ink).
+
+For mobile apps with Vue, [NativeScript](https://nativescript.org/) currently has the best support. But I cannot point to a standout app built with it, which leaves Vue in an awkward spot here.
+
+React Native has a much stronger portfolio. Instagram, Facebook, Pinterest, Tesla, Uber, Discord, and many other apps use it.
+
+For learning once and applying it in many places, **React is the winner**.
+
+## Developer experience (DX)
+
+React and Vue each have a DevTools browser extension.
+
+The recent [Nuxt DevTools](https://nuxt.com/blog/introducing-nuxt-devtools) release is on another level. Every feature makes my mouth water. React pays far too little attention to local development tools; after all these years, the experience still feels the same.
+
+React also has a steep learning curve for beginners, especially if they are still learning JavaScript and JSX. Vue is gentler at the start and easier to pick up. At least, that was my experience.
+
+React projects often take more code, along with the mental overhead of `useEffect`, `useMemo`, `useCallback`, and their dependencies. Chasing the "best optimization" makes React harder to learn. Once you understand those parts, though, you can write efficient React apps with confidence.
+
+Documentation matters too.
+
+For several years after Hooks launched, React had no clear, official guide that taught the system from end to end. Many developers had to find their own way through it. The [official React documentation](https://react.dev/) only began its rewrite in 2022 and launched in 2023, finally teaching Hooks before Class Components.
+
+The core team has always treated [Vue's documentation](https://vuejs.org/) as a priority. It explains new concepts and the basics of Vue's reactivity well.
+
+If developer experience matters most to you, **Vue is the winner**.
+
+## The ecosystems
+
+React has a huge ecosystem because so many developers build tools and libraries for it.
+
+At one end, [Vercel](https://vercel.com) funds the development of [Next.js](https://nextjs.org). [Poimandres](https://github.com/pmndrs) makes tools such as `jotai`, `zustand`, and `react-three-fiber`. [WorkOS](https://workos.com/) built the accessible, unstyled [Radix UI](https://www.radix-ui.com/) library. Independent developers such as [shadcn](https://shadcn.com/) publish [copy-and-paste UI best practices](https://ui.shadcn.com) too.
+
+React Server Components put many library authors in an awkward position. The whole `'use client'` controversy was embarrassing and reminded me of the move from Vue 2 to Vue 3. Changes this large work better when people can adopt them gradually.
+
+Vue does not have a particularly large company creating and maintaining its open-source libraries. Instead, the Vue, Vite, and Nuxt core teams have built an arsenal with their communities. The ecosystem is smaller, yet Vue developers seem happy with it. Nuxt Labs also puts out excellent modules and plugins, including [NuxtLabs UI](https://ui.nuxtlabs.com/getting-started) and [Nuxt Studio](https://nuxt.studio/).
+
+For ecosystems, **React and Vue both win**.
+
+## Conclusion
+
+On balance, React is the clear winner among frontend frameworks right now. Vue still has room to grow. It needs more developers contributing to the community and more large companies willing to trust it with big applications and talk openly about doing so.
+
+I want Vue to have a brighter future. I want to see more great products built with Vue/Nuxt and more great designers in its community.
+
+For now, React's ecosystem, its best products, and its design community will keep me on the React side a while longer.
+
+I hope the competition between frameworks stays healthy and keeps pushing both sides to improve. Web developers are the ones who benefit when that happens.

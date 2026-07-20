@@ -1,0 +1,336 @@
+{
+  "id": "108c4779-e22e-4e96-9b19-b003f69f5671",
+  "prevId": "474d5c21-b432-4cfc-9250-890965a21ede",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.ama_admin_sessions": {
+      "name": "ama_admin_sessions",
+      "schema": "",
+      "columns": {
+        "token_hash": {
+          "name": "token_hash",
+          "type": "varchar(64)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "owner_email": {
+          "name": "owner_email",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revoked_at": {
+          "name": "revoked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ama_admin_sessions_expires_at_idx": {
+          "name": "ama_admin_sessions_expires_at_idx",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ama_auth_tokens": {
+      "name": "ama_auth_tokens",
+      "schema": "",
+      "columns": {
+        "token_hash": {
+          "name": "token_hash",
+          "type": "varchar(64)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "owner_email": {
+          "name": "owner_email",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "consumed_at": {
+          "name": "consumed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ama_auth_tokens_expires_at_idx": {
+          "name": "ama_auth_tokens_expires_at_idx",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ama_availability_windows": {
+      "name": "ama_availability_windows",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "iso_weekday": {
+          "name": "iso_weekday",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_minute": {
+          "name": "start_minute",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_minute": {
+          "name": "end_minute",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ama_availability_windows_order_idx": {
+          "name": "ama_availability_windows_order_idx",
+          "columns": [
+            {
+              "expression": "iso_weekday",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "start_minute",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "end_minute",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ama_availability_windows_iso_weekday_check": {
+          "name": "ama_availability_windows_iso_weekday_check",
+          "value": "\"ama_availability_windows\".\"iso_weekday\" BETWEEN 1 AND 7"
+        },
+        "ama_availability_windows_start_minute_check": {
+          "name": "ama_availability_windows_start_minute_check",
+          "value": "\"ama_availability_windows\".\"start_minute\" BETWEEN 0 AND 1439"
+        },
+        "ama_availability_windows_end_minute_check": {
+          "name": "ama_availability_windows_end_minute_check",
+          "value": "\"ama_availability_windows\".\"end_minute\" BETWEEN 1 AND 1440"
+        },
+        "ama_availability_windows_same_day_check": {
+          "name": "ama_availability_windows_same_day_check",
+          "value": "\"ama_availability_windows\".\"start_minute\" < \"ama_availability_windows\".\"end_minute\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.newsletters": {
+      "name": "newsletters",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "subject": {
+          "name": "subject",
+          "type": "varchar(200)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sent_at": {
+          "name": "sent_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.subscribers": {
+      "name": "subscribers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "token": {
+          "name": "token",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subscribed_at": {
+          "name": "subscribed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unsubscribed_at": {
+          "name": "unsubscribed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

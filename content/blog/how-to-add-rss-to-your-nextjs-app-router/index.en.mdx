@@ -1,0 +1,207 @@
+---
+title: "How to Add RSS to a Next.js App Router Site"
+description: "A guide to adding an RSS feed to a Next.js website built with the App Router."
+---
+
+When Vercel announced at Ship that the Next.js 13 App Router was [stable](https://nextjs.org/blog/next-13-4), it put many Next.js developers in an awkward position. New projects would use the App Router by default, so we had to learn a new Next.js architecture.
+
+To me, calling the App Router "stable" at that point was a **mirage**. It still had too many bugs and too many gaps in compatibility and extensibility.
+
+Moving from the Pages directory to the App directory is hard, especially in a large codebase. RSCs (React Server Components) do not suit every project, and the wider shift turns work we once called "frontend" into full-stack development.
+
+These changes will confuse frontend developers who have little backend experience. I plan to write more tutorials and guides about the Next.js App Router.
+
+All right, that's enough rambling about Next.js. Let's get to the main event.
+
+Most people add RSS to a website so readers can subscribe to their blog posts.
+
+Adding an RSS feed to a Next.js site is simple. Let's get started!
+
+## Install the dependencies
+
+First, install the `rss` package. It will generate the RSS XML for us. Add it to your Next.js project with npm, yarn, or pnpm:
+
+```sh title="Command line"
+npm i rss && npm i -D @types/rss
+yarn add rss && yarn add -D @types/rss
+pnpm i rss && pnpm i -D @types/rss
+```
+
+Why did we choose `rss`?
+
+I ran into problems with [feed](https://www.npmjs.com/package/feed) and found `rss` easier to use 😂. (For example, iOS Safari may append a `.rss` suffix when you visit an RSS URL. That stops iOS from recognizing the link globally and opening a compatible reader for you to subscribe.)
+
+In short, I recommend `rss` instead of `feed`.
+
+Now we can build the feed.
+
+## Define the API route
+
+First, choose a URL for the RSS feed. Common paths include:
+
+- `/feed`
+
+- `/feed.xml`
+
+- `/rss`
+
+- `/rss.xml`
+
+If you are like me, you will want to support all four.
+
+We can do that with Next.js Rewrites.
+
+We still need one canonical entry point. Any option works; this tutorial uses the conventional `/feed.xml`.
+
+Under the App Router, we do this with a [Route Handler](https://nextjs.org/docs/app/building-your-application/routing/router-handlers). A Route Handler defines how an endpoint responds to **GET/POST/PATCH/DELETE** requests.
+
+![](./image-1.png#1600x444 "Next.js Route Handler example")
+
+A Route Handler does not have to live in an `api` folder. We want `/feed.xml` to return RSS XML, so a [**Static Route Handler**](https://nextjs.org/docs/app/building-your-application/routing/router-handlers#static-route-handlers) will do the job.
+
+Create a folder named `feed.xml` inside the `app` directory. Yes, a folder name can look like a file extension. You could even make a route ending in `.php` and instantly make it look valuable. Your [Lamborghini dream](https://twitter.com/taylorotwell/status/1534178479201259520?s=20) will be within reach. Inside that folder, create `route.ts`:
+
+```typescript title="app/feed.xml/route.ts"
+import RSS from 'rss'
+
+export async function GET() {
+  const feed = new RSS({
+    title: 'Your website title',
+    description: 'A description of your website',
+    site_url: 'https://yourdomain.com', // Your website domain
+    feed_url: 'https://yourdomain.com/feed.xml', // Use an absolute URL whenever possible
+    language: 'zh-CN', // Your website language code
+    image_url: 'https://yourdomain.com/opengraph-image.png', // Put a 1200x630 image named opengraph-image.png in your app directory
+    generator: 'PHP 9.0', // Write whatever you like, or omit it
+  })
+
+  return new Response(feed.xml(), {
+    headers: {
+      'content-type': 'application/xml'
+    }
+  })
+}
+```
+
+That is the file structure we need.
+
+The route now needs to fetch your article data, whether it lives in a database or a CMS.
+
+I cannot know where your data comes from, so I will assume you have an async function named `fetchData`:
+
+```typescript title="app/feed.xml/route.ts"
+import RSS from 'rss'
+
+export async function GET() {
+  const feed = new RSS({
+    title: 'Your website title',
+    description: 'A description of your website',
+    site_url: 'https://yourdomain.com', // Your website domain
+    feed_url: 'https://yourdomain.com/feed.xml', // Use an absolute URL whenever possible
+    language: 'zh-CN', // Your website language code
+    image_url: 'https://yourdomain.com/opengraph-image.png', // Put a 1200x630 image named opengraph-image.png in your app directory
+    generator: 'PHP 9.0', // Write whatever you like, or omit it
+  })
+
+  const data = await fetchData() // Fetch the article data before populating the RSS feed
+  // Assume data is an array of articles:
+  data.forEach((post) => {
+    feed.item({
+      title: post.title, // Article title
+      guid: post.id, // Article ID
+      url: `https://yourdomain.com/blog/${post.slug}`, // Article URL
+      description: post.description, // Article description, if available
+      date: new Date(post.publishedAt), // Article publication date
+      enclosure: {
+        url: post.imageUrl, // Article image, if available
+      }
+    })
+  })
+
+  return new Response(feed.xml(), {
+    headers: {
+      'content-type': 'application/xml'
+    }
+  })
+}
+```
+
+The feed is ready. Start Next.js locally with `npm run dev`, then open `http://localhost:3000/feed.xml` in your browser. You should see the XML.
+
+![](./image-2.png#2568x1608)
+
+## Match multiple routes
+
+Use Next.js [Rewrites](https://nextjs.org/docs/app/api-reference/next-config-js/rewrites) to make `/rss`, `/rss.xml`, and `/feed` return the same XML:
+
+```javascript title="next.config.js"
+module.exports = {
+  // ...
+  async rewrites() {
+    return [
+      {
+        source: '/rss',
+        destination: '/feed.xml',
+      },
+      {
+        source: '/rss.xml',
+        destination: '/feed.xml',
+      },
+      {
+        source: '/feed',
+        destination: '/feed.xml',
+      },
+    ]
+  },
+}
+```
+
+The feed now works at all four addresses:
+
+- `/feed`
+
+- `/feed.xml`
+
+- `/rss`
+
+- `/rss.xml`
+
+## A handy tip
+
+Most browsers support RSS Autodiscovery. To add it to our site, put this in the HTML `<head>`: `<link rel="alternate" type="application/rss+xml"
+  title="RSS Feed"
+  href="" />`
+
+With the App Router, [**Metadata**](https://nextjs.org/docs/app/building-your-application/optimizing/metadata) saves us from writing the `<head>` markup by hand:
+
+```tsx title="app/layout.tsx"
+import type { Metadata } from 'next'
+
+export const metadata = {
+  // ...
+  alternates: {
+    canonical: 'https://yourdomain.com',
+    types: {
+      'application/rss+xml': [{ url: 'feed.xml', title: 'RSS feed' }],
+    },
+  },
+} satisfies Metadata
+```
+
+The site now has a working RSS feed with autodiscovery.
+
+## Recap
+
+Here is what we did:
+
+1. We used a [**Static Route Handler**](https://nextjs.org/docs/app/building-your-application/routing/router-handlers#static-route-handlers) to generate a static `/feed.xml`;
+
+1. We used [**Rewrites**](https://nextjs.org/docs/app/api-reference/next-config-js/rewrites) to map multiple routes to the same destination;
+
+1. We used [**Metadata**](https://nextjs.org/docs/app/building-your-application/optimizing/metadata) to add RSS Autodiscovery to the website;
+
+Finally, here is how the feed looked when I added it to [Feedly](https://feedly.com):
+
+![](./image-3.png#2713x2027 "The result after adding the feed in Feedly")
+
+Enjoy, have fun!
