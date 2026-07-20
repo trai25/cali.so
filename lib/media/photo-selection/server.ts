@@ -49,6 +49,25 @@ function restoreSelectionDates(
   }
 }
 
+// Development renders the fixture cards when the read fails, so the full
+// error stack on every request is pure noise there — one compact warning
+// per process is enough. Everywhere else the error must stay loud.
+let warnedDevelopmentReadFailure = false
+
+function logReadFailure(scope: 'read' | 'public read', error: unknown) {
+  if (process.env.NODE_ENV === 'development') {
+    if (warnedDevelopmentReadFailure) return
+    warnedDevelopmentReadFailure = true
+    const summary =
+      error instanceof Error ? error.message.split('\n')[0] : String(error)
+    console.warn(
+      `[photo-selection] database unreachable in development; rendering dev fixtures (${summary})`,
+    )
+    return
+  }
+  console.error(`[photo-selection] ${scope} failed; rendering empty state`, error)
+}
+
 async function readPublishedPhotoSelection() {
   'use cache'
   cacheTag(PUBLIC_PHOTO_SELECTION_CACHE_TAG)
@@ -67,10 +86,7 @@ async function readPublishedPhotoSelection() {
     // the empty state instead. At runtime the rethrow lands in the caller's
     // catch, so a request never 500s over this read.
     if (process.env.VERCEL_ENV) throw error
-    console.error(
-      '[photo-selection] read failed; rendering empty state',
-      error,
-    )
+    logReadFailure('read', error)
     return null
   }
 }
@@ -90,10 +106,7 @@ export async function getPublishedPhotoSelection() {
     if (selection && selection.items.length > 0) return selection
     return devFallback()
   } catch (error) {
-    console.error(
-      '[photo-selection] public read failed; rendering empty state',
-      error,
-    )
+    logReadFailure('public read', error)
     return devFallback()
   }
 }
