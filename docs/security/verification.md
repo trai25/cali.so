@@ -100,14 +100,19 @@ Project API checks refreshed on 2026-07-20 verified:
   remain fail closed.
 - [ ] Configure an isolated Preview Resend credential pair only when hosted AMA
   finalization and transactional email testing is required.
-- [ ] Apply migration `0010` to the Preview Neon branch and grant its runtime
-  role CRUD-only access to `rate_limit_windows`. This remote database check
-  requires two fresh confirmations. Preview unconditionally selects the
-  database limiter and has no Redis fallback; if the table or grants are
-  missing, protected admin mutations fail closed with 503.
+- [x] Internal Preview deployment run
+  [#29719376370](https://github.com/CaliCastle/cali.so/actions/runs/29719376370)
+  applied the reviewed migrations successfully before deploying its exact
+  commit. Preview workflows now apply all migrations automatically.
+- [ ] Verify the exact active Preview runtime role has CRUD-only access to
+  `rate_limit_windows`. This remote database check requires two fresh
+  confirmations. Preview unconditionally selects the database limiter and has
+  no Redis fallback; if the table or grants are missing, protected admin
+  mutations fail closed with 503.
 - [x] Every `KV_*`, `REDIS_URL`, and `UPSTASH_*` variable is absent from
   Preview. Redis is Production-only. The Preview runtime is configured to use
-  isolated Neon, but its migration and grants are not yet counted as verified.
+  isolated Neon. Automated migration ordering is verified; live runtime grants
+  are not yet counted as verified.
 - [ ] Remove the obsolete `Admin Security` challenge for the removed
   `POST /api/admin/auth/request` route.
 - [x] The dead `AMA_ADMIN_ENABLED` Preview variable is absent; the owner admin
@@ -128,7 +133,8 @@ Project API checks refreshed on 2026-07-20 verified:
   verified the public security boundary, all 13 hosted browser cases, and a
   signed-out `401` from `/api/admin/media/assets` rather than a server error.
 
-Clerk provider configuration and owner recovery remain tracked by issue #93.
-Signed-in owner operations and end-to-end checks for each configured external
-provider remain separate operational follow-ups; they are not deployment
-workflow blockers.
+Issue #93 is closed. Current Clerk provider configuration, owner recovery,
+session revocation, and credential rotation are documented in
+`docs/security/clerk-admin-operations.md`. Signed-in owner operations and
+end-to-end checks for each configured external provider remain separate
+operational follow-ups; they are not deployment workflow blockers.
