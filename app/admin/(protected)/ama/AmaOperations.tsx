@@ -49,66 +49,91 @@ export type BookingFiltersViewModel = {
 
 function BookingRow({
   booking,
+  position,
   ownerTimeZone,
   detailBasePath,
   showPrep = false,
 }: {
   booking: BookingRowViewModel
+  position: number
   ownerTimeZone: string
   detailBasePath: string
   showPrep?: boolean
 }) {
   const provider = providerLabels[booking.meetingProvider]
   return (
-    <li className="grid gap-3 px-2 py-4 text-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
-      <Link
-        href={`${detailBasePath}/${booking.id}`}
-        className="min-w-0 rounded-[2px] outline-none focus-visible:ring-1 focus-visible:ring-foreground"
-      >
-        <span className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-          <span className="font-medium">{booking.guestName}</span>
-          <span className="break-all font-mono text-xs text-muted-foreground">
-            {booking.guestEmail}
+    <li className="px-2 py-5 text-sm">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <span className="section-tag shrink-0" aria-hidden>
+          <span className="section-tag-index">
+            {String(position).padStart(2, '0')}
           </span>
-          <span className="font-mono text-[11px] text-muted-foreground">
-            {booking.id.slice(0, 8)}
-          </span>
+          <span className="section-tag-hatch" />
         </span>
-        <span className="mt-1 block text-sm text-muted-foreground">
-          <span className="tabular-nums">
-            <T
-              zh={zonedDateTime(booking.startsAt, ownerTimeZone, 'zh')}
-              en={zonedDateTime(booking.startsAt, ownerTimeZone, 'en')}
-            />
-            {' '}({ownerTimeZone})
-          </span>
-          <span aria-hidden="true"> · </span>
-          <span className="tabular-nums">
-            <T
-              zh={zonedDateTime(booking.startsAt, booking.guestTimeZone, 'zh')}
-              en={zonedDateTime(booking.startsAt, booking.guestTimeZone, 'en')}
-            />
-            {' '}({booking.guestTimeZone})
-          </span>
+        <Link
+          href={`${detailBasePath}/${booking.id}`}
+          className="rounded-[2px] font-medium outline-none focus-visible:ring-1 focus-visible:ring-foreground"
+        >
+          {booking.guestName}
+        </Link>
+        <span className="break-all font-mono text-xs text-muted-foreground">
+          {booking.guestEmail}
         </span>
+        <span className="font-mono text-[11px] text-muted-foreground">
+          {booking.id.slice(0, 8)}
+        </span>
+      </div>
+
+      <dl className="mt-3 divide-y divide-border/70 border-y border-border/70">
+        <div className="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-baseline sm:gap-4">
+          <dt className="shrink-0 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground sm:w-20">
+            <T zh="时间" en="Schedule" />
+          </dt>
+          <dd className="min-w-0 text-muted-foreground">
+            <span className="tabular-nums">
+              <T
+                zh={zonedDateTime(booking.startsAt, ownerTimeZone, 'zh')}
+                en={zonedDateTime(booking.startsAt, ownerTimeZone, 'en')}
+              />
+              {' '}({ownerTimeZone})
+            </span>
+            <span className="mx-2 text-border" aria-hidden="true">/</span>
+            <span className="tabular-nums">
+              <T
+                zh={zonedDateTime(booking.startsAt, booking.guestTimeZone, 'zh')}
+                en={zonedDateTime(booking.startsAt, booking.guestTimeZone, 'en')}
+              />
+              {' '}({booking.guestTimeZone})
+            </span>
+          </dd>
+        </div>
+
         {booking.topics.length > 0 && (
-          <span className="mt-1 block line-clamp-1 text-sm text-muted-foreground">
-            <T zh="话题：" en="Topics: " />
-            {booking.topics.join(', ')}
-          </span>
+          <div className="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-baseline sm:gap-4">
+            <dt className="shrink-0 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground sm:w-20">
+              <T zh="话题" en="Topics" />
+            </dt>
+            <dd className="min-w-0 text-muted-foreground">
+              {booking.topics.join(', ')}
+            </dd>
+          </div>
         )}
-        <span className="mt-1 block line-clamp-1 text-sm text-muted-foreground">
-          {booking.briefPreview ? (
-            <>
-              <T zh="预约简述：" en="Booking Brief: " />
-              {booking.briefPreview}
-            </>
-          ) : (
-            <T zh="没有预约简述" en="No Booking Brief" />
-          )}
-        </span>
-      </Link>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:justify-end">
+
+        <div className="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-baseline sm:gap-4">
+          <dt className="shrink-0 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground sm:w-20">
+            <T zh="预约简述" en="Brief" />
+          </dt>
+          <dd className="min-w-0 line-clamp-1 text-muted-foreground">
+            {booking.briefPreview ? (
+              booking.briefPreview
+            ) : (
+              <T zh="没有预约简述" en="No Booking Brief" />
+            )}
+          </dd>
+        </div>
+      </dl>
+
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
         <span className="text-muted-foreground">
           <T zh={provider.zh} en={provider.en} />
         </span>
@@ -121,6 +146,12 @@ function BookingRow({
             />
           </span>
         )}
+        <span aria-hidden="true" className="blog-row-leader hidden sm:block" />
+        <Button asChild variant="ghost" size="lg" expandHitArea>
+          <Link href={`${detailBasePath}/${booking.id}`}>
+            <T zh="查看预约" en="View Booking" />
+          </Link>
+        </Button>
         {showPrep && booking.meetingUrl && (
           <Button asChild variant="primary" size="lg" expandHitArea>
             <a href={booking.meetingUrl} target="_blank" rel="noreferrer">
@@ -580,10 +611,11 @@ export function AmaOperations({
         ) : (
           bookings.length > 0 && (
             <ul className="mt-3 divide-y divide-border/70">
-              {bookings.map((booking) => (
+              {bookings.map((booking, index) => (
                 <BookingRow
                   key={booking.id}
                   booking={booking}
+                  position={firstResult + index}
                   ownerTimeZone={ownerTimeZone}
                   detailBasePath={basePath}
                   showPrep={view === 'upcoming'}
