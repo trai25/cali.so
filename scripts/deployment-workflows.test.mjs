@@ -194,6 +194,13 @@ test('release pull requests reject unsafe migrations before merging to main', as
 test('quality runs the canonical Vitest suite exactly once', async () => {
   const config = await workflow('security')
   const job = config.jobs.quality
+  const packageJson = JSON.parse(await text('package.json'))
+
+  assert.equal(
+    packageJson.scripts['test:unit'],
+    "vitest run app components db lib --exclude='**/*.live.test.ts'",
+    'the canonical suite must include security and every non-live Media test',
+  )
 
   const unitSteps = job.steps.filter(
     (step) => typeof step.run === 'string' && step.run.includes('pnpm test:unit'),

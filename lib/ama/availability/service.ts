@@ -276,6 +276,14 @@ export function createAvailabilityService(dependencies: AvailabilityServiceDepen
         }
       }
 
+      if (calendarResult.status !== 'connected') {
+        return {
+          status: calendarResult.status,
+          diagnosis: 'calendar-unavailable' as const,
+          slots: [],
+        }
+      }
+
       const policyEligible = computeAvailableSlots({
         ...common,
         googleBusy: [],
@@ -286,14 +294,6 @@ export function createAvailabilityService(dependencies: AvailabilityServiceDepen
         return {
           status: calendarResult.status,
           diagnosis: 'no-policy-eligible-hours' as const,
-          slots: [],
-        }
-      }
-
-      if (calendarResult.status !== 'connected') {
-        return {
-          status: calendarResult.status,
-          diagnosis: 'calendar-unavailable' as const,
           slots: [],
         }
       }

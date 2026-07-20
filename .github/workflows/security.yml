@@ -61,6 +61,8 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # The canonical glob includes app, components, db, and lib, covering
+      # security plus every non-live Media suite without rerunning subsets.
       - name: Test unit and integration suites
         run: pnpm test:unit
 

@@ -60,6 +60,14 @@ const reviewedMigrationDigests = new Map([
     'db/migrations/0013_brief_yellowjacket.sql',
     '4b684dc6d280978e76d23600cc21ed731f87df52bef96bcbfc55bb71c1d200fa',
   ],
+  [
+    'db/migrations/0014_ama_availability_overrides.sql',
+    '01da301a410adc42fa0b98b9da9892c0e9f86fbd7283f19d9419b12edd2ee2bd',
+  ],
+  [
+    'db/migrations/0015_ama_availability_weekdays.sql',
+    '389c391df3654f437b1be2bc5703fa8eb37d39423674c616e45e0a8b67676203',
+  ],
 ])
 
 function dollarDelimiterAt(sql, index) {

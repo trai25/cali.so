@@ -178,6 +178,8 @@ test('admits exact reviewed migration baselines without weakening future checks'
     'db/migrations/0011_ama_booking_system.sql',
     'db/migrations/0012_high_fidelity_photo_renditions.sql',
     'db/migrations/0013_brief_yellowjacket.sql',
+    'db/migrations/0014_ama_availability_overrides.sql',
+    'db/migrations/0015_ama_availability_weekdays.sql',
   ]) {
     const sql = await readFile(path, 'utf8')
     assert.deepEqual(productionMigrationFindings(path, sql), [])

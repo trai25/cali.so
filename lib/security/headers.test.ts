@@ -36,7 +36,7 @@ describe('site security headers', () => {
   it('allows the Clerk instance origins only on the admin policies', async () => {
     vi.stubEnv(
       'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY',
-      `pk_test_${Buffer.from('example.clerk.accounts.dev$').toString('base64')}`,
+      `pk_test_${Buffer.from('Example.Clerk.Accounts.Dev$').toString('base64')}`,
     )
     const {
       adminSecurityHeader,
