@@ -45,8 +45,7 @@ describe('Media Library AI Gateway Alt Text Suggestion generator', () => {
     const call = generateTextMock.mock.calls[0]![0]
     expect(call).toMatchObject({
       model: { model: config.primaryModel },
-      temperature: 0.2,
-      maxOutputTokens: 320,
+      maxOutputTokens: 2048,
       maxRetries: 1,
       timeout: 12_000,
       providerOptions: {
@@ -61,10 +60,11 @@ describe('Media Library AI Gateway Alt Text Suggestion generator', () => {
     })
     const content = call.messages[0].content
     expect(content[1]).toEqual({
-      type: 'image',
-      image: bytes,
+      type: 'file',
+      data: bytes,
       mediaType: 'image/jpeg',
     })
+    expect(call.temperature).toBeUndefined()
     expect(JSON.stringify(content)).not.toMatch(
       /IMG_|originals\/|latitude|longitude|EXIF/i,
     )

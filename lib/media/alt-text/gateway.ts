@@ -42,15 +42,18 @@ export function createMediaAltTextGenerator(config: MediaAltTextGatewayConfig) {
             content: [
               { type: 'text', text: instructions },
               {
-                type: 'image',
-                image: input.imageBytes,
+                type: 'file',
+                data: input.imageBytes,
                 mediaType: 'image/jpeg',
               },
             ],
           },
         ],
-        temperature: 0.2,
-        maxOutputTokens: 320,
+        // No temperature: the configured gpt-5.x models are reasoning models
+        // and reject sampling parameters. The budget must also cover hidden
+        // reasoning tokens before the structured output, so 320 would starve
+        // the JSON payload (280 chars per language plus schema overhead).
+        maxOutputTokens: 2048,
         maxRetries: config.maxRetries,
         timeout: config.timeoutMs,
         providerOptions: {
