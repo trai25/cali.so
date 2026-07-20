@@ -1,7 +1,10 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { enUS, zhCN } from 'date-fns/locale'
 
+import { Button } from '~/components/ui/button'
+import { Calendar } from '~/components/ui/calendar'
 import {
   Select,
   SelectContent,
@@ -10,7 +13,6 @@ import {
 } from '~/components/ui/select'
 import { T } from '~/lib/i18n'
 import { localize, useLocale } from '~/lib/locale-client'
-import { cn } from '~/lib/utils'
 
 export type PublicSlot = {
   startsAt: string
@@ -23,6 +25,7 @@ type SlotPickerProps = {
   onTimeZoneChange: (timeZone: string) => void
   selected: string | null
   onSelect: (startsAt: string) => void
+  onDateChange?: () => void
   disabled?: boolean
 }
 
@@ -43,10 +46,29 @@ function safeFormatter(options: Intl.DateTimeFormatOptions, locale: string, time
   }
 }
 
+function formatterDayKey(formatter: Intl.DateTimeFormat, date: Date) {
+  const parts = formatter.formatToParts(date)
+  const year = parts.find((part) => part.type === 'year')?.value
+  const month = parts.find((part) => part.type === 'month')?.value
+  const day = parts.find((part) => part.type === 'day')?.value
+  return year && month && day ? `${year}-${month}-${day}` : ''
+}
+
+function calendarDate(dayKey: string) {
+  const [year, month, day] = dayKey.split('-').map(Number)
+  return new Date(year!, month! - 1, day!, 12)
+}
+
+function calendarDayKey(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 /**
- * The shared start-time picker: slots grouped by day in the guest's zone,
- * every slot a 44px button. Selection is shown with color and a ring, never
- * with size, so nothing shifts. Both booking and reschedule reuse it.
+ * The shared start-time picker: choose an available date in the shadcn
+ * calendar, then one time from that date. Booking and reschedule share it.
  */
 export function SlotPicker({
   slots,
@@ -54,9 +76,11 @@ export function SlotPicker({
   onTimeZoneChange,
   selected,
   onSelect,
+  onDateChange,
   disabled = false,
 }: SlotPickerProps) {
   const locale = useLocale()
+  const [preferredDayKey, setPreferredDayKey] = useState<string | null>(null)
 
   const timeZones = useMemo(() => listTimeZones(timeZone), [timeZone])
 
@@ -87,12 +111,26 @@ export function SlotPicker({
       timeZone,
     )
     const zhFull = safeFormatter(
-      { month: 'long', day: 'numeric', weekday: 'long', hour: '2-digit', minute: '2-digit', hour12: false },
+      {
+        month: 'long',
+        day: 'numeric',
+        weekday: 'long',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      },
       'zh-CN',
       timeZone,
     )
     const enFull = safeFormatter(
-      { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true },
+      {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      },
       'en-US',
       timeZone,
     )
@@ -100,19 +138,28 @@ export function SlotPicker({
     const byDay = new Map<
       string,
       {
+        date: Date
         zhHeading: string
         enHeading: string
-        slots: { startsAt: string; zhTime: string; enTime: string; zhLabel: string; enLabel: string }[]
+        slots: {
+          startsAt: string
+          zhTime: string
+          enTime: string
+          zhLabel: string
+          enLabel: string
+        }[]
       }
     >()
 
     for (const slot of slots) {
       const start = new Date(slot.startsAt)
       if (!Number.isFinite(start.getTime())) continue
-      const key = dayKey.format(start)
+      const key = formatterDayKey(dayKey, start)
+      if (!key) continue
       let group = byDay.get(key)
       if (!group) {
         group = {
+          date: calendarDate(key),
           zhHeading: zhDay.format(start),
           enHeading: enDay.format(start),
           slots: [],
@@ -133,8 +180,31 @@ export function SlotPicker({
       .map(([key, group]) => ({ key, ...group }))
   }, [slots, timeZone])
 
+  const selectedDayKey = groups.find((group) =>
+    group.slots.some((slot) => slot.startsAt === selected),
+  )?.key
+  const activeDayKey =
+    selectedDayKey ??
+    (groups.some((group) => group.key === preferredDayKey)
+      ? preferredDayKey
+      : groups[0]?.key ?? null)
+  const activeGroup = groups.find((group) => group.key === activeDayKey)
+  const availableDayKeys = useMemo(
+    () => new Set(groups.map((group) => group.key)),
+    [groups],
+  )
+  const availableDates = useMemo(() => groups.map((group) => group.date), [groups])
+
+  function chooseDate(date: Date | undefined) {
+    if (!date) return
+    const nextDayKey = calendarDayKey(date)
+    if (!availableDayKeys.has(nextDayKey)) return
+    setPreferredDayKey(nextDayKey)
+    if (selectedDayKey && selectedDayKey !== nextDayKey) onDateChange?.()
+  }
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <div className="grid gap-1.5 text-sm">
         <span className="text-muted-foreground">
           <T zh="时区" en="Time zone" />
@@ -146,7 +216,7 @@ export function SlotPicker({
         >
           <SelectTrigger
             aria-label={localize(locale, '时区', 'Time zone')}
-            className="w-full rounded-[2px] font-mono text-[13px]"
+            className="w-full font-mono text-[13px]"
           />
           <SelectContent>
             {timeZones.map((zone, index) => (
@@ -162,46 +232,60 @@ export function SlotPicker({
           </SelectContent>
         </Select>
         <p className="text-[13px] text-muted-foreground">
-          <T zh="以下时间均按你选择的时区显示。" en="All times are shown in your selected time zone." />
+          <T zh="日期和时间均按你选择的时区显示。" en="Dates and times use your selected time zone." />
         </p>
       </div>
 
-      <div className="flex flex-col gap-5">
-        {groups.map((group) => (
-          <section key={group.key} aria-label={localize(locale, group.zhHeading, group.enHeading)}>
-            {/* Day headings take the plate-label register: machine chrome
-                over the mono time chips below. */}
+      {activeGroup && (
+        <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_10.5rem]">
+          <Calendar
+            mode="single"
+            required
+            selected={activeGroup.date}
+            onSelect={chooseDate}
+            defaultMonth={groups[0]?.date}
+            startMonth={groups[0]?.date}
+            endMonth={groups.at(-1)?.date}
+            disabled={(date) => disabled || !availableDayKeys.has(calendarDayKey(date))}
+            modifiers={{ available: availableDates }}
+            locale={locale === 'zh' ? zhCN : enUS}
+            weekStartsOn={0}
+            fixedWeeks
+            className="mx-auto max-w-[22rem]"
+          />
+
+          <section
+            aria-label={localize(locale, activeGroup.zhHeading, activeGroup.enHeading)}
+            className="min-w-0 sm:border-l sm:border-border sm:pl-4"
+          >
             <h3 className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-              <T zh={group.zhHeading} en={group.enHeading} />
+              <T zh={activeGroup.zhHeading} en={activeGroup.enHeading} />
             </h3>
-            <ul className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {group.slots.map((slot) => {
+            <ul className="mt-2 flex max-h-[19rem] flex-col gap-2 overflow-y-auto pr-1">
+              {activeGroup.slots.map((slot) => {
                 const isSelected = selected === slot.startsAt
                 return (
                   <li key={slot.startsAt}>
-                    <button
+                    <Button
                       type="button"
+                      variant={isSelected ? 'primary' : 'tertiary'}
+                      size="lg"
+                      active={isSelected}
                       disabled={disabled}
                       aria-pressed={isSelected}
                       aria-label={localize(locale, slot.zhLabel, slot.enLabel)}
                       onClick={() => onSelect(slot.startsAt)}
-                      className={cn(
-                        'min-h-11 w-full touch-manipulation rounded-[2px] font-mono text-[13px] tabular-nums outline-none transition-colors duration-150',
-                        'focus-visible:ring-1 focus-visible:ring-[var(--focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                        isSelected
-                          ? 'bg-foreground text-background shadow-[0_0_0_1px_var(--foreground)]'
-                          : 'text-foreground shadow-[0_0_0_1px_var(--border)] hover:shadow-[0_0_0_1px_var(--foreground)]',
-                      )}
+                      className="min-h-11 w-full font-mono text-[13px] tabular-nums"
                     >
                       <T zh={slot.zhTime} en={slot.enTime} />
-                    </button>
+                    </Button>
                   </li>
                 )
               })}
             </ul>
           </section>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   )
 }
