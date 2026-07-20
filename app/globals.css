@@ -1345,6 +1345,17 @@
   grid-template-columns: 9rem minmax(0, 1fr);
 }
 
+/* Dense booking rows use the same engraved table plate with a narrow label
+   rail, leaving the record itself as the dominant reading surface. */
+.spec-nameplate-compact > div {
+  grid-template-columns: 4.75rem minmax(0, 1fr);
+}
+
+.spec-nameplate-compact dd {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .spec-nameplate > div + div {
   border-top: var(--border-hairline) solid var(--border);
 }

@@ -65,6 +65,8 @@ export async function responseJson(response: Response) {
 }
 
 const dateTimeFormatters = new Map<string, Intl.DateTimeFormat>()
+const timeFormatters = new Map<string, Intl.DateTimeFormat>()
+const dayKeyFormatters = new Map<string, Intl.DateTimeFormat>()
 
 function zonedFormatter(zone: string, locale: Locale) {
   const key = `${zone}:${locale}`
@@ -95,6 +97,62 @@ function zonedFormatter(zone: string, locale: Locale) {
 
 export function zonedDateTime(iso: string, zone: string, locale: Locale) {
   return zonedFormatter(zone, locale).format(new Date(iso))
+}
+
+function zonedTimeFormatter(zone: string, locale: Locale) {
+  const key = `${zone}:${locale}`
+  let formatter = timeFormatters.get(key)
+  if (!formatter) {
+    const options: Intl.DateTimeFormatOptions = {
+      timeZone: zone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }
+    try {
+      formatter = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', options)
+    } catch {
+      formatter = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
+        ...options,
+        timeZone: 'UTC',
+      })
+    }
+    timeFormatters.set(key, formatter)
+  }
+  return formatter
+}
+
+export function zonedTime(iso: string, zone: string, locale: Locale) {
+  return zonedTimeFormatter(zone, locale).format(new Date(iso))
+}
+
+function dayKeyFormatter(zone: string) {
+  let formatter = dayKeyFormatters.get(zone)
+  if (!formatter) {
+    const options: Intl.DateTimeFormatOptions = {
+      timeZone: zone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }
+    try {
+      formatter = new Intl.DateTimeFormat('en-CA', options)
+    } catch {
+      formatter = new Intl.DateTimeFormat('en-CA', {
+        ...options,
+        timeZone: 'UTC',
+      })
+    }
+    dayKeyFormatters.set(zone, formatter)
+  }
+  return formatter
+}
+
+export function zonedDayKey(iso: string, zone: string) {
+  const parts = dayKeyFormatter(zone).formatToParts(new Date(iso))
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? ''
+  return `${value('year')}-${value('month')}-${value('day')}`
 }
 
 export const bookingStatusLabels: Record<BookingStatus, { zh: string; en: string }> = {

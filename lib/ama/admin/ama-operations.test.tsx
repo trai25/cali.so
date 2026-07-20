@@ -210,6 +210,37 @@ describe('AMA admin page', () => {
     expect(
       container.querySelector('a[href*="calendar.google.com"]'),
     ).not.toBeNull()
+    expect(container.querySelector('.spec-nameplate-compact')).not.toBeNull()
+    expect(container.querySelector('[data-booking-brief]')?.className).not.toContain(
+      'line-clamp',
+    )
+  })
+
+  it('puts time zones on separate lines and omits a repeated local date', () => {
+    const { container } = render(<AmaOperations {...fixtures} />)
+    const ownerLine = container.querySelector('[data-booking-time="owner"]')
+    const guestLine = container.querySelector('[data-booking-time="guest"]')
+    const guestEnglish = guestLine?.querySelector('[data-en]')?.textContent
+
+    expect(ownerLine?.className).toContain('block')
+    expect(guestLine?.className).toContain('block')
+    expect(guestEnglish).toMatch(/^\d{2}:\d{2}$/)
+  })
+
+  it('keeps the guest date when the time zones cross a calendar-day boundary', () => {
+    const { container } = render(
+      <AmaOperations
+        {...fixtures}
+        view="upcoming"
+        bookings={[upcomingBooking]}
+        total={1}
+      />,
+    )
+    const guestEnglish = container.querySelector(
+      '[data-booking-time="guest"] [data-en]',
+    )?.textContent
+
+    expect(guestEnglish).not.toMatch(/^\d{2}:\d{2}$/)
   })
 
   it('renders past Bookings as a first-class URL view', () => {

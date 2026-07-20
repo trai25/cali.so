@@ -15,7 +15,9 @@ import {
   providerLabels,
   refundStatusLabels,
   responseJson,
+  zonedDayKey,
   zonedDateTime,
+  zonedTime,
   type AlternateTimeRequestViewModel,
   type BookingRowViewModel,
   type OperationViewModel,
@@ -61,6 +63,9 @@ function BookingRow({
   showPrep?: boolean
 }) {
   const provider = providerLabels[booking.meetingProvider]
+  const sameLocalDate =
+    zonedDayKey(booking.startsAt, ownerTimeZone) ===
+    zonedDayKey(booking.startsAt, booking.guestTimeZone)
   return (
     <li className="px-2 py-5 text-sm">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -84,24 +89,31 @@ function BookingRow({
         </span>
       </div>
 
-      <dl className="mt-3 divide-y divide-border/70 border-y border-border/70">
-        <div className="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-baseline sm:gap-4">
-          <dt className="shrink-0 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground sm:w-20">
-            <T zh="时间" en="Schedule" />
+      <dl className="spec-nameplate spec-nameplate-compact mt-3">
+        <div>
+          <dt>
+            <T zh="时间" en="Time" />
           </dt>
           <dd className="min-w-0 text-muted-foreground">
-            <span className="tabular-nums">
+            <span data-booking-time="owner" className="block tabular-nums">
               <T
                 zh={zonedDateTime(booking.startsAt, ownerTimeZone, 'zh')}
                 en={zonedDateTime(booking.startsAt, ownerTimeZone, 'en')}
               />
               {' '}({ownerTimeZone})
             </span>
-            <span className="mx-2 text-border" aria-hidden="true">/</span>
-            <span className="tabular-nums">
+            <span data-booking-time="guest" className="mt-1 block tabular-nums">
               <T
-                zh={zonedDateTime(booking.startsAt, booking.guestTimeZone, 'zh')}
-                en={zonedDateTime(booking.startsAt, booking.guestTimeZone, 'en')}
+                zh={
+                  sameLocalDate
+                    ? zonedTime(booking.startsAt, booking.guestTimeZone, 'zh')
+                    : zonedDateTime(booking.startsAt, booking.guestTimeZone, 'zh')
+                }
+                en={
+                  sameLocalDate
+                    ? zonedTime(booking.startsAt, booking.guestTimeZone, 'en')
+                    : zonedDateTime(booking.startsAt, booking.guestTimeZone, 'en')
+                }
               />
               {' '}({booking.guestTimeZone})
             </span>
@@ -109,8 +121,8 @@ function BookingRow({
         </div>
 
         {booking.topics.length > 0 && (
-          <div className="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-baseline sm:gap-4">
-            <dt className="shrink-0 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground sm:w-20">
+          <div>
+            <dt>
               <T zh="话题" en="Topics" />
             </dt>
             <dd className="min-w-0 text-muted-foreground">
@@ -119,11 +131,14 @@ function BookingRow({
           </div>
         )}
 
-        <div className="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-baseline sm:gap-4">
-          <dt className="shrink-0 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground sm:w-20">
+        <div>
+          <dt>
             <T zh="预约简述" en="Brief" />
           </dt>
-          <dd className="min-w-0 line-clamp-1 text-muted-foreground">
+          <dd
+            data-booking-brief
+            className="min-w-0 whitespace-pre-wrap leading-5 text-muted-foreground"
+          >
             {booking.briefPreview ? (
               booking.briefPreview
             ) : (
