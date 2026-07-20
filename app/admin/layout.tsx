@@ -23,6 +23,11 @@ export const metadata: Metadata = {
 // so clerk-js keeps refreshing the 60-second session-token cookie in the
 // background. Without it every idle minute ends in a handshake redirect
 // and admin API 401 reloads.
+//
+// The static guarantee was verified against @clerk/nextjs 7.5.20: only the
+// `dynamic` prop opts the server provider into request data. Clerk does not
+// document that contract, so re-verify (and reconfirm the `◐` build marker
+// on admin routes) when the lockfile bumps @clerk/nextjs.
 export default function AdminRootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <SiteDocument isAdmin locale="zh" restoreLocale>
