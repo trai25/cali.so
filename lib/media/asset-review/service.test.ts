@@ -70,20 +70,22 @@ function fixture() {
       }
       return record
     },
-    async archive(input) {
-      if (record.catalogState !== 'active') return { status: 'invalid_state' }
+    archive: vi.fn(async (input) => {
+      if (record.catalogState !== 'active') {
+        return { status: 'invalid_state' as const }
+      }
       record = {
         ...record,
         catalogState: 'archived',
         archivedAt: input.archivedAt,
       }
       return {
-        status: 'updated',
+        status: 'updated' as const,
         asset: record,
         undoOperationId: '22222222-2222-4222-8222-222222222222',
         publicSelectionChanged,
       }
-    },
+    }),
     async undoArchive() {
       if (record.catalogState !== 'archived') return { status: 'invalid_state' }
       record = { ...record, catalogState: 'active', archivedAt: null }
@@ -102,6 +104,7 @@ function fixture() {
     clock: { now: () => new Date('2026-07-15T12:00:00.000Z') },
   })
   return {
+    repository,
     service,
     invalidatePublicSelection,
     setPublicSelectionChanged(value: boolean) {
@@ -167,8 +170,12 @@ describe('Media Asset review service', () => {
   })
 
   it('archives a selected Media Asset and invalidates its surgical publication', async () => {
-    const { invalidatePublicSelection, service, setPublicSelectionChanged } =
-      fixture()
+    const {
+      invalidatePublicSelection,
+      repository,
+      service,
+      setPublicSelectionChanged,
+    } = fixture()
     setPublicSelectionChanged(true)
 
     await expect(
@@ -176,6 +183,12 @@ describe('Media Asset review service', () => {
     ).resolves.toMatchObject({
       asset: { catalogState: 'archived' },
       undoOperationId: '22222222-2222-4222-8222-222222222222',
+    })
+    expect(repository.archive).toHaveBeenCalledWith({
+      ownerUserId: 'owner_01',
+      mediaAssetId,
+      archivedAt: new Date('2026-07-15T12:00:00.000Z'),
+      undoExpiresAt: new Date('2026-07-15T12:00:30.000Z'),
     })
     expect(invalidatePublicSelection).toHaveBeenCalledOnce()
   })

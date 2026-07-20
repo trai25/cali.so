@@ -328,13 +328,16 @@ export function createMediaAssetReviewRepository(
             undoExpiresAt: input.undoExpiresAt,
           })
           .returning({ id: mediaAssetArchiveOperations.id })
+        if (!operation) {
+          throw new Error('Archive operation insert returned no row')
+        }
         const preview = asset
           ? await previewRendition(transaction, asset.id)
           : null
         return {
           status: 'updated',
           asset: record(asset, preview, publicRenditionUrl),
-          undoOperationId: operation!.id,
+          undoOperationId: operation.id,
           publicSelectionChanged: withdrawal.publication !== null,
         }
       })

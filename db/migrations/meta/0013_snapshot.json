@@ -3000,7 +3000,6 @@
             }
           ],
           "isUnique": true,
-          "where": "\"media_published_photo_selections\".\"publication_kind\" = 'draft'",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -3021,6 +3020,10 @@
         },
         "media_published_photo_selections_revision_check": {
           "name": "media_published_photo_selections_revision_check",
+          "value": "\"media_published_photo_selections\".\"draft_revision\" >= 0"
+        },
+        "media_published_photo_selections_kind_revision_check": {
+          "name": "media_published_photo_selections_kind_revision_check",
           "value": "(\"media_published_photo_selections\".\"publication_kind\" = 'draft' AND \"media_published_photo_selections\".\"draft_revision\" >= 0) OR (\"media_published_photo_selections\".\"publication_kind\" = 'withdrawal' AND \"media_published_photo_selections\".\"draft_revision\" IS NULL)"
         },
         "media_published_photo_selections_item_count_check": {
