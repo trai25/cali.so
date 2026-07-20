@@ -44,10 +44,18 @@ describe('LocaleSuggestion', () => {
     expect(
       (await screen.findByRole('region', { name: 'Language suggestion' }))
         .textContent,
-    ).toContain('Would you prefer to view this page in English?')
+    ).toContain('View in English?')
+    const switchButton = screen.getByRole('button', { name: 'View in English' })
+    expect(switchButton.textContent).toBe('Yes')
+    const stayButton = screen.getByRole('button', { name: '继续使用中文' })
+    expect(stayButton.textContent).toBe('No')
+    expect(stayButton.hasAttribute('lang')).toBe(false)
     expect(
-      screen.getByRole('button', { name: 'View in English' }),
+      screen
+        .getByRole('region', { name: 'Language suggestion' })
+        .querySelector('.locale-suggestion-hatch'),
     ).not.toBeNull()
+    expect(screen.queryByText('LANG')).toBeNull()
   })
 
   it('prefers a saved site language over the browser language', async () => {
@@ -60,10 +68,13 @@ describe('LocaleSuggestion', () => {
 
     expect(
       (await screen.findByRole('region', { name: '语言建议' })).textContent,
-    ).toContain('是否切换到中文浏览？')
+    ).toContain('切换到中文？')
+    expect(screen.getByRole('button', { name: '切换到中文' }).textContent).toBe(
+      '是',
+    )
     expect(
-      screen.getByRole('button', { name: '切换到中文' }),
-    ).not.toBeNull()
+      screen.getByRole('button', { name: 'Continue in English' }).textContent,
+    ).toBe('否')
   })
 
   it('remembers the current language when the visitor chooses to stay', async () => {
@@ -101,7 +112,7 @@ describe('LocaleSuggestion', () => {
 
     expect(
       (await screen.findByRole('region', { name: '语言建议' })).textContent,
-    ).toContain('是否切换到中文浏览？')
+    ).toContain('切换到中文？')
   })
 
   it('ignores unsupported browser languages', () => {

@@ -4527,68 +4527,141 @@ a:focus-visible .external-label .external-mark {
   }
 }
 
-/* ── Locale suggestion: a fixed instrument strip ─────────────────── */
+/* ── Locale suggestion: an edge-mounted instrument plate ────────── */
 
 .locale-suggestion-positioner {
   position: fixed;
   z-index: var(--z-toast);
-  top: calc(env(safe-area-inset-top) + 0.75rem);
-  left: 50%;
-  width: min(37.5rem, calc(100vw - 1.5rem));
-  transform: translateX(-50%);
+  top: env(safe-area-inset-top);
+  left: 0;
+  width: 100%;
   pointer-events: none;
 }
 
+.locale-suggestion-positioner::before,
+.locale-suggestion-positioner::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  z-index: 1;
+  background: var(--muted-foreground);
+  opacity: 0.52;
+  pointer-events: none;
+}
+
+.locale-suggestion-positioner::before {
+  bottom: -0.3125rem;
+  width: var(--border-hairline);
+  height: 0.625rem;
+}
+
+.locale-suggestion-positioner::after {
+  bottom: -0.0625rem;
+  width: 0.5625rem;
+  height: var(--border-hairline);
+  transform: translateX(-50%);
+}
+
 .locale-suggestion {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.5rem 1rem;
-  min-height: 3.5rem;
-  padding: 0.625rem 0.75rem;
-  border-radius: 2px;
-  outline: var(--border-hairline) solid var(--border);
-  outline-offset: calc(-1 * var(--border-hairline));
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  border-bottom: var(--border-hairline) solid var(--border);
+  background: var(--surface-2);
   pointer-events: auto;
   animation: locale-suggestion-enter 150ms var(--ease-swift) backwards;
 }
 
+.locale-suggestion-inner {
+  display: grid;
+  grid-template-columns: 0.75rem 3rem minmax(0, 1fr) auto 0.75rem;
+  align-items: center;
+  width: min(37.5rem, calc(100vw - 1rem));
+  min-height: 2.75rem;
+  margin: 0 auto;
+  border-right: var(--border-hairline) solid var(--border);
+  border-left: var(--border-hairline) solid var(--border);
+}
+
+.locale-suggestion-screw {
+  position: relative;
+  width: 0.5rem;
+  height: 0.5rem;
+  justify-self: center;
+  border-radius: 50%;
+  background: var(--surface-1);
+  box-shadow:
+    0 0 0 var(--border-hairline) var(--border),
+    inset 0.0625rem 0.0625rem 0 color-mix(in oklab, white 38%, transparent);
+}
+
+.locale-suggestion-screw::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.3125rem;
+  height: var(--border-hairline);
+  background: var(--muted-foreground);
+  transform: translate(-50%, -50%) rotate(-42deg);
+}
+
+.locale-suggestion-hatch {
+  align-self: stretch;
+  border-right: var(--border-hairline) solid var(--border);
+  background: repeating-linear-gradient(
+    -45deg,
+    color-mix(in oklab, var(--muted-foreground) 55%, transparent) 0,
+    color-mix(in oklab, var(--muted-foreground) 55%, transparent) 1px,
+    transparent 1px,
+    transparent 3.5px
+  );
+  user-select: none;
+}
+
 .locale-suggestion-copy {
-  font-size: 0.875rem;
-  line-height: 1.5;
+  min-width: 0;
+  margin: 0;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
   letter-spacing: -0.011em;
+  text-wrap: balance;
 }
 
 .locale-suggestion-actions {
+  align-self: stretch;
   display: flex;
   flex-shrink: 0;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.25rem;
-}
-
-.locale-suggestion-actions :is(a, button) {
-  font-size: 0.875rem;
+  gap: 0.1875rem;
+  padding: 0.625rem;
+  border-left: var(--border-hairline) solid var(--border);
 }
 
 @keyframes locale-suggestion-enter {
   from {
     opacity: 0;
-    transform: translateY(-4px) scale(0.985);
+    transform: translateY(-4px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
 @media (max-width: 39.999rem) {
-  .locale-suggestion {
-    grid-template-columns: minmax(0, 1fr);
+  .locale-suggestion-inner {
+    grid-template-columns: 0.625rem 2.625rem minmax(0, 1fr) auto 0.625rem;
+  }
+
+  .locale-suggestion-copy {
+    padding-inline: 0.625rem;
   }
 
   .locale-suggestion-actions {
-    justify-content: flex-start;
+    padding-inline: 0.375rem;
   }
 }
 

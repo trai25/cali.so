@@ -716,15 +716,23 @@ images share the same route identity.
 
 On a public route, a saved site preference takes priority; without one, the
 first supported language in `navigator.languages` becomes the preference. If
-that resolved preference differs from the explicit route, one fixed top-center
-instrument strip offers the equivalent route. The suggestion speaks in the
-offered language, preserves the path, query, and fragment, and requires an
-explicit choice: switch, or stay in the current language. Either choice becomes
-the saved site preference; unsupported browser languages produce no prompt.
-The strip uses the surface ladder, 2px print-register corner, compact chrome
-type, existing button hierarchy, and `--z-toast`. It never redirects
-automatically, never shifts layout or steals focus, and disables its brief
-transform-and-opacity entrance under reduced motion.
+that resolved preference differs from the explicit route, one fixed instrument
+plate offers the equivalent route. Its ruled surface spans the full viewport
+width and clamps to the top edge instead of floating above the page; the hatch,
+two balanced screw heads, prompt, and actions stay aligned inside the centered
+37.5rem site grid. A full-height diagonal hatch in the existing section-tag
+register replaces the language label, while the center registration tick marks
+the plate below. The short human prompt speaks in the offered language; the
+shared pill buttons answer with localized Yes and No while retaining descriptive
+accessible labels. The choice preserves the path, query, and fragment and is
+explicit: switch, or stay in the current language. Either choice becomes the
+saved site preference; unsupported browser languages produce no prompt. The
+plate uses the surface ladder and `--z-toast`, with no drop shadow. It never
+redirects automatically, shifts layout, or steals focus, and disables its brief
+transform-and-opacity entrance under reduced motion. The plate has 10px of inner
+padding above and below its 24px shared small buttons, and uses no expanded hit
+areas; this is a maintainer-approved exception to the site's usual 44px
+touch-target minimum (July 2026).
 
 Each post keeps its Chinese source in `index.mdx` and a complete English
 translation in `index.en.mdx`. The matching route renders only that source and
