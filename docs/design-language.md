@@ -717,14 +717,17 @@ images share the same route identity.
 On a public route, a saved site preference takes priority; without one, the
 first supported language in `navigator.languages` becomes the preference. If
 that resolved preference differs from the explicit route, one fixed top-center
-instrument strip offers the equivalent route. The suggestion speaks in the
-offered language, preserves the path, query, and fragment, and requires an
-explicit choice: switch, or stay in the current language. Either choice becomes
-the saved site preference; unsupported browser languages produce no prompt.
-The strip uses the surface ladder, 2px print-register corner, compact chrome
-type, existing button hierarchy, and `--z-toast`. It never redirects
-automatically, never shifts layout or steals focus, and disables its brief
-transform-and-opacity entrance under reduced motion.
+instrument plate offers the equivalent route. It clamps to the viewport edge
+and the 37.5rem content grid instead of floating above the page: no drop shadow,
+a ruled surface, a center registration tick, compact machine labels, and two
+restrained screw heads. The short human prompt speaks in the offered language;
+the squared actions name the two languages while retaining descriptive
+accessible labels. The choice preserves the path, query, and fragment and is
+explicit: switch, or stay in the current language. Either choice becomes the
+saved site preference; unsupported browser languages produce no prompt. The
+plate uses the surface ladder, 2px print-register corner, and `--z-toast`. It
+never redirects automatically, never shifts layout or steals focus, and
+disables its brief transform-and-opacity entrance under reduced motion.
 
 Each post keeps its Chinese source in `index.mdx` and a complete English
 translation in `index.en.mdx`. The matching route renders only that source and
