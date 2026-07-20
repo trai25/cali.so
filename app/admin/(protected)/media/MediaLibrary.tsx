@@ -1028,6 +1028,7 @@ export function MediaLibrary({
 
       const chunkCount = originalUploadChunkCount(item.file.size)
       let uploadedChunkCount = item.uploadedChunkCount ?? 0
+      let restartedAfterConflict = false
       while (uploadedChunkCount < chunkCount) {
         patchQueue(item.id, { status: 'uploading' })
         const start = uploadedChunkCount * MAX_ORIGINAL_UPLOAD_CHUNK_BYTES
@@ -1048,9 +1049,11 @@ export function MediaLibrary({
           },
         )
         if (!uploadResponse.ok) {
-          if (uploadResponse.status === 409) {
+          if (uploadResponse.status === 409 && !restartedAfterConflict) {
+            restartedAfterConflict = true
             uploadedChunkCount = 0
             patchQueue(item.id, { uploadedChunkCount: 0 })
+            continue
           }
           throw new Error('upload_failed')
         }

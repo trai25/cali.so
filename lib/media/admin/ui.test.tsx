@@ -357,6 +357,88 @@ describe('Media archive UI contract', () => {
     expect(localStorage.length).toBe(0)
   })
 
+  it('restarts once from chunk zero after a missing-prior-chunk response', async () => {
+    const digest = new Uint8Array(32).buffer
+    vi.stubGlobal('crypto', {
+      randomUUID: vi
+        .fn()
+        .mockReturnValueOnce('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+        .mockReturnValueOnce('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'),
+      subtle: { digest: vi.fn().mockResolvedValue(digest) },
+    })
+
+    const originalAttempts: string[] = []
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === '/api/admin/media/upload-intents') {
+        return Response.json(
+          {
+            uploadIntent: {
+              id: '22222222-2222-4222-8222-222222222222',
+            },
+          },
+          { status: 201 },
+        )
+      }
+      if (url.includes('/original?chunk=')) {
+        originalAttempts.push(url)
+        const firstChunkOneAttempt =
+          url.endsWith('?chunk=1') &&
+          originalAttempts.filter((attempt) => attempt.endsWith('?chunk=1'))
+            .length === 1
+        return new Response(null, { status: firstChunkOneAttempt ? 409 : 204 })
+      }
+      if (url.endsWith('/complete')) {
+        return Response.json({
+          mediaAsset: { id: activeAsset.id, processingState: 'ready' },
+        })
+      }
+      if (url.endsWith('/alt-text')) {
+        return Response.json({ suggestion: null, asset: null })
+      }
+      if (url.endsWith('?view=active')) {
+        return Response.json({ assets: [activeAsset] })
+      }
+      if (url.endsWith('?view=archived')) {
+        return Response.json({ assets: [] })
+      }
+      throw new Error(`Unexpected request: ${url}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { container, queryByRole } = render(
+      <MediaLibrary initialActive={[]} initialArchived={[]} selectionIds={[]} />,
+    )
+    const file = new File(
+      [new Uint8Array(4 * 1024 * 1024 + 3)],
+      'photo.jpg',
+      { type: 'image/jpeg' },
+    )
+    if (!file.arrayBuffer) {
+      Object.defineProperty(file, 'arrayBuffer', {
+        value: async () => new Uint8Array(4 * 1024 * 1024 + 3).buffer,
+      })
+    }
+    fireEvent.change(container.querySelector('input[type="file"]')!, {
+      target: { files: [file] },
+    })
+
+    await waitFor(() => {
+      expect(originalAttempts).toEqual([
+        '/api/admin/media/upload-intents/22222222-2222-4222-8222-222222222222/original?chunk=0',
+        '/api/admin/media/upload-intents/22222222-2222-4222-8222-222222222222/original?chunk=1',
+        '/api/admin/media/upload-intents/22222222-2222-4222-8222-222222222222/original?chunk=0',
+        '/api/admin/media/upload-intents/22222222-2222-4222-8222-222222222222/original?chunk=1',
+      ])
+      expect(
+        fetchMock.mock.calls.filter(([input]) =>
+          String(input).endsWith('/complete'),
+        ),
+      ).toHaveLength(1)
+    })
+    expect(queryByRole('button', { name: /Retry/ })).toBeNull()
+  })
+
   it('reuses an unfinished upload key after the admin remounts', async () => {
     const digest = new Uint8Array(32).buffer
     vi.stubGlobal('crypto', {
