@@ -1,9 +1,17 @@
 # v3 cutover ops runbook
 
 Maintainer-operated commands for the hosted blockers in
-`docs/v3-cutover-readiness.md`. Every step here changes production-adjacent
-state and is intentionally left to a human operator. Nothing in this file
-contains a secret; commands that need one prompt for it interactively.
+`docs/v3-cutover-readiness.md`. Manual commands here change
+production-adjacent state and remain operator-controlled; the committed
+Production workflow itself runs automatically after a reviewed commit reaches
+`main`. Nothing in this file contains a secret; commands that need one prompt
+for it interactively.
+
+The v3.0 Production deployment completed on July 20, 2026. Attempt 3 of
+[Deploy Production run #29707454879](https://github.com/CaliCastle/cali.so/actions/runs/29707454879)
+applied migrations and deployed `main@d891463` without a manual approval step.
+Treat the provisioning commands below as a rebuild and rotation reference, not
+as a statement that Production is still unconfigured.
 
 ## Vercel CLI scope
 
@@ -50,8 +58,7 @@ Neon project.
 | --- | --- | --- | --- |
 | `preview` | `NEON_PROJECT_ID`, `NEON_MIGRATION_ROLE`, `NEON_RUNTIME_ROLE`, `NEON_DATABASE`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` | project-scoped `NEON_API_KEY`, `VERCEL_TOKEN` | Internal branches only; exclude `dev` and `main` |
 | `staging` | Same non-production variables | Same non-production secrets | `dev` only; no approval |
-| `production-migration-review` | None | None | `main` only; required reviewer |
-| `production` | `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` | `MIGRATION_DATABASE_URL`, `VERCEL_TOKEN` | `main` only; required reviewer |
+| `production` | `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` | `MIGRATION_DATABASE_URL`, `VERCEL_TOKEN` | `main` only; no deployment reviewer |
 
 The committed `vercel.json` disables Vercel Git deployments. Do not re-enable
 them in the dashboard: GitHub must create or select the Neon branch, migrate it,
@@ -127,10 +134,11 @@ JSON
 
 ## 4. Provision the Production environment
 
-Production currently satisfies none of the v3 contract in `.env.example`.
-Each `env add` prompts for its value; generate fresh secrets rather than
-copying Preview's, and never add `MIGRATION_DATABASE_URL` to any Vercel
-environment.
+Production satisfied this contract for the v3.0 deployment on July 20, 2026.
+Before rebuilding or rotating it, inventory the live environment and change
+only the intended values. Each `env add` prompts for its value; generate fresh
+secrets rather than copying Preview's, and never add
+`MIGRATION_DATABASE_URL` to any Vercel environment.
 
 ```bash
 add() { npx vercel env add "$1" production $SCOPE; }
@@ -147,10 +155,10 @@ add NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 add CLERK_SECRET_KEY
 add CRON_SECRET              # openssl rand -hex 32
 
-# Server-only key material — generate per environment, never reuse Preview's.
-add AMA_ENCRYPTION_KEY       # openssl rand -hex 32
-add RATE_LIMIT_HASH_KEY      # openssl rand -hex 32
-add MEDIA_ENCRYPTION_KEY     # openssl rand -hex 32
+# Server-only key material — 32 decoded bytes of base64 per environment.
+add AMA_ENCRYPTION_KEY       # openssl rand -base64 32
+add RATE_LIMIT_HASH_KEY      # openssl rand -base64 32
+add MEDIA_ENCRYPTION_KEY     # openssl rand -base64 32
 
 # Rate limits (values from .env.example defaults unless tuned).
 add ADMIN_MUTATION_RATE_LIMIT_MAX_REQUESTS
@@ -208,16 +216,15 @@ results in the readiness report:
 
 ## 6. Production database and migrations
 
-Gated by two fresh explicit confirmations immediately before access. Verify
-the separate Production Neon project, CRUD-only runtime role, and migration-role
-default privileges for both existing and future tables and sequences. A merge
-to `main` then starts `Deploy Production`. The no-secret
-`production-migration-review` environment records the first approval. Only
-after it succeeds can the separately protected `production` environment expose
-the migration credential and record the second approval.
+Direct operator access remains gated by two fresh explicit confirmations.
+Verify the separate Production Neon project, CRUD-only runtime role, and
+migration-role default privileges for both existing and future tables and
+sequences. A reviewed commit reaching `main` starts `Deploy Production`
+automatically. The `main`-only `production` environment exposes the migration
+credential to that workflow without an additional deployment review.
 
 The workflow hash-locks the immutable legacy baseline `0000` and reviewed v3
-migrations `0001` through `0011`, rejecting any modification or deletion.
+migrations `0001` through `0012`, rejecting any modification or deletion.
 Migration `0000` stays outside the v3 Drizzle journal and is not rerun. Future
 migrations fail closed unless every SQL
 statement is an explicitly allowed expand operation: create a new table, type,
@@ -226,10 +233,11 @@ non-null column with a statically proven non-null default; validate a named
 constraint; or set a statically proven non-null column default. New constraints,
 including `NOT VALID` constraints, affect new writes and therefore require an
 explicitly reviewed digest exception. Dynamic blocks, unknown default
-expressions, and every unrecognized statement are rejected. After both
-approvals and that check, the workflow applies pending migrations with the
-GitHub-only credential and deploys the exact commit. Do not approve either
-environment until the migration diff and rollback anchor have been reviewed.
+expressions, and every unrecognized statement are rejected. After the
+credential guards and expand-only check, the workflow applies pending
+migrations with the GitHub-only credential and deploys the exact commit.
+Review the migration diff and rollback anchor in the pull request before
+merging to `main`.
 
 ## 7. Rollback anchor
 

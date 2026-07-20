@@ -13,16 +13,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  migration-review:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    environment: production-migration-review
-    steps:
-      - name: Confirm Production migration review
-        run: echo "Production migration review approved."
-
   deploy:
-    needs: migration-review
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment: production
@@ -53,7 +44,9 @@ jobs:
       - name: Run database migrations
         env:
           MIGRATION_DATABASE_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
-        run: pnpm db:migrate
+        run: |
+          : "${MIGRATION_DATABASE_URL:?Production MIGRATION_DATABASE_URL is not configured}"
+          pnpm db:migrate
 
       - name: Deploy Vercel Production
         env:
@@ -62,6 +55,9 @@ jobs:
           VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
+          : "${VERCEL_ORG_ID:?Production VERCEL_ORG_ID is not configured}"
+          : "${VERCEL_PROJECT_ID:?Production VERCEL_PROJECT_ID is not configured}"
+          : "${VERCEL_TOKEN:?Production VERCEL_TOKEN is not configured}"
           deployment_url="$(
             pnpm dlx vercel@56.3.1 deploy --prod \
               --yes \

@@ -29,7 +29,13 @@ test('@hosted signed-out admin navigation stops at the authentication boundary',
   expect(responseBody).not.toContain('/_vercel/insights/script.js')
 
   if (response.status() === 404) {
-    expect(headers['x-clerk-auth-reason']).toBe('protect-rewrite, dev-browser-missing')
+    // Clerk reports the same fail-closed rewrite with an environment-specific
+    // signed-out reason: Preview lacks the development browser token, while
+    // Production lacks both a session token and UAT.
+    expect([
+      'protect-rewrite, dev-browser-missing',
+      'protect-rewrite, session-token-and-uat-missing',
+    ]).toContain(headers['x-clerk-auth-reason'])
     return
   }
 
