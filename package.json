@@ -4,6 +4,9 @@
   "private": true,
   "license": "SEE LICENSE IN LICENSE",
   "packageManager": "pnpm@10.12.1",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev",
     "prebuild": "node scripts/generate-og-runtime-fonts.mjs",
@@ -39,7 +42,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ai-sdk/gateway": "^3.0.150",
+    "@ai-sdk/gateway": "^4.0.23",
     "@aws-sdk/client-s3": "^3.1090.0",
     "@base-ui/react": "^1.6.0",
     "@clerk/nextjs": "^7.5.20",
@@ -48,7 +51,7 @@
     "@upstash/redis": "^1.38.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/functions": "^3.7.5",
-    "ai": "^6.0.226",
+    "ai": "^7.0.31",
     "beautiful-mermaid": "^1.1.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
