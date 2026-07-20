@@ -13,6 +13,7 @@ import {
   useContext,
   type ComponentType,
   type ReactNode,
+  type ButtonHTMLAttributes,
   type HTMLAttributes,
 } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
@@ -70,6 +71,7 @@ interface SelectProps {
   defaultValue?: string;
   onValueChange?: (value: string) => void;
   disabled?: boolean;
+  readOnly?: boolean;
   name?: string;
   required?: boolean;
 }
@@ -107,6 +109,7 @@ function Select({
   defaultValue,
   onValueChange,
   disabled = false,
+  readOnly = false,
   name,
   required,
 }: SelectProps) {
@@ -140,6 +143,7 @@ function Select({
         onOpenChange={setOpen}
         items={items}
         disabled={disabled}
+        readOnly={readOnly}
         name={name}
         required={required}
         // Non-modal: the page keeps scrolling and the Positioner tracks the
@@ -189,7 +193,7 @@ const triggerVariants = cva(
 );
 
 interface SelectTriggerProps
-  extends Omit<HTMLAttributes<HTMLButtonElement>, "children">,
+  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children">,
     VariantProps<typeof triggerVariants> {
   icon?: SelectIcon;
   placeholder?: string;

@@ -135,39 +135,6 @@ describe('Google Calendar provider', () => {
     ).rejects.toMatchObject({ code: 'denied_scope' })
   })
 
-  it('reads the connected identity from the primary Calendar resource', async () => {
-    const fetch = vi.fn(async () =>
-      Response.json({
-        id: 'owner@example.com',
-        summary: 'Cali Castle',
-        timeZone: 'Asia/Taipei',
-      }),
-    )
-    const client = createGoogleCalendarClient({
-      clientId: 'google-client-id',
-      clientSecret: 'google-client-secret',
-      fetch,
-      clock: { now: () => new Date('2026-07-14T04:00:00.000Z') },
-    })
-
-    const identity = await client.getPrimaryCalendarIdentity('access-token-value')
-
-    expect(identity).toEqual({
-      id: 'owner@example.com',
-      summary: 'Cali Castle',
-      timeZone: 'Asia/Taipei',
-    })
-    expect(fetch).toHaveBeenCalledWith(
-      'https://www.googleapis.com/calendar/v3/calendars/primary',
-      {
-        headers: {
-          Accept: 'application/json',
-          Authorization: 'Bearer access-token-value',
-        },
-      },
-    )
-  })
-
   it('refreshes an access token and computes its absolute expiry with the injected clock', async () => {
     const fetch = vi.fn(async () =>
       Response.json({ access_token: 'fresh-access-token', expires_in: 1800, token_type: 'Bearer' }),
@@ -384,22 +351,6 @@ describe('Google Calendar provider', () => {
     expect(String(error)).not.toContain('raw network detail')
   })
 
-  it('normalizes a Calendar API 401 as an expired or revoked connection', async () => {
-    const client = createGoogleCalendarClient({
-      clientId: 'google-client-id',
-      clientSecret: 'google-client-secret',
-      fetch: vi.fn(async () =>
-        Response.json({ error: { message: 'access-token-value is invalid' } }, { status: 401 }),
-      ),
-      clock: { now: () => new Date('2026-07-14T04:00:00.000Z') },
-    })
-
-    await expect(client.getPrimaryCalendarIdentity('access-token-value')).rejects.toMatchObject({
-      code: 'expired_or_revoked',
-      message: 'Google Calendar access expired or was revoked. Reconnect Google Calendar.',
-    })
-  })
-
   it('fails closed when Google returns a malformed token response', async () => {
     const client = createGoogleCalendarClient({
       clientId: 'google-client-id',
@@ -477,17 +428,4 @@ describe('Google Calendar provider', () => {
     expect(String(error)).not.toContain('raw-provider-outage-body')
   })
 
-  it('normalizes a structurally invalid Calendar response', async () => {
-    const client = createGoogleCalendarClient({
-      clientId: 'google-client-id',
-      clientSecret: 'google-client-secret',
-      fetch: vi.fn(async () => Response.json(null)),
-      clock: { now: () => new Date('2026-07-14T04:00:00.000Z') },
-    })
-
-    await expect(client.getPrimaryCalendarIdentity('access-token-value')).rejects.toMatchObject({
-      code: 'invalid_response',
-      message: 'Google Calendar returned an invalid response.',
-    })
-  })
 })

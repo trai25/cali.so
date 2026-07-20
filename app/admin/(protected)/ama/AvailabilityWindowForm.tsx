@@ -121,11 +121,12 @@ export function AvailabilityWindowForm({
           name="weekday"
           value={String(weekday)}
           onValueChange={(value) => setWeekday(Number(value))}
-          disabled={pending !== null}
+          readOnly={pending !== null}
         >
           <SelectTrigger
             aria-label={localize(locale, '星期', 'Day')}
             className="w-full"
+            disabled={pending !== null}
           />
           <SelectContent>
             {weekdays.map((option, index) => (
@@ -148,11 +149,12 @@ export function AvailabilityWindowForm({
         <Select
           name="start"
           defaultValue={formatMinute(availabilityWindow?.startMinute ?? 9 * 60)}
-          disabled={pending !== null}
+          readOnly={pending !== null}
         >
           <SelectTrigger
             aria-label={localize(locale, '开始时间', 'Start time')}
             className="w-full tabular-nums"
+            disabled={pending !== null}
           />
           <SelectContent>
             {startOptions.map((minute, index) => (
@@ -176,11 +178,12 @@ export function AvailabilityWindowForm({
         <Select
           name="end"
           defaultValue={formatMinute(availabilityWindow?.endMinute ?? 12 * 60)}
-          disabled={pending !== null}
+          readOnly={pending !== null}
         >
           <SelectTrigger
             aria-label={localize(locale, '结束时间', 'End time')}
             className="w-full tabular-nums"
+            disabled={pending !== null}
           />
           <SelectContent>
             {endOptions.map((minute, index) => (

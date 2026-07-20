@@ -54,12 +54,6 @@ type GoogleTokenResponse = {
   scope?: string
 }
 
-export type GoogleCalendarIdentity = {
-  id: string
-  summary: string
-  timeZone: string
-}
-
 export type GoogleBusyInterval = {
   start: string
   end: string
@@ -295,32 +289,6 @@ export function createGoogleCalendarClient(dependencies: GoogleCalendarClientDep
         expiresAt: new Date(
           dependencies.clock.now().getTime() + payload.expires_in * 1000,
         ),
-      }
-    },
-
-    async getPrimaryCalendarIdentity(accessToken: string): Promise<GoogleCalendarIdentity> {
-      const response = await request(`${GOOGLE_CALENDAR_API}/calendars/primary`, {
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-      await assertCalendarResponse(response)
-      const payload = await readJson(response)
-      if (
-        !isRecord(payload) ||
-        typeof payload.id !== 'string' ||
-        !payload.id ||
-        typeof payload.summary !== 'string' ||
-        typeof payload.timeZone !== 'string' ||
-        !payload.timeZone
-      ) {
-        invalidResponse()
-      }
-      return {
-        id: payload.id,
-        summary: payload.summary,
-        timeZone: payload.timeZone,
       }
     },
 

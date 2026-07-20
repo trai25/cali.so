@@ -6,7 +6,6 @@ import { createSecretBox, type EncryptedSecretEnvelope } from '../secrets'
 import {
   GOOGLE_CALENDAR_SCOPES,
   GoogleCalendarError,
-  type GoogleCalendarIdentity,
 } from './client'
 import {
   createGoogleCalendarService,
@@ -97,14 +96,6 @@ function fixture() {
         expiresAt: new Date('2026-07-14T05:00:00.000Z'),
       }
     },
-    async getPrimaryCalendarIdentity(accessToken) {
-      calls.push(['identity', accessToken])
-      return {
-        id: 'owner@example.com',
-        summary: 'Cali Castle',
-        timeZone: 'Asia/Taipei',
-      } satisfies GoogleCalendarIdentity
-    },
     async refreshAccessToken(refreshToken) {
       calls.push(['refresh', refreshToken])
       return {
@@ -192,7 +183,7 @@ describe('Google Calendar connection service', () => {
     ])
   })
 
-  it('connects the primary calendar and stores only an encrypted refresh token', async () => {
+  it('connects with the granted event and free/busy scopes only', async () => {
     const f = fixture()
     await f.service.begin()
 
@@ -205,9 +196,9 @@ describe('Google Calendar connection service', () => {
     expect(result).toBe('connected')
     expect(f.connection).toMatchObject({
       status: 'connected',
-      calendarId: 'owner@example.com',
-      calendarEmail: 'owner@example.com',
-      calendarSummary: 'Cali Castle',
+      calendarId: 'primary',
+      calendarEmail: null,
+      calendarSummary: null,
       grantedScopes: [...GOOGLE_CALENDAR_SCOPES],
       lastErrorCode: null,
     })
@@ -220,6 +211,7 @@ describe('Google Calendar connection service', () => {
         redirectUri: new URL('https://cali.so/api/admin/ama/google/callback'),
       },
     ])
+    expect(f.calls).not.toContainEqual(['identity', 'access-token'])
   })
 
   it('rejects replayed OAuth state before exchanging another code', async () => {
