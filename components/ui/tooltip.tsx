@@ -9,7 +9,6 @@ import {
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import { cn } from "~/lib/utils";
 import { fontWeights } from "~/lib/font-weight";
-import { useShape } from "~/lib/shape-context";
 
 // ---------------------------------------------------------------------------
 // Portal container context
@@ -110,7 +109,6 @@ function Tooltip({
 }: TooltipProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const open = forceOpen !== undefined ? forceOpen : internalOpen;
-  const shape = useShape();
   const portalContainer = useContext(TooltipPortalContainerContext);
   const hasAmbientProvider = useContext(TooltipGroupContext);
 
@@ -144,7 +142,7 @@ function Tooltip({
                     // height (~26px) as untrimmed browsers.
                     "bg-foreground px-2 py-1 text-[14px] text-background",
                     "[text-box:trim-both_cap_alphabetic] supports-[text-box:trim-both]:py-2",
-                    shape.bg,
+                    "rounded-[20px]",
                     className
                   )}
                   style={{

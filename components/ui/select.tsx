@@ -11,16 +11,21 @@ import {
   useMemo,
   createContext,
   useContext,
+  type ComponentType,
   type ReactNode,
   type HTMLAttributes,
 } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Select as SelectPrimitive } from "@base-ui/react/select";
-import type { IconComponent } from "~/lib/icon-context";
 import { cn } from "~/lib/utils";
 import { useProximityHover } from "~/hooks/use-proximity-hover";
-import { useShape } from "~/lib/shape-context";
 import { Elevated } from "~/lib/elevated";
+
+type SelectIcon = ComponentType<{
+  size?: number;
+  strokeWidth?: number;
+  className?: string;
+}>;
 
 // ---------------------------------------------------------------------------
 // Select context
@@ -186,7 +191,7 @@ const triggerVariants = cva(
 interface SelectTriggerProps
   extends Omit<HTMLAttributes<HTMLButtonElement>, "children">,
     VariantProps<typeof triggerVariants> {
-  icon?: IconComponent;
+  icon?: SelectIcon;
   placeholder?: string;
   error?: string;
 }
@@ -196,8 +201,6 @@ const SelectTrigger = forwardRef<HTMLButtonElement, SelectTriggerProps>(
     { className, variant, size, icon: Icon, placeholder = "Select…", error, ...props },
     ref
   ) => {
-    const shape = useShape();
-
     return (
       <div className="flex flex-col gap-1">
         <SelectPrimitive.Trigger
@@ -205,7 +208,7 @@ const SelectTrigger = forwardRef<HTMLButtonElement, SelectTriggerProps>(
           aria-invalid={!!error || undefined}
           className={cn(
             triggerVariants({ variant, size }),
-            shape.input,
+            "rounded-[20px]",
             error && "border-destructive/50 hover:border-destructive/50",
             className
           )}
@@ -265,7 +268,6 @@ interface SelectContentProps {
 const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
   ({ className, children }, ref) => {
     const { open, value } = useSelectContext();
-    const shape = useShape();
     const containerRef = useRef<HTMLDivElement>(null);
 
     const {
@@ -377,14 +379,14 @@ const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
                 className={cn(
                   // min-w tracks the trigger via the Positioner's --anchor-width
                   // var, matching the pre-migration minWidth: triggerRect.width.
-                  `relative flex flex-col gap-0.5 min-w-[var(--anchor-width)] max-h-[min(300px,var(--available-height))] overflow-y-auto ${shape.container} p-1 select-none outline-none`,
+                  "relative flex flex-col gap-0.5 min-w-[var(--anchor-width)] max-h-[min(300px,var(--available-height))] overflow-y-auto rounded-3xl p-1 select-none outline-none",
                   className
                 )}
               >
                 {/* Selected background */}
                 {checkedRect && (
                   <div
-                    className={`absolute ${shape.bg} bg-active pointer-events-none`}
+                    className="absolute rounded-[20px] bg-active pointer-events-none"
                     style={{
                       top: checkedRect.top,
                       left: checkedRect.left,
@@ -398,7 +400,7 @@ const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
                 {/* Hover background */}
                 {activeRect && (
                   <div
-                    className={`absolute ${shape.bg} bg-hover pointer-events-none`}
+                    className="absolute rounded-[20px] bg-hover pointer-events-none"
                     style={{
                       top: activeRect.top,
                       left: activeRect.left,
@@ -411,7 +413,7 @@ const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
                 {/* Focus ring */}
                 {focusRect && (
                   <div
-                    className={`absolute ${shape.focusRing} pointer-events-none z-20 border border-[color:var(--focus-ring)]`}
+                    className="absolute rounded-[22px] pointer-events-none z-20 border border-[color:var(--focus-ring)]"
                     style={{
                       left: focusRect.left - 2,
                       top: focusRect.top - 2,
@@ -438,7 +440,7 @@ SelectContent.displayName = "SelectContent";
 // ---------------------------------------------------------------------------
 
 interface SelectItemProps extends HTMLAttributes<HTMLDivElement> {
-  icon?: IconComponent;
+  icon?: SelectIcon;
   index: number;
   value: string;
   disabled?: boolean;
@@ -460,7 +462,6 @@ const SelectItem = forwardRef<HTMLDivElement, SelectItemProps>(
     const selectCtx = useSelectContext();
     const contentCtx = useContext(SelectContentContext);
     const internalRef = useRef<HTMLDivElement>(null);
-    const shape = useShape();
 
     // Register with proximity hover
     useEffect(() => {
@@ -495,7 +496,7 @@ const SelectItem = forwardRef<HTMLDivElement, SelectItemProps>(
               // shrink-0 is load-bearing: the popup is a flex column, so a
               // long list (every IANA zone) would otherwise squash every
               // row well under its 44px target.
-              `relative z-10 flex h-11 shrink-0 items-center gap-2 ${shape.item} px-2 text-[14px] cursor-pointer outline-none select-none`,
+              "relative z-10 flex h-11 shrink-0 items-center gap-2 rounded-[20px] px-2 text-[14px] cursor-pointer outline-none select-none",
               isActive || isChecked
                 ? "text-foreground"
                 : "text-muted-foreground",

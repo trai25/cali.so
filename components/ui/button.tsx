@@ -5,13 +5,19 @@ import {
   forwardRef,
   isValidElement,
   type ButtonHTMLAttributes,
+  type ComponentType,
   type ReactElement,
   type ReactNode,
 } from "react";
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import { cva, type VariantProps } from "class-variance-authority";
-import type { IconComponent } from "~/lib/icon-context";
 import { cn } from "~/lib/utils";
+
+type ButtonIcon = ComponentType<{
+  size?: number;
+  strokeWidth?: number;
+  className?: string;
+}>;
 
 const buttonVariants = cva(
   [
@@ -60,8 +66,8 @@ interface ButtonProps
   /** When true, the given single React-element child becomes the rendered element (slot-style). */
   asChild?: boolean;
   loading?: boolean;
-  leadingIcon?: IconComponent;
-  trailingIcon?: IconComponent;
+  leadingIcon?: ButtonIcon;
+  trailingIcon?: ButtonIcon;
   /** Force the visual pressed/held state. Useful when the button drives an
    *  external open piece of UI (a popover, dropdown, etc.) so it reads as
    *  engaged while the menu is showing. */

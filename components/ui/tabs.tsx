@@ -12,12 +12,11 @@ import {
   Children,
   cloneElement,
   isValidElement,
+  type ComponentType,
   type ComponentPropsWithoutRef,
 } from "react";
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
-import type { IconComponent } from "~/lib/icon-context";
 import { cn } from "~/lib/utils";
-import { useShape } from "~/lib/shape-context";
 import { useSurface } from "~/lib/surface-context";
 import { SURFACE_BG, surfaceClasses } from "~/lib/surface-classes";
 import { useProximityHover } from "~/hooks/use-proximity-hover";
@@ -33,6 +32,12 @@ interface TabsValueOrderContextValue {
 const TabsValueOrderContext = createContext<TabsValueOrderContextValue | null>(null);
 
 type TabsVariant = "segmented" | "subtle";
+
+type TabIcon = ComponentType<{
+  size?: number;
+  strokeWidth?: number;
+  className?: string;
+}>;
 
 interface TabsListContextValue {
   registerTab: (index: number, value: string, el: HTMLElement | null) => void;
@@ -164,7 +169,6 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
   ({ children, className, variant = "segmented", ...props }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const isMouseInside = useRef(false);
-    const shape = useShape();
     const substrate = useSurface();
     // Active pill lifts 3 levels above substrate (1 above the muted track + 2 for pop).
     // On the page (substrate 1) this lands on surface 4 — matches the original design.
@@ -293,7 +297,7 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
           className={cn(
             "relative inline-flex items-center select-none",
             variant === "subtle" ? "gap-1" : "gap-0.5 p-1 bg-muted",
-            shape.container,
+            "rounded-3xl",
             className
           )}
           {...props}
@@ -307,7 +311,7 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
                 variant === "subtle"
                   ? subtleIndicatorClass
                   : surfaceClasses(indicatorLevel),
-                shape.bg
+                "rounded-[20px]"
               )}
               style={{
                 left: selectedRect.left,
@@ -324,7 +328,7 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
             <div
               className={cn(
                 "absolute pointer-events-none bg-hover",
-                shape.bg
+                "rounded-[20px]"
               )}
               style={{
                 left: hoverRect.left,
@@ -341,7 +345,7 @@ const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
             <div
               className={cn(
                 "absolute pointer-events-none z-20 border border-[color:var(--focus-ring)]",
-                shape.focusRing
+                "rounded-[22px]"
               )}
               style={{
                 left: focusRect.left - 2,
@@ -366,7 +370,7 @@ TabsList.displayName = "TabsList";
 interface TabItemProps
   extends ComponentPropsWithoutRef<typeof TabsPrimitive.Tab> {
   value: string;
-  icon?: IconComponent;
+  icon?: TabIcon;
   label: string;
   /** @internal Auto-assigned by TabsList. */
   _index?: number;
