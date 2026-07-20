@@ -35,35 +35,41 @@ import { createMediaReconciliationService } from '../reconciliation/service'
 import { createPublicRenditionUrl } from '../storage/bunny'
 import { parseBunnyMediaCdnEnv } from '../storage/config'
 import { getMediaStorage } from '../storage/server'
+import { createMediaTransferRepository } from '../transfer/repository'
+import { createMediaTransferService } from '../transfer/service'
 
 let services: ReturnType<typeof createServices> | undefined
 let pageServices: ReturnType<typeof createPageServices> | undefined
 
 function createCatalogServices(publicRenditionUrl: (key: string) => string) {
   const database = () => getDatabase()
+  const invalidatePublicSelection = async () => {
+    revalidateTag(PUBLIC_PHOTO_SELECTION_CACHE_TAG, { expire: 0 })
+  }
   const review = createMediaAssetReviewService({
     repository: createMediaAssetReviewRepository(database, publicRenditionUrl),
+    invalidatePublicSelection,
   })
   const selection = createPhotoSelectionService({
     repository: createPhotoSelectionRepository(database),
-    invalidatePublicSelection: async () => {
-      // Next 16.3 requires a cache-life profile or expire object here;
-      // updateTag is restricted to Server Actions and this runs in a Route Handler.
-      revalidateTag(PUBLIC_PHOTO_SELECTION_CACHE_TAG, { expire: 0 })
-    },
+    // Next 16.3 requires a cache-life profile or expire object here;
+    // updateTag is restricted to Server Actions and this runs in a Route Handler.
+    invalidatePublicSelection,
   })
 
-  return { database, review, selection }
+  return { database, invalidatePublicSelection, review, selection }
 }
 
 function createPageServices() {
   const cdnBaseUrl = parseBunnyMediaCdnEnv(process.env)
-  const { review, selection } = createCatalogServices(
+  const { database, review, selection } = createCatalogServices(
     createPublicRenditionUrl(cdnBaseUrl),
   )
+  const transferRepository = createMediaTransferRepository(database)
   return {
     getDraft: selection.getDraft,
     listAssets: review.listAssets,
+    listTransfers: transferRepository.listOwnedTransferJobs,
   }
 }
 
@@ -79,9 +85,8 @@ function createServices() {
       windowSeconds: uploadChunkRateLimitWindowSeconds,
     },
   )
-  const { database, review, selection } = createCatalogServices(
-    storage.publicRenditionUrl,
-  )
+  const { database, invalidatePublicSelection, review, selection } =
+    createCatalogServices(storage.publicRenditionUrl)
   const ingestionRepository = createMediaIngestionRepository(database)
   const mediaEncryptionKey = process.env.MEDIA_ENCRYPTION_KEY
   if (!mediaEncryptionKey) {
@@ -95,6 +100,12 @@ function createServices() {
   })
   const purge = createMediaPurgeService({
     repository: createMediaPurgeRepository(database),
+    storage,
+    invalidatePublicSelection,
+  })
+  const transfer = createMediaTransferService({
+    repository: createMediaTransferRepository(database),
+    purge,
     storage,
   })
   const altTextConfig = parseMediaAltTextEnv(process.env)
@@ -138,6 +149,7 @@ function createServices() {
     selection,
     security: getOwnerAdminSecurity(),
     storage,
+    transfer,
     uploadChunkRateLimiter: {
       retryAfterSeconds: uploadChunkRateLimitWindowSeconds,
       limit: (key: string) => uploadChunkRateLimiter.limit(key),

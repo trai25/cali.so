@@ -25,49 +25,46 @@ function MediaFallback() {
         </h1>
         <PixelCluster variant={8} className="shrink-0" />
       </div>
-      <p className="mt-1 text-sm tabular-nums text-muted-foreground">…</p>
-      <div className="mt-6 rounded-lg border border-dashed border-border px-5 py-4">
-        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-          <div>
-            <p className="text-sm font-medium">
-              <T zh="拖入或选择照片" en="Drop or choose photos" />
-            </p>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              JPEG · PNG · HEIC · ≤ 50 MiB
-            </p>
-          </div>
-          <span className="inline-flex h-7 items-center rounded-full bg-surface-1 px-3 text-[12px] text-muted-foreground">
-            <T zh="选择文件" en="Choose files" />
-          </span>
-        </div>
+      <div className="mt-1 flex h-10 items-center justify-between gap-4">
+        <p className="text-sm tabular-nums text-muted-foreground">…</p>
+        <span className="inline-flex h-8 items-center rounded-full bg-surface-1 px-3.5 text-[12px] text-muted-foreground">
+          <T zh="传输" en="Transfers" />
+        </span>
       </div>
-      {/* The subtle Tabs row is 32px tall (h-8 chips, no track). */}
-      <div className="mt-6 flex min-h-8 items-center" />
-      <ul className="mt-4 grid grid-cols-3 gap-2">
-        {Array.from({ length: 6 }, (_, index) => (
-          <li
-            key={index}
-            aria-hidden
-            className="aspect-square rounded-[2px] bg-surface-1"
-          />
-        ))}
-      </ul>
+      {/* The final controls occupy this exact 32px command row. */}
+      <div className="mt-4 flex min-h-8 items-center justify-between gap-3">
+        <span className="h-8 w-32 rounded-full bg-surface-1" />
+        <span className="h-8 w-40 rounded-sm bg-surface-1" />
+      </div>
+      <div className="min-h-[25rem]">
+        <ul className="mt-4 grid grid-cols-3 gap-2">
+          {Array.from({ length: 6 }, (_, index) => (
+            <li
+              key={index}
+              aria-hidden
+              className="aspect-square rounded-[2px] bg-surface-1"
+            />
+          ))}
+        </ul>
+      </div>
     </div>
   )
 }
 
 async function MediaLoader() {
   const owner = await requireOwnerPage('/admin/media')
-  const { getDraft, listAssets } = getMediaAdminPageServices()
-  const [active, archived, draft] = await Promise.all([
+  const { getDraft, listAssets, listTransfers } = getMediaAdminPageServices()
+  const [active, archived, draft, transfers] = await Promise.all([
     listAssets({ ownerUserId: owner.id, view: 'active' }),
     listAssets({ ownerUserId: owner.id, view: 'archived' }),
     getDraft(owner.id),
+    listTransfers(owner.id),
   ])
   return (
     <MediaLibrary
       initialActive={active}
       initialArchived={archived}
+      initialTransfers={transfers}
       selectionIds={draft.mediaAssetIds}
     />
   )

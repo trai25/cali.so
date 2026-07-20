@@ -55,8 +55,8 @@ Current as of July 2026.
   `publicMetadata.siteOwner = "yes"` authorization marker. Origin checks, rate
   limits, audit events, and the strict admin CSP remain in force. Passkey
   step-up (reverification) was removed entirely in July 2026 (maintainer
-  decision) — see `docs/security/clerk-admin-operations.md`; the typed PURGE
-  confirmation for Media purge is still validated server-side.
+  decision) — see `docs/security/clerk-admin-operations.md`. Media Purge uses
+  one fixed confirmation dialog with no typed phrase.
 - The admin was redesigned in July 2026 to share the public design language
   (warm paper, 37.5rem column, an owner dock; spec in
   `docs/design-language.md` § Owner admin). IA: `/admin` is a one-screen
@@ -118,6 +118,13 @@ Current as of July 2026.
   and lease-claimed reconciliation removes abandoned chunks without racing an
   active transfer. `/photos` and homepage previews consume
   the active Published Photo Selection from Bunny Renditions. Media
+  Transfer Jobs persist across dialog dismissal and reload; Retry and Discard
+  stay in Transfers, including during processing, while only ready Media
+  Assets appear in Library or Archived. Rendition writes serialize with
+  Discard/Purge and persist their cleanup manifest before storage. Archive and
+  Purge surgically withdraw the target from Draft and
+  Published Photo Selections without publishing unrelated Draft edits. Archive
+  offers immediate Undo when the affected revisions remain unchanged.
   capabilities have no runtime feature switches: Alt Text Suggestions are on
   by default and, since July 2026, auto-apply as the approved bilingual Alt
   Text when none exists yet (upload-to-archive needs no review step; edits

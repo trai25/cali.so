@@ -18,9 +18,11 @@ import {
   DialogClose,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '~/components/ui/dialog'
+import { adminResponseJson } from '~/lib/admin/client-response'
 import { T } from '~/lib/i18n'
 import { localize, useLocale } from '~/lib/locale-client'
 import {
@@ -34,14 +36,6 @@ import { tiltFromSlug } from '~/lib/polaroid'
 const SAVE_DEBOUNCE_MS = 600
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error' | 'conflict'
-
-async function responseJson(response: Response) {
-  const body = (await response.json()) as Record<string, unknown>
-  if (!response.ok) {
-    throw new Error(typeof body.error === 'string' ? body.error : 'request_failed')
-  }
-  return body
-}
 
 function assetName(asset: MediaAssetReviewRecord) {
   return (
@@ -173,7 +167,7 @@ export function PhotoCuration({
             mediaAssetIds: orderRef.current,
           }),
         })
-        const body = await responseJson(response)
+        const body = await adminResponseJson(response)
         const draft = body.draft as DraftPhotoSelection
         revisionRef.current = draft.revision
         publishKeyRef.current = null
@@ -269,7 +263,7 @@ export function PhotoCuration({
           idempotencyKey,
         }),
       })
-      await responseJson(response)
+      await adminResponseJson(response)
       publishKeyRef.current = null
       setConfirming(false)
       setNotice(
@@ -331,15 +325,15 @@ export function PhotoCuration({
         </h1>
         <PixelCluster variant={9} className="shrink-0" />
       </div>
-      <div className="mt-1 flex min-h-8 flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <p className="text-sm tabular-nums text-muted-foreground">
+      <div className="mt-1 flex h-12 items-center justify-between gap-4">
+        <p className="min-w-0 text-sm leading-5 tabular-nums text-muted-foreground">
           {order.length}{' '}
           <T
             zh="张照片 · 前三张兼作首页预览"
             en="photos · first three double as the homepage preview"
           />
         </p>
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-3">
           <span aria-live="polite" className="text-sm text-muted-foreground">
             {saveState === 'saving' && <T zh="保存中…" en="Saving…" />}
             {saveState === 'saved' && <T zh="草稿已保存" en="Draft saved" />}
@@ -357,15 +351,16 @@ export function PhotoCuration({
             disabled={
               busy || conflict || saveState === 'error' || ineligibleIds.length > 0
             }
-            onClick={() => setConfirming((current) => !current)}
+            onClick={() => setConfirming(true)}
           >
             <T zh="发布" en="Publish" />
           </Button>
         </div>
       </div>
 
-      {conflict && (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md bg-surface-1 px-4 py-3">
+      <div className="mt-4 h-20 overflow-y-auto rounded-md bg-surface-1 px-3 py-2">
+        {conflict ? (
+          <div className="flex min-h-16 flex-wrap items-center justify-between gap-3">
           <p className="text-sm leading-5">
             <T
               zh="草稿已在其他页面更改。"
@@ -375,90 +370,25 @@ export function PhotoCuration({
           <Button variant="secondary" size="sm" onClick={() => router.refresh()}>
             <T zh="重新载入草稿" en="Reload draft" />
           </Button>
-        </div>
-      )}
-
-      {confirming && !conflict && (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md bg-surface-1 px-4 py-3">
-          <p className="text-sm leading-6">
-            {order.length === 0 ? (
-              <T
-                zh="发布空选集会清空照片页和首页预览。"
-                en="Publishing an empty selection clears the photos page and homepage previews."
-              />
-            ) : (
-              <>
-                {order.length} <T zh="张照片" en="photos" />
-                {added > 0 && (
-                  <>
-                    {' · '}
-                    <T zh={`新增 ${added}`} en={`${added} added`} />
-                  </>
-                )}
-                {removed > 0 && (
-                  <>
-                    {' · '}
-                    <T zh={`移除 ${removed}`} en={`${removed} removed`} />
-                  </>
-                )}
-                {reordered && (
-                  <>
-                    {' · '}
-                    <T zh="顺序有变" en="order changed" />
-                  </>
-                )}
-                {added === 0 && removed === 0 && !reordered && (
-                  <>
-                    {' · '}
-                    <T zh="与线上一致" en="matches what is live" />
-                  </>
-                )}
-              </>
-            )}
-          </p>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={busy}
-              onClick={() => setConfirming(false)}
-            >
-              <T zh="取消" en="Cancel" />
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              loading={publishing}
-              onClick={() => void publish()}
-            >
-              <T zh="确认发布" en="Confirm publish" />
-            </Button>
           </div>
-        </div>
-      )}
-
-      {notice && (
-        <p
-          ref={noticeRef}
-          role="status"
-          tabIndex={-1}
-          className="mt-4 rounded-md bg-surface-1 px-4 py-3 text-sm leading-6 outline-none"
-        >
-          {notice}
-        </p>
-      )}
-
-      {ineligibleIds.length > 0 && (
-        <p role="alert" className="mt-4 border-l-2 border-destructive pl-4 text-sm leading-6">
-          <T
-            zh="选集中有照片不再符合发布条件（虚化显示）。移除它，或到媒体页完成处理。"
-            en="A photo in the selection is no longer eligible (shown dimmed). Remove it, or repair it in Media."
-          />
-        </p>
-      )}
-
-      {selectedId && selectedIndex >= 0 && (
-        <div className="mt-4 flex min-h-11 flex-wrap items-center gap-1 rounded-md bg-surface-1 px-3 py-1.5">
+        ) : ineligibleIds.length > 0 ? (
+          <p role="alert" className="flex min-h-16 items-center border-l-2 border-destructive pl-4 text-sm leading-6">
+            <T
+              zh="选集中有照片不再符合发布条件（虚化显示）。移除它，或到媒体页完成处理。"
+              en="A photo in the selection is no longer eligible (shown dimmed). Remove it, or repair it in Media."
+            />
+          </p>
+        ) : notice ? (
+          <p
+            ref={noticeRef}
+            role="status"
+            tabIndex={-1}
+            className="flex min-h-16 items-center text-sm leading-6 outline-none"
+          >
+            {notice}
+          </p>
+        ) : selectedId && selectedIndex >= 0 ? (
+          <div className="flex min-h-16 flex-wrap items-center gap-1">
           <span className="px-2 text-sm tabular-nums text-muted-foreground">
             {String(selectedIndex + 1).padStart(2, '0')} / {order.length}
           </span>
@@ -507,19 +437,28 @@ export function PhotoCuration({
           >
             ✕
           </Button>
-        </div>
-      )}
+          </div>
+        ) : (
+          <p className="flex min-h-16 items-center text-sm leading-5 text-muted-foreground">
+            <T
+              zh="选择照片可移动或移除；拖动可直接排序。"
+              en="Select a photo to move or remove it; drag to reorder directly."
+            />
+          </p>
+        )}
+      </div>
 
-      {order.length === 0 ? (
-        <p className="mt-6 hairline-top py-10 text-sm leading-6 text-muted-foreground">
+      <div className="min-h-[30rem]">
+        {order.length === 0 ? (
+          <p className="mt-6 hairline-top py-10 text-sm leading-6 text-muted-foreground">
           <T
             zh="选集是空的。从档案里挑几张照片开始吧。"
             en="The selection is empty. Pick a few photos from the archive to begin."
           />
-        </p>
-      ) : null}
+          </p>
+        ) : null}
 
-      <ul className="mt-6 grid grid-cols-3 gap-x-4 gap-y-6">
+        <ul className="mt-4 grid grid-cols-3 gap-x-4 gap-y-6">
         {order.map((id, index) => {
           const asset = assetById.get(id)
           const ineligible = !asset || !isMediaAssetEligible(asset)
@@ -582,10 +521,82 @@ export function PhotoCuration({
             </span>
           </button>
         </li>
-      </ul>
+        </ul>
+      </div>
+
+      <Dialog open={confirming} onOpenChange={setConfirming}>
+        <DialogContent size="sm" className="h-64">
+          <DialogHeader>
+            <DialogTitle>
+              <T zh="发布照片选集" en="Publish Photo Selection" />
+            </DialogTitle>
+            <DialogClose disabled={publishing}>
+              <T zh="取消" en="Cancel" />
+            </DialogClose>
+          </DialogHeader>
+          <DialogDescription>
+            <T
+              zh="发布会替换照片页和首页预览中的当前选集。"
+              en="Publishing replaces the current selection on Photos and the homepage preview."
+            />
+          </DialogDescription>
+          <DialogBody>
+            <p className="text-sm leading-6 tabular-nums">
+              {order.length === 0 ? (
+                <T
+                  zh="发布空选集会清空照片页和首页预览。"
+                  en="Publishing an empty selection clears the photos page and homepage previews."
+                />
+              ) : (
+                <>
+                  {order.length} <T zh="张照片" en="photos" />
+                  {added > 0 && (
+                    <>
+                      {' · '}
+                      <T zh={`新增 ${added}`} en={`${added} added`} />
+                    </>
+                  )}
+                  {removed > 0 && (
+                    <>
+                      {' · '}
+                      <T zh={`移除 ${removed}`} en={`${removed} removed`} />
+                    </>
+                  )}
+                  {reordered && (
+                    <>
+                      {' · '}
+                      <T zh="顺序有变" en="order changed" />
+                    </>
+                  )}
+                  {added === 0 && removed === 0 && !reordered && (
+                    <>
+                      {' · '}
+                      <T zh="与线上一致" en="matches what is live" />
+                    </>
+                  )}
+                </>
+              )}
+            </p>
+          </DialogBody>
+          <DialogFooter>
+            <Button
+              variant="primary"
+              size="md"
+              loading={publishing}
+              disabled={publishing}
+              onClick={() => void publish()}
+            >
+              <T zh="发布" en="Publish" />
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
-        <DialogContent size="lg">
+        <DialogContent
+          size="lg"
+          className="h-[min(38rem,calc(100dvh-2rem))]"
+        >
           <DialogHeader>
             <DialogTitle>
               <T zh="从档案添加" en="Add from the archive" />
@@ -594,8 +605,9 @@ export function PhotoCuration({
               <T zh="完成" en="Done" />
             </DialogClose>
           </DialogHeader>
+          <DialogBody>
           {candidates.length === 0 ? (
-            <p className="mt-4 text-sm leading-6 text-muted-foreground">
+            <p className="text-sm leading-6 text-muted-foreground">
               <T
                 zh="档案里的照片都已经在选集里了。"
                 en="Every archive photo is already in the selection."
@@ -603,10 +615,9 @@ export function PhotoCuration({
             </p>
           ) : (
             <>
-              <DialogDescription>
+              <p className="mb-4 text-sm text-muted-foreground">
                 <T zh="点一下即可加入选集末尾。" en="Tap a photo to append it to the selection." />
-              </DialogDescription>
-              <DialogBody className="mt-4">
+              </p>
                 <ul className="grid grid-cols-3 gap-2">
                   {candidates.map((asset) => {
                     const reason = ineligibilityReason(asset)
@@ -663,9 +674,9 @@ export function PhotoCuration({
                     />
                   </p>
                 )}
-              </DialogBody>
             </>
           )}
+          </DialogBody>
         </DialogContent>
       </Dialog>
     </div>

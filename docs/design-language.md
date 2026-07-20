@@ -917,12 +917,26 @@ public analytics, social reads, and route view transitions. Its contract:
   (`Elevated` offset 4); popovers stay at offset 2. Never a native
   `confirm()`/`prompt()`. Dialogs wear the printed-label chrome the hover
   cards established: the register's 2px corner, a hairline frame, and
-  ruled full-bleed head/foot rows (`components/ui/dialog.tsx`).
-- **Confirmation grammar.** Reversible-but-notable actions (archive,
-  disconnect) use a two-step armed button that relaxes after ~4s.
-  Irreversible actions (Purge) require the typed confirmation word inside
-  the dialog; the server validates the same literal. Publishing shows an
-  inline summary of what changes before one confirm.
+  ruled full-bleed head/foot rows (`components/ui/dialog.tsx`). Transient
+  workflows use fixed viewport-bounded geometry; async state scrolls inside
+  the body and never resizes the page or the open sheet.
+- **Media workflow.** Transfers, the Media inspector, Transfer Discard, Purge,
+  the Photo Selection picker, and Publish are fixed-geometry dialogs. Transfer
+  Jobs persist when the dialog closes and after reload. Incomplete work stays
+  in Transfers with Retry and Discard, including while processing, and never
+  appears as an empty Media Asset in Library or Archived. Chunk rate limits
+  keep the row in place, follow the server's retry delay, and preserve the
+  same fixed dialog geometry.
+- **Confirmation grammar.** Archive is one action followed by a ten-second Undo
+  toast. Purge and Transfer Discard each use one fixed confirmation dialog with
+  one destructive confirmation button and no typed phrase. Publishing uses one
+  fixed dialog that summarizes the pending membership and order change before
+  one confirm. Other reversible-but-notable admin actions may retain their
+  two-step armed control where their own workflow specifies it.
+- **Reserved commands.** Photo Selection permanently reserves its command
+  region for selection controls, conflicts, eligibility, and publication
+  feedback. Loading shells reserve the same header, command, and grid geometry,
+  so selecting, publishing, and streaming owner data do not move the prints.
 - **No entrance animations** — the admin is daily-use chrome (frequency
   principle). Status is a quiet dot: amber for in-flight, red only for
   broken or destructive. Numbers are always `tabular-nums`.

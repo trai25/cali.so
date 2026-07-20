@@ -35,6 +35,7 @@ describe('Media admin page services', () => {
     expect(services).toEqual({
       getDraft: expect.any(Function),
       listAssets: expect.any(Function),
+      listTransfers: expect.any(Function),
     })
     expect(services).not.toHaveProperty('review')
     expect(services).not.toHaveProperty('selection')

@@ -9,7 +9,11 @@ import {
   mediaUploadIntents,
 } from '~/db/schema'
 
+import { lockMediaAssetProcessing } from '../catalog/lifecycle-locks'
+
 import type {
+  ActiveMediaAssetProcessingSession,
+  MarkMediaAssetReadyInput,
   MediaAssetRecord,
   MediaIngestionRepository,
   OriginalContentType,
@@ -103,6 +107,104 @@ export function createMediaIngestionRepository(
     return row ? mediaAssetRecord(row) : null
   }
 
+  async function findRenditionWith(
+    client: MediaIngestionDatabase | Parameters<
+      Parameters<MediaIngestionDatabase['transaction']>[0]
+    >[0],
+    mediaAssetId: string,
+    profileWidth: number,
+  ) {
+    const [row] = await client
+      .select()
+      .from(mediaRenditions)
+      .where(
+        and(
+          eq(mediaRenditions.mediaAssetId, mediaAssetId),
+          eq(mediaRenditions.profileWidth, profileWidth),
+        ),
+      )
+      .limit(1)
+    return row ? renditionRecord(row) : null
+  }
+
+  async function recordRenditionWith(
+    client: MediaIngestionDatabase | Parameters<
+      Parameters<MediaIngestionDatabase['transaction']>[0]
+    >[0],
+    input: RenditionRecord,
+  ) {
+    const [created] = await client
+      .insert(mediaRenditions)
+      .values(input)
+      .onConflictDoNothing({
+        target: [mediaRenditions.mediaAssetId, mediaRenditions.profileWidth],
+      })
+      .returning()
+    if (created) return renditionRecord(created)
+
+    const existing = await findRenditionWith(
+      client,
+      input.mediaAssetId,
+      input.profileWidth,
+    )
+    if (!existing) throw new Error('Rendition conflict was not readable')
+    return existing
+  }
+
+  async function markReadyWith(
+    client: MediaIngestionDatabase | Parameters<
+      Parameters<MediaIngestionDatabase['transaction']>[0]
+    >[0],
+    {
+      mediaAssetId,
+      metadata,
+      completedAt,
+      requiredRenditionCount,
+    }: MarkMediaAssetReadyInput,
+  ) {
+    const [ready] = await client
+      .update(mediaAssets)
+      .set({
+        processingState: 'ready',
+        processingErrorCode: null,
+        width: metadata.width,
+        height: metadata.height,
+        capturedAt: metadata.capturedAt,
+        cameraMake: metadata.cameraMake,
+        cameraModel: metadata.cameraModel,
+        lens: metadata.lens,
+        focalLengthMillimeters: numericValue(metadata.focalLengthMillimeters),
+        aperture: numericValue(metadata.aperture),
+        shutterSpeedSeconds: numericValue(metadata.shutterSpeedSeconds),
+        iso: metadata.iso,
+        captureLocationEnvelope: metadata.captureLocationEnvelope,
+        updatedAt: completedAt,
+      })
+      .where(
+        and(
+          eq(mediaAssets.id, mediaAssetId),
+          eq(mediaAssets.catalogState, 'active'),
+          eq(mediaAssets.processingState, 'processing'),
+          sql`(
+            SELECT count(*)
+            FROM ${mediaRenditions}
+            WHERE ${mediaRenditions.mediaAssetId} = ${mediaAssetId}
+          ) = ${requiredRenditionCount}`,
+        ),
+      )
+      .returning()
+    if (ready) return mediaAssetRecord(ready)
+
+    const [current] = await client
+      .select()
+      .from(mediaAssets)
+      .where(eq(mediaAssets.id, mediaAssetId))
+      .limit(1)
+    if (!current || current.catalogState !== 'active') return null
+    if (current.processingState === 'ready') return mediaAssetRecord(current)
+    throw new Error('Media Asset Rendition manifest is incomplete')
+  }
+
   return {
     async createUploadIntent(input) {
       const [created] = await database()
@@ -155,6 +257,7 @@ export function createMediaIngestionRepository(
             eq(mediaUploadIntents.ownerUserId, ownerUserId),
             gt(mediaUploadIntents.expiresAt, activeAt),
             isNull(mediaUploadIntents.completedAt),
+            isNull(mediaUploadIntents.discardStartedAt),
           ),
         )
         .returning()
@@ -173,6 +276,7 @@ export function createMediaIngestionRepository(
             completed_at = COALESCE(completed_at, ${completedAt}),
             updated_at = ${completedAt}
           WHERE id = ${uploadIntent.id}
+            AND discard_started_at IS NULL
           RETURNING id
         )
         INSERT INTO ${mediaAssets} (
@@ -198,7 +302,6 @@ export function createMediaIngestionRepository(
         ON CONFLICT (upload_intent_id) DO NOTHING
       `)
       const asset = await findAssetBy(mediaAssets.uploadIntentId, uploadIntent.id)
-      if (!asset) throw new Error('Verified Media Asset was not readable')
       return asset
     },
 
@@ -213,9 +316,11 @@ export function createMediaIngestionRepository(
         .where(
           and(
             eq(mediaAssets.id, mediaAssetId),
+            eq(mediaAssets.catalogState, 'active'),
             or(
               inArray(mediaAssets.processingState, [
                 'original_verified',
+                'repair_required',
                 'retryable_failure',
               ]),
               and(
@@ -233,84 +338,59 @@ export function createMediaIngestionRepository(
       return findAssetBy(mediaAssets.id, id)
     },
 
+    async withActiveProcessingAsset<T>({ mediaAssetId, run }: {
+      mediaAssetId: string
+      run(session: ActiveMediaAssetProcessingSession): Promise<T>
+    }) {
+      const result = await database().transaction(async (transaction) => {
+        await lockMediaAssetProcessing(transaction, mediaAssetId)
+        const [asset] = await transaction
+          .select({
+            catalogState: mediaAssets.catalogState,
+            processingState: mediaAssets.processingState,
+          })
+          .from(mediaAssets)
+          .where(eq(mediaAssets.id, mediaAssetId))
+          .limit(1)
+        if (
+          !asset ||
+          asset.catalogState !== 'active' ||
+          asset.processingState !== 'processing'
+        ) {
+          return { status: 'canceled' as const }
+        }
+
+        try {
+          const value = await run({
+            findRendition: (profileWidth) =>
+              findRenditionWith(transaction, mediaAssetId, profileWidth),
+            recordRendition: (input) =>
+              recordRenditionWith(transaction, input),
+            markReady: (input) =>
+              markReadyWith(transaction, { mediaAssetId, ...input }),
+          })
+          return { status: 'active' as const, value }
+        } catch (error) {
+          // The callback may have inserted a deterministic Rendition manifest
+          // before a Bunny failure. Return the error as data so the transaction
+          // commits that cleanup record, then rethrow outside the transaction.
+          return { status: 'failed' as const, error }
+        }
+      })
+      if (result.status === 'failed') throw result.error
+      return result
+    },
+
     async findRendition(mediaAssetId, profileWidth) {
-      const [row] = await database()
-        .select()
-        .from(mediaRenditions)
-        .where(
-          and(
-            eq(mediaRenditions.mediaAssetId, mediaAssetId),
-            eq(mediaRenditions.profileWidth, profileWidth),
-          ),
-        )
-        .limit(1)
-      return row ? renditionRecord(row) : null
+      return findRenditionWith(database(), mediaAssetId, profileWidth)
     },
 
     async recordRendition(input) {
-      const [created] = await database()
-        .insert(mediaRenditions)
-        .values(input)
-        .onConflictDoNothing({
-          target: [mediaRenditions.mediaAssetId, mediaRenditions.profileWidth],
-        })
-        .returning()
-      if (created) return renditionRecord(created)
-
-      const [existing] = await database()
-        .select()
-        .from(mediaRenditions)
-        .where(
-          and(
-            eq(mediaRenditions.mediaAssetId, input.mediaAssetId),
-            eq(mediaRenditions.profileWidth, input.profileWidth),
-          ),
-        )
-        .limit(1)
-      if (!existing) throw new Error('Rendition conflict was not readable')
-      return renditionRecord(existing)
+      return recordRenditionWith(database(), input)
     },
 
-    async markReady({
-      mediaAssetId,
-      metadata,
-      completedAt,
-      requiredRenditionCount,
-    }) {
-      const [ready] = await database()
-        .update(mediaAssets)
-        .set({
-          processingState: 'ready',
-          processingErrorCode: null,
-          width: metadata.width,
-          height: metadata.height,
-          capturedAt: metadata.capturedAt,
-          cameraMake: metadata.cameraMake,
-          cameraModel: metadata.cameraModel,
-          lens: metadata.lens,
-          focalLengthMillimeters: numericValue(
-            metadata.focalLengthMillimeters,
-          ),
-          aperture: numericValue(metadata.aperture),
-          shutterSpeedSeconds: numericValue(metadata.shutterSpeedSeconds),
-          iso: metadata.iso,
-          captureLocationEnvelope: metadata.captureLocationEnvelope,
-          updatedAt: completedAt,
-        })
-        .where(
-          and(
-            eq(mediaAssets.id, mediaAssetId),
-            eq(mediaAssets.processingState, 'processing'),
-            sql`(
-              SELECT count(*)
-              FROM ${mediaRenditions}
-              WHERE ${mediaRenditions.mediaAssetId} = ${mediaAssetId}
-            ) = ${requiredRenditionCount}`,
-          ),
-        )
-        .returning()
-      if (!ready) throw new Error('Media Asset Rendition manifest is incomplete')
-      return mediaAssetRecord(ready)
+    async markReady(input) {
+      return markReadyWith(database(), input)
     },
 
     async markFailure({
@@ -329,13 +409,19 @@ export function createMediaIngestionRepository(
         .where(
           and(
             eq(mediaAssets.id, mediaAssetId),
+            eq(mediaAssets.catalogState, 'active'),
             ne(mediaAssets.processingState, 'ready'),
           ),
         )
         .returning()
       if (!failed) {
-        const current = await findAssetBy(mediaAssets.id, mediaAssetId)
-        if (current?.processingState === 'ready') return current
+        const [current] = await database()
+          .select()
+          .from(mediaAssets)
+          .where(eq(mediaAssets.id, mediaAssetId))
+          .limit(1)
+        if (!current || current.catalogState !== 'active') return null
+        if (current.processingState === 'ready') return mediaAssetRecord(current)
         throw new Error('Media Asset failure was not recorded')
       }
       return mediaAssetRecord(failed)

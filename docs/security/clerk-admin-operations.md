@@ -52,8 +52,9 @@ decision in July 2026: on a single-owner personal site the repeated prompts
 gated daily flows without a matching threat. Owner authorization is now
 exclusively the server-side `siteOwner` check, still wrapped in same-origin
 mutation guards, per-actor rate limits, privileged-action audit events, and
-the strict admin CSP. Media Asset Purge additionally requires the literal
-typed `PURGE` confirmation, validated server-side.
+the strict admin CSP. Media Asset Purge uses one explicit fixed dialog with a
+single destructive confirmation button; there is no typed phrase or second
+owner prompt.
 
 Alongside it, the admin's per-request nonce CSP was retired when admin
 routes adopted prerendered instant-navigation shells (nonces require

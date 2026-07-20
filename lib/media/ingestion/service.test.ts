@@ -72,6 +72,9 @@ function fixture() {
   let originalReportedByteSize: number | null = null
   let originalMissing = false
   let failingRenditionProfile: number | null = null
+  let processingSessionCount = 0
+  let cancelProcessingAfter: number | null = null
+  let discardBeforeAsset = false
   const repository: MediaIngestionRepository = {
     async createUploadIntent(input) {
       const key = `${input.ownerUserId}:${input.idempotencyKey}`
@@ -96,6 +99,7 @@ function fixture() {
       return id ? assets.get(id) ?? null : null
     },
     async createVerifiedMediaAsset({ uploadIntent, completedAt }) {
+      if (discardBeforeAsset) return null
       const existingId = assetsByIntent.get(uploadIntent.id)
       if (existingId) return assets.get(existingId)!
       const asset: MediaAssetRecord = {
@@ -135,6 +139,25 @@ function fixture() {
     },
     async getMediaAsset(id) {
       return assets.get(id) ?? null
+    },
+    async withActiveProcessingAsset({ mediaAssetId, run }) {
+      if (
+        cancelProcessingAfter !== null &&
+        processingSessionCount >= cancelProcessingAfter
+      ) {
+        return { status: 'canceled' }
+      }
+      processingSessionCount += 1
+      return {
+        status: 'active',
+        value: await run({
+          findRendition: (profileWidth) =>
+            repository.findRendition(mediaAssetId, profileWidth),
+          recordRendition: (input) => repository.recordRendition(input),
+          markReady: (input) =>
+            repository.markReady({ mediaAssetId, ...input }),
+        }),
+      }
     },
     async findRendition(mediaAssetId, profileWidth) {
       return renditions.get(`${mediaAssetId}:${profileWidth}`) ?? null
@@ -196,6 +219,7 @@ function fixture() {
     deleteOriginalChunk: vi.fn(async (_originalKey: string, chunkIndex: number) => {
       originalChunks.delete(chunkIndex)
     }),
+    deleteOriginal: vi.fn(async () => undefined),
     storeRendition: vi.fn(async (input: {
       key: string
       bytes: Uint8Array
@@ -283,6 +307,12 @@ function fixture() {
     failRendition(profileWidth: number | null) {
       failingRenditionProfile = profileWidth
     },
+    cancelProcessingAfterSessions(count: number | null) {
+      cancelProcessingAfter = count
+    },
+    discardBeforeAssetCreation() {
+      discardBeforeAsset = true
+    },
   }
 }
 
@@ -362,14 +392,14 @@ describe('Media Library ingestion service', () => {
       'asset:original_verified',
       'asset:processing',
       'image:process',
-      'rendition:store:640',
       'rendition:record:640',
-      'rendition:store:1024',
+      'rendition:store:640',
       'rendition:record:1024',
-      'rendition:store:1600',
+      'rendition:store:1024',
       'rendition:record:1600',
-      'rendition:store:2560',
+      'rendition:store:1600',
       'rendition:record:2560',
+      'rendition:store:2560',
       'location:seal',
       'asset:ready',
     ])
@@ -497,6 +527,28 @@ describe('Media Library ingestion service', () => {
     expect(f.processor).not.toHaveBeenCalled()
   })
 
+  it('removes a late Original when Discard wins before asset creation', async () => {
+    const f = fixture()
+    const intent = await f.service.createUploadIntent({
+      ownerUserId: 'owner_01',
+      idempotencyKey: 'upload_01',
+      contentType: 'image/jpeg',
+      byteSize: originalBytes.byteLength,
+      checksumSha256: originalChecksum,
+    })
+    f.discardBeforeAssetCreation()
+
+    await expect(
+      f.service.completeUploadIntent({
+        ownerUserId: 'owner_01',
+        uploadIntentId: intent.id,
+      }),
+    ).rejects.toEqual(new MediaIngestionError('not_found'))
+
+    expect(f.storage.deleteOriginal).toHaveBeenCalledWith(intent.originalKey)
+    expect(f.processor).not.toHaveBeenCalled()
+  })
+
   it('does not read an Original after its stored size fails verification', async () => {
     const f = fixture()
     const intent = await f.service.createUploadIntent({
@@ -580,7 +632,7 @@ describe('Media Library ingestion service', () => {
       processingState: 'retryable_failure',
       processingErrorCode: 'dependency_unavailable',
     })
-    expect(f.renditions).toHaveLength(1)
+    expect(f.renditions).toHaveLength(2)
     const confirmedKey = [...f.renditions.values()][0]!.objectKey
     const confirmedInspections = f.storage.inspectRendition.mock.calls.filter(
       ([key]) => key === confirmedKey,
@@ -601,7 +653,7 @@ describe('Media Library ingestion service', () => {
       f.storage.inspectRendition.mock.calls.filter(
         ([key]) => key === confirmedKey,
       ),
-    ).toHaveLength(confirmedInspections)
+    ).toHaveLength(confirmedInspections + 1)
     expect(
       f.storage.readRendition.mock.calls.filter(([key]) => key === confirmedKey),
     ).toHaveLength(2)
@@ -630,6 +682,29 @@ describe('Media Library ingestion service', () => {
       ),
     ).toHaveLength(0)
     expect(f.renditions).toHaveLength(4)
+  })
+
+  it('stops before another storage write when Discard cancels processing', async () => {
+    const f = fixture()
+    const intent = await f.service.createUploadIntent({
+      ownerUserId: 'owner_01',
+      idempotencyKey: 'upload_01',
+      contentType: 'image/jpeg',
+      byteSize: originalBytes.byteLength,
+      checksumSha256: originalChecksum,
+    })
+    f.cancelProcessingAfterSessions(1)
+
+    await expect(
+      f.service.completeUploadIntent({
+        ownerUserId: 'owner_01',
+        uploadIntentId: intent.id,
+      }),
+    ).rejects.toEqual(new MediaIngestionError('not_found'))
+
+    expect(f.renditions).toHaveLength(1)
+    expect(f.storage.storeRendition).toHaveBeenCalledOnce()
+    expect(f.events).not.toContain('asset:retryable_failure')
   })
 
   it('marks a missing verified Original as repair required', async () => {

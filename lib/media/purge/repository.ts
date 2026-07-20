@@ -4,15 +4,18 @@ import { and, asc, eq, sql } from 'drizzle-orm'
 
 import type { getDatabase } from '~/db'
 import {
-  mediaActivePhotoPublication,
   mediaAssetPurgeJobs,
   mediaAssetPurgeRenditions,
   mediaAssets,
-  mediaPhotoSelectionDraftEntries,
-  mediaPublishedPhotoSelectionEntries,
   mediaRenditions,
   mediaUploadIntents,
 } from '~/db/schema'
+
+import {
+  lockMediaAssetProcessing,
+  lockPhotoSelectionMutations,
+} from '../catalog/lifecycle-locks'
+import { withdrawMediaAssetFromSelections } from '../photo-selection/withdrawal'
 
 import type {
   ClaimMediaPurgeResult,
@@ -31,22 +34,6 @@ function ownedAssetCondition(ownerUserId: string, mediaAssetId: string) {
         AND ${mediaUploadIntents.ownerUserId} = ${ownerUserId}
     )`,
   )
-}
-
-function selectionConflictCondition() {
-  return sql`EXISTS (
-    SELECT 1 FROM ${mediaPhotoSelectionDraftEntries}
-    WHERE ${mediaPhotoSelectionDraftEntries.mediaAssetId} = ${mediaAssets.id}
-  ) OR EXISTS (
-    SELECT 1
-    FROM ${mediaActivePhotoPublication}
-    INNER JOIN ${mediaPublishedPhotoSelectionEntries}
-      ON ${mediaPublishedPhotoSelectionEntries.publishedSelectionId} =
-         ${mediaActivePhotoPublication.publishedSelectionId}
-    WHERE ${mediaActivePhotoPublication.id} = 1
-      AND ${mediaPublishedPhotoSelectionEntries.sourceMediaAssetId} =
-          ${mediaAssets.id}
-  )`
 }
 
 export function createMediaPurgeRepository(
@@ -95,6 +82,8 @@ export function createMediaPurgeRepository(
 
     async claim(input): Promise<ClaimMediaPurgeResult> {
       return database().transaction(async (transaction) => {
+        await lockPhotoSelectionMutations(transaction, input.ownerUserId)
+        await lockMediaAssetProcessing(transaction, input.mediaAssetId)
         const [knownJob] = await transaction
           .select()
           .from(mediaAssetPurgeJobs)
@@ -145,6 +134,7 @@ export function createMediaPurgeRepository(
           .for('update')
 
         let originalKey: string
+        let publicSelectionChanged = false
         if (existingJob) {
           if (existingJob.completedAt) return { status: 'completed' }
           if (
@@ -157,6 +147,10 @@ export function createMediaPurgeRepository(
             return { status: 'invalid_state' }
           }
           originalKey = existingJob.originalKey
+          // Cache invalidation is idempotent. Re-run it on every resumed
+          // Purge so a previous invalidation failure cannot be skipped before
+          // storage deletion continues.
+          publicSelectionChanged = true
           await transaction
             .update(mediaAssetPurgeJobs)
             .set({
@@ -168,17 +162,13 @@ export function createMediaPurgeRepository(
             .where(eq(mediaAssetPurgeJobs.mediaAssetId, input.mediaAssetId))
         } else {
           if (asset.catalogState !== 'archived') return { status: 'invalid_state' }
-          const [selection] = await transaction
-            .select({ id: mediaAssets.id })
-            .from(mediaAssets)
-            .where(
-              and(
-                eq(mediaAssets.id, asset.id),
-                selectionConflictCondition(),
-              ),
-            )
-            .limit(1)
-          if (selection) return { status: 'selection_conflict' }
+          const withdrawal = await withdrawMediaAssetFromSelections(transaction, {
+            ownerUserId: input.ownerUserId,
+            mediaAssetId: input.mediaAssetId,
+            idempotencyKey: `purge:${input.mediaAssetId}`,
+            at: input.claimedAt,
+          })
+          publicSelectionChanged = withdrawal.publication !== null
 
           const renditions = await transaction
             .select({ objectKey: mediaRenditions.objectKey })
@@ -225,6 +215,7 @@ export function createMediaPurgeRepository(
           .orderBy(asc(mediaAssetPurgeRenditions.objectKey))
         return {
           status: 'claimed',
+          publicSelectionChanged,
           job: {
             mediaAssetId: input.mediaAssetId,
             originalKey,
