@@ -15,6 +15,7 @@ import {
 import { MediaImageError } from '../processing/image'
 import { CaptureLocationError } from '../privacy/capture-location'
 import { BunnyStorageError } from '../storage/bunny'
+import { MAX_ORIGINAL_UPLOAD_CHUNK_BYTES } from '../storage/transfer'
 
 const originalBytes = new TextEncoder().encode('approved original bytes')
 const originalChecksum = createHash('sha256').update(originalBytes).digest('hex')
@@ -63,6 +64,7 @@ function fixture() {
     string,
     { bytes: Uint8Array; byteSize: number; contentType: string }
   >()
+  const originalChunks = new Map<number, Uint8Array>()
   const events: string[] = []
   let now = new Date('2026-07-15T00:00:00.000Z')
   let readableOriginal: Uint8Array = originalBytes
@@ -85,6 +87,9 @@ function fixture() {
           (intent) => intent.ownerUserId === ownerUserId && intent.id === id,
         ) ?? null
       )
+    },
+    async claimUploadIntentTransfer(ownerUserId, id) {
+      return repository.findUploadIntent(ownerUserId, id)
     },
     async findMediaAsset(uploadIntentId) {
       const id = assetsByIntent.get(uploadIntentId)
@@ -175,6 +180,22 @@ function fixture() {
       }
     }),
     readOriginal: vi.fn(async () => readableOriginal),
+    storeOriginal: vi.fn(async (input: {
+      bytes: Uint8Array
+      contentType: string
+    }) => {
+      readableOriginal = input.bytes
+      originalContentType = input.contentType
+      originalMissing = false
+    }),
+    readOriginalChunk: vi.fn(async (_originalKey: string, chunkIndex: number) => {
+      const chunk = originalChunks.get(chunkIndex)
+      if (!chunk) throw new BunnyStorageError('not_found')
+      return chunk
+    }),
+    deleteOriginalChunk: vi.fn(async (_originalKey: string, chunkIndex: number) => {
+      originalChunks.delete(chunkIndex)
+    }),
     storeRendition: vi.fn(async (input: {
       key: string
       bytes: Uint8Array
@@ -242,6 +263,10 @@ function fixture() {
     },
     setOriginalMissing(value: boolean) {
       originalMissing = value
+    },
+    setOriginalChunks(chunks: readonly Uint8Array[]) {
+      originalChunks.clear()
+      chunks.forEach((chunk, index) => originalChunks.set(index, chunk))
     },
     seedRendition(profileWidth: 640 | 1024 | 1600 | 2560) {
       const rendition = processedImage().renditions.find(
@@ -353,6 +378,82 @@ describe('Media Library ingestion service', () => {
       longitude: -122.4194,
     })
   })
+
+  it('assembles and verifies private chunks before processing the Original', async () => {
+    const f = fixture()
+    const chunkedOriginal = new Uint8Array(
+      MAX_ORIGINAL_UPLOAD_CHUNK_BYTES + 3,
+    )
+    chunkedOriginal.set([1, 2, 3], MAX_ORIGINAL_UPLOAD_CHUNK_BYTES)
+    const chunkedChecksum = createHash('sha256')
+      .update(chunkedOriginal)
+      .digest('hex')
+    const intent = await f.service.createUploadIntent({
+      ownerUserId: 'owner_01',
+      idempotencyKey: 'upload_01',
+      contentType: 'image/jpeg',
+      byteSize: chunkedOriginal.byteLength,
+      checksumSha256: chunkedChecksum,
+    })
+    f.setOriginalMissing(true)
+    f.setOriginalChunks([
+      chunkedOriginal.slice(0, MAX_ORIGINAL_UPLOAD_CHUNK_BYTES),
+      chunkedOriginal.slice(MAX_ORIGINAL_UPLOAD_CHUNK_BYTES),
+    ])
+
+    await expect(
+      f.service.completeUploadIntent({
+        ownerUserId: 'owner_01',
+        uploadIntentId: intent.id,
+      }),
+    ).resolves.toMatchObject({ processingState: 'ready' })
+
+    expect(f.storage.readOriginalChunk.mock.calls).toEqual([
+      [intent.originalKey, 0],
+      [intent.originalKey, 1],
+    ])
+    const storedOriginal = f.storage.storeOriginal.mock.calls[0]?.[0]
+    expect(storedOriginal).toMatchObject({
+      key: intent.originalKey,
+      contentType: intent.contentType,
+      checksumSha256: intent.checksumSha256,
+    })
+    expect(storedOriginal?.bytes.byteLength).toBe(chunkedOriginal.byteLength)
+    expect(
+      createHash('sha256').update(storedOriginal!.bytes).digest('hex'),
+    ).toBe(chunkedChecksum)
+    expect(f.storage.deleteOriginalChunk.mock.calls).toEqual([
+      [intent.originalKey, 0],
+      [intent.originalKey, 1],
+    ])
+  })
+
+  it.each(['not_found', 'provider_unavailable'] as const)(
+    'reports a %s chunk read failure as an Original mismatch',
+    async (code) => {
+      const f = fixture()
+      const intent = await f.service.createUploadIntent({
+        ownerUserId: 'owner_01',
+        idempotencyKey: 'upload_01',
+        contentType: 'image/jpeg',
+        byteSize: originalBytes.byteLength,
+        checksumSha256: originalChecksum,
+      })
+      f.setOriginalMissing(true)
+      f.storage.readOriginalChunk.mockRejectedValueOnce(
+        new BunnyStorageError(code),
+      )
+
+      await expect(
+        f.service.completeUploadIntent({
+          ownerUserId: 'owner_01',
+          uploadIntentId: intent.id,
+        }),
+      ).rejects.toEqual(new MediaIngestionError('original_mismatch'))
+      expect(f.assets).toHaveLength(0)
+      expect(f.storage.storeOriginal).not.toHaveBeenCalled()
+    },
+  )
 
   it('returns a ready Media Asset idempotently without repeating side effects', async () => {
     const f = fixture()

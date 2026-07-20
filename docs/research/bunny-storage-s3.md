@@ -1,6 +1,7 @@
 # Bunny Storage S3 compatibility research
 
-_First-party documentation reviewed 2026-07-14. S3 compatibility is in public
+_First-party documentation reviewed 2026-07-14 and Edge Rules rechecked
+2026-07-20. S3 compatibility is in public
 preview and has to be selected when creating the Storage Zone; it cannot be
 enabled or disabled later._ [Bunny S3 documentation](https://docs.bunny.net/storage/s3)
 
@@ -85,11 +86,24 @@ headers. Bunny's reviewed documentation does not specify the resulting
 or a declarative S3 CORS document format, so validate those in a non-production
 zone before allowing browser uploads. [Bunny S3 documentation](https://docs.bunny.net/storage/s3) · [Pull Zone update API](https://docs.bunny.net/api-reference/core/pull-zone/update-pull-zone) · [Edge Rules](https://docs.bunny.net/cdn/edge-rules/index)
 
+The Production S3 endpoint was checked with a credential-free browser-style
+`OPTIONS` request on 2026-07-20. It returned `204` without any
+`Access-Control-Allow-*` headers, matching the documented limitation. A Pull
+Zone controls CDN delivery but does not add browser CORS to the S3 write
+endpoint, so cali.so cannot use direct browser `PUT` requests. Originals use
+bounded same-origin chunks instead; this also keeps every request below
+Vercel's fixed 4.5 MB Function payload limit.
+
 ## Delivery, replication, and cost model
 
 Create a Pull Zone whose origin type is the Bunny Storage Zone. Files are then
 available at `https://{pull-zone}.b-cdn.net/{key}` (or a configured custom
 hostname) and delivered through Bunny CDN. [Storage quickstart](https://docs.bunny.net/storage/quickstart) · [Pull Zone quickstart](https://docs.bunny.net/cdn/quickstart)
+
+The Media Library uses one Storage Zone. Bunny documents `Block Request` Edge
+Rules as `ActionType: 4` and wildcard trigger paths such as `/images/*`; the
+Media Pull Zone uses that mechanism to deny `/originals/*` and
+`/transfer-chunks/*` while delivering `/renditions/*`. [Edge Rules](https://docs.bunny.net/cdn/edge-rules) · [Trigger paths](https://docs.bunny.net/cdn/edge-rules/trigger-path) · [Edge Rule API](https://docs.bunny.net/api-reference/core/pull-zone/addupdate-edge-rule)
 
 Uploads go to the primary region, then replicate to selected regions. During a
 primary-region outage uploads are unavailable, though delivery can continue
@@ -119,9 +133,9 @@ rates before committing, since the pricing page is the source of record.
    password in a client bundle; Bunny identifies it as the Secret Access Key
    and says to keep storage credentials secure. [Bunny S3 documentation](https://docs.bunny.net/storage/s3) · [Storage quickstart](https://docs.bunny.net/storage/quickstart)
 3. Have Route Handlers or Server Actions perform trusted uploads, deletes, and
-   listings. For direct browser transfers, have a server endpoint mint a
-   short-lived S3 presigned URL only after application authorization, and test
-   the CDN-level CORS configuration and expiry behavior. [Bunny S3 documentation](https://docs.bunny.net/storage/s3)
+   listings. Keep browser transfers in bounded same-origin requests because the
+   S3 write endpoint does not expose the required browser CORS response.
+   [Bunny S3 documentation](https://docs.bunny.net/storage/s3)
 4. Return the Pull Zone/custom-domain URL to browsers for reads, never the
    storage endpoint. Use immutable or versioned object keys when content
    changes, then purge the Pull Zone where an immediate update is required.

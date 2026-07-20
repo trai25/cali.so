@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { and, eq, inArray, lt, ne, or, sql } from 'drizzle-orm'
+import { and, eq, gt, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm'
 
 import type { getDatabase } from '~/db'
 import {
@@ -142,6 +142,22 @@ export function createMediaIngestionRepository(
           ),
         )
         .limit(1)
+      return row ? uploadIntentRecord(row) : null
+    },
+
+    async claimUploadIntentTransfer(ownerUserId, id, activeAt) {
+      const [row] = await database()
+        .update(mediaUploadIntents)
+        .set({ updatedAt: activeAt })
+        .where(
+          and(
+            eq(mediaUploadIntents.id, id),
+            eq(mediaUploadIntents.ownerUserId, ownerUserId),
+            gt(mediaUploadIntents.expiresAt, activeAt),
+            isNull(mediaUploadIntents.completedAt),
+          ),
+        )
+        .returning()
       return row ? uploadIntentRecord(row) : null
     },
 

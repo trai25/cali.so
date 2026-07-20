@@ -36,15 +36,13 @@ jobs:
       GOOGLE_CLIENT_SECRET: ci-google-secret
       SITE_URL: https://cali.so
       BUNNY_MEDIA_REGION: ny
-      BUNNY_ORIGINALS_ZONE: ci-media-originals
-      BUNNY_ORIGINALS_PASSWORD: ci-originals-password
-      BUNNY_RENDITIONS_ZONE: ci-media-renditions
-      BUNNY_RENDITIONS_PASSWORD: ci-renditions-password
-      BUNNY_RENDITIONS_CDN_URL: https://media-ci.example.com
+      BUNNY_MEDIA_ZONE: ci-media
+      BUNNY_MEDIA_PASSWORD: ci-media-password
+      BUNNY_MEDIA_CDN_URL: https://media-ci.example.com
       BUNNY_CDN_API_KEY: ci-cdn-api-key
     steps:
       - name: Check out repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
 
@@ -155,16 +153,16 @@ jobs:
       security-events: write
     steps:
       - name: Check out repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@3c3833e0f8c1c83d449a7478aa59c036a9165498 # v3.29.11
+        uses: github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
         with:
           languages: javascript-typescript
           build-mode: none
           queries: security-extended
 
       - name: Analyze
-        uses: github/codeql-action/analyze@3c3833e0f8c1c83d449a7478aa59c036a9165498 # v3.29.11
+        uses: github/codeql-action/analyze@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
         with:
           category: /language:javascript-typescript

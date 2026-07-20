@@ -78,8 +78,9 @@ Current as of July 2026.
   every request, and `/admin/login` stays a deliberate `instant = false`
   redirect. Consequences: the admin has no client-side ClerkProvider (no
   Clerk JS ships to the admin at all), and the former per-request nonce
-  admin CSP is retired — nonces force dynamic rendering — so admin pages
-  use the static site policy from `lib/security/headers.ts`.
+  admin CSP is retired because nonces force dynamic rendering. Admin pages
+  use the static site policy from `lib/security/headers.ts`; AMA settings
+  extends only `form-action` for the redirect to Google OAuth.
 - The complete paid AMA booking system (#79, slices #82 through #87) is
   implemented and enabled by default (maintainer decision, July 2026; the
   former `AMA_*_ENABLED` switches are removed): public `/ama` and
@@ -106,14 +107,26 @@ Current as of July 2026.
 - Playwright is the browser release gate. Quality runs the complete production-
   build Chromium suite plus a WebKit smoke matrix, while Preview and Staging
   rerun the read-only hosted subset against the exact deployment URL.
-- The Bunny-backed Media Library in ADR-0007 owns the curated photo workflow.
-  Private Originals stay server-only, while `/photos` and homepage previews
-  consume the active Published Photo Selection from Bunny Renditions. Media
+- The Bunny-backed Media Library in ADR-0007 and ADR-0013 owns the curated
+  photo workflow. One Bunny Media zone stores Originals, Renditions, and
+  transfer chunks; Pull Zone rules expose only `/renditions/*`. Browser
+  transfers use retryable 4 MiB
+  same-origin chunks so the 50 MiB product limit stays below Vercel's 4.5 MB
+  per-request ceiling; completion assembles and verifies the Original in Bunny,
+  and lease-claimed reconciliation removes abandoned chunks without racing an
+  active transfer. `/photos` and homepage previews consume
+  the active Published Photo Selection from Bunny Renditions. Media
   capabilities have no runtime feature switches: Alt Text Suggestions are on
   by default and, since July 2026, auto-apply as the approved bilingual Alt
   Text when none exists yet (upload-to-archive needs no review step; edits
   and regeneration remain available in the inspector). Location Label
   suggestions follow their provider credential.
+  Before deploying ADR-0013, set `BUNNY_MEDIA_ZONE`,
+  `BUNNY_MEDIA_PASSWORD`, and `BUNNY_MEDIA_CDN_URL` from the existing
+  Rendition zone, then add the two protected-path Edge Rules. Remove the old
+  Original and Rendition variable names only after the new contract verifies.
+  Emptying or retiring the former Original zone is a separate destructive
+  cloud operation and requires fresh confirmation.
 
 ## Release gates
 

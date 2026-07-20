@@ -12,7 +12,9 @@ export type MediaRecoveryCandidate = {
   uploadIntentId: string
   mediaAssetId: string | null
   originalKey: string
+  byteSize: number
   expiresAt: Date
+  lastActiveAt: Date
 }
 
 export function createMediaReconciliationRepository(
@@ -21,6 +23,7 @@ export function createMediaReconciliationRepository(
   return {
     async listRecoveryCandidates(input: {
       createdBefore: Date
+      abandonedStaleBefore: Date
       processingStaleBefore: Date
       limit: number
     }): Promise<MediaRecoveryCandidate[]> {
@@ -30,7 +33,9 @@ export function createMediaReconciliationRepository(
           uploadIntentId: mediaUploadIntents.id,
           mediaAssetId: mediaAssets.id,
           originalKey: mediaUploadIntents.originalKey,
+          byteSize: mediaUploadIntents.byteSize,
           expiresAt: mediaUploadIntents.expiresAt,
+          lastActiveAt: mediaUploadIntents.updatedAt,
         })
         .from(mediaUploadIntents)
         .leftJoin(
@@ -42,6 +47,7 @@ export function createMediaReconciliationRepository(
             and(
               isNull(mediaAssets.id),
               lt(mediaUploadIntents.createdAt, input.createdBefore),
+              lt(mediaUploadIntents.updatedAt, input.abandonedStaleBefore),
             ),
             and(
               eq(mediaAssets.catalogState, 'active'),
@@ -64,6 +70,30 @@ export function createMediaReconciliationRepository(
         .limit(input.limit)
     },
 
+    async claimAbandonedUploadIntent(input: {
+      uploadIntentId: string
+      expectedLastActiveAt: Date
+      expiredBefore: Date
+      claimedAt: Date
+    }) {
+      const [claimed] = await database()
+        .update(mediaUploadIntents)
+        .set({ updatedAt: input.claimedAt })
+        .where(
+          and(
+            eq(mediaUploadIntents.id, input.uploadIntentId),
+            eq(mediaUploadIntents.updatedAt, input.expectedLastActiveAt),
+            lt(mediaUploadIntents.expiresAt, input.expiredBefore),
+            sql`NOT EXISTS (
+              SELECT 1 FROM ${mediaAssets}
+              WHERE ${mediaAssets.uploadIntentId} = ${mediaUploadIntents.id}
+            )`,
+          ),
+        )
+        .returning({ id: mediaUploadIntents.id })
+      return claimed !== undefined
+    },
+
     async markRecoveryAttempted(input: {
       uploadIntentId: string
       attemptedAt: Date
@@ -77,6 +107,7 @@ export function createMediaReconciliationRepository(
     async deleteAbandonedUploadIntent(input: {
       uploadIntentId: string
       expiredBefore: Date
+      cleanupClaimedAt: Date
     }) {
       const [deleted] = await database()
         .delete(mediaUploadIntents)
@@ -84,6 +115,7 @@ export function createMediaReconciliationRepository(
           and(
             eq(mediaUploadIntents.id, input.uploadIntentId),
             lt(mediaUploadIntents.expiresAt, input.expiredBefore),
+            eq(mediaUploadIntents.updatedAt, input.cleanupClaimedAt),
             sql`NOT EXISTS (
               SELECT 1 FROM ${mediaAssets}
               WHERE ${mediaAssets.uploadIntentId} = ${mediaUploadIntents.id}

@@ -58,8 +58,10 @@ typed `PURGE` confirmation, validated server-side.
 Alongside it, the admin's per-request nonce CSP was retired when admin
 routes adopted prerendered instant-navigation shells (nonces require
 dynamic rendering). Admin pages use the static site policy from
-`lib/security/headers.ts`; with no client-side Clerk remaining, no
-provider origins are needed in it.
+`lib/security/headers.ts`; with no client-side Clerk remaining, no Clerk
+provider origins are needed. The AMA settings page has one narrow exception:
+its `form-action` also permits `https://accounts.google.com` so the native
+connect form can enter Google OAuth after the same-origin handler redirects.
 
 Passkeys remain the recommended Clerk sign-in method, and every recovery
 procedure below still applies. Reintroducing a step-up boundary would need

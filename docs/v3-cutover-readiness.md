@@ -275,8 +275,9 @@ complete additive migration history before deploying the exact commit. Public
 site, discovery, URL, link, security-boundary, and signed-out admin checks pass
 against Production.
 
-Signed-in owner verification, the private Originals and public Renditions
-storage contract, the active Published Photo Selection, and complete
+Signed-in owner verification, the protected Original and public Rendition path
+contract in the shared Bunny Media zone, the active Published Photo Selection,
+and complete
 end-to-end exercises for each configured AMA provider remain operator checks.
 
 Production database or sensitive cloud-data inspection requires two fresh,

@@ -31,30 +31,24 @@ async function waitFor(
 
 liveDescribe('Bunny Media Storage live contract', () => {
   it(
-    'keeps Originals private and delivers then purges immutable Renditions',
+    'blocks Original paths and delivers Renditions from one Media zone',
     async () => {
       const config = parseBunnyStorageEnv(process.env)
       const contract = assertNonProductionBunnyContract(process.env, config)
       await verifyBunnyAccountContract(config, contract)
       const storage = createBunnyStorage(config)
       const identity = randomUUID()
-      const originalKey = `contracts/${identity}/original.jpg`
+      const originalKey = `originals/contracts/${identity}/original.jpg`
       const bytes = new TextEncoder().encode(`bunny-media-contract:${identity}`)
       const checksumSha256 = createHash('sha256').update(bytes).digest('hex')
-      const renditionKey = `contracts/${identity}/rendition-${checksumSha256}.jpg`
-      const storageEndpoint = new URL(
-        `https://${config.region}-s3.storage.bunnycdn.com`,
+      const renditionKey =
+        `renditions/contracts/${identity}/rendition-${checksumSha256}.jpg`
+      const chunkKey = `transfer-chunks/${originalKey}/0.part`
+      const publicOriginalUrl = new URL(
+        originalKey,
+        config.media.cdnBaseUrl,
       )
-      const unsignedOriginalUrl = new URL(
-        `/${config.originals.zone}/${originalKey}`,
-        storageEndpoint,
-      )
-      const unsignedListingUrl = new URL(
-        `/${config.originals.zone}`,
-        storageEndpoint,
-      )
-      unsignedListingUrl.searchParams.set('list-type', '2')
-      unsignedListingUrl.searchParams.set('prefix', `contracts/${identity}`)
+      const publicChunkUrl = new URL(chunkKey, config.media.cdnBaseUrl)
 
       try {
         await storage.storeOriginal({
@@ -69,15 +63,21 @@ liveDescribe('Bunny Media Storage live contract', () => {
           contentType: 'image/jpeg',
         })
         await expect(storage.readOriginal(originalKey)).resolves.toEqual(bytes)
+        await storage.storeOriginalChunk({
+          originalKey,
+          chunkIndex: 0,
+          bytes,
+          checksumSha256,
+        })
 
-        const [unsignedGet, unsignedListing] = await Promise.all([
-          fetch(unsignedOriginalUrl),
-          fetch(unsignedListingUrl),
+        const [originalResponse, chunkResponse] = await Promise.all([
+          fetch(publicOriginalUrl, { cache: 'no-store' }),
+          fetch(publicChunkUrl, { cache: 'no-store' }),
         ])
-        expect(unsignedGet.ok).toBe(false)
-        expect(unsignedListing.ok).toBe(false)
-        expect(await unsignedGet.text()).not.toContain(identity)
-        expect(await unsignedListing.text()).not.toContain(identity)
+        expect(originalResponse.status).toBe(403)
+        expect(chunkResponse.status).toBe(403)
+        expect(await originalResponse.text()).not.toContain(identity)
+        expect(await chunkResponse.text()).not.toContain(identity)
 
         const publicUrl = await storage.storeRendition({
           key: renditionKey,
@@ -117,6 +117,7 @@ liveDescribe('Bunny Media Storage live contract', () => {
           storage.deleteRendition(renditionKey),
           storage.purgeRendition(renditionKey),
           storage.deleteOriginal(originalKey),
+          storage.deleteOriginalChunk(originalKey, 0),
         ])
       }
     },

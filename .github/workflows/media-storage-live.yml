@@ -30,11 +30,9 @@ jobs:
       BUNNY_STORAGE_CONTRACT_EDGE_TTL_SECONDS: ${{ vars.BUNNY_STORAGE_CONTRACT_EDGE_TTL_SECONDS }}
       BUNNY_STORAGE_CONTRACT_BROWSER_TTL_SECONDS: ${{ vars.BUNNY_STORAGE_CONTRACT_BROWSER_TTL_SECONDS }}
       BUNNY_MEDIA_REGION: ${{ vars.BUNNY_MEDIA_REGION }}
-      BUNNY_ORIGINALS_ZONE: ${{ secrets.BUNNY_ORIGINALS_ZONE }}
-      BUNNY_ORIGINALS_PASSWORD: ${{ secrets.BUNNY_ORIGINALS_PASSWORD }}
-      BUNNY_RENDITIONS_ZONE: ${{ secrets.BUNNY_RENDITIONS_ZONE }}
-      BUNNY_RENDITIONS_PASSWORD: ${{ secrets.BUNNY_RENDITIONS_PASSWORD }}
-      BUNNY_RENDITIONS_CDN_URL: ${{ vars.BUNNY_RENDITIONS_CDN_URL }}
+      BUNNY_MEDIA_ZONE: ${{ secrets.BUNNY_MEDIA_ZONE }}
+      BUNNY_MEDIA_PASSWORD: ${{ secrets.BUNNY_MEDIA_PASSWORD }}
+      BUNNY_MEDIA_CDN_URL: ${{ vars.BUNNY_MEDIA_CDN_URL }}
       BUNNY_CDN_API_KEY: ${{ secrets.BUNNY_CDN_API_KEY }}
     steps:
       - name: Confirm non-production storage
@@ -45,7 +43,7 @@ jobs:
           fi
 
       - name: Check out repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Set up pnpm
         uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9

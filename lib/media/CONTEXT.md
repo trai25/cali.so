@@ -6,8 +6,8 @@ Implemented end to end for Bunny storage, catalog persistence, image
 processing, privacy boundaries, resumable ingestion, owner review, and photo
 curation. The owner admin manages Media Assets and Draft Photo Selections;
 `/photos` and the homepage consume the active Published Photo Selection. The
-retired static photo fallback is not part of v3, and private Originals remain
-server-only.
+retired static photo fallback is not part of v3. Originals and Renditions share
+one Media Store, while only Renditions are available through public delivery.
 
 The Media Library owns reusable files, their safe descriptive metadata, and
 the selections that publish them across the personal site.
@@ -20,7 +20,8 @@ metadata and storage references.
 _Avoid_: Upload, file record
 
 **Original**:
-The private, full-quality source object from which public versions are made.
+The protected, full-quality source object from which public versions are made.
+It is never delivered to visitors.
 _Avoid_: Source file, master
 
 **Upload Intent**:
@@ -35,7 +36,7 @@ _Avoid_: Copy, thumbnail
 
 New image processing produces no-upscale 640, 1024, 1600, and 2560 profiles as
 progressive sRGB JPEGs at quality 90 with 4:4:4 chroma. Embedded metadata is
-stripped from every Rendition while the private Original remains byte-for-byte
+stripped from every Rendition while the protected Original remains byte-for-byte
 unchanged. The original three-profile publication baseline remains readable;
 newly processed Media Assets add the 2560 profile for high-density lightboxes.
 
