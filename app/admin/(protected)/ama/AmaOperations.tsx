@@ -122,7 +122,10 @@ function BookingRow({
             <dt>
               <T zh="话题" en="Topics" />
             </dt>
-            <dd className="min-w-0 text-muted-foreground">
+            <dd
+              data-booking-topics
+              className="min-w-0 font-sans text-muted-foreground"
+            >
               {booking.topics.join(', ')}
             </dd>
           </div>
@@ -134,7 +137,7 @@ function BookingRow({
           </dt>
           <dd
             data-booking-brief
-            className="min-w-0 whitespace-pre-wrap leading-5 text-muted-foreground"
+            className="min-w-0 whitespace-pre-wrap font-sans leading-5 text-muted-foreground"
           >
             {booking.briefPreview ? (
               booking.briefPreview

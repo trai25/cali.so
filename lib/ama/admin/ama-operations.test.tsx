@@ -211,6 +211,12 @@ describe('AMA admin page', () => {
       container.querySelector('a[href*="calendar.google.com"]'),
     ).not.toBeNull()
     expect(container.querySelector('.spec-nameplate-compact')).not.toBeNull()
+    expect(container.querySelector('[data-booking-topics]')?.className).toContain(
+      'font-sans',
+    )
+    expect(container.querySelector('[data-booking-brief]')?.className).toContain(
+      'font-sans',
+    )
     expect(container.querySelector('[data-booking-brief]')?.className).not.toContain(
       'line-clamp',
     )
