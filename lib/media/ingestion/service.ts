@@ -79,6 +79,35 @@ export type RenditionRecord = {
   metadataStripped: true
 }
 
+export type MarkMediaAssetReadyInput = {
+  mediaAssetId: string
+  metadata: Omit<
+    MediaAssetRecord,
+    | 'id'
+    | 'uploadIntentId'
+    | 'processingState'
+    | 'processingErrorCode'
+    | 'originalKey'
+    | 'originalContentType'
+    | 'originalByteSize'
+    | 'originalChecksumSha256'
+  >
+  completedAt: Date
+  requiredRenditionCount: number
+}
+
+export type ActiveMediaAssetProcessingSession = {
+  findRendition(profileWidth: number): Promise<RenditionRecord | null>
+  recordRendition(input: RenditionRecord): Promise<RenditionRecord>
+  markReady(
+    input: Omit<MarkMediaAssetReadyInput, 'mediaAssetId'>,
+  ): Promise<MediaAssetRecord | null>
+}
+
+export type ActiveMediaAssetProcessingResult<T> =
+  | { status: 'active'; value: T }
+  | { status: 'canceled' }
+
 export interface MediaIngestionRepository {
   createUploadIntent(
     input: Omit<UploadIntentRecord, 'completedAt'>,
@@ -93,40 +122,29 @@ export interface MediaIngestionRepository {
   createVerifiedMediaAsset(input: {
     uploadIntent: UploadIntentRecord
     completedAt: Date
-  }): Promise<MediaAssetRecord>
+  }): Promise<MediaAssetRecord | null>
   claimProcessing(input: {
     mediaAssetId: string
     claimedAt: Date
     staleBefore: Date
   }): Promise<boolean>
   getMediaAsset(id: string): Promise<MediaAssetRecord | null>
+  withActiveProcessingAsset<T>(input: {
+    mediaAssetId: string
+    run(session: ActiveMediaAssetProcessingSession): Promise<T>
+  }): Promise<ActiveMediaAssetProcessingResult<T>>
   findRendition(
     mediaAssetId: string,
     profileWidth: number,
   ): Promise<RenditionRecord | null>
   recordRendition(input: RenditionRecord): Promise<RenditionRecord>
-  markReady(input: {
-    mediaAssetId: string
-    metadata: Omit<
-      MediaAssetRecord,
-      | 'id'
-      | 'uploadIntentId'
-      | 'processingState'
-      | 'processingErrorCode'
-      | 'originalKey'
-      | 'originalContentType'
-      | 'originalByteSize'
-      | 'originalChecksumSha256'
-    >
-    completedAt: Date
-    requiredRenditionCount: number
-  }): Promise<MediaAssetRecord>
+  markReady(input: MarkMediaAssetReadyInput): Promise<MediaAssetRecord | null>
   markFailure(input: {
     mediaAssetId: string
     processingState: 'retryable_failure' | 'repair_required'
     processingErrorCode: string
     failedAt: Date
-  }): Promise<MediaAssetRecord>
+  }): Promise<MediaAssetRecord | null>
 }
 
 export type MediaIngestionErrorCode =
@@ -165,6 +183,7 @@ type MediaIngestionDependencies = {
       originalKey: string,
       chunkIndex: number,
     ): Promise<void>
+    deleteOriginal(key: string): Promise<void>
     storeRendition(input: {
       key: string
       bytes: Uint8Array
@@ -410,6 +429,8 @@ function safeFailure(error: unknown) {
   }
 }
 
+class MediaAssetProcessingCanceled extends Error {}
+
 export function createMediaIngestionService({
   repository,
   storage,
@@ -464,30 +485,57 @@ export function createMediaIngestionService({
       let asset = await repository.findMediaAsset(intent.id)
       if (asset?.processingState === 'ready') return asset
 
-      let bytes: Uint8Array
-      try {
-        bytes = await verifyOriginal(storage, intent, asset === null)
-      } catch (error) {
-        if (!asset) throw error
-        const failure = safeFailure(error)
-        return repository.markFailure({
-          mediaAssetId: asset.id,
-          ...failure,
-          failedAt: clock.now(),
-        })
-      }
-
       const now = clock.now()
-      asset ??= await repository.createVerifiedMediaAsset({
-        uploadIntent: intent,
-        completedAt: now,
-      })
-      const claimed = await repository.claimProcessing({
-        mediaAssetId: asset.id,
-        claimedAt: now,
-        staleBefore: new Date(now.getTime() - PROCESSING_STALE_AFTER_MS),
-      })
-      if (!claimed) return (await repository.getMediaAsset(asset.id)) ?? asset
+      let bytes: Uint8Array
+      if (asset) {
+        const claimed = await repository.claimProcessing({
+          mediaAssetId: asset.id,
+          claimedAt: now,
+          staleBefore: new Date(now.getTime() - PROCESSING_STALE_AFTER_MS),
+        })
+        if (!claimed) return (await repository.getMediaAsset(asset.id)) ?? asset
+
+        try {
+          const verification = await repository.withActiveProcessingAsset({
+            mediaAssetId: asset.id,
+            run: () => verifyOriginal(storage, intent, false),
+          })
+          if (verification.status === 'canceled') {
+            throw new MediaAssetProcessingCanceled()
+          }
+          bytes = verification.value
+        } catch (error) {
+          if (error instanceof MediaAssetProcessingCanceled) {
+            throw new MediaIngestionError('not_found')
+          }
+          const failure = safeFailure(error)
+          const failed = await repository.markFailure({
+            mediaAssetId: asset.id,
+            ...failure,
+            failedAt: clock.now(),
+          })
+          if (!failed) throw new MediaIngestionError('not_found')
+          return failed
+        }
+      } else {
+        bytes = await verifyOriginal(storage, intent, true)
+        asset = await repository.createVerifiedMediaAsset({
+          uploadIntent: intent,
+          completedAt: now,
+        })
+        if (!asset) {
+          // Discard can close the intent after verification. Remove any
+          // assembled Original that completed after Discard's first cleanup.
+          await storage.deleteOriginal(intent.originalKey)
+          throw new MediaIngestionError('not_found')
+        }
+        const claimed = await repository.claimProcessing({
+          mediaAssetId: asset.id,
+          claimedAt: now,
+          staleBefore: new Date(now.getTime() - PROCESSING_STALE_AFTER_MS),
+        })
+        if (!claimed) return (await repository.getMediaAsset(asset.id)) ?? asset
+      }
 
       try {
         const processed = await processor(bytes)
@@ -520,83 +568,100 @@ export function createMediaIngestionService({
             progressive: rendition.progressive,
             metadataStripped: rendition.metadataStripped,
           }
-          const existing = await repository.findRendition(asset.id, profileWidth)
-          if (existing) {
-            if (!renditionMatches(existing, expected)) {
-              throw new MediaIngestionError('rendition_mismatch')
-            }
-            await verifyRendition(
-              storage,
-              existing.objectKey,
-              existing,
-              existing,
-            )
-            continue
-          }
-
-          let stored = await inspectOptionalRendition(storage, objectKey)
-          if (!stored) {
-            await storage.storeRendition({
-              key: objectKey,
-              bytes: rendition.bytes,
-              checksumSha256: rendition.checksumSha256,
-              contentType: rendition.contentType,
-            })
-            stored = await storage.inspectRendition(objectKey)
-          }
-          if (
-            stored.byteSize !== rendition.byteSize ||
-            stored.contentType !== rendition.contentType
-          ) {
-            throw new MediaIngestionError('rendition_mismatch')
-          }
-          await verifyRendition(storage, objectKey, expected, stored)
-          const recorded = await repository.recordRendition({
+          const processing = await repository.withActiveProcessingAsset({
             mediaAssetId: asset.id,
-            objectKey,
-            ...expected,
+            run: async (session) => {
+              const existing = await session.findRendition(profileWidth)
+              if (existing && !renditionMatches(existing, expected)) {
+                throw new MediaIngestionError('rendition_mismatch')
+              }
+
+              // Persist the deterministic manifest before Bunny. If the
+              // provider fails or the process exits after the write, Purge
+              // still knows the exact object key it must remove.
+              const recorded =
+                existing ??
+                (await session.recordRendition({
+                  mediaAssetId: asset.id,
+                  objectKey,
+                  ...expected,
+                }))
+              if (
+                recorded.objectKey !== objectKey ||
+                !renditionMatches(recorded, expected)
+              ) {
+                throw new MediaIngestionError('rendition_mismatch')
+              }
+
+              let stored = await inspectOptionalRendition(storage, objectKey)
+              if (!stored) {
+                await storage.storeRendition({
+                  key: objectKey,
+                  bytes: rendition.bytes,
+                  checksumSha256: rendition.checksumSha256,
+                  contentType: rendition.contentType,
+                })
+                stored = await storage.inspectRendition(objectKey)
+              }
+              if (
+                stored.byteSize !== rendition.byteSize ||
+                stored.contentType !== rendition.contentType
+              ) {
+                throw new MediaIngestionError('rendition_mismatch')
+              }
+              await verifyRendition(storage, objectKey, expected, stored)
+            },
           })
-          if (
-            recorded.objectKey !== objectKey ||
-            !renditionMatches(recorded, expected)
-          ) {
-            throw new MediaIngestionError('rendition_mismatch')
+          if (processing.status === 'canceled') {
+            throw new MediaAssetProcessingCanceled()
           }
         }
 
         const captureLocationEnvelope = processed.original.captureLocation
           ? captureLocationVault.seal(processed.original.captureLocation)
           : null
-        return repository.markReady({
+        const ready = await repository.withActiveProcessingAsset({
           mediaAssetId: asset.id,
-          metadata: {
-            width: processed.original.width,
-            height: processed.original.height,
-            capturedAt: processed.original.capturedAt,
-            cameraMake: processed.original.cameraMake,
-            cameraModel: processed.original.cameraModel,
-            lens: processed.original.lens,
-            focalLengthMillimeters:
-              processed.original.focalLengthMillimeters,
-            aperture: processed.original.aperture,
-            shutterSpeedSeconds: processed.original.shutterSpeedSeconds,
-            iso:
-              processed.original.iso !== null &&
-              Number.isSafeInteger(processed.original.iso)
-                ? processed.original.iso
-                : null,
-            captureLocationEnvelope,
-          },
-          completedAt: clock.now(),
-          requiredRenditionCount: RENDITION_PROFILE_WIDTHS.length,
+          run: (session) =>
+            session.markReady({
+              metadata: {
+                width: processed.original.width,
+                height: processed.original.height,
+                capturedAt: processed.original.capturedAt,
+                cameraMake: processed.original.cameraMake,
+                cameraModel: processed.original.cameraModel,
+                lens: processed.original.lens,
+                focalLengthMillimeters:
+                  processed.original.focalLengthMillimeters,
+                aperture: processed.original.aperture,
+                shutterSpeedSeconds: processed.original.shutterSpeedSeconds,
+                iso:
+                  processed.original.iso !== null &&
+                  Number.isSafeInteger(processed.original.iso)
+                    ? processed.original.iso
+                    : null,
+                captureLocationEnvelope,
+              },
+              completedAt: clock.now(),
+              requiredRenditionCount: RENDITION_PROFILE_WIDTHS.length,
+            }),
         })
+        if (ready.status === 'canceled' || ready.value === null) {
+          throw new MediaAssetProcessingCanceled()
+        }
+        return ready.value
       } catch (error) {
+        if (error instanceof MediaAssetProcessingCanceled) {
+          throw new MediaIngestionError('not_found')
+        }
         const failure = safeFailure(error)
-        return repository.markFailure({
+        const failed = await repository.markFailure({
           mediaAssetId: asset.id,
           ...failure,
           failedAt: clock.now(),
         })
+        if (!failed) throw new MediaIngestionError('not_found')
+        return failed
       }
     },
   }

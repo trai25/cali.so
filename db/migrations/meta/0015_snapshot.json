@@ -1,6 +1,6 @@
 {
-  "id": "cf095551-ac65-41d8-87fe-dc405d63aba0",
-  "prevId": "4242c828-f65d-43c5-a3e4-378fc721ead8",
+  "id": "ca9137dc-68c7-4b9c-b16a-aacb939913bb",
+  "prevId": "f62db8f4-7a77-4b31-bd0e-dfbec343b0f9",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -3569,6 +3569,261 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ama_availability_override_windows": {
+      "name": "ama_availability_override_windows",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "override_id": {
+          "name": "override_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_minute": {
+          "name": "start_minute",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_minute": {
+          "name": "end_minute",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ama_availability_override_windows_order_idx": {
+          "name": "ama_availability_override_windows_order_idx",
+          "columns": [
+            {
+              "expression": "override_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "start_minute",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "end_minute",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "ama_availability_override_windows_override_id_ama_availability_overrides_id_fk": {
+          "name": "ama_availability_override_windows_override_id_ama_availability_overrides_id_fk",
+          "tableFrom": "ama_availability_override_windows",
+          "tableTo": "ama_availability_overrides",
+          "columnsFrom": [
+            "override_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ama_availability_override_windows_start_minute_check": {
+          "name": "ama_availability_override_windows_start_minute_check",
+          "value": "\"ama_availability_override_windows\".\"start_minute\" BETWEEN 0 AND 1439"
+        },
+        "ama_availability_override_windows_end_minute_check": {
+          "name": "ama_availability_override_windows_end_minute_check",
+          "value": "\"ama_availability_override_windows\".\"end_minute\" BETWEEN 1 AND 1440"
+        },
+        "ama_availability_override_windows_same_day_check": {
+          "name": "ama_availability_override_windows_same_day_check",
+          "value": "\"ama_availability_override_windows\".\"start_minute\" < \"ama_availability_override_windows\".\"end_minute\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.ama_availability_overrides": {
+      "name": "ama_availability_overrides",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "local_date": {
+          "name": "local_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ama_availability_overrides_local_date_uidx": {
+          "name": "ama_availability_overrides_local_date_uidx",
+          "columns": [
+            {
+              "expression": "local_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ama_availability_settings": {
+      "name": "ama_availability_settings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "default": 1
+        },
+        "time_zone": {
+          "name": "time_zone",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'Asia/Taipei'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ama_availability_settings_singleton_check": {
+          "name": "ama_availability_settings_singleton_check",
+          "value": "\"ama_availability_settings\".\"id\" = 1"
+        },
+        "ama_availability_settings_time_zone_check": {
+          "name": "ama_availability_settings_time_zone_check",
+          "value": "length(btrim(\"ama_availability_settings\".\"time_zone\")) > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.ama_availability_weekdays": {
+      "name": "ama_availability_weekdays",
+      "schema": "",
+      "columns": {
+        "iso_weekday": {
+          "name": "iso_weekday",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "enabled": {
+          "name": "enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ama_availability_weekdays_iso_weekday_check": {
+          "name": "ama_availability_weekdays_iso_weekday_check",
+          "value": "\"ama_availability_weekdays\".\"iso_weekday\" BETWEEN 1 AND 7"
+        }
+      },
       "isRLSEnabled": false
     }
   },

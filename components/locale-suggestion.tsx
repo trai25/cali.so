@@ -4,25 +4,26 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 import { Button } from '~/components/ui/button'
-import { Elevated } from '~/lib/elevated'
 import { localePath, type Locale } from '~/lib/locale-route'
 
 const SUGGESTION_COPY = {
   zh: {
     regionLabel: '语言建议',
-    message: '是否切换到中文浏览？',
-    switchLabel: '切换到中文',
-    stayLabel: 'Continue in English',
+    message: '切换到中文？',
+    switchLabel: '是',
+    switchAriaLabel: '切换到中文',
+    stayLabel: '否',
+    stayAriaLabel: 'Continue in English',
     language: 'zh-CN',
-    stayLanguage: 'en',
   },
   en: {
     regionLabel: 'Language suggestion',
-    message: 'Would you prefer to view this page in English?',
-    switchLabel: 'View in English',
-    stayLabel: '继续使用中文',
+    message: 'View in English?',
+    switchLabel: 'Yes',
+    switchAriaLabel: 'View in English',
+    stayLabel: 'No',
+    stayAriaLabel: '继续使用中文',
     language: 'en',
-    stayLanguage: 'zh-CN',
   },
 } as const satisfies Record<
   Locale,
@@ -30,9 +31,10 @@ const SUGGESTION_COPY = {
     regionLabel: string
     message: string
     switchLabel: string
+    switchAriaLabel: string
     stayLabel: string
+    stayAriaLabel: string
     language: string
-    stayLanguage: string
   }
 >
 
@@ -98,9 +100,7 @@ export function LocaleSuggestion({ locale }: { locale: Locale }) {
 
   return (
     <div className="locale-suggestion-positioner">
-      <Elevated
-        offset={2}
-        shadowLevel={3}
+      <section
         role="region"
         aria-label={copy.regionLabel}
         aria-live="polite"
@@ -109,28 +109,32 @@ export function LocaleSuggestion({ locale }: { locale: Locale }) {
         data-locale-suggestion={suggestedLocale}
         className="locale-suggestion"
       >
-        <p className="locale-suggestion-copy">{copy.message}</p>
-        <div className="locale-suggestion-actions">
-          <Button
-            type="button"
-            size="lg"
-            expandHitArea
-            onClick={switchLocale}
-          >
-            {copy.switchLabel}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="lg"
-            expandHitArea
-            lang={copy.stayLanguage}
-            onClick={stay}
-          >
-            {copy.stayLabel}
-          </Button>
+        <div className="locale-suggestion-inner">
+          <span aria-hidden="true" className="locale-suggestion-screw" />
+          <span aria-hidden="true" className="locale-suggestion-hatch" />
+          <p className="locale-suggestion-copy">{copy.message}</p>
+          <div className="locale-suggestion-actions">
+            <Button
+              type="button"
+              size="sm"
+              aria-label={copy.switchAriaLabel}
+              onClick={switchLocale}
+            >
+              {copy.switchLabel}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-label={copy.stayAriaLabel}
+              onClick={stay}
+            >
+              {copy.stayLabel}
+            </Button>
+          </div>
+          <span aria-hidden="true" className="locale-suggestion-screw" />
         </div>
-      </Elevated>
+      </section>
     </div>
   )
 }

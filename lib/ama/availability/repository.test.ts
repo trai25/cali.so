@@ -14,8 +14,8 @@ describe('Availability Window repository', () => {
   const getClient = usePGliteTestClient([
     '0001_ama_owner_auth.sql',
     '0002_ama_availability.sql',
-    '0013_ama_availability_overrides.sql',
-    '0014_ama_availability_weekdays.sql',
+    '0014_ama_availability_overrides.sql',
+    '0015_ama_availability_weekdays.sql',
   ])
   let repository: ReturnType<typeof createAvailabilityRepository>
 

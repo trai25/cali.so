@@ -179,6 +179,7 @@ export function createMediaReconciliationRepository(
             inArray(mediaAssets.processingState, [
               'original_verified',
               'processing',
+              'repair_required',
               'retryable_failure',
             ]),
           ),

@@ -1,6 +1,6 @@
 {
-  "id": "ca9137dc-68c7-4b9c-b16a-aacb939913bb",
-  "prevId": "f62db8f4-7a77-4b31-bd0e-dfbec343b0f9",
+  "id": "f62db8f4-7a77-4b31-bd0e-dfbec343b0f9",
+  "prevId": "cf095551-ac65-41d8-87fe-dc405d63aba0",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -245,261 +245,6 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.ama_availability_override_windows": {
-      "name": "ama_availability_override_windows",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "override_id": {
-          "name": "override_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "start_minute": {
-          "name": "start_minute",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "end_minute": {
-          "name": "end_minute",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "ama_availability_override_windows_order_idx": {
-          "name": "ama_availability_override_windows_order_idx",
-          "columns": [
-            {
-              "expression": "override_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "start_minute",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "end_minute",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "ama_availability_override_windows_override_id_ama_availability_overrides_id_fk": {
-          "name": "ama_availability_override_windows_override_id_ama_availability_overrides_id_fk",
-          "tableFrom": "ama_availability_override_windows",
-          "tableTo": "ama_availability_overrides",
-          "columnsFrom": [
-            "override_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "ama_availability_override_windows_start_minute_check": {
-          "name": "ama_availability_override_windows_start_minute_check",
-          "value": "\"ama_availability_override_windows\".\"start_minute\" BETWEEN 0 AND 1439"
-        },
-        "ama_availability_override_windows_end_minute_check": {
-          "name": "ama_availability_override_windows_end_minute_check",
-          "value": "\"ama_availability_override_windows\".\"end_minute\" BETWEEN 1 AND 1440"
-        },
-        "ama_availability_override_windows_same_day_check": {
-          "name": "ama_availability_override_windows_same_day_check",
-          "value": "\"ama_availability_override_windows\".\"start_minute\" < \"ama_availability_override_windows\".\"end_minute\""
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.ama_availability_overrides": {
-      "name": "ama_availability_overrides",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "local_date": {
-          "name": "local_date",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "ama_availability_overrides_local_date_uidx": {
-          "name": "ama_availability_overrides_local_date_uidx",
-          "columns": [
-            {
-              "expression": "local_date",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.ama_availability_settings": {
-      "name": "ama_availability_settings",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "default": 1
-        },
-        "time_zone": {
-          "name": "time_zone",
-          "type": "varchar(64)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'Asia/Taipei'"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "ama_availability_settings_singleton_check": {
-          "name": "ama_availability_settings_singleton_check",
-          "value": "\"ama_availability_settings\".\"id\" = 1"
-        },
-        "ama_availability_settings_time_zone_check": {
-          "name": "ama_availability_settings_time_zone_check",
-          "value": "length(btrim(\"ama_availability_settings\".\"time_zone\")) > 0"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.ama_availability_weekdays": {
-      "name": "ama_availability_weekdays",
-      "schema": "",
-      "columns": {
-        "iso_weekday": {
-          "name": "iso_weekday",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "enabled": {
-          "name": "enabled",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "ama_availability_weekdays_iso_weekday_check": {
-          "name": "ama_availability_weekdays_iso_weekday_check",
-          "value": "\"ama_availability_weekdays\".\"iso_weekday\" BETWEEN 1 AND 7"
-        }
-      },
       "isRLSEnabled": false
     },
     "public.ama_availability_windows": {
@@ -1889,6 +1634,190 @@
       },
       "isRLSEnabled": false
     },
+    "public.media_asset_archive_operations": {
+      "name": "media_asset_archive_operations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "owner_user_id": {
+          "name": "owner_user_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "media_asset_id": {
+          "name": "media_asset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "draft_id": {
+          "name": "draft_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "draft_revision_before": {
+          "name": "draft_revision_before",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "draft_revision_after": {
+          "name": "draft_revision_after",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "draft_position": {
+          "name": "draft_position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "published_selection_before": {
+          "name": "published_selection_before",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "published_selection_after": {
+          "name": "published_selection_after",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "undo_expires_at": {
+          "name": "undo_expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "undone_at": {
+          "name": "undone_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "media_asset_archive_operations_owner_idx": {
+          "name": "media_asset_archive_operations_owner_idx",
+          "columns": [
+            {
+              "expression": "owner_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "media_asset_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "undo_expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "media_asset_archive_operations_media_asset_id_media_assets_id_fk": {
+          "name": "media_asset_archive_operations_media_asset_id_media_assets_id_fk",
+          "tableFrom": "media_asset_archive_operations",
+          "tableTo": "media_assets",
+          "columnsFrom": [
+            "media_asset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "media_asset_archive_operations_draft_id_media_photo_selection_drafts_id_fk": {
+          "name": "media_asset_archive_operations_draft_id_media_photo_selection_drafts_id_fk",
+          "tableFrom": "media_asset_archive_operations",
+          "tableTo": "media_photo_selection_drafts",
+          "columnsFrom": [
+            "draft_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "media_asset_archive_operations_published_selection_before_media_published_photo_selections_id_fk": {
+          "name": "media_asset_archive_operations_published_selection_before_media_published_photo_selections_id_fk",
+          "tableFrom": "media_asset_archive_operations",
+          "tableTo": "media_published_photo_selections",
+          "columnsFrom": [
+            "published_selection_before"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "media_asset_archive_operations_published_selection_after_media_published_photo_selections_id_fk": {
+          "name": "media_asset_archive_operations_published_selection_after_media_published_photo_selections_id_fk",
+          "tableFrom": "media_asset_archive_operations",
+          "tableTo": "media_published_photo_selections",
+          "columnsFrom": [
+            "published_selection_after"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "media_asset_archive_operations_owner_check": {
+          "name": "media_asset_archive_operations_owner_check",
+          "value": "length(btrim(\"media_asset_archive_operations\".\"owner_user_id\")) > 0"
+        },
+        "media_asset_archive_operations_draft_check": {
+          "name": "media_asset_archive_operations_draft_check",
+          "value": "num_nonnulls(\"media_asset_archive_operations\".\"draft_id\", \"media_asset_archive_operations\".\"draft_revision_before\", \"media_asset_archive_operations\".\"draft_revision_after\", \"media_asset_archive_operations\".\"draft_position\") IN (0, 4)"
+        },
+        "media_asset_archive_operations_publication_check": {
+          "name": "media_asset_archive_operations_publication_check",
+          "value": "num_nonnulls(\"media_asset_archive_operations\".\"published_selection_before\", \"media_asset_archive_operations\".\"published_selection_after\") IN (0, 2)"
+        },
+        "media_asset_archive_operations_expiry_check": {
+          "name": "media_asset_archive_operations_expiry_check",
+          "value": "\"media_asset_archive_operations\".\"undo_expires_at\" > \"media_asset_archive_operations\".\"archived_at\" AND (\"media_asset_archive_operations\".\"undone_at\" IS NULL OR \"media_asset_archive_operations\".\"undone_at\" >= \"media_asset_archive_operations\".\"archived_at\")"
+        }
+      },
+      "isRLSEnabled": false
+    },
     "public.media_asset_purge_jobs": {
       "name": "media_asset_purge_jobs",
       "schema": "",
@@ -3006,11 +2935,18 @@
           "primaryKey": false,
           "notNull": true
         },
+        "publication_kind": {
+          "name": "publication_kind",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'draft'"
+        },
         "draft_revision": {
           "name": "draft_revision",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "item_count": {
           "name": "item_count",
@@ -3078,9 +3014,17 @@
           "name": "media_published_photo_selections_identity_check",
           "value": "length(btrim(\"media_published_photo_selections\".\"owner_user_id\")) > 0 AND length(btrim(\"media_published_photo_selections\".\"idempotency_key\")) > 0"
         },
+        "media_published_photo_selections_kind_check": {
+          "name": "media_published_photo_selections_kind_check",
+          "value": "\"media_published_photo_selections\".\"publication_kind\" IN ('draft', 'withdrawal')"
+        },
         "media_published_photo_selections_revision_check": {
           "name": "media_published_photo_selections_revision_check",
           "value": "\"media_published_photo_selections\".\"draft_revision\" >= 0"
+        },
+        "media_published_photo_selections_kind_revision_check": {
+          "name": "media_published_photo_selections_kind_revision_check",
+          "value": "(\"media_published_photo_selections\".\"publication_kind\" = 'draft' AND \"media_published_photo_selections\".\"draft_revision\" >= 0) OR (\"media_published_photo_selections\".\"publication_kind\" = 'withdrawal' AND \"media_published_photo_selections\".\"draft_revision\" IS NULL)"
         },
         "media_published_photo_selections_item_count_check": {
           "name": "media_published_photo_selections_item_count_check",
@@ -3340,6 +3284,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "discard_started_at": {
+          "name": "discard_started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -3446,6 +3396,10 @@
         "media_upload_intents_completion_check": {
           "name": "media_upload_intents_completion_check",
           "value": "\"media_upload_intents\".\"completed_at\" IS NULL OR \"media_upload_intents\".\"completed_at\" >= \"media_upload_intents\".\"created_at\""
+        },
+        "media_upload_intents_discard_check": {
+          "name": "media_upload_intents_discard_check",
+          "value": "\"media_upload_intents\".\"discard_started_at\" IS NULL OR (\"media_upload_intents\".\"completed_at\" IS NULL AND \"media_upload_intents\".\"discard_started_at\" >= \"media_upload_intents\".\"created_at\")"
         }
       },
       "isRLSEnabled": false
@@ -3615,6 +3569,217 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ama_availability_override_windows": {
+      "name": "ama_availability_override_windows",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "override_id": {
+          "name": "override_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_minute": {
+          "name": "start_minute",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_minute": {
+          "name": "end_minute",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ama_availability_override_windows_order_idx": {
+          "name": "ama_availability_override_windows_order_idx",
+          "columns": [
+            {
+              "expression": "override_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "start_minute",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "end_minute",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "ama_availability_override_windows_override_id_ama_availability_overrides_id_fk": {
+          "name": "ama_availability_override_windows_override_id_ama_availability_overrides_id_fk",
+          "tableFrom": "ama_availability_override_windows",
+          "tableTo": "ama_availability_overrides",
+          "columnsFrom": [
+            "override_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ama_availability_override_windows_start_minute_check": {
+          "name": "ama_availability_override_windows_start_minute_check",
+          "value": "\"ama_availability_override_windows\".\"start_minute\" BETWEEN 0 AND 1439"
+        },
+        "ama_availability_override_windows_end_minute_check": {
+          "name": "ama_availability_override_windows_end_minute_check",
+          "value": "\"ama_availability_override_windows\".\"end_minute\" BETWEEN 1 AND 1440"
+        },
+        "ama_availability_override_windows_same_day_check": {
+          "name": "ama_availability_override_windows_same_day_check",
+          "value": "\"ama_availability_override_windows\".\"start_minute\" < \"ama_availability_override_windows\".\"end_minute\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.ama_availability_overrides": {
+      "name": "ama_availability_overrides",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "local_date": {
+          "name": "local_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ama_availability_overrides_local_date_uidx": {
+          "name": "ama_availability_overrides_local_date_uidx",
+          "columns": [
+            {
+              "expression": "local_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ama_availability_settings": {
+      "name": "ama_availability_settings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "default": 1
+        },
+        "time_zone": {
+          "name": "time_zone",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'Asia/Taipei'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ama_availability_settings_singleton_check": {
+          "name": "ama_availability_settings_singleton_check",
+          "value": "\"ama_availability_settings\".\"id\" = 1"
+        },
+        "ama_availability_settings_time_zone_check": {
+          "name": "ama_availability_settings_time_zone_check",
+          "value": "length(btrim(\"ama_availability_settings\".\"time_zone\")) > 0"
+        }
+      },
       "isRLSEnabled": false
     }
   },

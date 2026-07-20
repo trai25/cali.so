@@ -22,6 +22,7 @@ describe('Media Asset Purge repository', () => {
     '0007_photo_publication_revision.sql',
     '0008_media_purge_progress.sql',
     '0009_media_catalog_state.sql',
+    '0013_brief_yellowjacket.sql',
   ])
   let client: PGlite
   let repository: ReturnType<typeof createMediaPurgeRepository>
@@ -78,6 +79,7 @@ describe('Media Asset Purge repository', () => {
   it('claims an Archived asset and snapshots every storage key', async () => {
     await expect(repository.claim(claimInput())).resolves.toEqual({
       status: 'claimed',
+      publicSelectionChanged: false,
       job: {
         mediaAssetId: assetId,
         originalKey: 'originals/photo.jpg',
@@ -115,7 +117,7 @@ describe('Media Asset Purge repository', () => {
     expect(asset.rows[0]).toMatchObject({ catalog_state: 'purging' })
   })
 
-  it('enforces ownership, Archived state, selection safety, and claim leases', async () => {
+  it('enforces ownership and state, withdraws selections, and leases claims', async () => {
     await expect(
       repository.claim(claimInput({ ownerUserId: 'owner_02' })),
     ).resolves.toEqual({ status: 'not_found' })
@@ -146,14 +148,39 @@ describe('Media Asset Purge repository', () => {
        VALUES ('55555555-5555-4555-8555-555555555555', $1, 0)`,
       [assetId],
     )
-    await expect(repository.claim(claimInput())).resolves.toEqual({
-      status: 'selection_conflict',
-    })
-    await client.query('DELETE FROM media_photo_selection_draft_entries')
+    const publicationId = '77777777-7777-4777-8777-777777777777'
+    await client.query(
+      `INSERT INTO media_published_photo_selections
+        (id, owner_user_id, idempotency_key, draft_revision, item_count,
+         published_at)
+       VALUES ($1, 'owner_01', 'publish_01', 1, 1, now())`,
+      [publicationId],
+    )
+    await client.query(
+      `INSERT INTO media_published_photo_selection_entries
+        (published_selection_id, source_media_asset_id, position, width,
+         height, alt_text_zh_hans, alt_text_en)
+       VALUES ($1, $2, 0, 1600, 1200, '照片', 'A photo')`,
+      [publicationId, assetId],
+    )
+    await client.query(
+      `INSERT INTO media_active_photo_publication (published_selection_id)
+       VALUES ($1)`,
+      [publicationId],
+    )
 
     await expect(repository.claim(claimInput())).resolves.toMatchObject({
       status: 'claimed',
+      publicSelectionChanged: true,
     })
+    const draftEntries = await client.query(
+      'SELECT id FROM media_photo_selection_draft_entries',
+    )
+    expect(draftEntries.rows).toEqual([])
+    const active = await client.query<{ published_selection_id: string }>(
+      'SELECT published_selection_id FROM media_active_photo_publication WHERE id = 1',
+    )
+    expect(active.rows[0]?.published_selection_id).not.toBe(publicationId)
     await expect(
       repository.claim(
         claimInput({
@@ -172,6 +199,18 @@ describe('Media Asset Purge repository', () => {
         }),
       ),
     ).resolves.toMatchObject({ status: 'claimed' })
+    await expect(
+      repository.claim(
+        claimInput({
+          claimToken: firstClaimToken,
+          claimedAt: new Date('2026-07-15T12:12:00Z'),
+          claimExpiresAt: new Date('2026-07-15T12:17:00Z'),
+        }),
+      ),
+    ).resolves.toMatchObject({
+      status: 'claimed',
+      publicSelectionChanged: true,
+    })
   })
 
   it('keeps progress durable and removes the catalog record last', async () => {

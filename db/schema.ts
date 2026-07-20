@@ -244,6 +244,7 @@ export const mediaUploadIntents = pgTable(
     checksumSha256: varchar('checksum_sha256', { length: 64 }).notNull(),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
     completedAt: timestamp('completed_at', { withTimezone: true }),
+    discardStartedAt: timestamp('discard_started_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },
@@ -281,6 +282,10 @@ export const mediaUploadIntents = pgTable(
     check(
       'media_upload_intents_completion_check',
       sql`${table.completedAt} IS NULL OR ${table.completedAt} >= ${table.createdAt}`,
+    ),
+    check(
+      'media_upload_intents_discard_check',
+      sql`${table.discardStartedAt} IS NULL OR (${table.completedAt} IS NULL AND ${table.discardStartedAt} >= ${table.createdAt})`,
     ),
   ],
 )
@@ -593,7 +598,11 @@ export const mediaPublishedPhotoSelections = pgTable(
     id: uuid('id').defaultRandom().primaryKey(),
     ownerUserId: varchar('owner_user_id', { length: 255 }).notNull(),
     idempotencyKey: varchar('idempotency_key', { length: 128 }).notNull(),
-    draftRevision: integer('draft_revision').notNull(),
+    publicationKind: varchar('publication_kind', { length: 16 })
+      .$type<'draft' | 'withdrawal'>()
+      .default('draft')
+      .notNull(),
+    draftRevision: integer('draft_revision'),
     itemCount: integer('item_count').notNull(),
     publishedAt: timestamp('published_at', { withTimezone: true }).notNull(),
   },
@@ -611,12 +620,71 @@ export const mediaPublishedPhotoSelections = pgTable(
       sql`length(btrim(${table.ownerUserId})) > 0 AND length(btrim(${table.idempotencyKey})) > 0`,
     ),
     check(
+      'media_published_photo_selections_kind_check',
+      sql`${table.publicationKind} IN ('draft', 'withdrawal')`,
+    ),
+    check(
       'media_published_photo_selections_revision_check',
       sql`${table.draftRevision} >= 0`,
     ),
     check(
+      'media_published_photo_selections_kind_revision_check',
+      sql`(${table.publicationKind} = 'draft' AND ${table.draftRevision} >= 0) OR (${table.publicationKind} = 'withdrawal' AND ${table.draftRevision} IS NULL)`,
+    ),
+    check(
       'media_published_photo_selections_item_count_check',
       sql`${table.itemCount} >= 0`,
+    ),
+  ],
+)
+
+export const mediaAssetArchiveOperations = pgTable(
+  'media_asset_archive_operations',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    ownerUserId: varchar('owner_user_id', { length: 255 }).notNull(),
+    mediaAssetId: uuid('media_asset_id')
+      .notNull()
+      .references(() => mediaAssets.id, { onDelete: 'cascade' }),
+    draftId: uuid('draft_id').references(() => mediaPhotoSelectionDrafts.id, {
+      onDelete: 'cascade',
+    }),
+    draftRevisionBefore: integer('draft_revision_before'),
+    draftRevisionAfter: integer('draft_revision_after'),
+    draftPosition: integer('draft_position'),
+    publishedSelectionBefore: uuid('published_selection_before').references(
+      () => mediaPublishedPhotoSelections.id,
+      { onDelete: 'restrict' },
+    ),
+    publishedSelectionAfter: uuid('published_selection_after').references(
+      () => mediaPublishedPhotoSelections.id,
+      { onDelete: 'restrict' },
+    ),
+    archivedAt: timestamp('archived_at', { withTimezone: true }).notNull(),
+    undoExpiresAt: timestamp('undo_expires_at', { withTimezone: true }).notNull(),
+    undoneAt: timestamp('undone_at', { withTimezone: true }),
+  },
+  (table) => [
+    index('media_asset_archive_operations_owner_idx').on(
+      table.ownerUserId,
+      table.mediaAssetId,
+      table.undoExpiresAt,
+    ),
+    check(
+      'media_asset_archive_operations_owner_check',
+      sql`length(btrim(${table.ownerUserId})) > 0`,
+    ),
+    check(
+      'media_asset_archive_operations_draft_check',
+      sql`num_nonnulls(${table.draftId}, ${table.draftRevisionBefore}, ${table.draftRevisionAfter}, ${table.draftPosition}) IN (0, 4)`,
+    ),
+    check(
+      'media_asset_archive_operations_publication_check',
+      sql`num_nonnulls(${table.publishedSelectionBefore}, ${table.publishedSelectionAfter}) IN (0, 2)`,
+    ),
+    check(
+      'media_asset_archive_operations_expiry_check',
+      sql`${table.undoExpiresAt} > ${table.archivedAt} AND (${table.undoneAt} IS NULL OR ${table.undoneAt} >= ${table.archivedAt})`,
     ),
   ],
 )

@@ -26,18 +26,22 @@ function PhotosFallback() {
         </h1>
         <PixelCluster variant={9} className="shrink-0" />
       </div>
-      <div className="mt-1 flex min-h-8 flex-wrap items-center justify-between gap-x-4 gap-y-2">
+      <div className="mt-1 flex h-12 items-center justify-between gap-4">
         <p className="text-sm tabular-nums text-muted-foreground">…</p>
+        <span className="h-8 w-20 rounded-full bg-surface-1" />
       </div>
-      <ul className="mt-6 grid grid-cols-3 gap-x-4 gap-y-6">
-        {Array.from({ length: 6 }, (_, index) => (
-          <li
-            key={index}
-            aria-hidden
-            className="aspect-[0.86] rounded-[3px] bg-surface-1"
-          />
-        ))}
-      </ul>
+      <div className="mt-4 h-20 rounded-md bg-surface-1" />
+      <div className="min-h-[30rem]">
+        <ul className="mt-4 grid grid-cols-3 gap-x-4 gap-y-6">
+          {Array.from({ length: 6 }, (_, index) => (
+            <li
+              key={index}
+              aria-hidden
+              className="aspect-[0.86] rounded-[3px] bg-surface-1"
+            />
+          ))}
+        </ul>
+      </div>
     </div>
   )
 }

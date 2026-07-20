@@ -13,11 +13,11 @@ const migrationUrls = {
     import.meta.url,
   ),
   availabilityOverrides: new URL(
-    '../db/migrations/0013_ama_availability_overrides.sql',
+    '../db/migrations/0014_ama_availability_overrides.sql',
     import.meta.url,
   ),
   availabilityWeekdays: new URL(
-    '../db/migrations/0014_ama_availability_weekdays.sql',
+    '../db/migrations/0015_ama_availability_weekdays.sql',
     import.meta.url,
   ),
 }

@@ -18,6 +18,7 @@ import { MediaReconciliationError } from '../reconciliation/service'
 import { PhotoSelectionError } from '../photo-selection/service'
 import { originalUploadChunkCount } from '../storage/transfer'
 import { storeOriginalChunkFromSameOriginRequest } from '../storage/upload'
+import { MediaTransferError } from '../transfer/service'
 
 type Authenticator = {
   authenticate(request: Request): Promise<OwnerAccess>
@@ -62,6 +63,7 @@ function errorResponse(error: unknown) {
     error instanceof MediaAltTextError ||
     error instanceof MediaPurgeError ||
     error instanceof MediaReconciliationError ||
+    error instanceof MediaTransferError ||
     error instanceof PhotoSelectionError
       ? error.code
       : 'dependency_unavailable'
@@ -76,7 +78,8 @@ function errorResponse(error: unknown) {
             ? 429
             : code === 'dependency_unavailable' ||
                 code === 'generation_failed' ||
-                code === 'cache_invalidation_failed'
+                code === 'cache_invalidation_failed' ||
+                code === 'retryable_failure'
               ? 503
               : 409
   return json(status, { error: code })
@@ -301,6 +304,11 @@ export function createMediaAssetActionHandler(
       updateDisplayMetadata(input: Record<string, unknown>): Promise<unknown>
       approveAltText(input: Record<string, unknown>): Promise<unknown>
       archive(input: { ownerUserId: string; mediaAssetId: string }): Promise<unknown>
+      undoArchive(input: {
+        ownerUserId: string
+        mediaAssetId: string
+        operationId: string
+      }): Promise<unknown>
       restore(input: { ownerUserId: string; mediaAssetId: string }): Promise<unknown>
     }
   },
@@ -312,6 +320,7 @@ export function createMediaAssetActionHandler(
       const body = await requestJson(request)
       const common = { ownerUserId: access.principal.id, mediaAssetId }
       let asset: unknown
+      let undoOperationId: string | undefined
       let event: PrivilegedAuditEvent
       if (body.intent === 'update_display_metadata') {
         asset = await dependencies.review.updateDisplayMetadata({
@@ -329,8 +338,21 @@ export function createMediaAssetActionHandler(
         })
         event = 'media_asset.reviewed'
       } else if (body.intent === 'archive') {
-        asset = await dependencies.review.archive(common)
+        const archived = (await dependencies.review.archive(common)) as {
+          asset: unknown
+          undoOperationId?: string
+        }
+        asset = archived.asset
+        undoOperationId = archived.undoOperationId
         event = 'media_asset.archived'
+      } else if (body.intent === 'undo_archive') {
+        const undone = (await dependencies.review.undoArchive({
+          ...common,
+          operationId:
+            typeof body.operationId === 'string' ? body.operationId : '',
+        })) as { asset: unknown }
+        asset = undone.asset
+        event = 'media_asset.restored'
       } else if (body.intent === 'restore') {
         asset = await dependencies.review.restore(common)
         event = 'media_asset.restored'
@@ -338,7 +360,7 @@ export function createMediaAssetActionHandler(
         return json(400, { error: 'invalid_request' })
       }
       audit(dependencies, request, event, access.principal.actorId)
-      return json(200, { asset })
+      return json(200, { asset, ...(undoOperationId ? { undoOperationId } : {}) })
     } catch (error) {
       return errorResponse(error)
     }
@@ -592,6 +614,56 @@ export function createMediaUploadIntentHandler(
   }
 }
 
+export function createMediaTransferListHandler(
+  dependencies: BaseDependencies & {
+    transfer: {
+      list(ownerUserId: string): Promise<unknown>
+    }
+  },
+) {
+  return async function GET(request: Request) {
+    const access = await authenticate(dependencies, request, false)
+    if ('response' in access) return access.response
+    try {
+      const transfers = await dependencies.transfer.list(access.principal.id)
+      return json(200, { transfers })
+    } catch (error) {
+      return errorResponse(error)
+    }
+  }
+}
+
+export function createMediaTransferDiscardHandler(
+  dependencies: BaseDependencies & {
+    transfer: {
+      discard(input: {
+        ownerUserId: string
+        uploadIntentId: string
+      }): Promise<unknown>
+    }
+  },
+) {
+  return async function DELETE(request: Request, uploadIntentId: string) {
+    const access = await authenticate(dependencies, request, true)
+    if ('response' in access) return access.response
+    try {
+      const result = await dependencies.transfer.discard({
+        ownerUserId: access.principal.id,
+        uploadIntentId,
+      })
+      audit(
+        dependencies,
+        request,
+        'media_upload.discarded',
+        access.principal.actorId,
+      )
+      return json(200, { result })
+    } catch (error) {
+      return errorResponse(error)
+    }
+  }
+}
+
 export function createMediaOriginalUploadHandler(
   dependencies: BaseDependencies & {
     baseUrl: URL
@@ -609,7 +681,9 @@ export function createMediaOriginalUploadHandler(
     }
     storage: Parameters<
       typeof storeOriginalChunkFromSameOriginRequest
-    >[0]['storage']
+    >[0]['storage'] & {
+      deleteOriginalChunk(originalKey: string, chunkIndex: number): Promise<void>
+    }
     uploadChunkRateLimiter: {
       retryAfterSeconds: number
       limit(key: string): Promise<{ success: boolean }>
@@ -666,7 +740,7 @@ export function createMediaOriginalUploadHandler(
         ),
       })
     }
-    return storeOriginalChunkFromSameOriginRequest({
+    const response = await storeOriginalChunkFromSameOriginRequest({
       request,
       canonicalBaseUrl: dependencies.baseUrl,
       expectation: {
@@ -679,6 +753,32 @@ export function createMediaOriginalUploadHandler(
       authorize: () => true,
       storage: dependencies.storage,
     })
+    if (response.status !== 204) return response
+
+    // A Discard can win after the first claim but before Bunny finishes the
+    // write. Re-claim after storage commits; if the intent expired, was
+    // discarded, or disappeared, remove this just-written chunk so no orphan
+    // survives the race.
+    let stillActive
+    try {
+      stillActive = await dependencies.ingestionRepository.claimUploadIntentTransfer(
+        access.principal.id,
+        uploadIntentId,
+        new Date(),
+      )
+    } catch {
+      return json(503, { error: 'dependency_unavailable' })
+    }
+    if (stillActive) return response
+    try {
+      await dependencies.storage.deleteOriginalChunk(
+        intent.originalKey,
+        chunkIndex,
+      )
+    } catch {
+      return json(503, { error: 'dependency_unavailable' })
+    }
+    return json(404, { error: 'not_found' })
   }
 }
 

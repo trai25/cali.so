@@ -34,6 +34,7 @@
     "test:media:purge": "vitest run lib/media/purge",
     "test:media:reconciliation": "vitest run lib/media/reconciliation",
     "test:media:storage": "vitest run lib/media/storage --exclude='**/*.live.test.ts'",
+    "test:media:transfer": "vitest run lib/media/transfer",
     "test:media:storage:live": "vitest run lib/media/storage/bunny.live.test.ts",
     "verify:legacy-urls": "node scripts/verify-legacy-url-contract.mjs",
     "verify:links": "node scripts/verify-public-links.mjs",

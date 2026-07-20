@@ -42,7 +42,7 @@ function fixture() {
       height: 480,
     },
   }
-  let selectionConflict = false
+  let publicSelectionChanged = false
   const repository: MediaAssetReviewRepository = {
     async listOwnedAssets() {
       return [record]
@@ -70,15 +70,26 @@ function fixture() {
       }
       return record
     },
-    async archive(input) {
-      if (selectionConflict) return { status: 'selection_conflict' }
-      if (record.catalogState !== 'active') return { status: 'invalid_state' }
+    archive: vi.fn(async (input) => {
+      if (record.catalogState !== 'active') {
+        return { status: 'invalid_state' as const }
+      }
       record = {
         ...record,
         catalogState: 'archived',
         archivedAt: input.archivedAt,
       }
-      return { status: 'updated', asset: record }
+      return {
+        status: 'updated' as const,
+        asset: record,
+        undoOperationId: '22222222-2222-4222-8222-222222222222',
+        publicSelectionChanged,
+      }
+    }),
+    async undoArchive() {
+      if (record.catalogState !== 'archived') return { status: 'invalid_state' }
+      record = { ...record, catalogState: 'active', archivedAt: null }
+      return { status: 'updated', asset: record, publicSelectionChanged }
     },
     async restore() {
       if (record.catalogState !== 'archived') return { status: 'invalid_state' }
@@ -86,14 +97,18 @@ function fixture() {
       return { status: 'updated', asset: record }
     },
   }
+  const invalidatePublicSelection = vi.fn(async () => undefined)
   const service = createMediaAssetReviewService({
     repository,
+    invalidatePublicSelection,
     clock: { now: () => new Date('2026-07-15T12:00:00.000Z') },
   })
   return {
+    repository,
     service,
-    setSelectionConflict(value: boolean) {
-      selectionConflict = value
+    invalidatePublicSelection,
+    setPublicSelectionChanged(value: boolean) {
+      publicSelectionChanged = value
     },
   }
 }
@@ -154,13 +169,28 @@ describe('Media Asset review service', () => {
     })
   })
 
-  it('blocks Archive while the Media Asset belongs to a Photo Selection', async () => {
-    const { service, setSelectionConflict } = fixture()
-    setSelectionConflict(true)
+  it('archives a selected Media Asset and invalidates its surgical publication', async () => {
+    const {
+      invalidatePublicSelection,
+      repository,
+      service,
+      setPublicSelectionChanged,
+    } = fixture()
+    setPublicSelectionChanged(true)
 
     await expect(
       service.archive({ ownerUserId: 'owner_01', mediaAssetId }),
-    ).rejects.toEqual(new MediaAssetReviewError('selection_conflict'))
+    ).resolves.toMatchObject({
+      asset: { catalogState: 'archived' },
+      undoOperationId: '22222222-2222-4222-8222-222222222222',
+    })
+    expect(repository.archive).toHaveBeenCalledWith({
+      ownerUserId: 'owner_01',
+      mediaAssetId,
+      archivedAt: new Date('2026-07-15T12:00:00.000Z'),
+      undoExpiresAt: new Date('2026-07-15T12:00:30.000Z'),
+    })
+    expect(invalidatePublicSelection).toHaveBeenCalledOnce()
   })
 
   it('archives and restores without changing reviewed metadata', async () => {
@@ -175,9 +205,11 @@ describe('Media Asset review service', () => {
     await expect(
       service.archive({ ownerUserId: 'owner_01', mediaAssetId }),
     ).resolves.toMatchObject({
-      catalogState: 'archived',
-      altTextEn: 'A cable car.',
-      archivedAt: new Date('2026-07-15T12:00:00.000Z'),
+      asset: {
+        catalogState: 'archived',
+        altTextEn: 'A cable car.',
+        archivedAt: new Date('2026-07-15T12:00:00.000Z'),
+      },
     })
     await expect(
       service.restore({ ownerUserId: 'owner_01', mediaAssetId }),

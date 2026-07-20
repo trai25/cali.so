@@ -30,6 +30,7 @@ describe('Media Library ingestion repository', () => {
     '0007_photo_publication_revision.sql',
     '0009_media_catalog_state.sql',
     '0012_high_fidelity_photo_renditions.sql',
+    '0013_brief_yellowjacket.sql',
   ])
   let client: PGlite
   let repository: ReturnType<typeof createMediaIngestionRepository>
@@ -69,6 +70,23 @@ describe('Media Library ingestion repository', () => {
     await expect(
       repository.claimUploadIntentTransfer('other_owner', intent.id, activeAt),
     ).resolves.toBeNull()
+    await client.query(
+      `UPDATE media_upload_intents
+       SET discard_started_at = $2 WHERE id = $1`,
+      [intent.id, activeAt],
+    )
+    await expect(
+      repository.claimUploadIntentTransfer(
+        intent.ownerUserId,
+        intent.id,
+        new Date('2026-07-15T01:01:00.000Z'),
+      ),
+    ).resolves.toBeNull()
+    await client.query(
+      `UPDATE media_upload_intents
+       SET discard_started_at = NULL WHERE id = $1`,
+      [intent.id],
+    )
     await expect(
       repository.claimUploadIntentTransfer(
         intent.ownerUserId,
@@ -91,6 +109,7 @@ describe('Media Library ingestion repository', () => {
       uploadIntent: intent,
       completedAt,
     })
+    if (!asset) throw new Error('Expected a verified Media Asset')
 
     const claims = await Promise.all([
       repository.claimProcessing({
@@ -116,6 +135,24 @@ describe('Media Library ingestion repository', () => {
     })
   })
 
+  it('does not create a Media Asset after Discard closes the intent', async () => {
+    const intent = await repository.createUploadIntent(intentInput)
+    await client.query(
+      `UPDATE media_upload_intents
+       SET discard_started_at = '2026-07-15T01:00:00Z'
+       WHERE id = $1`,
+      [intent.id],
+    )
+
+    await expect(
+      repository.createVerifiedMediaAsset({
+        uploadIntent: intent,
+        completedAt: new Date('2026-07-15T01:01:00.000Z'),
+      }),
+    ).resolves.toBeNull()
+    await expect(repository.findMediaAsset(intent.id)).resolves.toBeNull()
+  })
+
   it('requires the complete Rendition manifest before storing ready metadata', async () => {
     const intent = await repository.createUploadIntent(intentInput)
     const now = new Date('2026-07-15T01:00:00.000Z')
@@ -123,6 +160,7 @@ describe('Media Library ingestion repository', () => {
       uploadIntent: intent,
       completedAt: now,
     })
+    if (!asset) throw new Error('Expected a verified Media Asset')
     await repository.claimProcessing({
       mediaAssetId: asset.id,
       claimedAt: now,
@@ -172,7 +210,19 @@ describe('Media Library ingestion repository', () => {
     await repository.recordRendition(rendition(1024))
     await repository.recordRendition(rendition(1600))
     await repository.recordRendition(rendition(2560))
-    const ready = await repository.markReady(readyInput)
+    const readyResult = await repository.withActiveProcessingAsset({
+      mediaAssetId: asset.id,
+      run: (session) =>
+        session.markReady({
+          metadata: readyInput.metadata,
+          completedAt: readyInput.completedAt,
+          requiredRenditionCount: readyInput.requiredRenditionCount,
+        }),
+    })
+    if (readyResult.status !== 'active') {
+      throw new Error('Expected active processing')
+    }
+    const ready = readyResult.value
 
     const staleFailure = await repository.markFailure({
       mediaAssetId: asset.id,

@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { MediaLibrary } from '../../../app/admin/(protected)/media/MediaLibrary'
 import type { MediaAssetReviewRecord } from '../asset-review/service'
+import type { TransferJob } from '../transfer/service'
 
 // jsdom ships no ResizeObserver; the inspector dialog's scrollable body
 // observes its viewport to drive the edge fades. Assigned directly (not
@@ -53,6 +54,27 @@ const activeAsset: MediaAssetReviewRecord = {
   },
 }
 
+const failedTransfer: TransferJob = {
+  uploadIntentId: '22222222-2222-4222-8222-222222222222',
+  mediaAssetId: '33333333-3333-4333-8333-333333333333',
+  contentType: 'image/jpeg',
+  byteSize: 2_700_000,
+  checksumSha256: 'a'.repeat(64),
+  stage: 'failed',
+  processingState: 'retryable_failure',
+  processingErrorCode: 'dependency_unavailable',
+  createdAt: new Date('2026-07-20T08:00:00.000Z'),
+  updatedAt: new Date('2026-07-20T08:01:00.000Z'),
+  expiresAt: new Date('2026-07-20T08:15:00.000Z'),
+}
+
+const processingTransfer: TransferJob = {
+  ...failedTransfer,
+  stage: 'processing',
+  processingState: 'processing',
+  processingErrorCode: null,
+}
+
 beforeEach(() => {
   const entries = new Map<string, string>()
   vi.stubGlobal('localStorage', {
@@ -83,18 +105,18 @@ afterEach(() => {
 })
 
 describe('Media archive UI contract', () => {
-  it('renders the drop tray, contact sheet, and search without leaking private data', () => {
+  it('renders a stable contact sheet with Transfers outside page flow', () => {
     const html = renderToStaticMarkup(
       <MediaLibrary
         initialActive={[activeAsset]}
         initialArchived={[]}
+        initialTransfers={[]}
         selectionIds={[activeAsset.id]}
       />,
     )
 
-    expect(html).toContain('Drop or choose photos')
-    expect(html).toContain('multiple=""')
-    expect(html).toContain('image/heic')
+    expect(html).toContain('Transfers')
+    expect(html).not.toContain('multiple=""')
     expect(html).toContain('role="tablist"')
     expect(html).toContain('aria-haspopup="dialog"')
     // The selection mark shows what the photos page is using.
@@ -110,6 +132,7 @@ describe('Media archive UI contract', () => {
       <MediaLibrary
         initialActive={[activeAsset]}
         initialArchived={[]}
+        initialTransfers={[]}
         selectionIds={[]}
       />,
     )
@@ -136,6 +159,7 @@ describe('Media archive UI contract', () => {
       <MediaLibrary
         initialActive={[withoutCaptureLocation]}
         initialArchived={[]}
+        initialTransfers={[]}
         selectionIds={[]}
       />,
     )
@@ -179,6 +203,7 @@ describe('Media archive UI contract', () => {
       <MediaLibrary
         initialActive={[activeAsset]}
         initialArchived={[]}
+        initialTransfers={[]}
         selectionIds={[]}
       />,
     )
@@ -199,7 +224,7 @@ describe('Media archive UI contract', () => {
     expect(intents).toEqual(['update_display_metadata', 'approve_alt_text'])
   })
 
-  it('purges only through the typed in-dialog confirmation', async () => {
+  it('purges through one dedicated confirmation dialog', async () => {
     document.documentElement.dataset.locale = 'en'
     const archivedAsset: MediaAssetReviewRecord = {
       ...activeAsset,
@@ -212,6 +237,7 @@ describe('Media archive UI contract', () => {
       <MediaLibrary
         initialActive={[]}
         initialArchived={[archivedAsset]}
+        initialTransfers={[]}
         selectionIds={[]}
       />,
     )
@@ -222,16 +248,8 @@ describe('Media archive UI contract', () => {
     fireEvent.click(screen.getByRole('button', { name: /Purge$/ }))
 
     const confirmButton = screen.getByRole('button', {
-      name: /Confirm purge/,
+      name: /Purge$/,
     }) as HTMLButtonElement
-    const input = screen.getByRole('textbox', { name: /Type PURGE to confirm/ })
-
-    fireEvent.change(input, { target: { value: 'purge' } })
-    expect(confirmButton.disabled).toBe(true)
-    expect(fetchMock).not.toHaveBeenCalled()
-
-    fireEvent.change(input, { target: { value: 'PURGE' } })
-    expect(confirmButton.disabled).toBe(false)
     fireEvent.click(confirmButton)
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledOnce())
@@ -244,7 +262,77 @@ describe('Media archive UI contract', () => {
     )
   })
 
-  it('retries a failed Original transfer before attempting completion', async () => {
+  it('restores failed Transfer Jobs after reload and discards through one dialog', async () => {
+    document.documentElement.dataset.locale = 'en'
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (
+        url ===
+          `/api/admin/media/upload-intents/${failedTransfer.uploadIntentId}` &&
+        init?.method === 'DELETE'
+      ) {
+        return Response.json({ result: { status: 'discarded' } })
+      }
+      if (url.endsWith('?view=active') || url.endsWith('?view=archived')) {
+        return Response.json({ assets: [] })
+      }
+      if (url === '/api/admin/media/upload-intents') {
+        return Response.json({ transfers: [] })
+      }
+      throw new Error(`Unexpected request: ${url}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const { getByRole, getByText, queryByRole } = render(
+      <MediaLibrary
+        initialActive={[]}
+        initialArchived={[]}
+        initialTransfers={[failedTransfer]}
+        selectionIds={[]}
+      />,
+    )
+
+    expect(getByRole('button', { name: /Transfers/ }).textContent).toContain('1')
+    expect(getByText('The Library is empty — start a Transfer.')).toBeTruthy()
+    fireEvent.click(getByRole('button', { name: /Transfers/ }))
+    expect(
+      await screen.findByText(
+        'Storage is temporarily unavailable; it is safe to retry',
+      ),
+    ).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /Discard/ }))
+
+    await screen.findByRole('dialog', { name: /Discard Transfer/ })
+    expect(queryByRole('textbox')).toBeNull()
+    fireEvent.click(
+      screen.getByRole('button', { name: /Discard Permanently/ }),
+    )
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        `/api/admin/media/upload-intents/${failedTransfer.uploadIntentId}`,
+        { method: 'DELETE' },
+      ),
+    )
+  })
+
+  it('keeps Discard available while a Transfer Job is processing', async () => {
+    document.documentElement.dataset.locale = 'en'
+    render(
+      <MediaLibrary
+        initialActive={[]}
+        initialArchived={[]}
+        initialTransfers={[processingTransfer]}
+        selectionIds={[]}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: /Transfers/ }))
+    expect(
+      await screen.findByRole('button', { name: /Discard/ }),
+    ).toBeTruthy()
+  })
+
+  it('automatically retries a transient Original transfer before completion', async () => {
     const digest = new Uint8Array(32).buffer
     vi.stubGlobal('crypto', {
       randomUUID: vi
@@ -300,7 +388,7 @@ describe('Media archive UI contract', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const { container, getByRole } = render(
-      <MediaLibrary initialActive={[]} initialArchived={[]} selectionIds={[]} />,
+      <MediaLibrary initialActive={[]} initialArchived={[]} initialTransfers={[]} selectionIds={[]} />,
     )
     const file = new File(
       [new Uint8Array(4 * 1024 * 1024 + 3)],
@@ -314,12 +402,11 @@ describe('Media archive UI contract', () => {
         value: async () => new Uint8Array(4 * 1024 * 1024 + 3).buffer,
       })
     }
-    fireEvent.change(container.querySelector('input[type="file"]')!, {
+    fireEvent.click(getByRole('button', { name: /Transfers/ }))
+    fireEvent.change(document.querySelector('input[type="file"]')!, {
       target: { files: [file] },
     })
 
-    await waitFor(() => expect(getByRole('button', { name: /Retry/ })).toBeTruthy())
-    fireEvent.click(getByRole('button', { name: /Retry/ }))
     await waitFor(() => {
       expect(originalAttempts).toEqual([
         '/api/admin/media/upload-intents/22222222-2222-4222-8222-222222222222/original?chunk=0',
@@ -355,6 +442,82 @@ describe('Media archive UI contract', () => {
     ) as { idempotencyKey: string }
     expect(intentBody.idempotencyKey).toBe('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')
     expect(localStorage.length).toBe(0)
+  })
+
+  it('replaces an expired Upload Intent after the first chunk returns 404', async () => {
+    const digest = new Uint8Array(32).buffer
+    vi.stubGlobal('crypto', {
+      randomUUID: vi
+        .fn()
+        .mockReturnValueOnce('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+        .mockReturnValueOnce('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')
+        .mockReturnValueOnce('cccccccc-cccc-4ccc-8ccc-cccccccccccc'),
+      subtle: { digest: vi.fn().mockResolvedValue(digest) },
+    })
+    const intentIds = [
+      '22222222-2222-4222-8222-222222222222',
+      '33333333-3333-4333-8333-333333333333',
+    ]
+    const originalAttempts: string[] = []
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === '/api/admin/media/upload-intents') {
+        return Response.json({ uploadIntent: { id: intentIds.shift() } })
+      }
+      if (url.includes('/original?chunk=')) {
+        originalAttempts.push(url)
+        return new Response(null, {
+          status: url.includes('22222222-2222-4222-8222-222222222222')
+            ? 404
+            : 204,
+        })
+      }
+      if (url.endsWith('/complete')) {
+        return Response.json({
+          mediaAsset: { id: activeAsset.id, processingState: 'ready' },
+        })
+      }
+      if (url.endsWith('/alt-text')) {
+        return Response.json({ suggestion: null, asset: null })
+      }
+      if (url.endsWith('?view=active')) {
+        return Response.json({ assets: [activeAsset] })
+      }
+      if (url.endsWith('?view=archived')) {
+        return Response.json({ assets: [] })
+      }
+      throw new Error(`Unexpected request: ${url}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { getByRole, queryByRole } = render(
+      <MediaLibrary initialActive={[]} initialArchived={[]} initialTransfers={[]} selectionIds={[]} />,
+    )
+    const file = new File([new Uint8Array([1, 2, 3])], 'photo.jpg', {
+      type: 'image/jpeg',
+    })
+    if (!file.arrayBuffer) {
+      Object.defineProperty(file, 'arrayBuffer', {
+        value: async () => new Uint8Array([1, 2, 3]).buffer,
+      })
+    }
+    fireEvent.click(getByRole('button', { name: /Transfers/ }))
+    fireEvent.change(document.querySelector('input[type="file"]')!, {
+      target: { files: [file] },
+    })
+
+    await waitFor(() => {
+      expect(originalAttempts).toEqual([
+        '/api/admin/media/upload-intents/22222222-2222-4222-8222-222222222222/original?chunk=0',
+        '/api/admin/media/upload-intents/33333333-3333-4333-8333-333333333333/original?chunk=0',
+      ])
+    })
+    expect(
+      fetchMock.mock.calls.filter(
+        ([input]) => String(input) === '/api/admin/media/upload-intents',
+      ),
+    ).toHaveLength(2)
+    expect(queryByRole('button', { name: /Retry/ })).toBeNull()
   })
 
   it('restarts once from chunk zero after a missing-prior-chunk response', async () => {
@@ -406,8 +569,8 @@ describe('Media archive UI contract', () => {
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    const { container, queryByRole } = render(
-      <MediaLibrary initialActive={[]} initialArchived={[]} selectionIds={[]} />,
+    const { getByRole, queryByRole } = render(
+      <MediaLibrary initialActive={[]} initialArchived={[]} initialTransfers={[]} selectionIds={[]} />,
     )
     const file = new File(
       [new Uint8Array(4 * 1024 * 1024 + 3)],
@@ -419,7 +582,8 @@ describe('Media archive UI contract', () => {
         value: async () => new Uint8Array(4 * 1024 * 1024 + 3).buffer,
       })
     }
-    fireEvent.change(container.querySelector('input[type="file"]')!, {
+    fireEvent.click(getByRole('button', { name: /Transfers/ }))
+    fireEvent.change(document.querySelector('input[type="file"]')!, {
       target: { files: [file] },
     })
 
@@ -467,18 +631,20 @@ describe('Media archive UI contract', () => {
     }
 
     const first = render(
-      <MediaLibrary initialActive={[]} initialArchived={[]} selectionIds={[]} />,
+      <MediaLibrary initialActive={[]} initialArchived={[]} initialTransfers={[]} selectionIds={[]} />,
     )
-    fireEvent.change(first.container.querySelector('input[type="file"]')!, {
+    fireEvent.click(first.getByRole('button', { name: /Transfers/ }))
+    fireEvent.change(document.querySelector('input[type="file"]')!, {
       target: { files: [file] },
     })
     await waitFor(() => expect(intentBodies).toHaveLength(1))
     first.unmount()
 
     const second = render(
-      <MediaLibrary initialActive={[]} initialArchived={[]} selectionIds={[]} />,
+      <MediaLibrary initialActive={[]} initialArchived={[]} initialTransfers={[]} selectionIds={[]} />,
     )
-    fireEvent.change(second.container.querySelector('input[type="file"]')!, {
+    fireEvent.click(second.getByRole('button', { name: /Transfers/ }))
+    fireEvent.change(document.querySelector('input[type="file"]')!, {
       target: { files: [file] },
     })
     await waitFor(() => expect(intentBodies).toHaveLength(2))
@@ -524,8 +690,8 @@ describe('Media archive UI contract', () => {
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    const { container, getByText, queryByRole } = render(
-      <MediaLibrary initialActive={[]} initialArchived={[]} selectionIds={[]} />,
+    const { getByRole, getByText, queryByRole } = render(
+      <MediaLibrary initialActive={[]} initialArchived={[]} initialTransfers={[]} selectionIds={[]} />,
     )
     const file = new File([new Uint8Array([1, 2, 3])], 'photo.jpg', {
       type: 'image/jpeg',
@@ -535,7 +701,8 @@ describe('Media archive UI contract', () => {
         value: async () => new Uint8Array([1, 2, 3]).buffer,
       })
     }
-    fireEvent.change(container.querySelector('input[type="file"]')!, {
+    fireEvent.click(getByRole('button', { name: /Transfers/ }))
+    fireEvent.change(document.querySelector('input[type="file"]')!, {
       target: { files: [file] },
     })
 

@@ -16,9 +16,9 @@ const claimToken = '22222222-2222-4222-8222-222222222222'
 function fixture() {
   let completed = false
   let busy = false
-  let conflict = false
   let completeSucceeds = true
   let failureCode: string | null = null
+  let publicSelectionChanged = false
   const job: MediaPurgeJob = {
     mediaAssetId,
     originalKey: 'originals/photo.jpg',
@@ -58,9 +58,12 @@ function fixture() {
     async claim() {
       if (completed) return { status: 'completed' }
       if (busy) return { status: 'busy' }
-      if (conflict) return { status: 'selection_conflict' }
       failureCode = null
-      return { status: 'claimed', job: structuredClone(job) }
+      return {
+        status: 'claimed',
+        job: structuredClone(job),
+        publicSelectionChanged,
+      }
     },
     async markRenditionObjectDeleted({ objectKey, deletedAt }) {
       const rendition = job.renditions.find((item) => item.objectKey === objectKey)
@@ -107,6 +110,9 @@ function fixture() {
   const service = createMediaPurgeService({
     repository,
     storage,
+    invalidatePublicSelection: async () => {
+      calls.push('invalidate-public-selection')
+    },
     clock: { now: () => new Date('2026-07-15T12:00:00.000Z') },
     idGenerator: () => claimToken,
   })
@@ -125,11 +131,11 @@ function fixture() {
     setBusy: (value: boolean) => {
       busy = value
     },
-    setConflict: (value: boolean) => {
-      conflict = value
-    },
     setCompleteSucceeds: (value: boolean) => {
       completeSucceeds = value
+    },
+    setPublicSelectionChanged: (value: boolean) => {
+      publicSelectionChanged = value
     },
   }
 }
@@ -162,6 +168,14 @@ describe('Media Asset Purge service', () => {
       mediaAssetId,
     })
     expect(calls).toHaveLength(5)
+  })
+
+  it('invalidates a surgical publication before deleting storage objects', async () => {
+    const { calls, input, service, setPublicSelectionChanged } = fixture()
+    setPublicSelectionChanged(true)
+
+    await expect(service.purge(input)).resolves.toMatchObject({ status: 'purged' })
+    expect(calls[0]).toBe('invalidate-public-selection')
   })
 
   it('records partial failure and resumes from confirmed progress', async () => {
@@ -198,14 +212,8 @@ describe('Media Asset Purge service', () => {
     )
   })
 
-  it('reports selection conflicts and active claims safely', async () => {
-    const { input, service, setBusy, setConflict } = fixture()
-    setConflict(true)
-    await expect(service.purge(input)).rejects.toEqual(
-      new MediaPurgeError('selection_conflict'),
-    )
-
-    setConflict(false)
+  it('reports active claims safely', async () => {
+    const { input, service, setBusy } = fixture()
     setBusy(true)
     await expect(service.purge(input)).rejects.toEqual(
       new MediaPurgeError('busy'),

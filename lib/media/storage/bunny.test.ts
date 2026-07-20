@@ -451,6 +451,28 @@ describe('Bunny Media Storage', () => {
     })
   })
 
+  it('treats missing objects as already deleted for every Media namespace', async () => {
+    const send = vi.fn(async () => {
+      throw Object.assign(new Error('Not found'), {
+        $metadata: { httpStatusCode: 404 },
+      })
+    })
+    const storage = createBunnyStorage(config, {
+      client: { send } as never,
+    })
+
+    await expect(
+      storage.deleteOriginal('originals/asset_01/revision_01.heic'),
+    ).resolves.toBeUndefined()
+    await expect(
+      storage.deleteOriginalChunk('originals/asset_01/revision_01.heic', 0),
+    ).resolves.toBeUndefined()
+    await expect(
+      storage.deleteRendition('renditions/asset_01/photo-1600-v1.jpg'),
+    ).resolves.toBeUndefined()
+    expect(send).toHaveBeenCalledTimes(3)
+  })
+
   it('purges the exact immutable Rendition URL from Bunny CDN', async () => {
     const fetch = vi.fn(async (_input: string | URL | Request, _init?: RequestInit) =>
       Response.json({ Message: 'Purged' }),
