@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict'
+import { request as requestHttp } from 'node:http'
+import { request as requestHttps } from 'node:https'
 
 import { JSDOM } from 'jsdom'
 
@@ -58,6 +60,36 @@ function expectedMutationOrigin(baseUrl) {
   return new URL(process.env.SITE_URL ?? 'https://cali.so').origin
 }
 
+function rawHeaderValues(rawHeaders, name) {
+  const values = []
+  for (let index = 0; index < rawHeaders.length; index += 2) {
+    if (rawHeaders[index].toLowerCase() === name.toLowerCase()) {
+      values.push(rawHeaders[index + 1])
+    }
+  }
+  return values
+}
+
+async function fetchRawHeaders(baseUrl, path, init) {
+  const url = new URL(path, baseUrl)
+  const request = url.protocol === 'https:' ? requestHttps : requestHttp
+  return new Promise((resolve, reject) => {
+    const outgoing = request(
+      url,
+      {
+        method: init?.method ?? 'GET',
+        headers: init?.headers,
+      },
+      (incoming) => {
+        incoming.resume()
+        incoming.once('end', () => resolve(incoming.rawHeaders))
+      },
+    )
+    outgoing.once('error', reject)
+    outgoing.end()
+  })
+}
+
 async function fetchBoundary(baseUrl, path, init, options = {}) {
   const response = await fetch(new URL(path, baseUrl), {
     redirect: 'manual',
@@ -100,23 +132,27 @@ async function verifyPublicPages(baseUrl) {
 async function verifyAdminPages(baseUrl) {
   for (const path of [
     '/admin',
+    '/admin/ama/settings',
     '/admin/login',
     '/admin/photos?view=draft',
   ]) {
     // Clerk redirects document navigations to sign-in, but deliberately
     // rewrites non-page requests to 404. Model the browser boundary here.
-    const { response } = await fetchBoundary(baseUrl, path, {
+    const documentRequest = {
       headers: {
         accept: 'text/html',
         'sec-fetch-dest': 'document',
       },
-    })
+    }
+    const { response } = await fetchBoundary(baseUrl, path, documentRequest)
     assert.equal(response.status, 307, `${path} Clerk redirect status`)
     const location = new URL(response.headers.get('location'))
     assert.equal(location.protocol, 'https:')
-    assert.match(
-      location.pathname,
-      /(?:\/sign-in(?:\/|$)|\/v1\/client\/handshake$)/,
+    assert.ok(
+      location.pathname === '/sign-in' ||
+        location.pathname.startsWith('/sign-in/') ||
+        location.pathname === '/v1/client/handshake',
+      `${path} Clerk redirect path`,
     )
     const returnUrl = new URL(location.searchParams.get('redirect_url'))
     const requestedUrl = new URL(path, baseUrl)
@@ -126,6 +162,27 @@ async function verifyAdminPages(baseUrl) {
       `${requestedUrl.pathname}${requestedUrl.search}`,
       `${path} Clerk return path`,
     )
+    const policy = response.headers.get('content-security-policy') ?? ''
+    const policyDirectives = policy
+      .split(';')
+      .map((directive) => directive.trim())
+    if (path === '/admin/ama/settings') {
+      const rawHeaders = await fetchRawHeaders(baseUrl, path, documentRequest)
+      const policies = rawHeaderValues(rawHeaders, 'content-security-policy')
+      assert.equal(policies.length, 1, `${path} CSP header count`)
+      assert.equal(policies[0], policy, `${path} raw CSP header`)
+      assert.ok(
+        policyDirectives.includes(
+          "form-action 'self' https://accounts.google.com",
+        ),
+        `${path} Google OAuth form destination`,
+      )
+    } else {
+      assert.ok(
+        policyDirectives.includes("form-action 'self'"),
+        `${path} Google OAuth policy scope`,
+      )
+    }
   }
 }
 

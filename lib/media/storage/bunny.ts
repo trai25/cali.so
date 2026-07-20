@@ -23,11 +23,7 @@ export type BunnyStorageRegion = (typeof BUNNY_STORAGE_REGIONS)[number]
 
 export type BunnyStorageConfig = {
   region: BunnyStorageRegion
-  originals: {
-    zone: string
-    password: string
-  }
-  renditions: {
+  media: {
     zone: string
     password: string
     cdnBaseUrl: URL
@@ -52,8 +48,7 @@ export class BunnyStorageError extends Error {
 }
 
 type BunnyStorageDependencies = {
-  originalsClient?: S3Client
-  renditionsClient?: S3Client
+  client?: S3Client
   fetch?: typeof fetch
 }
 
@@ -84,9 +79,35 @@ function assertObjectKey(key: string) {
   }
 }
 
+function assertObjectNamespace(
+  key: string,
+  namespace: 'originals' | 'renditions',
+) {
+  assertObjectKey(key)
+  if (!key.startsWith(`${namespace}/`)) {
+    throw new TypeError(`Media object key must use the ${namespace}/ namespace`)
+  }
+}
+
+function assertOriginalObjectKey(key: string) {
+  assertObjectNamespace(key, 'originals')
+}
+
+function assertRenditionObjectKey(key: string) {
+  assertObjectNamespace(key, 'renditions')
+}
+
+function originalChunkObjectKey(originalKey: string, chunkIndex: number) {
+  assertOriginalObjectKey(originalKey)
+  if (!Number.isSafeInteger(chunkIndex) || chunkIndex < 0) {
+    throw new TypeError('Invalid Original transfer chunk index')
+  }
+  return `transfer-chunks/${originalKey}/${chunkIndex}.part`
+}
+
 export function createPublicRenditionUrl(cdnBaseUrl: URL) {
   return function publicRenditionUrl(key: string) {
-    assertObjectKey(key)
+    assertRenditionObjectKey(key)
     const encodedKey = key.split('/').map(encodeURIComponent).join('/')
     return new URL(encodedKey, cdnBaseUrl).toString()
   }
@@ -103,7 +124,7 @@ function assertContentAddressedRenditionKey(
   key: string,
   checksumSha256: string,
 ) {
-  assertObjectKey(key)
+  assertRenditionObjectKey(key)
   checksumBase64(checksumSha256)
   if (!key.toLowerCase().endsWith('.jpg')) {
     throw new TypeError('Renditions must use a JPEG object key')
@@ -125,33 +146,33 @@ export function createBunnyStorage(
   config: BunnyStorageConfig,
   dependencies: BunnyStorageDependencies = {},
 ) {
-  const originals =
-    dependencies.originalsClient ?? createClient(config.region, config.originals)
-  const renditions =
-    dependencies.renditionsClient ?? createClient(config.region, config.renditions)
+  const client =
+    dependencies.client ?? createClient(config.region, config.media)
   const request = dependencies.fetch ?? fetch
 
   const publicRenditionUrl = createPublicRenditionUrl(
-    config.renditions.cdnBaseUrl,
+    config.media.cdnBaseUrl,
   )
 
-  async function deleteObject(client: S3Client, bucket: string, key: string) {
+  async function deleteObject(key: string) {
     assertObjectKey(key)
     try {
-      await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }))
+      await client.send(
+        new DeleteObjectCommand({ Bucket: config.media.zone, Key: key }),
+      )
     } catch (error) {
       if (providerStatus(error) === 404) return
       throw new BunnyStorageError('provider_unavailable')
     }
   }
 
-  async function inspectObject(client: S3Client, bucket: string, key: string) {
+  async function inspectObject(key: string) {
     assertObjectKey(key)
     let output
     try {
       output = await client.send(
         new HeadObjectCommand({
-          Bucket: bucket,
+          Bucket: config.media.zone,
           Key: key,
         }),
       )
@@ -176,11 +197,13 @@ export function createBunnyStorage(
     }
   }
 
-  async function readObject(client: S3Client, bucket: string, key: string) {
+  async function readObject(key: string) {
     assertObjectKey(key)
     let output
     try {
-      output = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }))
+      output = await client.send(
+        new GetObjectCommand({ Bucket: config.media.zone, Key: key }),
+      )
     } catch (error) {
       throw new BunnyStorageError(
         providerStatus(error) === 404 ? 'not_found' : 'provider_unavailable',
@@ -201,12 +224,12 @@ export function createBunnyStorage(
       contentType: string
       checksumSha256: string
     }) {
-      assertObjectKey(input.key)
+      assertOriginalObjectKey(input.key)
       const checksum = checksumBase64(input.checksumSha256)
       try {
-        await originals.send(
+        await client.send(
           new PutObjectCommand({
-            Bucket: config.originals.zone,
+            Bucket: config.media.zone,
             Key: input.key,
             Body: input.bytes,
             ContentLength: input.bytes.byteLength,
@@ -219,12 +242,58 @@ export function createBunnyStorage(
       }
     },
 
+    async storeOriginalChunk(input: {
+      originalKey: string
+      chunkIndex: number
+      bytes: Uint8Array
+      checksumSha256: string
+    }) {
+      const key = originalChunkObjectKey(
+        input.originalKey,
+        input.chunkIndex,
+      )
+      const checksum = checksumBase64(input.checksumSha256)
+      try {
+        await client.send(
+          new PutObjectCommand({
+            Bucket: config.media.zone,
+            Key: key,
+            Body: input.bytes,
+            ContentLength: input.bytes.byteLength,
+            ContentType: 'application/octet-stream',
+            ChecksumSHA256: checksum,
+          }),
+        )
+      } catch {
+        throw new BunnyStorageError('provider_unavailable')
+      }
+    },
+
     async inspectOriginal(key: string) {
-      return inspectObject(originals, config.originals.zone, key)
+      assertOriginalObjectKey(key)
+      return inspectObject(key)
     },
 
     async readOriginal(key: string) {
-      return readObject(originals, config.originals.zone, key)
+      assertOriginalObjectKey(key)
+      return readObject(key)
+    },
+
+    readOriginalChunk(originalKey: string, chunkIndex: number) {
+      return readObject(originalChunkObjectKey(originalKey, chunkIndex))
+    },
+
+    async inspectOriginalChunk(originalKey: string, chunkIndex: number) {
+      try {
+        return await inspectObject(
+          originalChunkObjectKey(originalKey, chunkIndex),
+        )
+      } catch (error) {
+        if (error instanceof BunnyStorageError && error.code === 'not_found') {
+          return null
+        }
+        throw error
+      }
     },
 
     async storeRendition(input: {
@@ -239,9 +308,9 @@ export function createBunnyStorage(
       }
       const checksum = checksumBase64(input.checksumSha256)
       try {
-        await renditions.send(
+        await client.send(
           new PutObjectCommand({
-            Bucket: config.renditions.zone,
+            Bucket: config.media.zone,
             Key: input.key,
             Body: input.bytes,
             ContentLength: input.bytes.byteLength,
@@ -256,19 +325,27 @@ export function createBunnyStorage(
     },
 
     async inspectRendition(key: string) {
-      return inspectObject(renditions, config.renditions.zone, key)
+      assertRenditionObjectKey(key)
+      return inspectObject(key)
     },
 
     async readRendition(key: string) {
-      return readObject(renditions, config.renditions.zone, key)
+      assertRenditionObjectKey(key)
+      return readObject(key)
     },
 
     deleteOriginal(key: string) {
-      return deleteObject(originals, config.originals.zone, key)
+      assertOriginalObjectKey(key)
+      return deleteObject(key)
+    },
+
+    deleteOriginalChunk(originalKey: string, chunkIndex: number) {
+      return deleteObject(originalChunkObjectKey(originalKey, chunkIndex))
     },
 
     deleteRendition(key: string) {
-      return deleteObject(renditions, config.renditions.zone, key)
+      assertRenditionObjectKey(key)
+      return deleteObject(key)
     },
 
     async purgeRendition(key: string) {

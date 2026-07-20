@@ -9,7 +9,11 @@ import {
 } from '../processing/image'
 import { CaptureLocationError } from '../privacy/capture-location'
 import { BunnyStorageError } from '../storage/bunny'
-import { MAX_ORIGINAL_UPLOAD_BYTES } from '../storage/upload'
+import {
+  MAX_ORIGINAL_UPLOAD_BYTES,
+  originalUploadChunkByteLength,
+  originalUploadChunkCount,
+} from '../storage/transfer'
 
 export const UPLOAD_INTENT_LIFETIME_MS = 24 * 60 * 60 * 1000
 
@@ -80,6 +84,11 @@ export interface MediaIngestionRepository {
     input: Omit<UploadIntentRecord, 'completedAt'>,
   ): Promise<UploadIntentRecord>
   findUploadIntent(ownerUserId: string, id: string): Promise<UploadIntentRecord | null>
+  claimUploadIntentTransfer(
+    ownerUserId: string,
+    id: string,
+    activeAt: Date,
+  ): Promise<UploadIntentRecord | null>
   findMediaAsset(uploadIntentId: string): Promise<MediaAssetRecord | null>
   createVerifiedMediaAsset(input: {
     uploadIntent: UploadIntentRecord
@@ -142,6 +151,20 @@ type MediaIngestionDependencies = {
       contentType: string
     }>
     readOriginal(key: string): Promise<Uint8Array>
+    storeOriginal(input: {
+      key: string
+      bytes: Uint8Array
+      contentType: string
+      checksumSha256: string
+    }): Promise<void>
+    readOriginalChunk(
+      originalKey: string,
+      chunkIndex: number,
+    ): Promise<Uint8Array>
+    deleteOriginalChunk(
+      originalKey: string,
+      chunkIndex: number,
+    ): Promise<void>
     storeRendition(input: {
       key: string
       bytes: Uint8Array
@@ -221,8 +244,59 @@ const PROCESSING_STALE_AFTER_MS = 5 * 60 * 1000
 async function verifyOriginal(
   storage: MediaIngestionDependencies['storage'],
   intent: UploadIntentRecord,
+  recoverIncompleteTransfer: boolean,
 ) {
-  const object = await storage.inspectOriginal(intent.originalKey)
+  let object
+  try {
+    object = await storage.inspectOriginal(intent.originalKey)
+  } catch (error) {
+    if (!(error instanceof BunnyStorageError) || error.code !== 'not_found') {
+      throw error
+    }
+    const chunkCount = originalUploadChunkCount(intent.byteSize)
+    const chunks: Uint8Array[] = []
+    let byteSize = 0
+    for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex += 1) {
+      let chunk: Uint8Array
+      try {
+        chunk = await storage.readOriginalChunk(intent.originalKey, chunkIndex)
+      } catch (error) {
+        if (recoverIncompleteTransfer && error instanceof BunnyStorageError) {
+          throw new MediaIngestionError('original_mismatch')
+        }
+        throw error
+      }
+      const expectedByteSize = originalUploadChunkByteLength(
+        intent.byteSize,
+        chunkIndex,
+      )
+      if (chunk.byteLength !== expectedByteSize) {
+        throw new MediaIngestionError('original_mismatch')
+      }
+      byteSize += chunk.byteLength
+      chunks.push(chunk)
+    }
+    const assembled = new Uint8Array(byteSize)
+    let offset = 0
+    for (const chunk of chunks) {
+      assembled.set(chunk, offset)
+      offset += chunk.byteLength
+    }
+    if (
+      assembled.byteLength !== intent.byteSize ||
+      createHash('sha256').update(assembled).digest('hex') !==
+        intent.checksumSha256
+    ) {
+      throw new MediaIngestionError('original_mismatch')
+    }
+    await storage.storeOriginal({
+      key: intent.originalKey,
+      bytes: assembled,
+      contentType: intent.contentType,
+      checksumSha256: intent.checksumSha256,
+    })
+    object = await storage.inspectOriginal(intent.originalKey)
+  }
   if (
     object.byteSize !== intent.byteSize ||
     object.contentType !== intent.contentType
@@ -237,6 +311,12 @@ async function verifyOriginal(
   ) {
     throw new MediaIngestionError('original_mismatch')
   }
+  const chunkCount = originalUploadChunkCount(intent.byteSize)
+  await Promise.all(
+    Array.from({ length: chunkCount }, (_, chunkIndex) =>
+      storage.deleteOriginalChunk(intent.originalKey, chunkIndex),
+    ),
+  )
   return bytes
 }
 
@@ -386,7 +466,7 @@ export function createMediaIngestionService({
 
       let bytes: Uint8Array
       try {
-        bytes = await verifyOriginal(storage, intent)
+        bytes = await verifyOriginal(storage, intent, asset === null)
       } catch (error) {
         if (!asset) throw error
         const failure = safeFailure(error)

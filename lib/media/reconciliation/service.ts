@@ -1,6 +1,7 @@
 import 'server-only'
 
 import type { MediaAssetRecord } from '../ingestion/service'
+import { originalUploadChunkCount } from '../storage/transfer'
 import type { MediaRecoveryCandidate } from './repository'
 
 export type MediaReconciliationErrorCode =
@@ -19,15 +20,23 @@ const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const BATCH_SIZE = 5
 const UNFINISHED_UPLOAD_GRACE_MS = 5 * 60 * 1000
+const UPLOAD_TRANSFER_STALE_AFTER_MS = 15 * 60 * 1000
 const PROCESSING_STALE_AFTER_MS = 5 * 60 * 1000
 
 type Dependencies = {
   repository: {
     listRecoveryCandidates(input: {
       createdBefore: Date
+      abandonedStaleBefore: Date
       processingStaleBefore: Date
       limit: number
     }): Promise<MediaRecoveryCandidate[]>
+    claimAbandonedUploadIntent(input: {
+      uploadIntentId: string
+      expectedLastActiveAt: Date
+      expiredBefore: Date
+      claimedAt: Date
+    }): Promise<boolean>
     markRecoveryAttempted(input: {
       uploadIntentId: string
       attemptedAt: Date
@@ -35,6 +44,7 @@ type Dependencies = {
     deleteAbandonedUploadIntent(input: {
       uploadIntentId: string
       expiredBefore: Date
+      cleanupClaimedAt: Date
     }): Promise<boolean>
     listReadyWithoutAltTextSuggestion(limit: number): Promise<
       Array<{ ownerUserId: string; mediaAssetId: string }>
@@ -56,6 +66,10 @@ type Dependencies = {
   }
   storage: {
     deleteOriginal(key: string): Promise<void>
+    deleteOriginalChunk(
+      originalKey: string,
+      chunkIndex: number,
+    ): Promise<void>
   }
   altText: {
     generateSuggestion(input: {
@@ -93,6 +107,9 @@ export function createMediaReconciliationService({
       try {
         candidates = await repository.listRecoveryCandidates({
           createdBefore: new Date(now.getTime() - UNFINISHED_UPLOAD_GRACE_MS),
+          abandonedStaleBefore: new Date(
+            now.getTime() - UPLOAD_TRANSFER_STALE_AFTER_MS,
+          ),
           processingStaleBefore: new Date(
             now.getTime() - PROCESSING_STALE_AFTER_MS,
           ),
@@ -104,25 +121,43 @@ export function createMediaReconciliationService({
 
       for (const candidate of candidates) {
         try {
-          await repository.markRecoveryAttempted({
-            uploadIntentId: candidate.uploadIntentId,
-            attemptedAt: now,
-          })
           if (!candidate.mediaAssetId && candidate.expiresAt < now) {
+            const claimed = await repository.claimAbandonedUploadIntent({
+              uploadIntentId: candidate.uploadIntentId,
+              expectedLastActiveAt: candidate.lastActiveAt,
+              expiredBefore: now,
+              claimedAt: now,
+            })
+            if (!claimed) continue
             // Bunny deletion treats a missing key as success. Delete storage
             // first so a provider failure leaves the durable intent available
             // for another cleanup attempt instead of orphaning the object.
-            await storage.deleteOriginal(candidate.originalKey)
+            await Promise.all([
+              storage.deleteOriginal(candidate.originalKey),
+              ...Array.from(
+                { length: originalUploadChunkCount(candidate.byteSize) },
+                (_, chunkIndex) =>
+                  storage.deleteOriginalChunk(
+                    candidate.originalKey,
+                    chunkIndex,
+                  ),
+              ),
+            ])
             if (
               await repository.deleteAbandonedUploadIntent({
                 uploadIntentId: candidate.uploadIntentId,
                 expiredBefore: now,
+                cleanupClaimedAt: now,
               })
             ) {
               cleaned += 1
             }
             continue
           }
+          await repository.markRecoveryAttempted({
+            uploadIntentId: candidate.uploadIntentId,
+            attemptedAt: now,
+          })
           const asset = await ingestion.completeUploadIntent({
             ownerUserId: candidate.ownerUserId,
             uploadIntentId: candidate.uploadIntentId,

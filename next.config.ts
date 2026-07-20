@@ -1,7 +1,10 @@
 import type { NextConfig } from 'next'
 
 import legacyUrlManifest from './content/legacy-url-manifest.json'
-import { securityHeaders } from './lib/security/headers'
+import {
+  googleOAuthFormSecurityHeader,
+  securityHeaders,
+} from './lib/security/headers'
 
 const legacyRedirects = legacyUrlManifest.entries.flatMap((entry) =>
   entry.kind === 'redirect' && typeof entry.destination === 'string'
@@ -85,6 +88,12 @@ const nextConfig: NextConfig = {
       // admin API responses must never disclose their origin to another site.
       source: '/api/admin/:path*',
       headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }],
+    },
+    {
+      // The native connect form receives a same-origin 303 whose destination
+      // is Google's OAuth page. Limit that form destination to this one page.
+      source: '/admin/ama/settings',
+      headers: [googleOAuthFormSecurityHeader],
     },
     {
       // Proxied link media (favicons, Open Graph images) are never a

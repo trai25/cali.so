@@ -8,13 +8,19 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ uploadIntentId: string }> },
 ) {
-  const { baseUrl, ingestionRepository, security, storage } =
-    getMediaAdminServices()
+  const {
+    baseUrl,
+    ingestionRepository,
+    security,
+    storage,
+    uploadChunkRateLimiter,
+  } = getMediaAdminServices()
   return createMediaOriginalUploadHandler({
     authenticator: ownerRequestAuthenticator,
     baseUrl,
     ingestionRepository,
     security,
     storage,
+    uploadChunkRateLimiter,
   })(request, (await params).uploadIntentId)
 }

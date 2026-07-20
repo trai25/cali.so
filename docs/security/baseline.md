@@ -107,10 +107,12 @@ for supported build assets, `unsafe-eval` is development-only, script
 attributes are blocked, and all other directives remain restricted. The
 partially prerendered `/admin` surface uses the same static script policy so its
 Instant Navigation shells remain cacheable; it has no client-side Clerk
-provider or provider-origin allowance. Inline styles remain allowed because
-shared React UI emits style attributes. Revisit the script and shared style
-exceptions when Next.js and the UI can remove them without giving up static
-shells or functionality.
+provider or provider script or connection allowance. The AMA settings page
+alone extends `form-action` to `https://accounts.google.com` so its same-origin
+connect form may follow the server's redirect into Google OAuth. Inline styles
+remain allowed because shared React UI emits style attributes. Revisit the
+script and shared style exceptions when Next.js and the UI can remove them
+without giving up static shells or functionality.
 
 Configuration committed to this repository does not prove that a hosted
 setting is enabled. Track hosted verification separately in

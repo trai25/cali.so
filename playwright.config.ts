@@ -9,15 +9,11 @@ const localServerEnv = {
     process.env.AMA_ENCRYPTION_KEY ?? 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
   BUNNY_CDN_API_KEY: process.env.BUNNY_CDN_API_KEY ?? 'ci-cdn-api-key',
   BUNNY_MEDIA_REGION: process.env.BUNNY_MEDIA_REGION ?? 'ny',
-  BUNNY_ORIGINALS_PASSWORD:
-    process.env.BUNNY_ORIGINALS_PASSWORD ?? 'ci-originals-password',
-  BUNNY_ORIGINALS_ZONE: process.env.BUNNY_ORIGINALS_ZONE ?? 'ci-media-originals',
-  BUNNY_RENDITIONS_CDN_URL:
-    process.env.BUNNY_RENDITIONS_CDN_URL ?? 'https://media-ci.example.com',
-  BUNNY_RENDITIONS_PASSWORD:
-    process.env.BUNNY_RENDITIONS_PASSWORD ?? 'ci-renditions-password',
-  BUNNY_RENDITIONS_ZONE:
-    process.env.BUNNY_RENDITIONS_ZONE ?? 'ci-media-renditions',
+  BUNNY_MEDIA_CDN_URL:
+    process.env.BUNNY_MEDIA_CDN_URL ?? 'https://media-ci.example.com',
+  BUNNY_MEDIA_PASSWORD:
+    process.env.BUNNY_MEDIA_PASSWORD ?? 'ci-media-password',
+  BUNNY_MEDIA_ZONE: process.env.BUNNY_MEDIA_ZONE ?? 'ci-media',
   CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY ?? 'sk_live_ci_secret_not_real',
   DATABASE_URL:
     process.env.DATABASE_URL ?? 'postgresql://runtime:runtime@127.0.0.1:5432/cali',

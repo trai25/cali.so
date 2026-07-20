@@ -33,33 +33,18 @@ const cdnBaseUrl = z.url().transform((value, context) => {
 const bunnyStorageEnvironmentSchema = z
   .object({
     BUNNY_MEDIA_REGION: z.enum(BUNNY_STORAGE_REGIONS),
-    BUNNY_ORIGINALS_ZONE: zoneName,
-    BUNNY_ORIGINALS_PASSWORD: nonEmptySecret,
-    BUNNY_RENDITIONS_ZONE: zoneName,
-    BUNNY_RENDITIONS_PASSWORD: nonEmptySecret,
-    BUNNY_RENDITIONS_CDN_URL: cdnBaseUrl,
+    BUNNY_MEDIA_ZONE: zoneName,
+    BUNNY_MEDIA_PASSWORD: nonEmptySecret,
+    BUNNY_MEDIA_CDN_URL: cdnBaseUrl,
     BUNNY_CDN_API_KEY: nonEmptySecret,
-  })
-  .superRefine((environment, context) => {
-    if (environment.BUNNY_ORIGINALS_ZONE === environment.BUNNY_RENDITIONS_ZONE) {
-      context.addIssue({
-        code: 'custom',
-        path: ['BUNNY_RENDITIONS_ZONE'],
-        message: 'Originals and Renditions require distinct zones',
-      })
-    }
   })
   .transform(
     (environment): BunnyStorageConfig => ({
       region: environment.BUNNY_MEDIA_REGION,
-      originals: {
-        zone: environment.BUNNY_ORIGINALS_ZONE,
-        password: environment.BUNNY_ORIGINALS_PASSWORD,
-      },
-      renditions: {
-        zone: environment.BUNNY_RENDITIONS_ZONE,
-        password: environment.BUNNY_RENDITIONS_PASSWORD,
-        cdnBaseUrl: environment.BUNNY_RENDITIONS_CDN_URL,
+      media: {
+        zone: environment.BUNNY_MEDIA_ZONE,
+        password: environment.BUNNY_MEDIA_PASSWORD,
+        cdnBaseUrl: environment.BUNNY_MEDIA_CDN_URL,
       },
       cdnApiKey: environment.BUNNY_CDN_API_KEY,
     }),
@@ -75,12 +60,12 @@ export function parseBunnyStorageEnv(source: Record<string, string | undefined>)
   throw new Error(`Invalid Bunny Media Storage environment: ${fields.join(', ')}`)
 }
 
-export function parseBunnyRenditionCdnEnv(
+export function parseBunnyMediaCdnEnv(
   source: Record<string, string | undefined>,
 ) {
-  const result = cdnBaseUrl.safeParse(source.BUNNY_RENDITIONS_CDN_URL)
+  const result = cdnBaseUrl.safeParse(source.BUNNY_MEDIA_CDN_URL)
   if (result.success) return result.data
   throw new Error(
-    'Invalid Bunny Media Storage environment: BUNNY_RENDITIONS_CDN_URL',
+    'Invalid Bunny Media Storage environment: BUNNY_MEDIA_CDN_URL',
   )
 }

@@ -33,7 +33,7 @@ import { createMediaPurgeService } from '../purge/service'
 import { createMediaReconciliationRepository } from '../reconciliation/repository'
 import { createMediaReconciliationService } from '../reconciliation/service'
 import { createPublicRenditionUrl } from '../storage/bunny'
-import { parseBunnyRenditionCdnEnv } from '../storage/config'
+import { parseBunnyMediaCdnEnv } from '../storage/config'
 import { getMediaStorage } from '../storage/server'
 
 let services: ReturnType<typeof createServices> | undefined
@@ -57,7 +57,7 @@ function createCatalogServices(publicRenditionUrl: (key: string) => string) {
 }
 
 function createPageServices() {
-  const cdnBaseUrl = parseBunnyRenditionCdnEnv(process.env)
+  const cdnBaseUrl = parseBunnyMediaCdnEnv(process.env)
   const { review, selection } = createCatalogServices(
     createPublicRenditionUrl(cdnBaseUrl),
   )
@@ -70,6 +70,15 @@ function createPageServices() {
 function createServices() {
   const environment = getServerEnv()
   const storage = getMediaStorage()
+  const uploadChunkRateLimitWindowSeconds = 60
+  const uploadChunkRateLimiter = createRateLimiter(
+    environment.rateLimitBackend,
+    {
+      prefix: 'cali:media:upload-chunk',
+      maxRequests: 40,
+      windowSeconds: uploadChunkRateLimitWindowSeconds,
+    },
+  )
   const { database, review, selection } = createCatalogServices(
     storage.publicRenditionUrl,
   )
@@ -129,6 +138,10 @@ function createServices() {
     selection,
     security: getOwnerAdminSecurity(),
     storage,
+    uploadChunkRateLimiter: {
+      retryAfterSeconds: uploadChunkRateLimitWindowSeconds,
+      limit: (key: string) => uploadChunkRateLimiter.limit(key),
+    },
   }
 }
 

@@ -28,3 +28,21 @@ describe('server output tracing', () => {
     })
   })
 })
+
+describe('route security headers', () => {
+  it('allows the Google OAuth form redirect only from AMA settings', async () => {
+    const rules = await nextConfig.headers!()
+    const globalPolicy = rules
+      .find(({ source }) => source === '/:path*')
+      ?.headers.find(({ key }) => key === 'Content-Security-Policy')?.value
+    const googleOAuthPolicy = rules
+      .find(({ source }) => source === '/admin/ama/settings')
+      ?.headers.find(({ key }) => key === 'Content-Security-Policy')?.value
+
+    expect(globalPolicy).toContain("form-action 'self'")
+    expect(globalPolicy).not.toContain('https://accounts.google.com')
+    expect(googleOAuthPolicy).toContain(
+      "form-action 'self' https://accounts.google.com",
+    )
+  })
+})

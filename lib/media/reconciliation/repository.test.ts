@@ -112,6 +112,7 @@ describe('Media reconciliation repository', () => {
     await expect(
       repository.listRecoveryCandidates({
         createdBefore: new Date('2026-07-15T11:55:00.000Z'),
+        abandonedStaleBefore: new Date('2026-07-15T11:55:00.000Z'),
         processingStaleBefore: new Date('2026-07-15T11:55:00.000Z'),
         limit: 5,
       }),
@@ -121,14 +122,18 @@ describe('Media reconciliation repository', () => {
         uploadIntentId: abandonedIntentId,
         mediaAssetId: null,
         originalKey: 'originals/abandoned.jpg',
+        byteSize: 1000,
         expiresAt: new Date('2026-07-15T10:00:00.000Z'),
+        lastActiveAt: new Date('2026-07-15T08:00:00.000Z'),
       },
       {
         ownerUserId: 'owner_01',
         uploadIntentId: retryIntentId,
         mediaAssetId: retryAssetId,
         originalKey: 'originals/retry.jpg',
+        byteSize: 1000,
         expiresAt: new Date('2026-07-16T10:00:00.000Z'),
+        lastActiveAt: new Date('2026-07-15T08:01:00.000Z'),
       },
     ])
     await expect(
@@ -143,16 +148,27 @@ describe('Media reconciliation repository', () => {
         mediaAssetId: retryAssetId,
       }),
     ).resolves.toBeNull()
+    const cleanupClaimedAt = new Date('2026-07-15T12:00:00.000Z')
+    await expect(
+      repository.claimAbandonedUploadIntent({
+        uploadIntentId: abandonedIntentId,
+        expectedLastActiveAt: new Date('2026-07-15T08:00:00.000Z'),
+        expiredBefore: cleanupClaimedAt,
+        claimedAt: cleanupClaimedAt,
+      }),
+    ).resolves.toBe(true)
     await expect(
       repository.deleteAbandonedUploadIntent({
         uploadIntentId: abandonedIntentId,
-        expiredBefore: new Date('2026-07-15T12:00:00.000Z'),
+        expiredBefore: cleanupClaimedAt,
+        cleanupClaimedAt,
       }),
     ).resolves.toBe(true)
     await expect(
       repository.deleteAbandonedUploadIntent({
         uploadIntentId: retryIntentId,
         expiredBefore: new Date('2026-07-17T12:00:00.000Z'),
+        cleanupClaimedAt,
       }),
     ).resolves.toBe(false)
   })
@@ -166,9 +182,35 @@ describe('Media reconciliation repository', () => {
     ])
   })
 
+  it('cannot claim cleanup after newer upload activity', async () => {
+    const listed = await repository.listRecoveryCandidates({
+      createdBefore: new Date('2026-07-15T11:55:00.000Z'),
+      abandonedStaleBefore: new Date('2026-07-15T11:55:00.000Z'),
+      processingStaleBefore: new Date('2026-07-15T11:55:00.000Z'),
+      limit: 5,
+    })
+    const abandoned = listed.find(
+      (candidate) => candidate.uploadIntentId === abandonedIntentId,
+    )!
+    await repository.markRecoveryAttempted({
+      uploadIntentId: abandonedIntentId,
+      attemptedAt: new Date('2026-07-15T11:59:00.000Z'),
+    })
+
+    await expect(
+      repository.claimAbandonedUploadIntent({
+        uploadIntentId: abandonedIntentId,
+        expectedLastActiveAt: abandoned.lastActiveAt,
+        expiredBefore: new Date('2026-07-15T12:00:00.000Z'),
+        claimedAt: new Date('2026-07-15T12:00:00.000Z'),
+      }),
+    ).resolves.toBe(false)
+  })
+
   it('rotates attempted recovery and Alt Text work behind untouched candidates', async () => {
     const recoveryQuery = {
       createdBefore: new Date('2026-07-15T11:55:00.000Z'),
+      abandonedStaleBefore: new Date('2026-07-15T11:55:00.000Z'),
       processingStaleBefore: new Date('2026-07-15T11:55:00.000Z'),
       limit: 1,
     }
@@ -216,6 +258,7 @@ describe('Media reconciliation repository', () => {
 
       const candidates = await repository.listRecoveryCandidates({
         createdBefore: new Date('2026-07-15T11:55:00.000Z'),
+        abandonedStaleBefore: new Date('2026-07-15T11:55:00.000Z'),
         processingStaleBefore: new Date('2026-07-15T11:55:00.000Z'),
         limit: 5,
       })

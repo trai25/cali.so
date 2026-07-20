@@ -1,4 +1,4 @@
-import { createHmac } from 'node:crypto'
+import { createHash, createHmac } from 'node:crypto'
 
 import { describe, expect, it, vi } from 'vitest'
 
@@ -30,6 +30,7 @@ function request(
     authenticated?: boolean
     body?: string
     contentType?: string
+    headers?: Record<string, string>
     method?: string
     origin?: string
   } = {},
@@ -38,6 +39,7 @@ function request(
     authenticated = true,
     body,
     contentType = 'application/json',
+    headers = {},
     method,
     origin = 'https://cali.so',
   } = options
@@ -48,6 +50,7 @@ function request(
       ...(body === undefined ? {} : { 'content-type': contentType }),
       origin,
       'sec-fetch-site': origin === 'https://cali.so' ? 'same-origin' : 'cross-site',
+      ...headers,
     },
     body,
   })
@@ -784,14 +787,23 @@ describe('Media admin HTTP contract', () => {
       security: f.security,
       baseUrl: new URL('https://cali.so'),
       ingestionRepository: {
-        async findUploadIntent(ownerUserId, uploadIntentId) {
+        async claimUploadIntentTransfer(ownerUserId, uploadIntentId) {
           f.calls.push({ ownerUserId, uploadIntentId })
           return null
         },
       },
       storage: {
-        async storeOriginal() {
+        async inspectOriginalChunk() {
           throw new Error('a missing intent must not reach storage')
+        },
+        async storeOriginalChunk() {
+          throw new Error('a missing intent must not reach storage')
+        },
+      },
+      uploadChunkRateLimiter: {
+        retryAfterSeconds: 60,
+        async limit() {
+          throw new Error('a missing intent must not consume transfer budget')
         },
       },
     })
@@ -807,6 +819,105 @@ describe('Media admin HTTP contract', () => {
     expect(f.calls).toEqual([
       { ownerUserId: 'owner_01', uploadIntentId: 'upload_01' },
     ])
+  })
+
+  it('stores an authorized Original chunk below the platform body limit', async () => {
+    // A 50 MiB Original needs 13 bounded requests, so chunks must not consume
+    // the generic owner mutation budget that protects semantic actions.
+    const f = fixture(false)
+    const bytes = 'private image bytes'
+    const checksumSha256 = createHash('sha256').update(bytes).digest('hex')
+    const storeOriginalChunk = vi.fn(async () => undefined)
+    const limit = vi.fn(async () => ({ success: true }))
+    const handler = createMediaOriginalUploadHandler({
+      authenticator: f.authenticator,
+      security: f.security,
+      baseUrl: new URL('https://cali.so'),
+      ingestionRepository: {
+        async claimUploadIntentTransfer() {
+          return {
+            originalKey: 'originals/upload_01.jpg',
+            contentType: 'image/jpeg',
+            byteSize: bytes.length,
+            checksumSha256,
+          }
+        },
+      },
+      storage: {
+        async inspectOriginalChunk() {
+          return null
+        },
+        storeOriginalChunk,
+      },
+      uploadChunkRateLimiter: { retryAfterSeconds: 60, limit },
+    })
+
+    const response = await handler(
+      request('/api/admin/media/upload-intents/upload_01/original?chunk=0', {
+        method: 'PUT',
+        body: bytes,
+        contentType: 'application/octet-stream',
+        headers: { 'x-media-chunk-sha256': checksumSha256 },
+      }),
+      'upload_01',
+    )
+
+    expect(response.status).toBe(204)
+    expect(limit).toHaveBeenCalledWith('upload_01')
+    expect(storeOriginalChunk).toHaveBeenCalledWith({
+      originalKey: 'originals/upload_01.jpg',
+      chunkIndex: 0,
+      bytes: new TextEncoder().encode(bytes),
+      checksumSha256,
+    })
+  })
+
+  it('rate limits repeated chunks per Upload Intent without touching storage', async () => {
+    const f = fixture(false)
+    const bytes = 'private image bytes'
+    const checksumSha256 = createHash('sha256').update(bytes).digest('hex')
+    const storeOriginalChunk = vi.fn(async () => undefined)
+    const handler = createMediaOriginalUploadHandler({
+      authenticator: f.authenticator,
+      security: f.security,
+      baseUrl: new URL('https://cali.so'),
+      ingestionRepository: {
+        async claimUploadIntentTransfer() {
+          return {
+            originalKey: 'originals/upload_01.jpg',
+            contentType: 'image/jpeg',
+            byteSize: bytes.length,
+            checksumSha256,
+          }
+        },
+      },
+      storage: {
+        async inspectOriginalChunk() {
+          return null
+        },
+        storeOriginalChunk,
+      },
+      uploadChunkRateLimiter: {
+        retryAfterSeconds: 60,
+        async limit() {
+          return { success: false }
+        },
+      },
+    })
+
+    const response = await handler(
+      request('/api/admin/media/upload-intents/upload_01/original?chunk=0', {
+        method: 'PUT',
+        body: bytes,
+        contentType: 'application/octet-stream',
+        headers: { 'x-media-chunk-sha256': checksumSha256 },
+      }),
+      'upload_01',
+    )
+
+    expect(response.status).toBe(429)
+    expect(response.headers.get('retry-after')).toBe('60')
+    expect(storeOriginalChunk).not.toHaveBeenCalled()
   })
 
   it('completes an upload in the data namespace and audits the Clerk actor', async () => {

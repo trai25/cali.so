@@ -15,6 +15,8 @@ import {
   mediaUploadIntents,
 } from '~/db/schema'
 
+import { createPublicRenditionUrl } from '../storage/bunny'
+
 import type {
   DraftPhotoSelection,
   PhotoSelectionRepository,
@@ -189,18 +191,6 @@ async function loadCandidates(
     .where(inArray(mediaAssets.id, mediaAssetIds))
     .for('share')
   return collectCandidates(rows)
-}
-
-function publicRenditionUrl(baseUrl: URL, objectKey: string) {
-  const url = new URL(baseUrl)
-  const encodedObjectKey = objectKey
-    .split('/')
-    .filter(Boolean)
-    .map((segment) => encodeURIComponent(segment))
-    .join('/')
-  const basePath = url.pathname.replace(/\/+$/, '')
-  url.pathname = `${basePath}/${encodedObjectKey}`
-  return url.toString()
 }
 
 export type PublicPhotoSelection = {
@@ -570,6 +560,7 @@ export function createPublicPhotoSelectionRepository(
   database: () => PhotoSelectionDatabase,
   cdnBaseUrl: URL,
 ) {
+  const publicRenditionUrl = createPublicRenditionUrl(cdnBaseUrl)
   return {
     async getPublishedSelection(): Promise<PublicPhotoSelection | null> {
       const [active] = await database()
@@ -665,7 +656,7 @@ export function createPublicPhotoSelectionRepository(
             },
             renditions: renditions.map((rendition) => ({
               profileWidth: rendition.profileWidth,
-              src: publicRenditionUrl(cdnBaseUrl, rendition.objectKey),
+              src: publicRenditionUrl(rendition.objectKey),
               width: rendition.width,
               height: rendition.height,
             })),

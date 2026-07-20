@@ -16,7 +16,7 @@ import { MediaGeocodingError } from '../geocoding/service'
 import { MediaPurgeError } from '../purge/service'
 import { MediaReconciliationError } from '../reconciliation/service'
 import { PhotoSelectionError } from '../photo-selection/service'
-import { storeOriginalFromSameOriginRequest } from '../storage/upload'
+import { storeOriginalChunkFromSameOriginRequest } from '../storage/upload'
 
 type Authenticator = {
   authenticate(request: Request): Promise<OwnerAccess>
@@ -46,8 +46,11 @@ const responseHeaders = {
   'x-content-type-options': 'nosniff',
 }
 
-function json(status: number, body: unknown) {
-  return new Response(JSON.stringify(body), { status, headers: responseHeaders })
+function json(status: number, body: unknown, headers?: HeadersInit) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...responseHeaders, ...headers },
+  })
 }
 
 function errorResponse(error: unknown) {
@@ -177,7 +180,9 @@ async function authenticate(
   dependencies: BaseDependencies,
   request: Request,
   mutation: boolean,
+  options: { rateLimitMutation?: boolean } = {},
 ): Promise<AccessResult> {
+  const rateLimitMutation = options.rateLimitMutation ?? mutation
   const blocked = mutation
     ? await dependencies.security.protectOwnerAdminMutation(request)
     : null
@@ -198,7 +203,7 @@ async function authenticate(
       ),
     }
   }
-  if (mutation) {
+  if (rateLimitMutation) {
     const limited = await dependencies.security.limitAdminMutation(
       request,
       access.principal.actorId,
@@ -590,9 +595,10 @@ export function createMediaOriginalUploadHandler(
   dependencies: BaseDependencies & {
     baseUrl: URL
     ingestionRepository: {
-      findUploadIntent(
+      claimUploadIntentTransfer(
         ownerUserId: string,
         id: string,
+        activeAt: Date,
       ): Promise<{
         originalKey: string
         contentType: string
@@ -600,27 +606,59 @@ export function createMediaOriginalUploadHandler(
         checksumSha256: string
       } | null>
     }
-    storage: Parameters<typeof storeOriginalFromSameOriginRequest>[0]['storage']
+    storage: Parameters<
+      typeof storeOriginalChunkFromSameOriginRequest
+    >[0]['storage']
+    uploadChunkRateLimiter: {
+      retryAfterSeconds: number
+      limit(key: string): Promise<{ success: boolean }>
+    }
   },
 ) {
   return async function PUT(request: Request, uploadIntentId: string) {
-    const access = await authenticate(dependencies, request, true)
+    const access = await authenticate(dependencies, request, true, {
+      rateLimitMutation: false,
+    })
     if ('response' in access) return access.response
     let intent: Awaited<
       ReturnType<
-        typeof dependencies.ingestionRepository.findUploadIntent
+        typeof dependencies.ingestionRepository.claimUploadIntentTransfer
       >
     >
     try {
-      intent = await dependencies.ingestionRepository.findUploadIntent(
+      intent = await dependencies.ingestionRepository.claimUploadIntentTransfer(
         access.principal.id,
         uploadIntentId,
+        new Date(),
       )
     } catch {
       return json(503, { error: 'dependency_unavailable' })
     }
     if (!intent) return json(404, { error: 'not_found' })
-    return storeOriginalFromSameOriginRequest({
+    let rateLimit
+    try {
+      rateLimit = await dependencies.uploadChunkRateLimiter.limit(
+        uploadIntentId,
+      )
+    } catch {
+      return json(503, { error: 'dependency_unavailable' }, {
+        'retry-after': String(
+          dependencies.uploadChunkRateLimiter.retryAfterSeconds,
+        ),
+      })
+    }
+    if (!rateLimit.success) {
+      return json(429, { error: 'rate_limited' }, {
+        'retry-after': String(
+          dependencies.uploadChunkRateLimiter.retryAfterSeconds,
+        ),
+      })
+    }
+    const chunk = new URL(request.url).searchParams.get('chunk')
+    const chunkIndex = chunk !== null && /^\d+$/.test(chunk)
+      ? Number(chunk)
+      : Number.NaN
+    return storeOriginalChunkFromSameOriginRequest({
       request,
       canonicalBaseUrl: dependencies.baseUrl,
       expectation: {
@@ -629,6 +667,7 @@ export function createMediaOriginalUploadHandler(
         byteSize: intent.byteSize,
         checksumSha256: intent.checksumSha256,
       },
+      chunkIndex,
       authorize: () => true,
       storage: dependencies.storage,
     })
