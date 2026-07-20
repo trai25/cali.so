@@ -4,14 +4,18 @@ import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 
 import type { getDatabase } from '~/db'
 import {
-  mediaActivePhotoPublication,
+  mediaAssetArchiveOperations,
   mediaAssets,
-  mediaPhotoSelectionDraftEntries,
-  mediaPhotoSelectionDrafts,
-  mediaPublishedPhotoSelectionEntries,
   mediaRenditions,
   mediaUploadIntents,
 } from '~/db/schema'
+
+import { lockPhotoSelectionMutations } from '../catalog/lifecycle-locks'
+
+import {
+  restoreMediaAssetSelections,
+  withdrawMediaAssetFromSelections,
+} from '../photo-selection/withdrawal'
 
 import type {
   MediaAssetReviewRecord,
@@ -191,9 +195,12 @@ export function createMediaAssetReviewRepository(
           ),
         )
         .where(
-          input.view === 'active'
-            ? eq(mediaAssets.catalogState, 'active')
-            : inArray(mediaAssets.catalogState, ['archived', 'purging']),
+          and(
+            input.view === 'active'
+              ? eq(mediaAssets.catalogState, 'active')
+              : inArray(mediaAssets.catalogState, ['archived', 'purging']),
+            eq(mediaAssets.processingState, 'ready'),
+          ),
         )
         .orderBy(desc(mediaAssets.createdAt))
       return rows.map(
@@ -265,44 +272,31 @@ export function createMediaAssetReviewRepository(
 
     async archive(input) {
       return database().transaction(async (transaction) => {
+        await lockPhotoSelectionMutations(transaction, input.ownerUserId)
         const [current] = await transaction
-          .select({ id: mediaAssets.id, catalogState: mediaAssets.catalogState })
+          .select({
+            id: mediaAssets.id,
+            catalogState: mediaAssets.catalogState,
+            processingState: mediaAssets.processingState,
+          })
           .from(mediaAssets)
           .where(ownedAssetCondition(input.ownerUserId, input.mediaAssetId))
           .limit(1)
           .for('update')
         if (!current) return { status: 'not_found' }
-        if (current.catalogState !== 'active') return { status: 'invalid_state' }
+        if (
+          current.catalogState !== 'active' ||
+          current.processingState !== 'ready'
+        ) {
+          return { status: 'invalid_state' }
+        }
 
-        const [selection] = await transaction
-          .select({ id: mediaAssets.id })
-          .from(mediaAssets)
-          .where(
-            and(
-              eq(mediaAssets.id, current.id),
-              sql`EXISTS (
-                SELECT 1
-                FROM ${mediaPhotoSelectionDraftEntries}
-                INNER JOIN ${mediaPhotoSelectionDrafts}
-                  ON ${mediaPhotoSelectionDrafts.id} =
-                     ${mediaPhotoSelectionDraftEntries.draftId}
-                WHERE ${mediaPhotoSelectionDraftEntries.mediaAssetId} = ${mediaAssets.id}
-                  AND ${mediaPhotoSelectionDrafts.ownerUserId} =
-                      ${input.ownerUserId}
-              ) OR EXISTS (
-                SELECT 1
-                FROM ${mediaActivePhotoPublication}
-                INNER JOIN ${mediaPublishedPhotoSelectionEntries}
-                  ON ${mediaPublishedPhotoSelectionEntries.publishedSelectionId} =
-                     ${mediaActivePhotoPublication.publishedSelectionId}
-                WHERE ${mediaActivePhotoPublication.id} = 1
-                  AND ${mediaPublishedPhotoSelectionEntries.sourceMediaAssetId} =
-                      ${mediaAssets.id}
-              )`,
-            ),
-          )
-          .limit(1)
-        if (selection) return { status: 'selection_conflict' }
+        const withdrawal = await withdrawMediaAssetFromSelections(transaction, {
+          ownerUserId: input.ownerUserId,
+          mediaAssetId: input.mediaAssetId,
+          idempotencyKey: `archive:${input.mediaAssetId}:${input.archivedAt.getTime()}`,
+          at: input.archivedAt,
+        })
 
         const [asset] = await transaction
           .update(mediaAssets)
@@ -318,15 +312,114 @@ export function createMediaAssetReviewRepository(
             ),
           )
           .returning(reviewAssetColumns)
+        if (!asset) return { status: 'invalid_state' }
+        const [operation] = await transaction
+          .insert(mediaAssetArchiveOperations)
+          .values({
+            ownerUserId: input.ownerUserId,
+            mediaAssetId: input.mediaAssetId,
+            draftId: withdrawal.draft?.id ?? null,
+            draftRevisionBefore: withdrawal.draft?.revisionBefore ?? null,
+            draftRevisionAfter: withdrawal.draft?.revisionAfter ?? null,
+            draftPosition: withdrawal.draft?.position ?? null,
+            publishedSelectionBefore: withdrawal.publication?.beforeId ?? null,
+            publishedSelectionAfter: withdrawal.publication?.afterId ?? null,
+            archivedAt: input.archivedAt,
+            undoExpiresAt: input.undoExpiresAt,
+          })
+          .returning({ id: mediaAssetArchiveOperations.id })
         const preview = asset
           ? await previewRendition(transaction, asset.id)
           : null
-        return asset
-          ? {
-              status: 'updated',
-              asset: record(asset, preview, publicRenditionUrl),
-            }
-          : { status: 'invalid_state' }
+        return {
+          status: 'updated',
+          asset: record(asset, preview, publicRenditionUrl),
+          undoOperationId: operation!.id,
+          publicSelectionChanged: withdrawal.publication !== null,
+        }
+      })
+    },
+
+    async undoArchive(input) {
+      return database().transaction(async (transaction) => {
+        await lockPhotoSelectionMutations(transaction, input.ownerUserId)
+        const [operation] = await transaction
+          .select()
+          .from(mediaAssetArchiveOperations)
+          .where(
+            and(
+              eq(mediaAssetArchiveOperations.id, input.operationId),
+              eq(mediaAssetArchiveOperations.ownerUserId, input.ownerUserId),
+              eq(mediaAssetArchiveOperations.mediaAssetId, input.mediaAssetId),
+            ),
+          )
+          .limit(1)
+          .for('update')
+        if (!operation) return { status: 'not_found' }
+        if (operation.undoneAt || operation.undoExpiresAt < input.undoneAt) {
+          return { status: 'undo_expired' }
+        }
+
+        const [current] = await transaction
+          .select({ catalogState: mediaAssets.catalogState })
+          .from(mediaAssets)
+          .where(ownedAssetCondition(input.ownerUserId, input.mediaAssetId))
+          .limit(1)
+          .for('update')
+        if (!current) return { status: 'not_found' }
+        if (current.catalogState !== 'archived') return { status: 'invalid_state' }
+
+        const restored = await restoreMediaAssetSelections(transaction, {
+          ownerUserId: input.ownerUserId,
+          mediaAssetId: input.mediaAssetId,
+          draft:
+            operation.draftId &&
+            operation.draftRevisionBefore !== null &&
+            operation.draftRevisionAfter !== null &&
+            operation.draftPosition !== null
+              ? {
+                  id: operation.draftId,
+                  revisionBefore: operation.draftRevisionBefore,
+                  revisionAfter: operation.draftRevisionAfter,
+                  position: operation.draftPosition,
+                }
+              : null,
+          publication:
+            operation.publishedSelectionBefore && operation.publishedSelectionAfter
+              ? {
+                  beforeId: operation.publishedSelectionBefore,
+                  afterId: operation.publishedSelectionAfter,
+                }
+              : null,
+          at: input.undoneAt,
+        })
+        if (!restored) return { status: 'revision_conflict' }
+
+        const [asset] = await transaction
+          .update(mediaAssets)
+          .set({
+            catalogState: 'active',
+            archivedAt: null,
+            updatedAt: input.undoneAt,
+          })
+          .where(
+            and(
+              eq(mediaAssets.id, input.mediaAssetId),
+              eq(mediaAssets.catalogState, 'archived'),
+            ),
+          )
+          .returning(reviewAssetColumns)
+        if (!asset) return { status: 'invalid_state' }
+        await transaction
+          .update(mediaAssetArchiveOperations)
+          .set({ undoneAt: input.undoneAt })
+          .where(eq(mediaAssetArchiveOperations.id, operation.id))
+        const preview = await previewRendition(transaction, asset.id)
+        return {
+          status: 'updated',
+          asset: record(asset, preview, publicRenditionUrl),
+          publicSelectionChanged: operation.publishedSelectionAfter !== null,
+        }
       })
     },
 

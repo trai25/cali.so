@@ -163,7 +163,7 @@ describe('Photo curation UI contract', () => {
     })
   })
 
-  it('publishes after an inline confirmation that summarizes the change', async () => {
+  it('publishes from a fixed confirmation dialog that summarizes the change', async () => {
     document.documentElement.dataset.locale = 'en'
     const calls: Array<{ url: string; body: Record<string, unknown> }> = []
     vi.stubGlobal(
@@ -190,7 +190,7 @@ describe('Photo curation UI contract', () => {
     fireEvent.click(getByRole('button', { name: /Publish/ }))
     expect(getByText(/1 added/)).toBeTruthy()
 
-    fireEvent.click(getByRole('button', { name: /Confirm publish/ }))
+    fireEvent.click(getByRole('button', { name: /Publish$/ }))
     await waitFor(() =>
       expect(calls.some((call) => call.url.endsWith('/publish'))).toBe(true),
     )
@@ -229,7 +229,7 @@ describe('Photo curation UI contract', () => {
     fireEvent.click(getByRole('button', { name: /Position 2: Chinatown/ }))
     fireEvent.click(getByRole('button', { name: /Move earlier/ }))
     fireEvent.click(getByRole('button', { name: /Publish/ }))
-    fireEvent.click(getByRole('button', { name: /Confirm publish/ }))
+    fireEvent.click(getByRole('button', { name: /Publish$/ }))
 
     await waitFor(() =>
       expect(calls.some((call) => call.url.endsWith('/publish'))).toBe(true),
@@ -290,7 +290,7 @@ describe('Photo curation UI contract', () => {
     await new Promise((resolve) => setTimeout(resolve, 700))
 
     fireEvent.click(getByRole('button', { name: /Publish/ }))
-    fireEvent.click(getByRole('button', { name: /Confirm publish/ }))
+    fireEvent.click(getByRole('button', { name: /Publish$/ }))
 
     releases[0]!()
     await waitFor(() => expect(releases).toHaveLength(2))
@@ -400,11 +400,11 @@ describe('Photo curation UI contract', () => {
     )
 
     fireEvent.click(getByRole('button', { name: /Publish/ }))
-    fireEvent.click(getByRole('button', { name: /Confirm publish/ }))
+    fireEvent.click(getByRole('button', { name: /Publish$/ }))
     await findByText(/safe to retry/)
 
     // The confirmation panel stays open after a failure — retry directly.
-    fireEvent.click(getByRole('button', { name: /Confirm publish/ }))
+    fireEvent.click(getByRole('button', { name: /Publish$/ }))
     await waitFor(() => expect(publishBodies).toHaveLength(2))
     expect(publishBodies[0]!.idempotencyKey).toBe(publishBodies[1]!.idempotencyKey)
   })

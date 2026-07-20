@@ -43,10 +43,16 @@ export type MediaAssetReviewRecord = {
 }
 
 type CatalogStateResult =
-  | { status: 'updated'; asset: MediaAssetReviewRecord }
+  | {
+      status: 'updated'
+      asset: MediaAssetReviewRecord
+      undoOperationId?: string
+      publicSelectionChanged?: boolean
+    }
   | { status: 'invalid_state' }
   | { status: 'not_found' }
-  | { status: 'selection_conflict' }
+  | { status: 'revision_conflict' }
+  | { status: 'undo_expired' }
 
 export interface MediaAssetReviewRepository {
   listOwnedAssets(input: {
@@ -76,6 +82,13 @@ export interface MediaAssetReviewRepository {
     ownerUserId: string
     mediaAssetId: string
     archivedAt: Date
+    undoExpiresAt: Date
+  }): Promise<CatalogStateResult>
+  undoArchive(input: {
+    ownerUserId: string
+    mediaAssetId: string
+    operationId: string
+    undoneAt: Date
   }): Promise<CatalogStateResult>
   restore(input: {
     ownerUserId: string
@@ -85,11 +98,13 @@ export interface MediaAssetReviewRepository {
 }
 
 export type MediaAssetReviewErrorCode =
+  | 'cache_invalidation_failed'
   | 'dependency_unavailable'
   | 'invalid_request'
   | 'invalid_state'
   | 'not_found'
-  | 'selection_conflict'
+  | 'revision_conflict'
+  | 'undo_expired'
 
 export class MediaAssetReviewError extends Error {
   constructor(readonly code: MediaAssetReviewErrorCode) {
@@ -136,15 +151,23 @@ function validFocalPoint(value: { x: number; y: number } | null) {
 }
 
 function unwrapCatalogState(result: CatalogStateResult) {
-  if (result.status === 'updated') return result.asset
+  if (result.status === 'updated') return result
   throw new MediaAssetReviewError(result.status)
 }
 
+function unwrapAsset(result: CatalogStateResult) {
+  return unwrapCatalogState(result).asset
+}
+
+const ARCHIVE_UNDO_WINDOW_MS = 10_000
+
 export function createMediaAssetReviewService({
   repository,
+  invalidatePublicSelection,
   clock = { now: () => new Date() },
 }: {
   repository: MediaAssetReviewRepository
+  invalidatePublicSelection: () => Promise<void>
   clock?: { now(): Date }
 }) {
   return {
@@ -245,9 +268,53 @@ export function createMediaAssetReviewService({
         throw new MediaAssetReviewError('invalid_request')
       }
       try {
-        return unwrapCatalogState(
-          await repository.archive({ ...input, archivedAt: clock.now() }),
+        const archivedAt = clock.now()
+        const result = unwrapCatalogState(
+          await repository.archive({
+            ...input,
+            archivedAt,
+            undoExpiresAt: new Date(
+              archivedAt.getTime() + ARCHIVE_UNDO_WINDOW_MS,
+            ),
+          }),
         )
+        if (result.publicSelectionChanged) {
+          try {
+            await invalidatePublicSelection()
+          } catch {
+            throw new MediaAssetReviewError('cache_invalidation_failed')
+          }
+        }
+        return result
+      } catch (error) {
+        if (error instanceof MediaAssetReviewError) throw error
+        throw new MediaAssetReviewError('dependency_unavailable')
+      }
+    },
+
+    async undoArchive(input: {
+      ownerUserId: string
+      mediaAssetId: string
+      operationId: string
+    }) {
+      if (
+        !validIdentity(input.ownerUserId, input.mediaAssetId) ||
+        !uuidPattern.test(input.operationId)
+      ) {
+        throw new MediaAssetReviewError('invalid_request')
+      }
+      try {
+        const result = unwrapCatalogState(
+          await repository.undoArchive({ ...input, undoneAt: clock.now() }),
+        )
+        if (result.publicSelectionChanged) {
+          try {
+            await invalidatePublicSelection()
+          } catch {
+            throw new MediaAssetReviewError('cache_invalidation_failed')
+          }
+        }
+        return result
       } catch (error) {
         if (error instanceof MediaAssetReviewError) throw error
         throw new MediaAssetReviewError('dependency_unavailable')
@@ -259,7 +326,7 @@ export function createMediaAssetReviewService({
         throw new MediaAssetReviewError('invalid_request')
       }
       try {
-        return unwrapCatalogState(
+        return unwrapAsset(
           await repository.restore({ ...input, restoredAt: clock.now() }),
         )
       } catch (error) {

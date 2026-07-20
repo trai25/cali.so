@@ -1,4 +1,7 @@
-import { createMediaUploadIntentHandler } from '~/lib/media/admin/http'
+import {
+  createMediaTransferListHandler,
+  createMediaUploadIntentHandler,
+} from '~/lib/media/admin/http'
 import {
   getMediaAdminServices,
   ownerRequestAuthenticator,
@@ -10,5 +13,14 @@ export async function POST(request: Request) {
     authenticator: ownerRequestAuthenticator,
     ingestion,
     security,
+  })(request)
+}
+
+export async function GET(request: Request) {
+  const { security, transfer } = getMediaAdminServices()
+  return createMediaTransferListHandler({
+    authenticator: ownerRequestAuthenticator,
+    security,
+    transfer,
   })(request)
 }

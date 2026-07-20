@@ -15,8 +15,9 @@ The single-owner personal-site workflow did not justify repeated verification
 prompts after an already authenticated owner session. The remaining controls
 stay mandatory: same-origin mutation guards, per-actor rate limits,
 privileged-action audit events, the admin CSP, and least-privileged provider and
-database credentials. Media Asset Purge also requires the literal `PURGE`
-confirmation validated by the server.
+database credentials. Media Asset Purge remains an explicit irreversible action
+behind one fixed confirmation dialog with one destructive button; it adds no
+typed phrase or second owner prompt.
 
 Passkeys remain the recommended Clerk sign-in method and the owner should keep
 two independently recoverable passkeys. Session revocation, owner-metadata

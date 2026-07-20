@@ -21,6 +21,7 @@ describe('Photo Selection repository', () => {
     '0007_photo_publication_revision.sql',
     '0009_media_catalog_state.sql',
     '0012_high_fidelity_photo_renditions.sql',
+    '0013_brief_yellowjacket.sql',
   ])
   let client: PGlite
   let repository: ReturnType<typeof createPhotoSelectionRepository>
