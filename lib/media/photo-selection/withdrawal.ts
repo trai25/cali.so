@@ -84,7 +84,7 @@ async function withdrawFromDraft(
       .filter((mediaAssetId) => mediaAssetId !== input.mediaAssetId),
     at: input.at,
   })
-  await transaction
+  const [updated] = await transaction
     .update(mediaPhotoSelectionDrafts)
     .set({ revision: revisionAfter, updatedAt: input.at })
     .where(
@@ -93,6 +93,10 @@ async function withdrawFromDraft(
         eq(mediaPhotoSelectionDrafts.revision, draft.revision),
       ),
     )
+    .returning({ id: mediaPhotoSelectionDrafts.id })
+  if (!updated) {
+    throw new Error('Draft revision update failed: lock assumption violated')
+  }
 
   return {
     id: draft.id,

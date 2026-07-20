@@ -171,5 +171,14 @@ describe('Media Transfer repository', () => {
       [processingAssetId],
     )
     expect(processing.rows[0]?.catalog_state).toBe('archived')
+    await expect(repository.listOwnedTransferJobs('owner_01')).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          uploadIntentId: processingIntentId,
+          mediaAssetId: processingAssetId,
+          stage: 'discarding',
+        }),
+      ]),
+    )
   })
 })

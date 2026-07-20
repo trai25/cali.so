@@ -42,7 +42,10 @@ export function createMediaTransferRepository(
             eq(mediaUploadIntents.ownerUserId, ownerUserId),
             or(
               and(isNull(mediaAssets.id), isNull(mediaUploadIntents.completedAt)),
-              and(ne(mediaAssets.processingState, 'ready')),
+              and(
+                isNotNull(mediaAssets.id),
+                ne(mediaAssets.processingState, 'ready'),
+              ),
             ),
           ),
         )
@@ -55,7 +58,9 @@ export function createMediaTransferRepository(
         byteSize: row.byteSize,
         checksumSha256: row.checksumSha256,
         stage:
-          row.discardStartedAt !== null || row.catalogState === 'purging'
+          row.discardStartedAt !== null ||
+          row.catalogState === 'archived' ||
+          row.catalogState === 'purging'
             ? 'discarding'
             : row.mediaAssetId === null
               ? 'awaiting_file'
