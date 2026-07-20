@@ -12,6 +12,8 @@ import { cn } from "~/lib/utils";
 interface SwitchProps {
   /** Renders a min-h-11 label row; the switch is labelled via aria-labelledby. */
   label?: ReactNode;
+  /** Accessible name for a switch without a visible label row. */
+  "aria-label"?: string;
   checked?: boolean;
   defaultChecked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
@@ -22,6 +24,7 @@ interface SwitchProps {
 
 function Switch({
   label,
+  "aria-label": ariaLabel,
   checked,
   defaultChecked,
   onCheckedChange,
@@ -37,6 +40,7 @@ function Switch({
     <SwitchPrimitive.Root
       id={switchId}
       aria-labelledby={label ? labelId : undefined}
+      aria-label={label ? undefined : ariaLabel}
       checked={checked}
       defaultChecked={defaultChecked}
       onCheckedChange={onCheckedChange}

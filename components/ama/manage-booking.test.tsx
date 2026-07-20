@@ -142,7 +142,7 @@ describe('ManageBooking', () => {
     expect(screen.getAllByText('Google Meet').length).toBeGreaterThanOrEqual(1)
     expect(
       screen
-        .getByRole('link', { name: /meet\.google\.com/ })
+        .getByRole('link', { name: 'meet.google.com/abc-defg-hij' })
         .getAttribute('href'),
     ).toBe('https://meet.google.com/abc-defg-hij')
     expect(screen.getByText(/Confirmed/)).toBeTruthy()

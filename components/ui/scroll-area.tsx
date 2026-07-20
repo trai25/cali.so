@@ -33,10 +33,22 @@ export function ScrollAreaX({
     update()
     viewport.addEventListener('scroll', update, { passive: true })
     const observer = new ResizeObserver(update)
+    const observeChildren = () => {
+      for (const child of viewport.children) observer.observe(child)
+    }
     observer.observe(viewport)
-    for (const child of viewport.children) observer.observe(child)
+    observeChildren()
+    // Children mounted later (a dialog body populating asynchronously)
+    // must re-arm measurement — re-observing an element is a no-op, and
+    // detached nodes drop out of the ResizeObserver on their own.
+    const mutations = new MutationObserver(() => {
+      observeChildren()
+      update()
+    })
+    mutations.observe(viewport, { childList: true })
     return () => {
       viewport.removeEventListener('scroll', update)
+      mutations.disconnect()
       observer.disconnect()
     }
   }, [])
@@ -91,10 +103,22 @@ export function ScrollAreaY({
     update()
     viewport.addEventListener('scroll', update, { passive: true })
     const observer = new ResizeObserver(update)
+    const observeChildren = () => {
+      for (const child of viewport.children) observer.observe(child)
+    }
     observer.observe(viewport)
-    for (const child of viewport.children) observer.observe(child)
+    observeChildren()
+    // Children mounted later (a dialog body populating asynchronously)
+    // must re-arm measurement — re-observing an element is a no-op, and
+    // detached nodes drop out of the ResizeObserver on their own.
+    const mutations = new MutationObserver(() => {
+      observeChildren()
+      update()
+    })
+    mutations.observe(viewport, { childList: true })
     return () => {
       viewport.removeEventListener('scroll', update)
+      mutations.disconnect()
       observer.disconnect()
     }
   }, [])
