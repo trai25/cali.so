@@ -169,12 +169,18 @@ describe('AMA settings UI contract', () => {
     expect(new FormData(form).get('weekday')).toBe('5')
   })
 
-  it('supports keyboard-style submission with a stable pending state', () => {
+  it('keeps select values successful while a submission is pending', () => {
     const { container } = render(<AvailabilityWindowForm />)
     const form = container.querySelector('form')!
     form.addEventListener('submit', (event) => event.preventDefault())
 
     fireEvent.submit(form)
+
+    expect(Object.fromEntries(new FormData(form))).toMatchObject({
+      weekday: '1',
+      start: '09:00',
+      end: '12:00',
+    })
 
     const save = container.querySelector<HTMLButtonElement>('button[value="create"]')!
     expect(save.disabled).toBe(true)
@@ -184,7 +190,8 @@ describe('AMA settings UI contract', () => {
     )
     expect(fields.length).toBe(3)
     for (const field of fields) {
-      expect(field.disabled).toBe(true)
+      expect(field.disabled).toBe(false)
+      expect(field.readOnly).toBe(true)
     }
   })
 
