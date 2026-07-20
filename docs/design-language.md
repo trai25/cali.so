@@ -714,6 +714,18 @@ restoration. Locale-sensitive attributes derive from the route so accessible
 names never mix languages, and server metadata, canonical links, feeds, and OG
 images share the same route identity.
 
+On a public route, a saved site preference takes priority; without one, the
+first supported language in `navigator.languages` becomes the preference. If
+that resolved preference differs from the explicit route, one fixed top-center
+instrument strip offers the equivalent route. The suggestion speaks in the
+offered language, preserves the path, query, and fragment, and requires an
+explicit choice: switch, or stay in the current language. Either choice becomes
+the saved site preference; unsupported browser languages produce no prompt.
+The strip uses the surface ladder, 2px print-register corner, compact chrome
+type, existing button hierarchy, and `--z-toast`. It never redirects
+automatically, never shifts layout or steals focus, and disables its brief
+transform-and-opacity entrance under reduced motion.
+
 Each post keeps its Chinese source in `index.mdx` and a complete English
 translation in `index.en.mdx`. The matching route renders only that source and
 its document minimap; English heading IDs retain their `en-` prefix for stable
