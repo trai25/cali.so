@@ -2,6 +2,7 @@ import type { NextConfig } from 'next'
 
 import legacyUrlManifest from './content/legacy-url-manifest.json'
 import {
+  adminSecurityHeader,
   googleOAuthFormSecurityHeader,
   securityHeaders,
 } from './lib/security/headers'
@@ -88,6 +89,13 @@ const nextConfig: NextConfig = {
       // admin API responses must never disclose their origin to another site.
       source: '/api/admin/:path*',
       headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }],
+    },
+    {
+      // Admin pages ship clerk-js for background session-token refresh, so
+      // their policy alone allows the Clerk instance origins. The AMA
+      // settings entry below overrides this for its Google OAuth form.
+      source: '/admin/:path*',
+      headers: [adminSecurityHeader],
     },
     {
       // The native connect form receives a same-origin 303 whose destination

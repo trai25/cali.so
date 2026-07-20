@@ -105,10 +105,13 @@ static, ISR, and partial-prerendered output includes inline hydration payloads.
 A per-request nonce would disable those rendering modes. Next.js SRI is enabled
 for supported build assets, `unsafe-eval` is development-only, script
 attributes are blocked, and all other directives remain restricted. The
-partially prerendered `/admin` surface uses the same static script policy so its
-Instant Navigation shells remain cacheable; it has no client-side Clerk
-provider or provider script or connection allowance. The AMA settings page
-alone extends `form-action` to `https://accounts.google.com` so its same-origin
+partially prerendered `/admin` surface uses a static admin policy so its
+Instant Navigation shells remain cacheable; it additionally allows the
+Clerk instance origin (derived at build from the publishable key) in
+`script-src` and `connect-src`, because the admin ships a non-dynamic
+ClerkProvider whose clerk-js keeps the 60-second session-token cookie
+fresh. The AMA settings page keeps those Clerk origins and alone extends
+`form-action` to `https://accounts.google.com` so its same-origin
 connect form may follow the server's redirect into Google OAuth. Inline styles
 remain allowed because shared React UI emits style attributes. Revisit the
 script and shared style exceptions when Next.js and the UI can remove them
