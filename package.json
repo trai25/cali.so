@@ -74,7 +74,7 @@
     "server-only": "^0.0.1",
     "shadcn": "^4.13.1",
     "shaders": "3.0.440",
-    "sharp": "^0.34.5",
+    "sharp": "^0.35.3",
     "shiki": "^4.3.1",
     "subset-font": "^2.5.0",
     "tailwind-merge": "^3.6.0",
