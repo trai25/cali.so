@@ -114,7 +114,7 @@ importers:
         version: 0.0.1
       shadcn:
         specifier: ^4.13.1
-        version: 4.13.1(typescript@5.9.3)
+        version: 4.13.1(typescript@6.0.3)
       shaders:
         specifier: 3.0.440
         version: 3.0.440(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -180,8 +180,8 @@ importers:
         specifier: ^4.3.3
         version: 4.3.3
       typescript:
-        specifier: ^5.8.0
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
       vitest:
         specifier: ^4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1)(vite@8.1.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
@@ -3992,8 +3992,8 @@ packages:
     engines: {node: '>=12.20.0'}
     hasBin: true
 
-  typescript@5.9.3:
-    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
+  typescript@6.0.3:
+    resolution: {integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==}
     engines: {node: '>=14.17'}
     hasBin: true
 
@@ -5972,14 +5972,14 @@ snapshots:
       object-assign: 4.1.1
       vary: 1.1.2
 
-  cosmiconfig@9.0.2(typescript@5.9.3):
+  cosmiconfig@9.0.2(typescript@6.0.3):
     dependencies:
       env-paths: 2.2.1
       import-fresh: 3.3.1
       js-yaml: 4.3.0
       parse-json: 5.2.0
     optionalDependencies:
-      typescript: 5.9.3
+      typescript: 6.0.3
 
   cross-spawn@7.0.6:
     dependencies:
@@ -7873,7 +7873,7 @@ snapshots:
 
   setprototypeof@1.2.0: {}
 
-  shadcn@4.13.1(typescript@5.9.3):
+  shadcn@4.13.1(typescript@6.0.3):
     dependencies:
       '@babel/core': 7.29.7
       '@babel/parser': 7.29.7
@@ -7884,7 +7884,7 @@ snapshots:
       '@types/validate-npm-package-name': 4.0.2
       browserslist: 4.28.5
       commander: 14.0.3
-      cosmiconfig: 9.0.2(typescript@5.9.3)
+      cosmiconfig: 9.0.2(typescript@6.0.3)
       dedent: 1.7.2
       deepmerge: 4.3.1
       diff: 8.0.4
@@ -8209,7 +8209,7 @@ snapshots:
       tsover-runtime: 0.0.7
       typed-binary: 4.3.3
 
-  typescript@5.9.3: {}
+  typescript@6.0.3: {}
 
   uncrypto@0.1.3: {}
 
