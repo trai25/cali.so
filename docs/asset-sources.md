@@ -22,6 +22,10 @@ are promotional artwork from Apple Music, publishers, authors, or retailers.
 | `public/images/records/after-hours.jpg` | [Apple Music](https://music.apple.com/us/album/after-hours/1499378108) |
 | `public/images/records/2001.jpg` | [Apple Music](https://music.apple.com/us/album/2001/1440782221) |
 | `public/images/records/death-of-slim-shady.jpg` | [Apple Music](https://music.apple.com/us/album/the-death-of-slim-shady-coup-de-gr%C3%A2ce/1755022177) |
+| `public/images/records/starboy.jpg` | [Apple Music](https://music.apple.com/us/album/starboy/1440870373) |
+| `public/images/records/random-access-memories.jpg` | [Apple Music](https://music.apple.com/us/album/random-access-memories/617154241) |
+| `public/images/records/hurry-up-tomorrow.jpg` | [Apple Music](https://music.apple.com/us/album/hurry-up-tomorrow/1793702595) |
+| `public/images/records/urban-flora.jpg` | [Apple Music](https://music.apple.com/us/album/urban-flora/982629045) |
 
 ## Book covers
 
