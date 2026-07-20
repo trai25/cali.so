@@ -228,7 +228,7 @@ automatically. The `main`-only `production` environment exposes the migration
 credential to that workflow without an additional deployment review.
 
 The workflow hash-locks the immutable legacy baseline `0000` and reviewed v3
-migrations `0001` through `0012`, rejecting any modification or deletion.
+migrations `0001` through `0015`, rejecting any modification or deletion.
 Migration `0000` stays outside the v3 Drizzle journal and is not rerun. Future
 migrations fail closed unless every SQL
 statement is an explicitly allowed expand operation: create a new table, type,

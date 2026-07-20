@@ -19,7 +19,7 @@ function optionalClerkSource() {
   const encoded = /^pk_(?:live|test)_([A-Za-z0-9+/=]+)$/.exec(key)?.[1]
   if (!encoded) return ''
   try {
-    const domain = atob(encoded)
+    const domain = atob(encoded).toLowerCase()
     return /^[a-z0-9][a-z0-9.-]*\$$/.test(domain)
       ? ` https://${domain.slice(0, -1)}`
       : ''
