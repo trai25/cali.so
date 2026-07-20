@@ -729,7 +729,7 @@ explicit: switch, or stay in the current language. Either choice becomes the
 saved site preference; unsupported browser languages produce no prompt. The
 plate uses the surface ladder and `--z-toast`, with no drop shadow. It never
 redirects automatically, shifts layout, or steals focus, and disables its brief
-transform-and-opacity entrance under reduced motion. The plate has 4px of inner
+transform-and-opacity entrance under reduced motion. The plate has 8px of inner
 padding above and below its 24px shared small buttons, and uses no expanded hit
 areas; this is a maintainer-approved exception to the site's usual 44px
 touch-target minimum (July 2026).
