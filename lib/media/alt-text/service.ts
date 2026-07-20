@@ -177,7 +177,8 @@ export function createMediaAltTextService({
           ownerUserId: input.ownerUserId,
           imageBytes,
         })
-      } catch {
+      } catch (error) {
+        console.error('[media-alt-text] Suggestion generation failed', error)
         throw new MediaAltTextError('generation_failed')
       }
       if (

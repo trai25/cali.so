@@ -437,6 +437,57 @@ export function createFakeBookingRepository() {
       return copyBooking(booking)
     },
 
+    async searchBookings(input) {
+      const query = (input.filters.guestName ?? '').trim().toLocaleLowerCase()
+      const email = (input.filters.guestEmail ?? '').trim().toLocaleLowerCase()
+      const bookingId = (input.filters.bookingId ?? '').trim().toLocaleLowerCase()
+      const matches = bookings
+        .filter((booking) => {
+          const inView =
+            input.view === 'attention'
+              ? booking.status === 'finalizing' ||
+                booking.status === 'needs_reschedule' ||
+                booking.refundStatus === 'failed'
+              : input.view === 'upcoming'
+                ? booking.endsAt.getTime() >= input.now.getTime() &&
+                  booking.status !== 'cancelled'
+                : input.view === 'past'
+                  ? booking.endsAt.getTime() < input.now.getTime() &&
+                    booking.status !== 'cancelled'
+                  : booking.status === 'cancelled'
+          return (
+            inView &&
+            (!query || booking.guestName.toLocaleLowerCase().includes(query)) &&
+            (!email || booking.guestEmail.toLocaleLowerCase().includes(email)) &&
+            (!bookingId || booking.id.toLocaleLowerCase().includes(bookingId)) &&
+            (!input.filters.status || booking.status === input.filters.status) &&
+            (!input.filters.startsFrom ||
+              booking.startsAt.getTime() >= input.filters.startsFrom.getTime()) &&
+            (!input.filters.startsBefore ||
+              booking.startsAt.getTime() < input.filters.startsBefore.getTime())
+          )
+        })
+        .sort((left, right) => {
+          const difference = left.startsAt.getTime() - right.startsAt.getTime()
+          return input.view === 'upcoming' || input.view === 'attention'
+            ? difference
+            : -difference
+        })
+      const pageSize = Math.max(1, Math.min(100, Math.floor(input.pageSize)))
+      const page = Math.min(
+        Math.max(1, Math.floor(input.page)),
+        Math.max(1, Math.ceil(matches.length / pageSize)),
+      )
+      return {
+        items: matches
+          .slice((page - 1) * pageSize, page * pageSize)
+          .map(copyBooking),
+        total: matches.length,
+        page,
+        pageSize,
+      }
+    },
+
     async listBookings(input) {
       const limit = input.limit ?? 100
       if (input.view === 'attention') {
@@ -453,13 +504,21 @@ export function createFakeBookingRepository() {
       }
       if (input.view === 'upcoming') {
         return bookings
-          .filter((booking) => booking.endsAt.getTime() >= input.now.getTime())
+          .filter(
+            (booking) =>
+              booking.endsAt.getTime() >= input.now.getTime() &&
+              booking.status !== 'cancelled',
+          )
           .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime())
           .slice(0, limit)
           .map(copyBooking)
       }
       return bookings
-        .filter((booking) => booking.endsAt.getTime() < input.now.getTime())
+        .filter(
+          (booking) =>
+            booking.endsAt.getTime() < input.now.getTime() &&
+            booking.status !== 'cancelled',
+        )
         .sort((a, b) => b.startsAt.getTime() - a.startsAt.getTime())
         .slice(0, limit)
         .map(copyBooking)

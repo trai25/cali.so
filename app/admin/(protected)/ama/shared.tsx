@@ -29,10 +29,10 @@ export type BookingRowViewModel = {
   startsAt: string
   endsAt: string
   refundStatus: RefundStatus
-  /** Prep-at-a-glance: the meeting link already exists. */
-  hasMeetingLink: boolean
-  /** Prep-at-a-glance: the Guest submitted a Booking Brief (not yet purged). */
-  hasBrief: boolean
+  meetingUrl: string | null
+  calendarUrl: string | null
+  topics: readonly string[]
+  briefPreview: string | null
 }
 
 export type OperationViewModel = {
@@ -65,6 +65,8 @@ export async function responseJson(response: Response) {
 }
 
 const dateTimeFormatters = new Map<string, Intl.DateTimeFormat>()
+const timeFormatters = new Map<string, Intl.DateTimeFormat>()
+const dayKeyFormatters = new Map<string, Intl.DateTimeFormat>()
 
 function zonedFormatter(zone: string, locale: Locale) {
   const key = `${zone}:${locale}`
@@ -95,6 +97,62 @@ function zonedFormatter(zone: string, locale: Locale) {
 
 export function zonedDateTime(iso: string, zone: string, locale: Locale) {
   return zonedFormatter(zone, locale).format(new Date(iso))
+}
+
+function zonedTimeFormatter(zone: string, locale: Locale) {
+  const key = `${zone}:${locale}`
+  let formatter = timeFormatters.get(key)
+  if (!formatter) {
+    const options: Intl.DateTimeFormatOptions = {
+      timeZone: zone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }
+    try {
+      formatter = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', options)
+    } catch {
+      formatter = new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
+        ...options,
+        timeZone: 'UTC',
+      })
+    }
+    timeFormatters.set(key, formatter)
+  }
+  return formatter
+}
+
+export function zonedTime(iso: string, zone: string, locale: Locale) {
+  return zonedTimeFormatter(zone, locale).format(new Date(iso))
+}
+
+function dayKeyFormatter(zone: string) {
+  let formatter = dayKeyFormatters.get(zone)
+  if (!formatter) {
+    const options: Intl.DateTimeFormatOptions = {
+      timeZone: zone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }
+    try {
+      formatter = new Intl.DateTimeFormat('en-CA', options)
+    } catch {
+      formatter = new Intl.DateTimeFormat('en-CA', {
+        ...options,
+        timeZone: 'UTC',
+      })
+    }
+    dayKeyFormatters.set(zone, formatter)
+  }
+  return formatter
+}
+
+export function zonedDayKey(iso: string, zone: string) {
+  const parts = dayKeyFormatter(zone).formatToParts(new Date(iso))
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? ''
+  return `${value('year')}-${value('month')}-${value('day')}`
 }
 
 export const bookingStatusLabels: Record<BookingStatus, { zh: string; en: string }> = {
@@ -187,12 +245,16 @@ export function OperationStatusBadge({ status }: { status: DurableOperationStatu
 export function OperationsList({
   operations: initialOperations,
   showBookingLink = true,
+  bookingBasePath = '/admin/ama/bookings',
   removeOnResolve = false,
+  fixtureMode = false,
   onStatusChange,
 }: {
   operations: OperationViewModel[]
   showBookingLink?: boolean
+  bookingBasePath?: string
   removeOnResolve?: boolean
+  fixtureMode?: boolean
   onStatusChange?: (
     from: DurableOperationStatus,
     to: DurableOperationStatus,
@@ -213,12 +275,14 @@ export function OperationsList({
     setPending(`${operation.id}:${action}`)
     setNotice(null)
     try {
-      const response = await fetch(`/api/admin/ama/operations/${operation.id}`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ action }),
-      })
-      await responseJson(response)
+      if (!fixtureMode) {
+        const response = await fetch(`/api/admin/ama/operations/${operation.id}`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ action }),
+        })
+        await responseJson(response)
+      }
       if (action === 'retry') {
         setOperations((current) =>
           current.map((item) =>
@@ -326,7 +390,7 @@ export function OperationsList({
                     )}
                     {showBookingLink && operation.bookingId && (
                       <Link
-                        href={`/admin/ama/bookings/${operation.bookingId}`}
+                        href={`${bookingBasePath}/${operation.bookingId}`}
                         className="underline decoration-border underline-offset-2 outline-none hover:decoration-foreground focus-visible:rounded-sm focus-visible:ring-1 focus-visible:ring-foreground"
                       >
                         <T zh="查看预约" en="View Booking" />

@@ -1,34 +1,24 @@
-import { readFile } from 'node:fs/promises'
-
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { drizzle } from 'drizzle-orm/pglite'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('server-only', () => ({}))
+
+import { usePGliteTestClient } from '~/db/testing/pglite'
 
 import {
   createDatabaseRateLimiter,
   type RateLimitDatabase,
 } from './repository'
 
-const migrationUrl = new URL(
-  '../../db/migrations/0010_rate_limit_windows.sql',
-  import.meta.url,
-)
-
 describe('database rate limiter', () => {
+  const getClient = usePGliteTestClient(['0010_rate_limit_windows.sql'])
   let client: PGlite
   let now: Date
 
-  beforeEach(async () => {
-    client = new PGlite()
-    const migration = await readFile(migrationUrl, 'utf8')
-    await client.exec(migration.replaceAll('--> statement-breakpoint', ''))
+  beforeEach(() => {
+    client = getClient()
     now = new Date('2026-07-16T06:00:00.000Z')
-  })
-
-  afterEach(async () => {
-    await client.close()
   })
 
   it('allows only the configured number of concurrent requests', async () => {

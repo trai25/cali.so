@@ -1345,6 +1345,26 @@
   grid-template-columns: 9rem minmax(0, 1fr);
 }
 
+/* Dense booking rows use the same engraved table plate with a narrow label
+   rail, leaving the record itself as the dominant reading surface. */
+.spec-nameplate-compact > div {
+  grid-template-columns: 4.75rem minmax(0, 1fr);
+}
+
+.spec-nameplate-compact dd {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.booking-owner-time {
+  padding: 0.125rem 0.375rem;
+  background: var(--foreground);
+  box-decoration-break: clone;
+  color: var(--background);
+  line-height: 1.8;
+  -webkit-box-decoration-break: clone;
+}
+
 .spec-nameplate > div + div {
   border-top: var(--border-hairline) solid var(--border);
 }
@@ -1364,6 +1384,11 @@
   margin: 0;
   padding: 0.5rem 0.75rem;
   font-variant-numeric: tabular-nums;
+}
+
+.spec-nameplate-compact dt,
+.spec-nameplate-compact dd {
+  padding-block: 0.625rem;
 }
 
 /* ── Status ladder: journey steps as state cells ──────────────────── */

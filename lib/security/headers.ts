@@ -13,6 +13,21 @@ function optionalMediaImageSource() {
   }
 }
 
+function optionalClerkSource() {
+  const key = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+  if (!key) return ''
+  const encoded = /^pk_(?:live|test)_([A-Za-z0-9+/=]+)$/.exec(key)?.[1]
+  if (!encoded) return ''
+  try {
+    const domain = atob(encoded).toLowerCase()
+    return /^[a-z0-9][a-z0-9.-]*\$$/.test(domain)
+      ? ` https://${domain.slice(0, -1)}`
+      : ''
+  } catch {
+    return ''
+  }
+}
+
 function contentSecurityPolicy(
   scriptSources: string,
   styleSources: string,
@@ -42,17 +57,42 @@ function contentSecurityPolicy(
 
 // Static policies keep the admin's prerendered shell cacheable. Its former
 // nonce policy was retired in July 2026: nonces require dynamic rendering,
-// which is incompatible with instant navigation. No Clerk provider origins
-// are needed; the Google settings page extends only the form destination.
+// which is incompatible with instant navigation.
 const publicContentSecurityPolicy = contentSecurityPolicy(
   `'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ''}`,
   "'self' 'unsafe-inline'",
 )
 
-const googleOAuthFormContentSecurityPolicy = contentSecurityPolicy(
-  `'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ''}`,
+// Admin pages ship clerk-js so the 60-second Clerk session token keeps
+// refreshing in the background (July 2026). The script and Frontend API
+// origin is derived from the publishable key, which encodes the instance
+// domain by Clerk convention, so the policy stays static per build.
+const clerkSource = optionalClerkSource()
+
+const adminScriptSources = `'self' 'unsafe-inline'${
+  isDevelopment ? " 'unsafe-eval'" : ''
+}${clerkSource}`
+
+const adminContentSecurityPolicy = contentSecurityPolicy(
+  adminScriptSources,
   "'self' 'unsafe-inline'",
-  { formActionSources: "'self' https://accounts.google.com" },
+  { connectSources: clerkSource },
+)
+
+export const adminSecurityHeader = {
+  key: 'Content-Security-Policy',
+  value: adminContentSecurityPolicy,
+} as const
+
+// The AMA settings page sits under /admin, so it keeps the admin's Clerk
+// origins and extends only the form destination for Google OAuth.
+const googleOAuthFormContentSecurityPolicy = contentSecurityPolicy(
+  adminScriptSources,
+  "'self' 'unsafe-inline'",
+  {
+    formActionSources: "'self' https://accounts.google.com",
+    connectSources: clerkSource,
+  },
 )
 
 export const googleOAuthFormSecurityHeader = {

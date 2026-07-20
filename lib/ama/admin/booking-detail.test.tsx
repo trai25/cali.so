@@ -320,4 +320,48 @@ describe('AMA booking detail', () => {
     )
     expect(container.textContent).not.toContain('Refund pending')
   })
+
+  it('simulates fixture cancellation, rescheduling, and recovery without APIs', async () => {
+    const slot = {
+      startsAt: '2026-08-03T02:00:00.000Z',
+      endsAt: '2026-08-03T03:00:00.000Z',
+    }
+    const { container } = render(
+      <BookingDetail
+        booking={makeBooking()}
+        events={events}
+        operations={[
+          {
+            ...operations[0],
+            status: 'failed',
+            lastErrorCode: 'fixture_unavailable',
+          },
+        ]}
+        backHref="/admin/ama/fixtures/bookings"
+        fixtureMode
+        fixtureSlots={[slot]}
+      />,
+    )
+
+    expect(
+      container.querySelector('a[href="/admin/ama/fixtures/bookings"]'),
+    ).not.toBeNull()
+    fireEvent.click(buttonWithText(container, 'Retry'))
+    await waitFor(() =>
+      expect(container.textContent).not.toContain('fixture_unavailable'),
+    )
+
+    fireEvent.click(buttonWithText(container, 'Reschedule'))
+    await waitFor(() => buttonWithText(container, '10:00'))
+    fireEvent.click(buttonWithText(container, '10:00'))
+    fireEvent.click(buttonWithText(container, 'Confirm reschedule'))
+    await waitFor(() => expect(container.textContent).toContain('Rescheduled.'))
+
+    fireEvent.click(buttonWithText(container, 'Cancel Booking'))
+    fireEvent.click(buttonWithText(container, 'Confirm cancellation'))
+    await waitFor(() => expect(container.textContent).toContain('was cancelled'))
+
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(router.refresh).not.toHaveBeenCalled()
+  })
 })

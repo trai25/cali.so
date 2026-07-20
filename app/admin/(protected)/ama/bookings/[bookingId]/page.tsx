@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 
+import { AdminBackLink } from '~/components/admin-nav'
 import { PixelCluster } from '~/components/pixel-cluster'
 import { requireOwnerPage } from '~/lib/admin/server'
 import { getAmaAdminServices } from '~/lib/ama/admin/server'
@@ -84,6 +85,9 @@ function operationViewModel(operation: DurableOperationRecord): OperationViewMod
 function BookingFallback() {
   return (
     <div className="pb-10" aria-busy="true">
+      <AdminBackLink href="/admin/ama/bookings">
+        <T zh="预约" en="Bookings" />
+      </AdminBackLink>
       <div className="flex items-center justify-between gap-4">
         <p className="page-eyebrow">
           <T zh="咨询预约" en="AMA Booking" />
@@ -91,10 +95,21 @@ function BookingFallback() {
         <PixelCluster variant={10} className="shrink-0" />
       </div>
       <div className="mt-1 h-5 w-44 rounded-sm bg-surface-1" aria-hidden />
-      <div className="mt-6 grid gap-4 hairline-top pt-4" aria-hidden>
-        <div className="h-4 w-full max-w-80 rounded-sm bg-surface-1" />
-        <div className="h-4 w-full max-w-64 rounded-sm bg-surface-1" />
-        <div className="h-4 w-full max-w-72 rounded-sm bg-surface-1" />
+      <div aria-hidden>
+        {Array.from({ length: 6 }, (_, section) => (
+          <section key={section} className="mt-6 hairline-top pt-5">
+            <div className="h-4 w-28 rounded-sm bg-surface-1" />
+            <div className="mt-3 grid gap-3">
+              {Array.from({ length: section === 0 ? 2 : 3 }, (_, row) => (
+                <div
+                  key={row}
+                  className="h-4 rounded-sm bg-surface-1"
+                  style={{ width: `${68 + ((section + row) % 4) * 8}%` }}
+                />
+              ))}
+            </div>
+          </section>
+        ))}
       </div>
     </div>
   )

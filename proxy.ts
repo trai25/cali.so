@@ -27,6 +27,14 @@ function isAdminPage(pathname: string) {
   return pathname === '/admin' || pathname.startsWith('/admin/')
 }
 
+function isUnavailableAmaFixture(pathname: string) {
+  return (
+    process.env.NODE_ENV !== 'development' &&
+    (pathname === '/admin/ama/fixtures' ||
+      pathname.startsWith('/admin/ama/fixtures/'))
+  )
+}
+
 function usesClerk(pathname: string) {
   return (
     isAdminPage(pathname) ||
@@ -41,7 +49,7 @@ function usesClerk(pathname: string) {
 export function siteProxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  if (missingPublicContent(pathname)) {
+  if (missingPublicContent(pathname) || isUnavailableAmaFixture(pathname)) {
     const notFoundUrl = request.nextUrl.clone()
     notFoundUrl.pathname = '/_not-found'
     return NextResponse.rewrite(notFoundUrl, { status: 404 })
@@ -56,6 +64,9 @@ const clerkProxy = clerkMiddleware(async (auth, request) => {
 })
 
 export function proxy(request: NextRequest, event: NextFetchEvent) {
+  if (isUnavailableAmaFixture(request.nextUrl.pathname)) {
+    return siteProxy(request)
+  }
   if (!usesClerk(request.nextUrl.pathname)) return siteProxy(request)
   return clerkProxy(request, event)
 }

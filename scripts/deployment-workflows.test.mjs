@@ -191,6 +191,73 @@ test('release pull requests reject unsafe migrations before merging to main', as
   assertOrdered(job.steps, 'Build', 'Test browser release gate')
 })
 
+test('quality runs the canonical Vitest suite exactly once', async () => {
+  const config = await workflow('security')
+  const job = config.jobs.quality
+  const packageJson = JSON.parse(await text('package.json'))
+
+  assert.equal(
+    packageJson.scripts['test:unit'],
+    "vitest run app components db lib --exclude='**/*.live.test.ts'",
+    'the canonical suite must include security and every non-live Media test',
+  )
+
+  const unitSteps = job.steps.filter(
+    (step) => typeof step.run === 'string' && step.run.includes('pnpm test:unit'),
+  )
+  assert.equal(unitSteps.length, 1, 'quality must run pnpm test:unit once')
+
+  const validate = job.steps.find(
+    (step) => step.name === 'Validate database migrations',
+  )
+  assert.equal(validate?.run, 'pnpm db:validate')
+
+  // The focused suites stay as local diagnostic commands; quality must not
+  // rerun what the canonical non-live glob already owns.
+  const rerun = job.steps.filter(
+    (step) =>
+      typeof step.run === 'string' &&
+      /pnpm test:(ama|security|media:)/.test(step.run),
+  )
+  assert.deepEqual(
+    rerun.map((step) => step.name),
+    [],
+    'quality must not rerun suites owned by pnpm test:unit',
+  )
+
+  assertOrdered(job.steps, 'Typecheck', 'Test unit and integration suites')
+  assertOrdered(
+    job.steps,
+    'Test unit and integration suites',
+    'Validate database migrations',
+  )
+  assertOrdered(job.steps, 'Validate database migrations', 'Test deployment workflows')
+  assertOrdered(job.steps, 'Test deployment workflows', 'Test localization')
+  assertOrdered(job.steps, 'Test localization', 'Audit production dependencies')
+  assertOrdered(job.steps, 'Audit production dependencies', 'Build')
+  assertOrdered(job.steps, 'Build', 'Install Playwright browsers')
+  assertOrdered(job.steps, 'Install Playwright browsers', 'Test browser release gate')
+  assertOrdered(job.steps, 'Test browser release gate', 'Verify public links')
+  assertOrdered(job.steps, 'Verify public links', 'Verify legacy URL contract')
+  assertOrdered(
+    job.steps,
+    'Verify legacy URL contract',
+    'Verify public discovery and failure handling',
+  )
+  assertOrdered(
+    job.steps,
+    'Verify public discovery and failure handling',
+    'Verify production security boundary',
+  )
+  const install = job.steps.find(
+    (step) => step.name === 'Install Playwright browsers',
+  )
+  assert.equal(
+    install?.run,
+    'pnpm exec playwright install --with-deps chromium webkit',
+  )
+})
+
 test('branch deletion cleans only ephemeral Neon and Vercel Previews', async () => {
   const config = await workflow('cleanup-preview')
   assert.ok(Object.hasOwn(config.on, 'delete'))

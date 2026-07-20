@@ -147,6 +147,9 @@ describe('Media Library Alt Text Suggestion service', () => {
   })
 
   it('leaves the Media Asset unchanged when generation fails', async () => {
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined)
     const harness = createHarness({
       generationError: new Error('provider down'),
     })
@@ -158,6 +161,11 @@ describe('Media Library Alt Text Suggestion service', () => {
       }),
     ).rejects.toEqual(new MediaAltTextError('generation_failed'))
     expect(harness.repository.saveSuggestion).not.toHaveBeenCalled()
+    expect(consoleError).toHaveBeenCalledWith(
+      '[media-alt-text] Suggestion generation failed',
+      new Error('provider down'),
+    )
+    consoleError.mockRestore()
   })
 
   it('does not save after the Media Asset becomes ineligible', async () => {

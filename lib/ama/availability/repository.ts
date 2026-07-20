@@ -1,9 +1,17 @@
 import 'server-only'
 
-import { asc, eq, sql } from 'drizzle-orm'
+import { asc, eq, inArray, sql } from 'drizzle-orm'
 
 import { getDatabase } from '~/db'
-import { amaAvailabilityWindows } from '~/db/schema'
+import {
+  amaAvailabilityOverrides,
+  amaAvailabilityOverrideWindows,
+  amaAvailabilitySettings,
+  amaAvailabilityWeekdays,
+  amaAvailabilityWindows,
+} from '~/db/schema'
+
+export const DEFAULT_AVAILABILITY_TIME_ZONE = 'Asia/Taipei'
 
 export type AvailabilityDatabase = ReturnType<typeof getDatabase>
 
@@ -13,8 +21,239 @@ export type AvailabilityWindowInput = {
   endMinute: number
 }
 
+export type AvailabilityOverrideIntervalInput = Pick<
+  AvailabilityWindowInput,
+  'startMinute' | 'endMinute'
+>
+
+export type AvailabilityWeekdayRecord = {
+  isoWeekday: number
+  enabled: boolean
+}
+
 export function createAvailabilityRepository(database: () => AvailabilityDatabase) {
   return {
+    async getTimeZone() {
+      const [settings] = await database()
+        .select({ timeZone: amaAvailabilitySettings.timeZone })
+        .from(amaAvailabilitySettings)
+        .where(eq(amaAvailabilitySettings.id, 1))
+        .limit(1)
+      return settings?.timeZone ?? DEFAULT_AVAILABILITY_TIME_ZONE
+    },
+
+    async setTimeZone(timeZone: string) {
+      const [settings] = await database()
+        .insert(amaAvailabilitySettings)
+        .values({ id: 1, timeZone })
+        .onConflictDoUpdate({
+          target: amaAvailabilitySettings.id,
+          set: { timeZone, updatedAt: sql`now()` },
+        })
+        .returning({ timeZone: amaAvailabilitySettings.timeZone })
+      return settings.timeZone
+    },
+
+    async listWeekdayStates(): Promise<AvailabilityWeekdayRecord[]> {
+      const [states, windows] = await Promise.all([
+        database()
+          .select({
+            isoWeekday: amaAvailabilityWeekdays.isoWeekday,
+            enabled: amaAvailabilityWeekdays.enabled,
+          })
+          .from(amaAvailabilityWeekdays)
+          .orderBy(asc(amaAvailabilityWeekdays.isoWeekday)),
+        database()
+          .select({ isoWeekday: amaAvailabilityWindows.isoWeekday })
+          .from(amaAvailabilityWindows),
+      ])
+      const persisted = new Map(
+        states.map((state) => [state.isoWeekday, state.enabled]),
+      )
+      const weekdaysWithWindows = new Set(
+        windows.map((window) => window.isoWeekday),
+      )
+      return Array.from({ length: 7 }, (_, index) => {
+        const isoWeekday = index + 1
+        return {
+          isoWeekday,
+          enabled:
+            persisted.get(isoWeekday) ?? weekdaysWithWindows.has(isoWeekday),
+        }
+      })
+    },
+
+    async setWeekdayEnabled(
+      isoWeekday: number,
+      enabled: boolean,
+      defaultIntervals: readonly AvailabilityOverrideIntervalInput[] = [],
+    ) {
+      return database().transaction(async (transaction) => {
+        const [state] = await transaction
+          .insert(amaAvailabilityWeekdays)
+          .values({ isoWeekday, enabled })
+          .onConflictDoUpdate({
+            target: amaAvailabilityWeekdays.isoWeekday,
+            set: { enabled, updatedAt: sql`now()` },
+          })
+          .returning({
+            isoWeekday: amaAvailabilityWeekdays.isoWeekday,
+            enabled: amaAvailabilityWeekdays.enabled,
+          })
+
+        if (enabled && defaultIntervals.length > 0) {
+          const [existing] = await transaction
+            .select({ id: amaAvailabilityWindows.id })
+            .from(amaAvailabilityWindows)
+            .where(eq(amaAvailabilityWindows.isoWeekday, isoWeekday))
+            .limit(1)
+          if (!existing) {
+            await transaction.insert(amaAvailabilityWindows).values(
+              defaultIntervals.map((interval) => ({ isoWeekday, ...interval })),
+            )
+          }
+        }
+
+        return state
+      })
+    },
+
+    async listOverrides() {
+      const [overrides, intervals] = await Promise.all([
+        database()
+          .select()
+          .from(amaAvailabilityOverrides)
+          .orderBy(asc(amaAvailabilityOverrides.localDate)),
+        database()
+          .select()
+          .from(amaAvailabilityOverrideWindows)
+          .orderBy(
+            asc(amaAvailabilityOverrideWindows.overrideId),
+            asc(amaAvailabilityOverrideWindows.startMinute),
+            asc(amaAvailabilityOverrideWindows.endMinute),
+            asc(amaAvailabilityOverrideWindows.id),
+          ),
+      ])
+      return overrides.map((override) => ({
+        ...override,
+        intervals: intervals.filter(
+          (interval) => interval.overrideId === override.id,
+        ),
+      }))
+    },
+
+    async saveOverride(
+      localDate: string,
+      intervals: readonly AvailabilityOverrideIntervalInput[],
+    ) {
+      return database().transaction(async (transaction) => {
+        const [override] = await transaction
+          .insert(amaAvailabilityOverrides)
+          .values({ localDate })
+          .onConflictDoUpdate({
+            target: amaAvailabilityOverrides.localDate,
+            set: { updatedAt: sql`now()` },
+          })
+          .returning()
+
+        await transaction
+          .delete(amaAvailabilityOverrideWindows)
+          .where(eq(amaAvailabilityOverrideWindows.overrideId, override.id))
+
+        if (intervals.length > 0) {
+          await transaction.insert(amaAvailabilityOverrideWindows).values(
+            intervals.map((interval) => ({
+              overrideId: override.id,
+              ...interval,
+            })),
+          )
+        }
+
+        return {
+          ...override,
+          intervals: intervals.map((interval) => ({ ...interval })),
+        }
+      })
+    },
+
+    async deleteOverride(localDate: string) {
+      const [deleted] = await database()
+        .delete(amaAvailabilityOverrides)
+        .where(eq(amaAvailabilityOverrides.localDate, localDate))
+        .returning({ id: amaAvailabilityOverrides.id })
+      return deleted !== undefined
+    },
+
+    async copyWeekday(sourceWeekday: number, targetWeekdays: readonly number[]) {
+      const targets = [...new Set(targetWeekdays)].filter(
+        (weekday) => weekday !== sourceWeekday,
+      )
+      if (targets.length === 0) return
+
+      await database().transaction(async (transaction) => {
+        const source = await transaction
+          .select({
+            startMinute: amaAvailabilityWindows.startMinute,
+            endMinute: amaAvailabilityWindows.endMinute,
+          })
+          .from(amaAvailabilityWindows)
+          .where(eq(amaAvailabilityWindows.isoWeekday, sourceWeekday))
+          .orderBy(
+            asc(amaAvailabilityWindows.startMinute),
+            asc(amaAvailabilityWindows.endMinute),
+            asc(amaAvailabilityWindows.id),
+          )
+
+        const [sourceState] = await transaction
+          .select({ enabled: amaAvailabilityWeekdays.enabled })
+          .from(amaAvailabilityWeekdays)
+          .where(eq(amaAvailabilityWeekdays.isoWeekday, sourceWeekday))
+          .limit(1)
+        const sourceEnabled = sourceState?.enabled ?? source.length > 0
+
+        await transaction
+          .delete(amaAvailabilityWindows)
+          .where(inArray(amaAvailabilityWindows.isoWeekday, targets))
+
+        if (source.length > 0) {
+          await transaction.insert(amaAvailabilityWindows).values(
+            targets.flatMap((isoWeekday) =>
+              source.map((window) => ({ isoWeekday, ...window })),
+            ),
+          )
+        }
+
+        await transaction
+          .insert(amaAvailabilityWeekdays)
+          .values(
+            targets.map((isoWeekday) => ({
+              isoWeekday,
+              enabled: sourceEnabled,
+            })),
+          )
+          .onConflictDoUpdate({
+            target: amaAvailabilityWeekdays.isoWeekday,
+            set: { enabled: sourceEnabled, updatedAt: sql`now()` },
+          })
+      })
+    },
+
+    async replaceWeekday(
+      isoWeekday: number,
+      intervals: readonly AvailabilityOverrideIntervalInput[],
+    ) {
+      await database().transaction(async (transaction) => {
+        await transaction
+          .delete(amaAvailabilityWindows)
+          .where(eq(amaAvailabilityWindows.isoWeekday, isoWeekday))
+        if (intervals.length > 0) {
+          await transaction.insert(amaAvailabilityWindows).values(
+            intervals.map((interval) => ({ isoWeekday, ...interval })),
+          )
+        }
+      })
+    },
+
     async create(input: AvailabilityWindowInput) {
       const [created] = await database()
         .insert(amaAvailabilityWindows)

@@ -61,11 +61,13 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # The canonical glob includes app, components, db, and lib, covering
+      # security plus every non-live Media suite without rerunning subsets.
       - name: Test unit and integration suites
         run: pnpm test:unit
 
-      - name: Test AMA and migrations
-        run: pnpm test:ama
+      - name: Validate database migrations
+        run: pnpm db:validate
 
       - name: Test deployment workflows
         run: pnpm test:deployment
@@ -76,42 +78,6 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: node scripts/check-production-migrations.mjs "$BASE_SHA" "$HEAD_SHA"
-
-      - name: Test security controls
-        run: pnpm test:security
-
-      - name: Test media storage contract
-        run: pnpm test:media:storage
-
-      - name: Test media catalog constraints
-        run: pnpm test:media:catalog
-
-      - name: Test media image processing
-        run: pnpm test:media:processing
-
-      - name: Test media ingestion workflow
-        run: pnpm test:media:ingestion
-
-      - name: Test media reconciliation
-        run: pnpm test:media:reconciliation
-
-      - name: Test media Location Label suggestions
-        run: pnpm test:media:geocoding
-
-      - name: Test media Alt Text Suggestions
-        run: pnpm test:media:alt-text
-
-      - name: Test Photo Selection publication
-        run: pnpm test:media:photo-selection
-
-      - name: Test Media Asset review
-        run: pnpm test:media:asset-review
-
-      - name: Test Media admin
-        run: pnpm test:media:admin
-
-      - name: Test Media Asset Purge
-        run: pnpm test:media:purge
 
       - name: Test localization
         run: pnpm test:localization

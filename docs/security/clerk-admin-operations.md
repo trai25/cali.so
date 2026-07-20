@@ -58,11 +58,15 @@ owner prompt.
 
 Alongside it, the admin's per-request nonce CSP was retired when admin
 routes adopted prerendered instant-navigation shells (nonces require
-dynamic rendering). Admin pages use the static site policy from
-`lib/security/headers.ts`; with no client-side Clerk remaining, no Clerk
-provider origins are needed. The AMA settings page has one narrow exception:
-its `form-action` also permits `https://accounts.google.com` so the native
-connect form can enter Google OAuth after the same-origin handler redirects.
+dynamic rendering). Admin pages use a static admin policy from
+`lib/security/headers.ts` that allows the Clerk instance origin (derived
+at build from the publishable key) in `script-src` and `connect-src`: the
+admin ships a non-dynamic ClerkProvider purely so clerk-js keeps the
+60-second session-token cookie fresh, preventing handshake-redirect and
+401-reload churn. The AMA settings page keeps those origins and has one
+further exception: its `form-action` also permits
+`https://accounts.google.com` so the native connect form can enter Google
+OAuth after the same-origin handler redirects.
 
 Passkeys remain the recommended Clerk sign-in method, and every recovery
 procedure below still applies. Reintroducing a step-up boundary would need

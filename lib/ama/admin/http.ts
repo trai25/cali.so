@@ -17,6 +17,17 @@ export type AvailabilityWindowInput = {
 }
 
 export interface AvailabilityMutationService {
+  setTimeZone(timeZone: string): Promise<unknown>
+  setWeekday(isoWeekday: number, enabled: boolean): Promise<unknown>
+  copyWeekday(
+    sourceWeekday: number,
+    targetWeekdays: readonly number[],
+  ): Promise<unknown>
+  saveOverride(
+    localDate: string,
+    intervals: readonly { startMinute: number; endMinute: number }[],
+  ): Promise<unknown>
+  deleteOverride(localDate: string): Promise<unknown>
   create(input: AvailabilityWindowInput): Promise<unknown>
   update(id: number, input: AvailabilityWindowInput): Promise<unknown>
   delete(id: number): Promise<unknown>
@@ -108,6 +119,12 @@ function formString(formData: FormData, name: string) {
   return typeof value === 'string' ? value : ''
 }
 
+function formStrings(formData: FormData, name: string) {
+  return formData
+    .getAll(name)
+    .filter((value): value is string => typeof value === 'string')
+}
+
 function parsePositiveInteger(value: string) {
   if (!/^\d+$/.test(value)) return null
   const parsed = Number(value)
@@ -165,6 +182,27 @@ function availabilityWindowFrom(formData: FormData): AvailabilityWindowInput | n
   return { isoWeekday: weekday, startMinute, endMinute }
 }
 
+function overrideIntervalsFrom(formData: FormData) {
+  const starts = formStrings(formData, 'overrideStart')
+  const ends = formStrings(formData, 'overrideEnd')
+  if (starts.length === 0 || starts.length !== ends.length) return null
+
+  const intervals: { startMinute: number; endMinute: number }[] = []
+  for (let index = 0; index < starts.length; index += 1) {
+    const startMinute = parseMinute(starts[index])
+    const endMinute = parseMinute(ends[index], true)
+    if (
+      startMinute === null ||
+      endMinute === null ||
+      startMinute >= endMinute
+    ) {
+      return null
+    }
+    intervals.push({ startMinute, endMinute })
+  }
+  return intervals
+}
+
 export function createAvailabilityMutationHandler(
   dependencies: HandlerDependencies<AvailabilityMutationService>,
 ) {
@@ -182,7 +220,62 @@ export function createAvailabilityMutationHandler(
       const intent = formString(formData, 'intent')
       const id = parsePositiveInteger(formString(formData, 'id'))
 
-      if (intent === 'delete' && id !== null) {
+      if (intent === 'set-time-zone') {
+        const timeZone = formString(formData, 'timeZone')
+        if (!timeZone) {
+          return redirect(
+            baseUrl,
+            '/admin/ama/settings?availability=invalid-time-zone',
+          )
+        }
+        await service.setTimeZone(timeZone)
+      } else if (intent === 'set-weekday') {
+        const weekday = parseWeekday(formData)
+        const enabled = formString(formData, 'enabled')
+        if (weekday === null || (enabled !== 'true' && enabled !== 'false')) {
+          return redirect(baseUrl, '/admin/ama/settings?availability=invalid')
+        }
+        await service.setWeekday(weekday, enabled === 'true')
+      } else if (intent === 'copy-weekday') {
+        const weekday = parseWeekday(formData)
+        const targets = formStrings(formData, 'targetWeekday')
+          .map(parsePositiveInteger)
+          .filter(
+            (target): target is number => target !== null && target <= 7,
+          )
+        if (weekday === null || targets.length === 0) {
+          return redirect(
+            baseUrl,
+            '/admin/ama/settings?availability=invalid-copy',
+          )
+        }
+        await service.copyWeekday(weekday, targets)
+      } else if (intent === 'save-override') {
+        const localDate = formString(formData, 'localDate')
+        const mode = formString(formData, 'overrideMode')
+        const intervals =
+          mode === 'closed'
+            ? []
+            : mode === 'custom'
+              ? overrideIntervalsFrom(formData)
+              : null
+        if (!localDate || intervals === null) {
+          return redirect(
+            baseUrl,
+            '/admin/ama/settings?availability=invalid-override',
+          )
+        }
+        await service.saveOverride(localDate, intervals)
+      } else if (intent === 'delete-override') {
+        const localDate = formString(formData, 'localDate')
+        if (!localDate) {
+          return redirect(
+            baseUrl,
+            '/admin/ama/settings?availability=invalid-override',
+          )
+        }
+        await service.deleteOverride(localDate)
+      } else if (intent === 'delete' && id !== null) {
         await service.delete(id)
       } else {
         const input = availabilityWindowFrom(formData)

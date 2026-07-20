@@ -19,7 +19,6 @@ import { getServerEnv } from '../server-env'
 import { createSecretBox } from '../secrets'
 import { getAmaSecurity } from '../security/server'
 
-export const AMA_OWNER_TIME_ZONE = 'Asia/Taipei'
 const GOOGLE_REQUEST_TIMEOUT_MS = 8_000
 
 let services: ReturnType<typeof createServices> | undefined
@@ -71,7 +70,6 @@ function createServices() {
   const availability = createAvailabilityService({
     repository: availabilityRepository,
     calendar: google,
-    ownerTimeZone: AMA_OWNER_TIME_ZONE,
     clock,
   })
 
