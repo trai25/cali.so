@@ -4,6 +4,9 @@
   "private": true,
   "license": "SEE LICENSE IN LICENSE",
   "packageManager": "pnpm@10.12.1",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev",
     "prebuild": "node scripts/generate-og-runtime-fonts.mjs",
