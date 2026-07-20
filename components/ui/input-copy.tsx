@@ -1,10 +1,9 @@
 "use client";
 
 import { forwardRef, useState, useCallback, useRef, useEffect, useId, type HTMLAttributes } from "react";
+import { Copy } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { useIcon } from "~/lib/icon-context";
 import { fontWeights } from "~/lib/font-weight";
-import { useShape } from "~/lib/shape-context";
 import { Tooltip } from "~/components/ui/tooltip";
 
 type InputCopyVariant = "icon" | "button";
@@ -27,7 +26,6 @@ interface InputCopyProps extends Omit<HTMLAttributes<HTMLDivElement>, "children"
 
 const InputCopy = forwardRef<HTMLDivElement, InputCopyProps>(
   ({ value, label, onCopy, disabled, variant = "icon", align = "right", className, ...props }, ref) => {
-    const CopyIcon = useIcon("copy");
     // "copied" and "error" both occupy the same fixed status slot on the button
     const [status, setStatus] = useState<"idle" | "copied" | "error">("idle");
     // "idle" = normal tooltip behavior, "copied" = force open, "suppressed" = force closed
@@ -35,8 +33,6 @@ const InputCopy = forwardRef<HTMLDivElement, InputCopyProps>(
     const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
     const tooltipVisibleRef = useRef(false);
     const tooltipWasVisibleRef = useRef(false);
-    const shape = useShape();
-
     // Associate the visible label with the button: the button's accessible
     // name reads "Copy <label>" (its own state label + the field label).
     const generatedId = useId();
@@ -133,7 +129,7 @@ const InputCopy = forwardRef<HTMLDivElement, InputCopyProps>(
           <path d="M6 12L10 16L18 8" />
         </svg>
       ) : (
-        <CopyIcon size={14} strokeWidth={1.5} />
+        <Copy size={14} strokeWidth={1.5} />
       );
 
     const iconSwitch = (
@@ -230,7 +226,7 @@ const InputCopy = forwardRef<HTMLDivElement, InputCopyProps>(
         className={cn(
           "group flex min-h-11 w-full items-center cursor-pointer outline-none transition-[background-color,color,border-color,box-shadow] duration-150",
           "focus-visible:ring-1 focus-visible:ring-[color:var(--focus-ring)]",
-          shape.input
+          "rounded-[20px]"
         )}
       >
         {buttonContent}
