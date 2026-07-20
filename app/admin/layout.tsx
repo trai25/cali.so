@@ -1,4 +1,5 @@
 import '../globals.css'
+import { ClerkProvider } from '@clerk/nextjs'
 import type { Metadata } from 'next'
 
 import { rootMetadata, SiteDocument } from '../_components/site-document'
@@ -17,12 +18,15 @@ export const metadata: Metadata = {
 // owner dock prerender and prefetch, while everything the owner actually
 // sees streams from per-request loaders behind each page's Suspense
 // boundary. Ownership is enforced by clerkMiddleware plus requireOwnerPage
-// inside those loaders — no client-side Clerk remains, so there is no
-// provider here.
+// inside those loaders. The ClerkProvider below stays non-dynamic (no
+// request data, shell still prerenders) and renders no UI — it exists only
+// so clerk-js keeps refreshing the 60-second session-token cookie in the
+// background. Without it every idle minute ends in a handshake redirect
+// and admin API 401 reloads.
 export default function AdminRootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <SiteDocument isAdmin locale="zh" restoreLocale>
-      {children}
+      <ClerkProvider>{children}</ClerkProvider>
     </SiteDocument>
   )
 }
