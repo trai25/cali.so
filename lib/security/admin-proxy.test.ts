@@ -74,4 +74,15 @@ describe('admin CSP', () => {
 
     expect(response?.headers.get('content-security-policy')).toBeNull()
   })
+
+  it('hides development-only AMA fixtures before Clerk outside development', () => {
+    const response = siteProxy(
+      new NextRequest('https://cali.so/admin/ama/fixtures/bookings'),
+    )
+
+    expect(response.status).toBe(404)
+    expect(response.headers.get('x-middleware-rewrite')).toBe(
+      'https://cali.so/_not-found',
+    )
+  })
 })
