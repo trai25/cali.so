@@ -72,7 +72,7 @@ const NOTICES: Record<Exclude<NoticeKey, null>, { zh: string; en: string }> = {
     en: 'Too many attempts. Wait a moment and try again.',
   },
   provider_unavailable: {
-    zh: '预订服务暂时不可用。你可以稍后再试，或提交一个替代时间请求。',
+    zh: '预订服务暂时不可用。你可以稍后再试，或者直接把你方便的时间发给我。',
     en: 'Booking is temporarily unavailable. Try again shortly, or send an alternate time request instead.',
   },
   network: {
@@ -121,6 +121,23 @@ function heldTimeFormatters(timeZone: string) {
       en: new Intl.DateTimeFormat('en-US', { hour12: true }),
     }
   }
+}
+
+// The blog-post h2 register (boxed ordinal + hazard hatch + editorial
+// heading text) for the form's numbered sections. Rendered as children of
+// an <h2> or <legend> so fieldset semantics stay intact.
+function SectionHeading({ index, zh, en }: { index: number; zh: string; en: string }) {
+  return (
+    <>
+      <span className="section-tag" aria-hidden>
+        <span className="section-tag-index">{String(index).padStart(2, '0')}</span>
+        <span className="section-tag-hatch" />
+      </span>
+      <span className="text-lg font-semibold tracking-[-0.02em] text-foreground">
+        <T zh={zh} en={en} />
+      </span>
+    </>
+  )
 }
 
 function FieldError({ id, error }: { id: string; error: FieldKey | undefined }) {
@@ -209,11 +226,11 @@ function AlternateTimeRequestForm({
     return (
       <div role="status" className="rounded-lg px-4 py-5 shadow-[0_0_0_1px_var(--border)]">
         <p className="text-sm font-medium">
-          <T zh="已经收到了，谢谢。" en="Got it, thank you." />
+          <T zh="收到了，谢谢！" en="Got it, thank you." />
         </p>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
           <T
-            zh="我会看看这些时间能不能安排，然后回邮件给你。这一步不会付款，也不会占用任何时间。"
+            zh="我会看看这些时间能不能排上，然后邮件回复你。现在还不需要付款，也没有为你预留任何时段。"
             en="I will see whether one of those windows can work and reply by email. Nothing is paid and no time is reserved yet."
           />
         </p>
@@ -264,7 +281,7 @@ function AlternateTimeRequestForm({
 
       <div className="grid gap-1.5 text-sm">
         <label htmlFor={`${baseId}-windows`} className="text-muted-foreground">
-          <T zh="哪些时间对你合适" en="Times that work for you" />
+          <T zh="你方便的时间" en="Times that work for you" />
         </label>
         <Textarea
           ref={windowsRef}
@@ -282,7 +299,7 @@ function AlternateTimeRequestForm({
         />
         {errors.preferredWindows ? (
           <p id={`${baseId}-windows-error`} role="alert" className="text-[13px] text-foreground">
-            <T zh="请写下几个对你合适的时间段。" en="Please describe a few windows that would work." />
+            <T zh="请写几个你方便的时间段。" en="Please describe a few windows that would work." />
           </p>
         ) : (
           <p id={`${baseId}-windows-hint`} className="text-[13px] text-muted-foreground">
@@ -325,7 +342,7 @@ function AlternateTimeRequestForm({
           {pending ? (
             <T zh="正在发送…" en="Sending…" />
           ) : (
-            <T zh="发送替代时间请求" en="Send alternate time request" />
+            <T zh="发送时间建议" en="Send alternate time request" />
           )}
         </Button>
       </div>
@@ -703,7 +720,7 @@ export function BookingFlow() {
           </p>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
             <T
-              zh="预订服务暂时没有开放，或日历这会儿连不上。你可以稍后再来，或者把对你合适的时间发给我。"
+              zh="预订服务暂时没有开放，或日历这会儿连不上。你可以稍后再来，或者把你方便的时间发给我。"
               en="Booking is not open at the moment, or the calendar cannot be reached. Come back a bit later, or tell me what times would work for you."
             />
           </p>
@@ -822,9 +839,9 @@ export function BookingFlow() {
   // form and the recovery form stay sibling <form> elements.
   return (
     <div className="flex flex-col gap-10">
-      <div ref={slotSectionRef} className="flex flex-col gap-4">
-        <h2 className="text-sm font-medium text-muted-foreground">
-          <T zh="1 · 选择时间" en="1 · Pick a time" />
+      <div ref={slotSectionRef} className="flex flex-col gap-5">
+        <h2 className="flex items-center gap-2.5">
+          <SectionHeading index={1} zh="选择时间" en="Pick a time" />
         </h2>
         {slots.length > 0 ? (
           <>
@@ -857,8 +874,8 @@ export function BookingFlow() {
         <>
           <form onSubmit={submitHold} noValidate className="flex flex-col gap-10">
           <fieldset className="flex flex-col gap-4" disabled={submitting}>
-            <legend className="text-sm font-medium text-muted-foreground">
-              <T zh="2 · 介绍你自己" en="2 · Introduce yourself" />
+            <legend className="mb-5 flex items-center gap-2.5">
+              <SectionHeading index={2} zh="介绍你自己" en="Introduce yourself" />
             </legend>
 
             <div className="grid gap-1.5 text-sm">
@@ -911,8 +928,8 @@ export function BookingFlow() {
             disabled={submitting}
             aria-describedby={fieldErrors.topics ? `${baseId}-topics-error` : undefined}
           >
-            <legend className="text-sm font-medium text-muted-foreground">
-              <T zh="3 · 想聊什么" en="3 · What to talk about" />
+            <legend className="mb-5 flex items-center gap-2.5">
+              <SectionHeading index={3} zh="想聊什么" en="What to talk about" />
             </legend>
             <CheckboxGroup checkedIndices={checkedTopicIndices} className="w-full">
               {AMA_TOPICS.map((topic, index) => {
@@ -935,8 +952,8 @@ export function BookingFlow() {
           </fieldset>
 
           <fieldset className="flex flex-col gap-4" disabled={submitting}>
-            <legend className="text-sm font-medium text-muted-foreground">
-              <T zh="4 · Booking Brief" en="4 · Booking Brief" />
+            <legend className="mb-5 flex items-center gap-2.5">
+              <SectionHeading index={4} zh="Booking Brief" en="Booking Brief" />
             </legend>
 
             <div className="grid gap-1.5 text-sm">
@@ -1007,8 +1024,8 @@ export function BookingFlow() {
           </fieldset>
 
           <fieldset className="flex flex-col gap-4" disabled={submitting}>
-            <legend className="text-sm font-medium text-muted-foreground">
-              <T zh="5 · 会议方式" en="5 · Meeting" />
+            <legend className="mb-5 flex items-center gap-2.5">
+              <SectionHeading index={5} zh="会议方式" en="Meeting" />
             </legend>
             <RadioGroup
               value={provider}
@@ -1044,9 +1061,9 @@ export function BookingFlow() {
             <div>
               <Button type="submit" size="lg" expandHitArea disabled={submitting}>
                 {submitting ? (
-                  <T zh="正在保留时间…" en="Holding your time…" />
+                  <T zh="正在预订…" en="Holding your time…" />
                 ) : (
-                  <T zh="保留这个时间" en="Hold this time" />
+                  <T zh="预订" en="Hold this time" />
                 )}
               </Button>
             </div>
@@ -1068,7 +1085,7 @@ export function BookingFlow() {
               aria-expanded={showAlternate}
               onClick={() => setShowAlternate((value) => !value)}
             >
-              <T zh="没有合适的时间？告诉我你的时间。" en="No times fit? Tell me what works." />
+              <T zh="没有合适的时间？把你方便的时间告诉我。" en="No times fit? Tell me what works." />
             </Button>
             {showAlternate && (
               <div className="mt-4">

@@ -295,7 +295,7 @@ describe('BookingFlow', () => {
     fireEvent.change(screen.getByLabelText(/邮箱/), {
       target: { value: 'grace@example.com' },
     })
-    fireEvent.change(screen.getByLabelText(/哪些时间对你合适/), {
+    fireEvent.change(screen.getByLabelText(/你方便的时间/), {
       target: { value: 'Weekday evenings after 8pm.' },
     })
     fireEvent.click(screen.getByRole('button', { name: /Send alternate time request/ }))
