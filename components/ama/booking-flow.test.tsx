@@ -129,12 +129,19 @@ afterEach(() => {
 })
 
 describe('BookingFlow', () => {
-  it('groups fetched slots by day with 44px start-time buttons', async () => {
+  it('uses a calendar date picker and only shows times for the chosen day', async () => {
     await renderOpenFlow()
 
-    expect(screen.getAllByRole('heading', { level: 3 }).length).toBe(2)
-    expect(slotButtons().length).toBe(3)
+    expect(document.querySelector('[data-slot="calendar"]')).toBeTruthy()
+    expect(document.querySelectorAll('[data-available="true"]').length).toBe(2)
+    expect(slotButtons().length).toBe(2)
     expect(screen.getByRole('combobox')).toBeTruthy()
+
+    fireEvent.click(slotButtons()[0]!)
+    expect(slotButtons()[0]!.getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(document.querySelector('[data-day-key="2026-08-04"]')!)
+    expect(slotButtons().length).toBe(1)
+    expect(slotButtons()[0]!.getAttribute('aria-pressed')).toBe('false')
   })
 
   it('re-groups on time zone change without losing typed intake', async () => {
@@ -151,7 +158,7 @@ describe('BookingFlow', () => {
       'I want to talk through my product roadmap.',
     )
     expect(screen.getAllByRole('checkbox')[0]!.getAttribute('aria-checked')).toBe('true')
-    expect(slotButtons().length).toBe(3)
+    expect(slotButtons().length).toBe(2)
   })
 
   it('blocks submission with inline errors and focuses the first invalid field', async () => {
@@ -232,7 +239,8 @@ describe('BookingFlow', () => {
 
     expect(screen.getByRole('alert').textContent).toContain('That time was just taken')
     expect(requestsTo('/api/ama/slots').length).toBe(1)
-    expect(slotButtons().length).toBe(2)
+    expect(slotButtons().length).toBe(1)
+    expect(document.querySelectorAll('[data-available="true"]').length).toBe(2)
     expect((screen.getByLabelText(/名字/) as HTMLInputElement).value).toBe('Ada Lovelace')
     expect((screen.getByLabelText(/你想从这一小时/) as HTMLTextAreaElement).value).toBe(
       'I want to talk through my product roadmap.',
