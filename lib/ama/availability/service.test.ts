@@ -7,6 +7,7 @@ import {
   createAvailabilityService,
   InvalidAvailabilityOverrideError,
   InvalidAvailabilityTimeZoneError,
+  InvalidAvailabilityWindowError,
   type AvailabilityRepository,
   type CalendarAvailability,
 } from './service'
@@ -241,6 +242,38 @@ describe('Availability Window service', () => {
       { isoWeekday: 5, startMinute: 540, endMinute: 720 },
       { isoWeekday: 5, startMinute: 780, endMinute: 1020 },
     ])
+  })
+
+  it('replaces one weekday with multiple non-overlapping intervals', async () => {
+    const f = fixture()
+
+    await f.service.replaceWeekday(3, [
+      { startMinute: 13 * 60, endMinute: 17 * 60 },
+      { startMinute: 8 * 60, endMinute: 11 * 60 },
+    ])
+
+    expect(
+      f.windows
+        .filter((window) => window.isoWeekday === 3)
+        .map(({ startMinute, endMinute }) => ({ startMinute, endMinute })),
+    ).toEqual([
+      { startMinute: 480, endMinute: 660 },
+      { startMinute: 780, endMinute: 1020 },
+    ])
+  })
+
+  it('rejects empty or overlapping weekday replacements', async () => {
+    const f = fixture()
+
+    expect(() => f.service.replaceWeekday(3, [])).toThrow(
+      InvalidAvailabilityWindowError,
+    )
+    expect(() =>
+      f.service.replaceWeekday(3, [
+        { startMinute: 9 * 60, endMinute: 12 * 60 },
+        { startMinute: 11 * 60, endMinute: 17 * 60 },
+      ]),
+    ).toThrow(InvalidAvailabilityWindowError)
   })
 
   it('rejects malformed date overrides before persistence', async () => {

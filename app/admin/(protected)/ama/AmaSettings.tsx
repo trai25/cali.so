@@ -19,16 +19,16 @@ import {
 import { T } from '~/lib/i18n'
 
 import {
-  AvailabilityWindowForm,
+  AvailabilityWeekdayForm,
   type AvailabilityWindowViewModel,
-} from './AvailabilityWindowForm'
+} from './AvailabilityWeekdayForm'
 import {
   DateOverrideForm,
   type DateOverrideViewModel,
 } from './DateOverrideForm'
 import { AMA_WEEKDAYS, formatScheduleMinute } from './scheduling-fields'
 
-export type { AvailabilityWindowViewModel } from './AvailabilityWindowForm'
+export type { AvailabilityWindowViewModel } from './AvailabilityWeekdayForm'
 
 export type GoogleCalendarIdentityViewModel = {
   calendarId: string
@@ -271,7 +271,6 @@ function WeekdaySchedule({
   describedBy?: string
   fixtureMode: boolean
 }) {
-  const [adding, setAdding] = useState(false)
   const [copying, setCopying] = useState(false)
   const [pending, setPending] = useState(false)
   const [fixtureEnabled, setFixtureEnabled] = useState(enabled)
@@ -290,7 +289,6 @@ function WeekdaySchedule({
     if (!toggleArmed) {
       event.preventDefault()
       setToggleArmed(true)
-      setAdding(false)
       setCopying(false)
       return
     }
@@ -316,8 +314,8 @@ function WeekdaySchedule({
           <span className="text-xs text-muted-foreground tabular-nums">
             {currentEnabled ? (
               <T
-                zh={`${windows.length} 个时段`}
-                en={`${windows.length} ${windows.length === 1 ? 'interval' : 'intervals'}`}
+                zh={`已保存 ${windows.length} 个时段`}
+                en={`${windows.length} saved ${windows.length === 1 ? 'interval' : 'intervals'}`}
               />
             ) : (
               <T
@@ -333,38 +331,18 @@ function WeekdaySchedule({
         </div>
         <div className="flex flex-wrap items-center gap-1">
           {currentEnabled && (
-            <>
-              <Button
-                type="button"
-                variant="ghost"
-                size="lg"
-                active={adding}
-                disabled={pending}
-                aria-expanded={adding}
-                onClick={() => {
-                  setAdding((value) => !value)
-                  setCopying(false)
-                }}
-                expandHitArea
-              >
-                <T zh="添加时段" en="Add interval" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="lg"
-                active={copying}
-                disabled={pending}
-                aria-expanded={copying}
-                onClick={() => {
-                  setCopying((value) => !value)
-                  setAdding(false)
-                }}
-                expandHitArea
-              >
-                <T zh="复制" en="Copy" />
-              </Button>
-            </>
+            <Button
+              type="button"
+              variant="ghost"
+              size="lg"
+              active={copying}
+              disabled={pending}
+              aria-expanded={copying}
+              onClick={() => setCopying((value) => !value)}
+              expandHitArea
+            >
+              <T zh="复制" en="Copy" />
+            </Button>
           )}
           <form
             action="/api/admin/ama/availability"
@@ -416,23 +394,10 @@ function WeekdaySchedule({
       </div>
 
       {currentEnabled && (
-        <div className="mt-2 grid gap-3">
-          {windows.map((window) => (
-            <AvailabilityWindowForm
-              key={window.id}
-              window={window}
-              fixedWeekday={weekday.value}
-              describedBy={describedBy}
-              fixtureMode={fixtureMode}
-            />
-          ))}
-        </div>
-      )}
-
-      {adding && (
-        <div className="mt-4 rounded-[2px] bg-surface-1 px-4 py-4">
-          <AvailabilityWindowForm
-            fixedWeekday={weekday.value}
+        <div className="mt-2">
+          <AvailabilityWeekdayForm
+            isoWeekday={weekday.value}
+            windows={windows}
             describedBy={describedBy}
             fixtureMode={fixtureMode}
           />

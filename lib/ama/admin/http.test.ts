@@ -56,6 +56,9 @@ function fixture(rateLimitAllows = true) {
     async copyWeekday(sourceWeekday, targetWeekdays) {
       mutations.push(['copy-weekday', sourceWeekday, targetWeekdays])
     },
+    async replaceWeekday(isoWeekday, intervals) {
+      mutations.push(['replace-weekday', isoWeekday, intervals])
+    },
     async saveOverride(localDate, intervals) {
       mutations.push(['save-override', localDate, intervals])
     },
@@ -213,6 +216,64 @@ describe('AMA admin HTTP contract', () => {
         'https://cali.so/admin/ama/settings?availability=saved',
       )
     }
+  })
+
+  it('replaces one weekday with multiple submitted intervals atomically', async () => {
+    const f = fixture()
+    const handler = createAvailabilityMutationHandler({
+      authenticator: f.authenticator,
+      service: f.availability,
+      security: f.security,
+      baseUrl: new URL('https://cali.so'),
+    })
+
+    const response = await handler(
+      formRequest('/api/admin/ama/availability', {
+        intent: 'save-weekday',
+        weekday: '1',
+        start: ['13:00', '09:00'],
+        end: ['17:00', '12:00'],
+      }),
+    )
+
+    expect(f.mutations).toEqual([
+      [
+        'replace-weekday',
+        1,
+        [
+          { startMinute: 540, endMinute: 720 },
+          { startMinute: 780, endMinute: 1020 },
+        ],
+      ],
+    ])
+    expect(response.status).toBe(303)
+    expect(response.headers.get('location')).toBe(
+      'https://cali.so/admin/ama/settings?availability=saved',
+    )
+  })
+
+  it('rejects overlapping weekday intervals without mutation', async () => {
+    const f = fixture()
+    const handler = createAvailabilityMutationHandler({
+      authenticator: f.authenticator,
+      service: f.availability,
+      security: f.security,
+      baseUrl: new URL('https://cali.so'),
+    })
+
+    const response = await handler(
+      formRequest('/api/admin/ama/availability', {
+        intent: 'save-weekday',
+        weekday: '1',
+        start: ['09:00', '11:00'],
+        end: ['12:00', '17:00'],
+      }),
+    )
+
+    expect(f.mutations).toEqual([])
+    expect(response.headers.get('location')).toBe(
+      'https://cali.so/admin/ama/settings?availability=invalid',
+    )
   })
 
   it('rejects malformed and overnight Availability Windows without mutation', async () => {
