@@ -121,7 +121,7 @@ function assertWeekday(isoWeekday: number) {
   }
 }
 
-function assertWeekdayIntervals(
+function normalizeWeekdayIntervals(
   isoWeekday: number,
   intervals: readonly Pick<AvailabilityWindow, 'startMinute' | 'endMinute'>[],
 ) {
@@ -141,6 +141,7 @@ function assertWeekdayIntervals(
       throw new InvalidAvailabilityWindowError()
     }
   }
+  return ordered
 }
 
 function normalizeTimeZone(value: string) {
@@ -224,8 +225,10 @@ export function createAvailabilityService(dependencies: AvailabilityServiceDepen
       isoWeekday: number,
       intervals: readonly Pick<AvailabilityWindow, 'startMinute' | 'endMinute'>[],
     ) {
-      assertWeekdayIntervals(isoWeekday, intervals)
-      return repository.replaceWeekday(isoWeekday, intervals)
+      return repository.replaceWeekday(
+        isoWeekday,
+        normalizeWeekdayIntervals(isoWeekday, intervals),
+      )
     },
 
     saveOverride(

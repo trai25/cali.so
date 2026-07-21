@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { enUS, zhCN } from 'date-fns/locale'
 
 import { Button } from '~/components/ui/button'
-import { Calendar } from '~/components/ui/calendar'
+import { Calendar, calendarDayKey } from '~/components/ui/calendar'
 import {
   Select,
   SelectContent,
@@ -57,13 +57,6 @@ function formatterDayKey(formatter: Intl.DateTimeFormat, date: Date) {
 function calendarDate(dayKey: string) {
   const [year, month, day] = dayKey.split('-').map(Number)
   return new Date(year!, month! - 1, day!, 12)
-}
-
-function calendarDayKey(date: Date) {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
 }
 
 /**

@@ -237,7 +237,7 @@ function weekdayIntervalsFrom(formData: FormData) {
   for (let index = 1; index < ordered.length; index += 1) {
     if (ordered[index]!.startMinute < ordered[index - 1]!.endMinute) return null
   }
-  return intervals
+  return ordered
 }
 
 export function createAvailabilityMutationHandler(

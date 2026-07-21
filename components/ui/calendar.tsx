@@ -12,7 +12,7 @@ import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react
 import { Button } from '~/components/ui/button'
 import { cn } from '~/lib/utils'
 
-function localDayKey(date: Date) {
+function calendarDayKey(date: Date) {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
@@ -186,7 +186,7 @@ function CalendarDayButton({
       size="icon"
       active={modifiers.selected}
       data-day={day.date.toLocaleDateString(locale?.code)}
-      data-day-key={localDayKey(day.date)}
+      data-day-key={calendarDayKey(day.date)}
       data-available={modifiers.available || undefined}
       className={cn(
         'aspect-square h-auto min-h-11 w-full min-w-[var(--cell-size)] font-mono text-[13px] tabular-nums',
@@ -197,4 +197,4 @@ function CalendarDayButton({
   )
 }
 
-export { Calendar, CalendarDayButton }
+export { Calendar, CalendarDayButton, calendarDayKey }

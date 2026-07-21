@@ -231,8 +231,8 @@ describe('AMA admin HTTP contract', () => {
       formRequest('/api/admin/ama/availability', {
         intent: 'save-weekday',
         weekday: '1',
-        start: ['09:00', '13:00'],
-        end: ['12:00', '17:00'],
+        start: ['13:00', '09:00'],
+        end: ['17:00', '12:00'],
       }),
     )
 

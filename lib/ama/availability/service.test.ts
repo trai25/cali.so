@@ -248,8 +248,8 @@ describe('Availability Window service', () => {
     const f = fixture()
 
     await f.service.replaceWeekday(3, [
-      { startMinute: 8 * 60, endMinute: 11 * 60 },
       { startMinute: 13 * 60, endMinute: 17 * 60 },
+      { startMinute: 8 * 60, endMinute: 11 * 60 },
     ])
 
     expect(
