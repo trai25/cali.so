@@ -15,7 +15,6 @@ import { T } from '~/lib/i18n'
 import { localize, useLocale } from '~/lib/locale-client'
 import { localePath } from '~/lib/locale-route'
 import { assignLocation } from '~/lib/navigation'
-import { ShapeProvider } from '~/lib/shape-context'
 import { cn } from '~/lib/utils'
 
 const HOLD_SYNC_INTERVAL_MS = 60_000
@@ -208,7 +207,7 @@ function AlternateTimeRequestForm({
 
   if (done) {
     return (
-      <div role="status" className="rounded-md px-4 py-5 shadow-[0_0_0_1px_var(--border)]">
+      <div role="status" className="rounded-lg px-4 py-5 shadow-[0_0_0_1px_var(--border)]">
         <p className="text-sm font-medium">
           <T zh="已经收到了，谢谢。" en="Got it, thank you." />
         </p>
@@ -239,7 +238,6 @@ function AlternateTimeRequestForm({
           aria-describedby={errors.name ? `${baseId}-name-error` : undefined}
           onChange={(event) => setName(event.target.value)}
           destructive={errors.name}
-          className="rounded-[2px]"
         />
         {errors.name && <FieldError id={`${baseId}-name-error`} error="name" />}
       </div>
@@ -260,7 +258,6 @@ function AlternateTimeRequestForm({
           aria-describedby={errors.email ? `${baseId}-email-error` : undefined}
           onChange={(event) => setEmail(event.target.value)}
           destructive={errors.email}
-          className="rounded-[2px]"
         />
         {errors.email && <FieldError id={`${baseId}-email-error`} error="email" />}
       </div>
@@ -281,7 +278,7 @@ function AlternateTimeRequestForm({
             errors.preferredWindows ? `${baseId}-windows-error` : `${baseId}-windows-hint`
           }
           onChange={(event) => setPreferredWindows(event.target.value)}
-          className="rounded-[2px] leading-6"
+          className="leading-6"
         />
         {errors.preferredWindows ? (
           <p id={`${baseId}-windows-error`} role="alert" className="text-[13px] text-foreground">
@@ -308,7 +305,7 @@ function AlternateTimeRequestForm({
           disabled={pending}
           maxLength={1000}
           onChange={(event) => setNote(event.target.value)}
-          className="rounded-[2px] leading-6"
+          className="leading-6"
         />
       </div>
 
@@ -324,7 +321,6 @@ function AlternateTimeRequestForm({
           size="lg"
           disabled={pending}
           expandHitArea
-          className="rounded-[2px]"
         >
           {pending ? (
             <T zh="正在发送…" en="Sending…" />
@@ -683,13 +679,13 @@ export function BookingFlow() {
           {localize(locale, '正在加载可预约时间…', 'Loading available times…')}
         </p>
         <div aria-hidden className="flex flex-col gap-5">
-          <div className="h-8 rounded-[2px] bg-muted" />
+          <div className="h-8 rounded-lg bg-muted" />
           <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_10.5rem]">
-            <div className="h-[19rem] rounded-[2px] bg-muted" />
+            <div className="h-[19rem] rounded-lg bg-muted" />
             <div className="flex flex-col gap-2">
-              <div className="h-4 w-24 rounded-[2px] bg-muted" />
+              <div className="h-4 w-24 rounded bg-muted" />
               {Array.from({ length: 5 }, (_, index) => (
-                <div key={index} className="h-11 rounded-[2px] bg-muted" />
+                <div key={index} className="h-11 rounded-full bg-muted" />
               ))}
             </div>
           </div>
@@ -714,7 +710,7 @@ export function BookingFlow() {
         </div>
         <AlternateTimeRequestForm timeZone={timeZone} defaultName={name} defaultEmail={email} />
         <div>
-          <Button asChild variant="ghost" size="lg" expandHitArea className="rounded-[2px]">
+          <Button asChild variant="ghost" size="lg" expandHitArea>
             <Link href={localePath(locale, '/ama')}>
               <T zh="返回介绍页" en="Back to the AMA page" />
             </Link>
@@ -739,13 +735,7 @@ export function BookingFlow() {
           </p>
         </div>
         <div>
-          <Button
-            type="button"
-            size="lg"
-            expandHitArea
-            className="rounded-[2px]"
-            onClick={() => void pickNewTime()}
-          >
+          <Button type="button" size="lg" expandHitArea onClick={() => void pickNewTime()}>
             <T zh="重新选择时间" en="Pick a new time" />
           </Button>
         </div>
@@ -756,7 +746,7 @@ export function BookingFlow() {
   if (stage === 'hold' && hold) {
     return (
       <div className="flex flex-col gap-6">
-        <div className="rounded-[2px] px-4 py-5 shadow-[0_0_0_1px_var(--border)]">
+        <div className="rounded-lg px-4 py-5 shadow-[0_0_0_1px_var(--border)]">
           <p className="text-sm text-muted-foreground">
             <T zh="已为你保留" en="Held for you" />
           </p>
@@ -804,7 +794,6 @@ export function BookingFlow() {
             type="button"
             size="lg"
             expandHitArea
-            className="rounded-[2px]"
             disabled={checkoutPending}
             onClick={() => void continueToPayment()}
           >
@@ -819,7 +808,6 @@ export function BookingFlow() {
             variant="ghost"
             size="lg"
             expandHitArea
-            className="rounded-[2px]"
             disabled={checkoutPending}
             onClick={() => void pickNewTime()}
           >
@@ -832,10 +820,7 @@ export function BookingFlow() {
 
   // stage === 'open'. The alternate-time form nests nowhere: the intake
   // form and the recovery form stay sibling <form> elements.
-  // The square shape puts the fluid checkbox/radio groups on the page's
-  // industrial 2px register.
   return (
-    <ShapeProvider defaultShape="square">
     <div className="flex flex-col gap-10">
       <div ref={slotSectionRef} className="flex flex-col gap-4">
         <h2 className="text-sm font-medium text-muted-foreground">
@@ -890,7 +875,6 @@ export function BookingFlow() {
                 aria-describedby={fieldErrors.name ? `${baseId}-name-error` : undefined}
                 onChange={(event) => setName(event.target.value)}
                 destructive={fieldErrors.name}
-                className="rounded-[2px]"
               />
               <FieldError id={`${baseId}-name-error`} error={fieldErrors.name ? 'name' : undefined} />
             </div>
@@ -910,7 +894,6 @@ export function BookingFlow() {
                 aria-describedby={fieldErrors.email ? `${baseId}-email-error` : undefined}
                 onChange={(event) => setEmail(event.target.value)}
                 destructive={fieldErrors.email}
-                className="rounded-[2px]"
               />
               <FieldError id={`${baseId}-email-error`} error={fieldErrors.email ? 'email' : undefined} />
               <p className="text-[13px] text-muted-foreground">
@@ -924,7 +907,7 @@ export function BookingFlow() {
 
           <fieldset
             ref={topicsRef}
-            className="flex flex-col gap-3"
+            className="flex flex-col gap-4"
             disabled={submitting}
             aria-describedby={fieldErrors.topics ? `${baseId}-topics-error` : undefined}
           >
@@ -971,7 +954,7 @@ export function BookingFlow() {
                   fieldErrors.brief ? `${baseId}-brief-error` : `${baseId}-brief-hint`
                 }
                 onChange={(event) => setBrief(event.target.value)}
-                className="rounded-[2px] leading-6"
+                className="leading-6"
               />
               {fieldErrors.brief ? (
                 <FieldError id={`${baseId}-brief-error`} error="brief" />
@@ -1012,7 +995,6 @@ export function BookingFlow() {
                         })
                       }
                       destructive={fieldErrors[errorKey]}
-                      className="rounded-[2px]"
                     />
                     <FieldError
                       id={`${baseId}-${errorKey}-error`}
@@ -1024,7 +1006,7 @@ export function BookingFlow() {
             </div>
           </fieldset>
 
-          <fieldset className="flex flex-col gap-3" disabled={submitting}>
+          <fieldset className="flex flex-col gap-4" disabled={submitting}>
             <legend className="text-sm font-medium text-muted-foreground">
               <T zh="5 · 会议方式" en="5 · Meeting" />
             </legend>
@@ -1060,13 +1042,7 @@ export function BookingFlow() {
 
           <div className="flex flex-col gap-3">
             <div>
-              <Button
-                type="submit"
-                size="lg"
-                expandHitArea
-                className="rounded-[2px]"
-                disabled={submitting}
-              >
+              <Button type="submit" size="lg" expandHitArea disabled={submitting}>
                 {submitting ? (
                   <T zh="正在保留时间…" en="Holding your time…" />
                 ) : (
@@ -1089,7 +1065,6 @@ export function BookingFlow() {
               variant="ghost"
               size="lg"
               expandHitArea
-              className="rounded-[2px]"
               aria-expanded={showAlternate}
               onClick={() => setShowAlternate((value) => !value)}
             >
@@ -1108,6 +1083,5 @@ export function BookingFlow() {
         </>
       )}
     </div>
-    </ShapeProvider>
   )
 }

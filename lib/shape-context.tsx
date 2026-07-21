@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from "react";
 
-type ShapeVariant = "pill" | "rounded" | "square";
+type ShapeVariant = "pill" | "rounded";
 
 interface ShapeClasses {
   item: string;
@@ -53,20 +53,6 @@ const shapeMap: Record<ShapeVariant, ShapeClasses> = {
     input: "rounded-lg",
     bgRadius: 8,
     mergedRadius: 8,
-  },
-  // The site's industrial register: 2px machine corners (see
-  // docs/design-language.md), with the focus ring keeping the +2px
-  // concentric bump the other variants use.
-  square: {
-    item: "rounded-[2px]",
-    bg: "rounded-[2px]",
-    focusRing: "rounded-[4px]",
-    mergedBg: "rounded-[2px]",
-    container: "rounded-[4px]",
-    button: "rounded-[2px]",
-    input: "rounded-[2px]",
-    bgRadius: 2,
-    mergedRadius: 2,
   },
 };
 

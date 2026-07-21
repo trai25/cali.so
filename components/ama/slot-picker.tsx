@@ -209,7 +209,7 @@ export function SlotPicker({
         >
           <SelectTrigger
             aria-label={localize(locale, '时区', 'Time zone')}
-            className="w-full rounded-[2px] font-mono text-[13px]"
+            className="w-full rounded-lg font-mono text-[13px]"
           />
           <SelectContent>
             {timeZones.map((zone, index) => (
@@ -272,7 +272,7 @@ export function SlotPicker({
                         aria-pressed={isSelected}
                         aria-label={localize(locale, slot.zhLabel, slot.enLabel)}
                         onClick={() => onSelect(slot.startsAt)}
-                        className="min-h-11 w-full rounded-[2px] font-mono text-[13px] tabular-nums"
+                        className="min-h-11 w-full font-mono text-[13px] tabular-nums"
                       >
                         <T zh={slot.zhTime} en={slot.enTime} />
                       </Button>

@@ -35,7 +35,7 @@ function Calendar({
     <DayPicker
       showOutsideDays={showOutsideDays}
       className={cn(
-        'group/calendar w-full bg-transparent [--cell-radius:2px] [--cell-size:2.75rem]',
+        'group/calendar w-full bg-transparent [--cell-radius:var(--radius-md)] [--cell-size:2.75rem]',
         className,
       )}
       captionLayout={captionLayout}
@@ -69,7 +69,7 @@ function Calendar({
           'flex h-[var(--cell-size)] w-full items-center justify-center gap-1.5 text-sm font-medium',
           defaultClassNames.dropdowns,
         ),
-        dropdown_root: cn('relative rounded-[2px]', defaultClassNames.dropdown_root),
+        dropdown_root: cn('relative rounded-lg', defaultClassNames.dropdown_root),
         dropdown: cn(
           'absolute inset-0 bg-popover opacity-0',
           defaultClassNames.dropdown,
@@ -78,13 +78,13 @@ function Calendar({
           'select-none font-mono text-[13px] tabular-nums',
           captionLayout === 'label'
             ? ''
-            : 'flex items-center gap-1 rounded-[2px] [&>svg]:size-3.5 [&>svg]:text-muted-foreground',
+            : 'flex items-center gap-1 rounded-lg [&>svg]:size-3.5 [&>svg]:text-muted-foreground',
           defaultClassNames.caption_label,
         ),
         month_grid: cn('w-full border-collapse', defaultClassNames.month_grid),
         weekdays: cn('flex', defaultClassNames.weekdays),
         weekday: cn(
-          'flex-1 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground select-none',
+          'flex-1 rounded-lg font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground select-none',
           defaultClassNames.weekday,
         ),
         week: cn('mt-1 flex w-full', defaultClassNames.week),
@@ -97,7 +97,7 @@ function Calendar({
           defaultClassNames.week_number,
         ),
         day: cn(
-          'group/day relative aspect-square h-full w-full rounded-[2px] p-0 text-center select-none',
+          'group/day relative aspect-square h-full w-full rounded-lg p-0 text-center select-none',
           defaultClassNames.day,
         ),
         range_start: cn('relative isolate', defaultClassNames.range_start),
@@ -131,7 +131,7 @@ function Calendar({
           <Button
             variant="ghost"
             size="icon"
-            className={cn('rounded-[2px]', className)}
+            className={className}
             disabled={buttonProps['aria-disabled'] === true}
             {...buttonProps}
           >
@@ -142,7 +142,7 @@ function Calendar({
           <Button
             variant="ghost"
             size="icon"
-            className={cn('rounded-[2px]', className)}
+            className={className}
             disabled={buttonProps['aria-disabled'] === true}
             {...buttonProps}
           >
@@ -189,7 +189,7 @@ function CalendarDayButton({
       data-day-key={calendarDayKey(day.date)}
       data-available={modifiers.available || undefined}
       className={cn(
-        'aspect-square h-auto min-h-11 w-full min-w-[var(--cell-size)] rounded-[2px] font-mono text-[13px] tabular-nums',
+        'aspect-square h-auto min-h-11 w-full min-w-[var(--cell-size)] font-mono text-[13px] tabular-nums',
         className,
       )}
       {...props}
