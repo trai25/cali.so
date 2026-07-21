@@ -2,7 +2,6 @@
 
 import {
   useRef,
-  useState,
   useEffect,
   createContext,
   useContext,
@@ -93,10 +92,7 @@ const CheckboxGroup = forwardRef<HTMLDivElement, CheckboxGroupProps>(
     });
     prevGroupMap.current = newGroupMap;
 
-    const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
-
     const activeRect = activeIndex !== null ? itemRects[activeIndex] : null;
-    const focusRect = focusedIndex !== null ? itemRects[focusedIndex] : null;
     const isHoveringOther =
       activeIndex !== null && !checkedIndices.has(activeIndex);
     const shape = useShape();
@@ -121,17 +117,12 @@ const CheckboxGroup = forwardRef<HTMLDivElement, CheckboxGroupProps>(
               .closest("[data-proximity-index]")
               ?.getAttribute("data-proximity-index");
             if (indexAttr != null) {
-              const idx = Number(indexAttr);
-              setActiveIndex(idx);
-              setFocusedIndex(
-                (e.target as HTMLElement).matches(":focus-visible") ? idx : null
-              );
+              setActiveIndex(Number(indexAttr));
             }
           }}
           onBlur={(e) => {
             // Don't clear hover when focus moves to another item within the group
             if (containerRef.current?.contains(e.relatedTarget as Node)) return;
-            setFocusedIndex(null);
             setActiveIndex(null);
           }}
           onKeyDown={(e) => {
@@ -199,26 +190,8 @@ const CheckboxGroup = forwardRef<HTMLDivElement, CheckboxGroupProps>(
             )}
           </AnimatePresence>
 
-          {/* Focus ring */}
-          <AnimatePresence>
-            {focusRect && (
-              <motion.div
-                className={`absolute ${shape.focusRing} pointer-events-none z-20 border border-[color:var(--focus-ring,#6B97FF)]`}
-                initial={false}
-                animate={{
-                  left: focusRect.left - 2,
-                  top: focusRect.top - 2,
-                  width: focusRect.width + 4,
-                  height: focusRect.height + 4,
-                }}
-                exit={{ opacity: 0, transition: spring.fast.exit }}
-                transition={{
-                  ...spring.fast,
-                  opacity: { duration: 0.08 },
-                }}
-              />
-            )}
-          </AnimatePresence>
+          {/* No focus ring: keyboard focus lights the hover background via
+              activeIndex, which is indicator enough for these rows. */}
 
           {children}
         </div>
