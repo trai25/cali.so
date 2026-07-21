@@ -357,7 +357,7 @@ export function SlotPicker({
                         aria-pressed={isSelected}
                         aria-label={localize(locale, slot.zhLabel, slot.enLabel)}
                         onClick={() => onSelect(slot.startsAt)}
-                        className="min-h-11 w-full font-mono text-[13px] tabular-nums"
+                        className="min-h-11 w-full font-mono text-[13px] font-normal tabular-nums"
                       >
                         <T zh={slot.zhTime} en={slot.enTime} />
                       </Button>

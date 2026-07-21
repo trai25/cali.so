@@ -37,7 +37,10 @@ const buttonVariants = cva(
       size: {
         sm: "h-6 px-2 gap-1",
         md: "h-7 px-2 gap-1.5",
-        lg: "h-8 px-2 gap-2",
+        // The public CTA register (.btn-cta): 36px pill, 14px medium label,
+        // 18px inline padding. lg is the prominent-action tier everywhere,
+        // so it carries the same metrics.
+        lg: "h-9 px-[1.125rem] gap-2 text-sm font-medium",
         "icon-sm": "h-6 w-6 [&_svg]:h-3.5 [&_svg]:w-3.5",
         icon: "h-7 w-7 [&_svg]:h-4 [&_svg]:w-4",
         "icon-lg": "h-8 w-8 [&_svg]:h-5 [&_svg]:w-5",
