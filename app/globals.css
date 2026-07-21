@@ -1497,6 +1497,19 @@
   padding-left: 0.625rem;
 }
 
+/* Softer hover/selected fills for large choice groups (the AMA booking
+   form's fluid checkbox/radio rows): the merged selection slab reads heavy
+   at the global --hover/--active strengths, so this dials both down. */
+.quiet-selection {
+  --hover: color-mix(in oklab, var(--foreground) 4%, transparent);
+  --active: color-mix(in oklab, var(--foreground) 7%, transparent);
+}
+
+.dark .quiet-selection {
+  --hover: color-mix(in oklab, var(--foreground) 5%, transparent);
+  --active: color-mix(in oklab, var(--foreground) 9%, transparent);
+}
+
 /* boxed ordinal for manual steps (the how-it-works list). The box aligns
    to the text baseline so the number reads as part of the first line. */
 .step-index {

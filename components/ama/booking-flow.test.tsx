@@ -157,7 +157,7 @@ describe('BookingFlow', () => {
     expect((screen.getByLabelText(/你想从这一小时/) as HTMLTextAreaElement).value).toBe(
       'I want to talk through my product roadmap.',
     )
-    expect((screen.getAllByRole('checkbox')[0] as HTMLInputElement).checked).toBe(true)
+    expect(screen.getAllByRole('checkbox')[0]!.getAttribute('aria-checked')).toBe('true')
     expect(slotButtons().length).toBe(2)
   })
 
@@ -295,7 +295,7 @@ describe('BookingFlow', () => {
     fireEvent.change(screen.getByLabelText(/邮箱/), {
       target: { value: 'grace@example.com' },
     })
-    fireEvent.change(screen.getByLabelText(/哪些时间对你合适/), {
+    fireEvent.change(screen.getByLabelText(/你方便的时间/), {
       target: { value: 'Weekday evenings after 8pm.' },
     })
     fireEvent.click(screen.getByRole('button', { name: /Send alternate time request/ }))
