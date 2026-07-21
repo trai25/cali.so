@@ -29,13 +29,98 @@ type SlotPickerProps = {
   disabled?: boolean
 }
 
-function listTimeZones(detected: string): string[] {
-  const zones =
-    typeof Intl.supportedValuesOf === 'function'
-      ? Intl.supportedValuesOf('timeZone')
-      : []
-  if (zones.includes(detected)) return zones
-  return [detected, ...zones]
+/**
+ * One curated zone per populous UTC offset; the picker shows one option per
+ * *current* offset (DST folds neighbours together at runtime) so the list
+ * stays well under 20 rows instead of the ~400-zone IANA list.
+ */
+const CURATED_ZONES: { zone: string; zh: string[]; en: string[] }[] = [
+  { zone: 'America/Los_Angeles', zh: ['洛杉矶', '温哥华', '旧金山'], en: ['Los Angeles', 'Vancouver', 'San Francisco'] },
+  { zone: 'America/Denver', zh: ['丹佛', '盐湖城'], en: ['Denver', 'Salt Lake City'] },
+  { zone: 'America/Chicago', zh: ['芝加哥', '墨西哥城', '达拉斯'], en: ['Chicago', 'Mexico City', 'Dallas'] },
+  { zone: 'America/New_York', zh: ['纽约', '多伦多', '迈阿密'], en: ['New York', 'Toronto', 'Miami'] },
+  { zone: 'America/Sao_Paulo', zh: ['圣保罗', '布宜诺斯艾利斯'], en: ['São Paulo', 'Buenos Aires'] },
+  { zone: 'Europe/London', zh: ['伦敦', '里斯本', '都柏林'], en: ['London', 'Lisbon', 'Dublin'] },
+  { zone: 'Europe/Paris', zh: ['巴黎', '柏林', '阿姆斯特丹'], en: ['Paris', 'Berlin', 'Amsterdam'] },
+  { zone: 'Europe/Athens', zh: ['雅典', '赫尔辛基', '开罗'], en: ['Athens', 'Helsinki', 'Cairo'] },
+  { zone: 'Europe/Istanbul', zh: ['伊斯坦布尔', '莫斯科', '利雅得'], en: ['Istanbul', 'Moscow', 'Riyadh'] },
+  { zone: 'Asia/Dubai', zh: ['迪拜', '阿布扎比'], en: ['Dubai', 'Abu Dhabi'] },
+  { zone: 'Asia/Karachi', zh: ['卡拉奇', '伊斯兰堡'], en: ['Karachi', 'Islamabad'] },
+  { zone: 'Asia/Kolkata', zh: ['新德里', '孟买', '班加罗尔'], en: ['New Delhi', 'Mumbai', 'Bengaluru'] },
+  { zone: 'Asia/Dhaka', zh: ['达卡'], en: ['Dhaka'] },
+  { zone: 'Asia/Bangkok', zh: ['曼谷', '雅加达', '胡志明市'], en: ['Bangkok', 'Jakarta', 'Ho Chi Minh City'] },
+  { zone: 'Asia/Shanghai', zh: ['北京', '新加坡', '香港'], en: ['Beijing', 'Singapore', 'Hong Kong'] },
+  { zone: 'Asia/Tokyo', zh: ['东京', '首尔'], en: ['Tokyo', 'Seoul'] },
+  { zone: 'Australia/Sydney', zh: ['悉尼', '墨尔本', '堪培拉'], en: ['Sydney', 'Melbourne', 'Canberra'] },
+  { zone: 'Pacific/Auckland', zh: ['奥克兰', '惠灵顿'], en: ['Auckland', 'Wellington'] },
+]
+
+function zoneOffsetMinutes(zone: string): number | null {
+  try {
+    const value = new Intl.DateTimeFormat('en-US', { timeZone: zone, timeZoneName: 'longOffset' })
+      .formatToParts(new Date())
+      .find((part) => part.type === 'timeZoneName')?.value
+    if (!value) return null
+    if (value === 'GMT' || value === 'UTC') return 0
+    const match = value.match(/GMT([+-])(\d{1,2})(?::(\d{2}))?/)
+    if (!match) return null
+    const sign = match[1] === '-' ? -1 : 1
+    return sign * (Number(match[2]) * 60 + Number(match[3] ?? 0))
+  } catch {
+    return null
+  }
+}
+
+function offsetLabel(minutes: number): string {
+  const sign = minutes < 0 ? '-' : '+'
+  const abs = Math.abs(minutes)
+  const remainder = abs % 60
+  return `UTC${sign}${Math.floor(abs / 60)}${remainder ? `:${String(remainder).padStart(2, '0')}` : ''}`
+}
+
+function fallbackCity(zone: string): string {
+  return (zone.split('/').pop() ?? zone).replace(/_/g, ' ')
+}
+
+type TimeZoneOption = { zone: string; zh: string; en: string }
+
+/**
+ * Groups the curated zones by their offset right now, folds the selected
+ * (usually auto-detected) zone into its matching group so it stays a valid
+ * option, and appends it as its own row when no group shares its offset
+ * (e.g. UTC+5:45 or +9:30).
+ */
+function listTimeZoneOptions(selected: string): TimeZoneOption[] {
+  const groups = new Map<number, { zone: string; zh: string[]; en: string[] }>()
+  for (const curated of CURATED_ZONES) {
+    const offset = zoneOffsetMinutes(curated.zone)
+    if (offset === null) continue
+    const group = groups.get(offset)
+    if (group) {
+      group.zh.push(...curated.zh)
+      group.en.push(...curated.en)
+    } else {
+      groups.set(offset, { zone: curated.zone, zh: [...curated.zh], en: [...curated.en] })
+    }
+  }
+  const selectedOffset = zoneOffsetMinutes(selected)
+  if (selectedOffset !== null) {
+    const group = groups.get(selectedOffset)
+    if (group) group.zone = selected
+    else
+      groups.set(selectedOffset, {
+        zone: selected,
+        zh: [fallbackCity(selected)],
+        en: [fallbackCity(selected)],
+      })
+  }
+  return [...groups.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([offset, group]) => ({
+      zone: group.zone,
+      zh: `${offsetLabel(offset)} · ${group.zh.slice(0, 3).join(' / ')}`,
+      en: `${offsetLabel(offset)} · ${group.en.slice(0, 3).join(' / ')}`,
+    }))
 }
 
 function safeFormatter(options: Intl.DateTimeFormatOptions, locale: string, timeZone: string) {
@@ -75,7 +160,7 @@ export function SlotPicker({
   const locale = useLocale()
   const [preferredDayKey, setPreferredDayKey] = useState<string | null>(null)
 
-  const timeZones = useMemo(() => listTimeZones(timeZone), [timeZone])
+  const timeZoneOptions = useMemo(() => listTimeZoneOptions(timeZone), [timeZone])
 
   const groups = useMemo(() => {
     const dayKey = safeFormatter(
@@ -212,14 +297,14 @@ export function SlotPicker({
             className="w-full rounded-lg font-mono text-[13px]"
           />
           <SelectContent>
-            {timeZones.map((zone, index) => (
+            {timeZoneOptions.map((option, index) => (
               <SelectItem
-                key={zone}
-                value={zone}
+                key={option.zone}
+                value={option.zone}
                 index={index}
                 className="font-mono text-[13px]"
               >
-                {zone}
+                {localize(locale, option.zh, option.en)}
               </SelectItem>
             ))}
           </SelectContent>
