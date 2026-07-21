@@ -931,7 +931,7 @@ export function BookingFlow() {
             <legend className="mb-5 flex items-center gap-2.5">
               <SectionHeading index={3} zh="想聊什么" en="What to talk about" />
             </legend>
-            <CheckboxGroup checkedIndices={checkedTopicIndices} className="w-full">
+            <CheckboxGroup checkedIndices={checkedTopicIndices} className="quiet-selection w-full">
               {AMA_TOPICS.map((topic, index) => {
                 const label = AMA_TOPIC_LABELS[topic]
                 return (
@@ -1032,7 +1032,7 @@ export function BookingFlow() {
               onValueChange={(value) => {
                 if (!submitting) setProvider(value as 'google-meet' | 'tencent-meeting')
               }}
-              className="w-full"
+              className="quiet-selection w-full"
             >
               {(
                 [
