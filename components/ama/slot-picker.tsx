@@ -13,6 +13,7 @@ import {
 } from '~/components/ui/select'
 import { T } from '~/lib/i18n'
 import { localize, useLocale } from '~/lib/locale-client'
+import { listTimeZoneOptions } from './time-zone-options'
 
 export type PublicSlot = {
   startsAt: string
@@ -27,15 +28,6 @@ type SlotPickerProps = {
   onSelect: (startsAt: string) => void
   onDateChange?: () => void
   disabled?: boolean
-}
-
-function listTimeZones(detected: string): string[] {
-  const zones =
-    typeof Intl.supportedValuesOf === 'function'
-      ? Intl.supportedValuesOf('timeZone')
-      : []
-  if (zones.includes(detected)) return zones
-  return [detected, ...zones]
 }
 
 function safeFormatter(options: Intl.DateTimeFormatOptions, locale: string, timeZone: string) {
@@ -75,7 +67,10 @@ export function SlotPicker({
   const locale = useLocale()
   const [preferredDayKey, setPreferredDayKey] = useState<string | null>(null)
 
-  const timeZones = useMemo(() => listTimeZones(timeZone), [timeZone])
+  const timeZoneOptions = useMemo(
+    () => listTimeZoneOptions(timeZone, slots.map((slot) => slot.startsAt)),
+    [slots, timeZone],
+  )
 
   const groups = useMemo(() => {
     const dayKey = safeFormatter(
@@ -209,17 +204,17 @@ export function SlotPicker({
         >
           <SelectTrigger
             aria-label={localize(locale, '时区', 'Time zone')}
-            className="w-full font-mono text-[13px]"
+            className="w-full rounded-lg font-mono text-[13px]"
           />
           <SelectContent>
-            {timeZones.map((zone, index) => (
+            {timeZoneOptions.map((option, index) => (
               <SelectItem
-                key={zone}
-                value={zone}
+                key={option.zone}
+                value={option.zone}
                 index={index}
                 className="font-mono text-[13px]"
               >
-                {zone}
+                {localize(locale, option.zh, option.en)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -247,35 +242,40 @@ export function SlotPicker({
             className="mx-auto max-w-[22rem]"
           />
 
+          {/* On sm+ the calendar defines the row height: the section's content
+              is absolutely filled, so the day list stretches exactly to the
+              calendar's edge and scrolls inside it. */}
           <section
             aria-label={localize(locale, activeGroup.zhHeading, activeGroup.enHeading)}
-            className="min-w-0 sm:border-l sm:border-border sm:pl-4"
+            className="relative min-w-0 sm:border-l sm:border-border"
           >
-            <h3 className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-              <T zh={activeGroup.zhHeading} en={activeGroup.enHeading} />
-            </h3>
-            <ul className="mt-2 flex max-h-[19rem] flex-col gap-2 overflow-y-auto pr-1">
-              {activeGroup.slots.map((slot) => {
-                const isSelected = selected === slot.startsAt
-                return (
-                  <li key={slot.startsAt}>
-                    <Button
-                      type="button"
-                      variant={isSelected ? 'primary' : 'tertiary'}
-                      size="lg"
-                      active={isSelected}
-                      disabled={disabled}
-                      aria-pressed={isSelected}
-                      aria-label={localize(locale, slot.zhLabel, slot.enLabel)}
-                      onClick={() => onSelect(slot.startsAt)}
-                      className="min-h-11 w-full font-mono text-[13px] tabular-nums"
-                    >
-                      <T zh={slot.zhTime} en={slot.enTime} />
-                    </Button>
-                  </li>
-                )
-              })}
-            </ul>
+            <div className="flex flex-col sm:absolute sm:inset-0 sm:pl-4">
+              <h3 className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                <T zh={activeGroup.zhHeading} en={activeGroup.enHeading} />
+              </h3>
+              <ul className="mt-2 flex max-h-[19rem] grow flex-col gap-2 overflow-y-auto pr-1 sm:max-h-none">
+                {activeGroup.slots.map((slot) => {
+                  const isSelected = selected === slot.startsAt
+                  return (
+                    <li key={slot.startsAt}>
+                      <Button
+                        type="button"
+                        variant={isSelected ? 'primary' : 'tertiary'}
+                        size="lg"
+                        active={isSelected}
+                        disabled={disabled}
+                        aria-pressed={isSelected}
+                        aria-label={localize(locale, slot.zhLabel, slot.enLabel)}
+                        onClick={() => onSelect(slot.startsAt)}
+                        className="min-h-11 w-full font-mono text-[13px] font-normal tabular-nums"
+                      >
+                        <T zh={slot.zhTime} en={slot.enTime} />
+                      </Button>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
           </section>
         </div>
       )}
