@@ -161,18 +161,48 @@ describe('Availability Window repository', () => {
     )
   })
 
-  it('replaces a weekday with enabled or disabled hours', async () => {
+  it('replaces a weekday with one complete set of hours', async () => {
     await repository.create({ isoWeekday: 3, startMinute: 540, endMinute: 720 })
 
     await repository.replaceWeekday(3, [])
     expect((await repository.list()).filter((window) => window.isoWeekday === 3)).toEqual([])
 
     await repository.replaceWeekday(3, [
-      { startMinute: 600, endMinute: 780 },
+      { startMinute: 600, endMinute: 720 },
+      { startMinute: 780, endMinute: 1020 },
     ])
-    await expect(repository.list()).resolves.toMatchObject([
-      { isoWeekday: 3, startMinute: 600, endMinute: 780 },
+    await expect(repository.list()).resolves.toEqual([
+      expect.objectContaining({
+        isoWeekday: 3,
+        startMinute: 600,
+        endMinute: 720,
+      }),
+      expect.objectContaining({
+        isoWeekday: 3,
+        startMinute: 780,
+        endMinute: 1020,
+      }),
     ])
+  })
+
+  it('rolls back the weekday replacement when an insert fails', async () => {
+    await repository.create({ isoWeekday: 3, startMinute: 540, endMinute: 720 })
+
+    await expect(
+      repository.replaceWeekday(3, [
+        { startMinute: 780, endMinute: 1020 },
+        { startMinute: -1, endMinute: 720 },
+      ]),
+    ).rejects.toThrow()
+
+    expect((await repository.list()).filter((window) => window.isoWeekday === 3))
+      .toEqual([
+        expect.objectContaining({
+          isoWeekday: 3,
+          startMinute: 540,
+          endMinute: 720,
+        }),
+      ])
   })
 
   it.each([

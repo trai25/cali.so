@@ -4,6 +4,9 @@ import Link from 'next/link'
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 
 import { SlotPicker, type PublicSlot } from '~/components/ama/slot-picker'
+import { Button } from '~/components/ui/button'
+import { Input } from '~/components/ui/input'
+import { Textarea } from '~/components/ui/textarea'
 import { trackFunnelEvent } from '~/lib/analytics'
 import { AMA_TOPIC_LABELS, AMA_TOPICS, type AmaTopic } from '~/lib/ama/booking/topics'
 import { T } from '~/lib/i18n'
@@ -128,15 +131,6 @@ function FieldError({ id, error }: { id: string; error: FieldKey | undefined }) 
   )
 }
 
-const inputClassName =
-  'min-h-11 w-full touch-manipulation rounded-md bg-background px-3 text-base shadow-[0_0_0_1px_var(--border)] outline-none focus-visible:shadow-[0_0_0_1px_var(--foreground)]'
-
-const primaryButtonClassName =
-  'inline-flex min-h-11 touch-manipulation items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background outline-none transition-transform duration-100 ease-[ease] active:scale-[0.97] disabled:pointer-events-none disabled:opacity-60 focus-visible:ring-1 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transform-none motion-reduce:transition-none'
-
-const quietButtonClassName =
-  'inline-flex min-h-11 touch-manipulation items-center justify-center rounded-md px-4 text-sm text-muted-foreground outline-none transition-colors duration-150 hover:text-foreground focus-visible:ring-1 focus-visible:ring-foreground disabled:pointer-events-none disabled:opacity-60'
-
 /**
  * The unpaid recovery path: guests who cannot use any open time describe
  * what would work instead. Nothing is reserved and nothing is charged.
@@ -231,7 +225,7 @@ function AlternateTimeRequestForm({
         <label htmlFor={`${baseId}-name`} className="text-muted-foreground">
           <T zh="名字" en="Name" />
         </label>
-        <input
+        <Input
           ref={nameRef}
           id={`${baseId}-name`}
           type="text"
@@ -241,7 +235,7 @@ function AlternateTimeRequestForm({
           aria-invalid={errors.name || undefined}
           aria-describedby={errors.name ? `${baseId}-name-error` : undefined}
           onChange={(event) => setName(event.target.value)}
-          className={inputClassName}
+          destructive={errors.name}
         />
         {errors.name && <FieldError id={`${baseId}-name-error`} error="name" />}
       </div>
@@ -250,7 +244,7 @@ function AlternateTimeRequestForm({
         <label htmlFor={`${baseId}-email`} className="text-muted-foreground">
           <T zh="邮箱" en="Email" />
         </label>
-        <input
+        <Input
           ref={emailRef}
           id={`${baseId}-email`}
           type="email"
@@ -261,7 +255,7 @@ function AlternateTimeRequestForm({
           aria-invalid={errors.email || undefined}
           aria-describedby={errors.email ? `${baseId}-email-error` : undefined}
           onChange={(event) => setEmail(event.target.value)}
-          className={inputClassName}
+          destructive={errors.email}
         />
         {errors.email && <FieldError id={`${baseId}-email-error`} error="email" />}
       </div>
@@ -270,7 +264,7 @@ function AlternateTimeRequestForm({
         <label htmlFor={`${baseId}-windows`} className="text-muted-foreground">
           <T zh="哪些时间对你合适" en="Times that work for you" />
         </label>
-        <textarea
+        <Textarea
           ref={windowsRef}
           id={`${baseId}-windows`}
           rows={3}
@@ -282,7 +276,7 @@ function AlternateTimeRequestForm({
             errors.preferredWindows ? `${baseId}-windows-error` : `${baseId}-windows-hint`
           }
           onChange={(event) => setPreferredWindows(event.target.value)}
-          className={cn(inputClassName, 'py-2.5 leading-6')}
+          className="leading-6"
         />
         {errors.preferredWindows ? (
           <p id={`${baseId}-windows-error`} role="alert" className="text-[13px] text-foreground">
@@ -302,14 +296,14 @@ function AlternateTimeRequestForm({
         <label htmlFor={`${baseId}-note`} className="text-muted-foreground">
           <T zh="备注（可选）" en="Note (optional)" />
         </label>
-        <textarea
+        <Textarea
           id={`${baseId}-note`}
           rows={2}
           value={note}
           disabled={pending}
           maxLength={1000}
           onChange={(event) => setNote(event.target.value)}
-          className={cn(inputClassName, 'py-2.5 leading-6')}
+          className="leading-6"
         />
       </div>
 
@@ -320,13 +314,18 @@ function AlternateTimeRequestForm({
       )}
 
       <div>
-        <button type="submit" disabled={pending} className={primaryButtonClassName}>
+        <Button
+          type="submit"
+          size="lg"
+          disabled={pending}
+          expandHitArea
+        >
           {pending ? (
             <T zh="正在发送…" en="Sending…" />
           ) : (
             <T zh="发送替代时间请求" en="Send alternate time request" />
           )}
-        </button>
+        </Button>
       </div>
     </form>
   )
@@ -504,7 +503,11 @@ export function BookingFlow() {
   }
 
   function focusField(key: FieldKey) {
-    if (key === 'slot') slotSectionRef.current?.querySelector('select')?.focus()
+    if (key === 'slot') {
+      slotSectionRef.current
+        ?.querySelector<HTMLButtonElement>('[data-slot="calendar"] button:not(:disabled)')
+        ?.focus()
+    }
     if (key === 'name') nameRef.current?.focus()
     if (key === 'email') emailRef.current?.focus()
     if (key === 'topics') topicsRef.current?.querySelector('input')?.focus()
@@ -667,19 +670,16 @@ export function BookingFlow() {
         <p className="sr-only">
           {localize(locale, '正在加载可预约时间…', 'Loading available times…')}
         </p>
-        <div aria-hidden className="flex flex-col gap-6 motion-safe:animate-pulse motion-reduce:animate-none">
-          <div className="h-11 rounded-md bg-muted" />
-          <div className="h-5 w-40 rounded bg-muted" />
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-            {Array.from({ length: 8 }, (_, index) => (
-              <div key={index} className="h-11 rounded-md bg-muted" />
-            ))}
-          </div>
-          <div className="h-5 w-40 rounded bg-muted" />
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-            {Array.from({ length: 4 }, (_, index) => (
-              <div key={index} className="h-11 rounded-md bg-muted" />
-            ))}
+        <div aria-hidden className="flex flex-col gap-5">
+          <div className="h-8 rounded-lg bg-muted" />
+          <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_10.5rem]">
+            <div className="h-[19rem] rounded-lg bg-muted" />
+            <div className="flex flex-col gap-2">
+              <div className="h-4 w-24 rounded bg-muted" />
+              {Array.from({ length: 5 }, (_, index) => (
+                <div key={index} className="h-11 rounded-full bg-muted" />
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -701,14 +701,13 @@ export function BookingFlow() {
           </p>
         </div>
         <AlternateTimeRequestForm timeZone={timeZone} defaultName={name} defaultEmail={email} />
-        <p className="text-sm">
-          <Link
-            href={localePath(locale, '/ama')}
-            className="text-muted-foreground underline decoration-dotted underline-offset-4 transition-colors duration-150 hover:text-foreground"
-          >
-            <T zh="返回介绍页" en="Back to the AMA page" />
-          </Link>
-        </p>
+        <div>
+          <Button asChild variant="ghost" size="lg" expandHitArea>
+            <Link href={localePath(locale, '/ama')}>
+              <T zh="返回介绍页" en="Back to the AMA page" />
+            </Link>
+          </Button>
+        </div>
       </div>
     )
   }
@@ -728,9 +727,9 @@ export function BookingFlow() {
           </p>
         </div>
         <div>
-          <button type="button" onClick={() => void pickNewTime()} className={primaryButtonClassName}>
+          <Button type="button" size="lg" expandHitArea onClick={() => void pickNewTime()}>
             <T zh="重新选择时间" en="Pick a new time" />
-          </button>
+          </Button>
         </div>
       </div>
     )
@@ -783,26 +782,29 @@ export function BookingFlow() {
         )}
 
         <div className="flex flex-wrap items-center gap-3">
-          <button
+          <Button
             type="button"
+            size="lg"
+            expandHitArea
             disabled={checkoutPending}
             onClick={() => void continueToPayment()}
-            className={primaryButtonClassName}
           >
             {checkoutPending ? (
               <T zh="正在前往付款…" en="Heading to payment…" />
             ) : (
               <T zh="继续付款" en="Continue to payment" />
             )}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="ghost"
+            size="lg"
+            expandHitArea
             disabled={checkoutPending}
             onClick={() => void pickNewTime()}
-            className={quietButtonClassName}
           >
             <T zh="换一个时间" en="Choose a different time" />
-          </button>
+          </Button>
         </div>
       </div>
     )
@@ -824,6 +826,7 @@ export function BookingFlow() {
               onTimeZoneChange={setTimeZone}
               selected={selected}
               onSelect={handleSelect}
+              onDateChange={() => setSelected(null)}
               disabled={submitting}
             />
             <FieldError id={`${baseId}-slot-error`} error={fieldErrors.slot ? 'slot' : undefined} />
@@ -854,7 +857,7 @@ export function BookingFlow() {
               <label htmlFor={`${baseId}-name`} className="text-muted-foreground">
                 <T zh="名字" en="Name" />
               </label>
-              <input
+              <Input
                 ref={nameRef}
                 id={`${baseId}-name`}
                 type="text"
@@ -863,7 +866,7 @@ export function BookingFlow() {
                 aria-invalid={fieldErrors.name || undefined}
                 aria-describedby={fieldErrors.name ? `${baseId}-name-error` : undefined}
                 onChange={(event) => setName(event.target.value)}
-                className={inputClassName}
+                destructive={fieldErrors.name}
               />
               <FieldError id={`${baseId}-name-error`} error={fieldErrors.name ? 'name' : undefined} />
             </div>
@@ -872,7 +875,7 @@ export function BookingFlow() {
               <label htmlFor={`${baseId}-email`} className="text-muted-foreground">
                 <T zh="邮箱" en="Email" />
               </label>
-              <input
+              <Input
                 ref={emailRef}
                 id={`${baseId}-email`}
                 type="email"
@@ -882,7 +885,7 @@ export function BookingFlow() {
                 aria-invalid={fieldErrors.email || undefined}
                 aria-describedby={fieldErrors.email ? `${baseId}-email-error` : undefined}
                 onChange={(event) => setEmail(event.target.value)}
-                className={inputClassName}
+                destructive={fieldErrors.email}
               />
               <FieldError id={`${baseId}-email-error`} error={fieldErrors.email ? 'email' : undefined} />
               <p className="text-[13px] text-muted-foreground">
@@ -942,7 +945,7 @@ export function BookingFlow() {
               <label htmlFor={`${baseId}-brief`} className="text-muted-foreground">
                 <T zh="你想从这一小时得到什么" en="What would make this hour valuable" />
               </label>
-              <textarea
+              <Textarea
                 ref={briefRef}
                 id={`${baseId}-brief`}
                 rows={5}
@@ -953,7 +956,7 @@ export function BookingFlow() {
                   fieldErrors.brief ? `${baseId}-brief-error` : `${baseId}-brief-hint`
                 }
                 onChange={(event) => setBrief(event.target.value)}
-                className={cn(inputClassName, 'py-2.5 leading-6')}
+                className="leading-6"
               />
               {fieldErrors.brief ? (
                 <FieldError id={`${baseId}-brief-error`} error="brief" />
@@ -975,7 +978,7 @@ export function BookingFlow() {
                 const errorKey: FieldKey = `url-${index}`
                 return (
                   <div key={index} className="grid gap-1.5">
-                    <input
+                    <Input
                       ref={urlRefs[index]}
                       type="url"
                       inputMode="url"
@@ -993,7 +996,7 @@ export function BookingFlow() {
                           return next
                         })
                       }
-                      className={inputClassName}
+                      destructive={fieldErrors[errorKey]}
                     />
                     <FieldError
                       id={`${baseId}-${errorKey}-error`}
@@ -1048,13 +1051,13 @@ export function BookingFlow() {
 
           <div className="flex flex-col gap-3">
             <div>
-              <button type="submit" disabled={submitting} className={primaryButtonClassName}>
+              <Button type="submit" size="lg" expandHitArea disabled={submitting}>
                 {submitting ? (
                   <T zh="正在保留时间…" en="Holding your time…" />
                 ) : (
                   <T zh="保留这个时间" en="Hold this time" />
                 )}
-              </button>
+              </Button>
             </div>
             <p className="text-[13px] leading-5 text-muted-foreground">
               <T
@@ -1066,14 +1069,16 @@ export function BookingFlow() {
           </form>
 
           <div className="hairline-top pt-6">
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="lg"
+              expandHitArea
               aria-expanded={showAlternate}
               onClick={() => setShowAlternate((value) => !value)}
-              className={cn(quietButtonClassName, 'px-0')}
             >
               <T zh="没有合适的时间？告诉我你的时间。" en="No times fit? Tell me what works." />
-            </button>
+            </Button>
             {showAlternate && (
               <div className="mt-4">
                 <AlternateTimeRequestForm

@@ -469,6 +469,7 @@ export function ManageBooking({ token }: { token: string }) {
                       onTimeZoneChange={setTimeZone}
                       selected={selected}
                       onSelect={setSelected}
+                      onDateChange={() => setSelected(null)}
                       disabled={pending !== null}
                     />
                   )}
