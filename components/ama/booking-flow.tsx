@@ -953,7 +953,7 @@ export function BookingFlow() {
 
           <fieldset className="flex flex-col gap-4" disabled={submitting}>
             <legend className="mb-5 flex items-center gap-2.5">
-              <SectionHeading index={4} zh="Booking Brief" en="Booking Brief" />
+              <SectionHeading index={4} zh="预约简述" en="Booking Brief" />
             </legend>
 
             <div className="grid gap-1.5 text-sm">
