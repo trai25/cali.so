@@ -150,7 +150,7 @@ describe('BookingFlow', () => {
     expect((screen.getByLabelText(/你想从这一小时/) as HTMLTextAreaElement).value).toBe(
       'I want to talk through my product roadmap.',
     )
-    expect((screen.getAllByRole('checkbox')[0] as HTMLInputElement).checked).toBe(true)
+    expect(screen.getAllByRole('checkbox')[0]!.getAttribute('aria-checked')).toBe('true')
     expect(slotButtons().length).toBe(3)
   })
 

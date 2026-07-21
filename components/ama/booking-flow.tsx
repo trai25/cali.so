@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 
 import { SlotPicker, type PublicSlot } from '~/components/ama/slot-picker'
+import { CheckboxGroup, CheckboxItem } from '~/components/ui/checkbox-group'
+import { RadioGroup, RadioItem } from '~/components/ui/radio-group'
 import { trackFunnelEvent } from '~/lib/analytics'
 import { AMA_TOPIC_LABELS, AMA_TOPICS, type AmaTopic } from '~/lib/ama/booking/topics'
 import { T } from '~/lib/i18n'
@@ -507,7 +509,8 @@ export function BookingFlow() {
     if (key === 'slot') slotSectionRef.current?.querySelector('select')?.focus()
     if (key === 'name') nameRef.current?.focus()
     if (key === 'email') emailRef.current?.focus()
-    if (key === 'topics') topicsRef.current?.querySelector('input')?.focus()
+    if (key === 'topics')
+      topicsRef.current?.querySelector<HTMLElement>('[data-proximity-index]')?.focus()
     if (key === 'brief') briefRef.current?.focus()
     if (key === 'url-0') urlRefs[0].current?.focus()
     if (key === 'url-1') urlRefs[1].current?.focus()
@@ -646,6 +649,11 @@ export function BookingFlow() {
       current.includes(topic) ? current.filter((entry) => entry !== topic) : [...current, topic],
     )
   }
+
+  const checkedTopicIndices = useMemo(
+    () => new Set(AMA_TOPICS.flatMap((topic, index) => (topics.includes(topic) ? [index] : []))),
+    [topics],
+  )
 
   const heldTime = useMemo(() => {
     if (!hold) return null
@@ -903,33 +911,23 @@ export function BookingFlow() {
             <legend className="text-sm font-medium text-muted-foreground">
               <T zh="3 · 想聊什么" en="3 · What to talk about" />
             </legend>
-            <ul className="grid gap-2 sm:grid-cols-2">
-              {AMA_TOPICS.map((topic) => {
+            <CheckboxGroup checkedIndices={checkedTopicIndices} className="w-full">
+              {AMA_TOPICS.map((topic, index) => {
                 const label = AMA_TOPIC_LABELS[topic]
-                const checked = topics.includes(topic)
                 return (
-                  <li key={topic}>
-                    <label
-                      className={cn(
-                        'flex min-h-11 cursor-pointer touch-manipulation items-center gap-3 rounded-md px-3 text-sm transition-colors duration-150',
-                        checked
-                          ? 'shadow-[0_0_0_1px_var(--foreground)]'
-                          : 'shadow-[0_0_0_1px_var(--border)]',
-                      )}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => toggleTopic(topic)}
-                        aria-label={localize(locale, label.zh, label.en)}
-                        className="h-4 w-4 accent-[var(--foreground)]"
-                      />
-                      <T zh={label.zh} en={label.en} />
-                    </label>
-                  </li>
+                  <CheckboxItem
+                    key={topic}
+                    index={index}
+                    label={localize(locale, label.zh, label.en)}
+                    checked={topics.includes(topic)}
+                    onToggle={() => {
+                      if (!submitting) toggleTopic(topic)
+                    }}
+                    className="h-11 touch-manipulation"
+                  />
                 )
               })}
-            </ul>
+            </CheckboxGroup>
             <FieldError id={`${baseId}-topics-error`} error={fieldErrors.topics ? 'topics' : undefined} />
           </fieldset>
 
@@ -1009,35 +1007,28 @@ export function BookingFlow() {
             <legend className="text-sm font-medium text-muted-foreground">
               <T zh="5 · 会议方式" en="5 · Meeting" />
             </legend>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <RadioGroup
+              value={provider}
+              onValueChange={(value) => {
+                if (!submitting) setProvider(value as 'google-meet' | 'tencent-meeting')
+              }}
+              className="w-full"
+            >
               {(
                 [
                   { value: 'google-meet', zh: 'Google Meet', en: 'Google Meet' },
                   { value: 'tencent-meeting', zh: '腾讯会议', en: 'Tencent Meeting' },
                 ] as const
-              ).map((option) => (
-                <label
+              ).map((option, index) => (
+                <RadioItem
                   key={option.value}
-                  className={cn(
-                    'flex min-h-11 cursor-pointer touch-manipulation items-center gap-3 rounded-md px-3 text-sm transition-colors duration-150',
-                    provider === option.value
-                      ? 'shadow-[0_0_0_1px_var(--foreground)]'
-                      : 'shadow-[0_0_0_1px_var(--border)]',
-                  )}
-                >
-                  <input
-                    type="radio"
-                    name={`${baseId}-provider`}
-                    value={option.value}
-                    checked={provider === option.value}
-                    onChange={() => setProvider(option.value)}
-                    aria-label={localize(locale, option.zh, option.en)}
-                    className="h-4 w-4 accent-[var(--foreground)]"
-                  />
-                  <T zh={option.zh} en={option.en} />
-                </label>
+                  index={index}
+                  value={option.value}
+                  label={localize(locale, option.zh, option.en)}
+                  className="h-11 touch-manipulation"
+                />
               ))}
-            </div>
+            </RadioGroup>
           </fieldset>
 
           {notice && (
