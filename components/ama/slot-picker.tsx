@@ -30,19 +30,21 @@ type SlotPickerProps = {
 }
 
 /**
- * One curated zone per populous UTC offset; the picker shows one option per
- * *current* offset (DST folds neighbours together at runtime) so the list
- * stays well under 20 rows instead of the ~400-zone IANA list.
+ * One curated zone per populous UTC offset, so the list stays well under 20
+ * rows instead of the ~400-zone IANA list. Every city listed on a row MUST
+ * observe that row's IANA zone rules exactly (offset AND daylight-saving
+ * schedule year-round) — slots are in the future, so a city merely sharing
+ * today's offset would render future times wrong past a DST transition.
  */
 const CURATED_ZONES: { zone: string; zh: string[]; en: string[] }[] = [
   { zone: 'America/Los_Angeles', zh: ['洛杉矶', '温哥华', '旧金山'], en: ['Los Angeles', 'Vancouver', 'San Francisco'] },
   { zone: 'America/Denver', zh: ['丹佛', '盐湖城'], en: ['Denver', 'Salt Lake City'] },
-  { zone: 'America/Chicago', zh: ['芝加哥', '墨西哥城', '达拉斯'], en: ['Chicago', 'Mexico City', 'Dallas'] },
+  { zone: 'America/Chicago', zh: ['芝加哥', '达拉斯', '休斯顿'], en: ['Chicago', 'Dallas', 'Houston'] },
   { zone: 'America/New_York', zh: ['纽约', '多伦多', '迈阿密'], en: ['New York', 'Toronto', 'Miami'] },
   { zone: 'America/Sao_Paulo', zh: ['圣保罗', '布宜诺斯艾利斯'], en: ['São Paulo', 'Buenos Aires'] },
   { zone: 'Europe/London', zh: ['伦敦', '里斯本', '都柏林'], en: ['London', 'Lisbon', 'Dublin'] },
   { zone: 'Europe/Paris', zh: ['巴黎', '柏林', '阿姆斯特丹'], en: ['Paris', 'Berlin', 'Amsterdam'] },
-  { zone: 'Europe/Athens', zh: ['雅典', '赫尔辛基', '开罗'], en: ['Athens', 'Helsinki', 'Cairo'] },
+  { zone: 'Europe/Athens', zh: ['雅典', '赫尔辛基'], en: ['Athens', 'Helsinki'] },
   { zone: 'Europe/Istanbul', zh: ['伊斯坦布尔', '莫斯科', '利雅得'], en: ['Istanbul', 'Moscow', 'Riyadh'] },
   { zone: 'Asia/Dubai', zh: ['迪拜', '阿布扎比'], en: ['Dubai', 'Abu Dhabi'] },
   { zone: 'Asia/Karachi', zh: ['卡拉奇', '伊斯兰堡'], en: ['Karachi', 'Islamabad'] },
@@ -85,41 +87,39 @@ function fallbackCity(zone: string): string {
 type TimeZoneOption = { zone: string; zh: string; en: string }
 
 /**
- * Groups the curated zones by their offset right now, folds the selected
- * (usually auto-detected) zone into its matching group so it stays a valid
- * option, and appends it as its own row when no group shares its offset
- * (e.g. UTC+5:45 or +9:30).
+ * One row per curated zone, labeled with its live offset (so DST labels stay
+ * truthful) and sorted by offset. Rows are never merged across zones — two
+ * zones sharing today's offset can diverge at the next DST transition, and
+ * slots are in the future. The selected (usually auto-detected) zone stays a
+ * valid option: it takes over the value of a same-offset row (times then
+ * render under the guest's own rules), or gets an appended row for offsets we
+ * do not curate (UTC+5:45, +9:30, …).
  */
 function listTimeZoneOptions(selected: string): TimeZoneOption[] {
-  const groups = new Map<number, { zone: string; zh: string[]; en: string[] }>()
-  for (const curated of CURATED_ZONES) {
+  const rows = CURATED_ZONES.flatMap((curated) => {
     const offset = zoneOffsetMinutes(curated.zone)
-    if (offset === null) continue
-    const group = groups.get(offset)
-    if (group) {
-      group.zh.push(...curated.zh)
-      group.en.push(...curated.en)
-    } else {
-      groups.set(offset, { zone: curated.zone, zh: [...curated.zh], en: [...curated.en] })
-    }
-  }
+    return offset === null ? [] : [{ ...curated, offset }]
+  })
   const selectedOffset = zoneOffsetMinutes(selected)
-  if (selectedOffset !== null) {
-    const group = groups.get(selectedOffset)
-    if (group) group.zone = selected
-    else
-      groups.set(selectedOffset, {
+  if (selectedOffset !== null && !rows.some((row) => row.zone === selected)) {
+    const sameOffset = rows.find((row) => row.offset === selectedOffset)
+    if (sameOffset) {
+      sameOffset.zone = selected
+    } else {
+      rows.push({
         zone: selected,
         zh: [fallbackCity(selected)],
         en: [fallbackCity(selected)],
+        offset: selectedOffset,
       })
+    }
   }
-  return [...groups.entries()]
-    .sort(([a], [b]) => a - b)
-    .map(([offset, group]) => ({
-      zone: group.zone,
-      zh: `${offsetLabel(offset)} · ${group.zh.slice(0, 3).join(' / ')}`,
-      en: `${offsetLabel(offset)} · ${group.en.slice(0, 3).join(' / ')}`,
+  return rows
+    .sort((a, b) => a.offset - b.offset)
+    .map((row) => ({
+      zone: row.zone,
+      zh: `${offsetLabel(row.offset)} · ${row.zh.join(' / ')}`,
+      en: `${offsetLabel(row.offset)} · ${row.en.join(' / ')}`,
     }))
 }
 
